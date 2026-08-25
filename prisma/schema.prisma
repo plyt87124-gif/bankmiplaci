@@ -1,0 +1,480 @@
+// Prisma schema for "Premia" — bank promotion comparator.
+// Extended beyond the minimum spec with fields needed for a production
+// affiliate product (auth, tracking detail, content/blog, audit trail)
+// while keeping the core entities the brief asked for.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------
+// Auth / admin
+// ---------------------------------------------------------------------
+
+enum AdminRole {
+  EDITOR
+  ADMIN
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         AdminRole @default(EDITOR)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  articles Article[]
+  comments Comment[]
+
+  @@map("admin_users")
+}
+
+// ---------------------------------------------------------------------
+// Public user accounts (site visitors — separate from AdminUser)
+// ---------------------------------------------------------------------
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  // Nullable+unique so this migrates safely onto any accounts created
+  // before this field existed; new registrations always set it.
+  username     String?   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+
+  comments     Comment[]
+  commentLikes CommentLike[]
+  clicks       Click[]
+  impressions  Impression[]
+  pageViews    PageView[]
+  bankHistory  UserBankHistory[]
+  resetTokens  PasswordResetToken[]
+  checklistProgress ChecklistProgress[]
+  promotionTracking UserPromotionTracking[]
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// Comments left by logged-in users under a promotion.
+model Comment {
+  id          String    @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  // Exactly one of userId/adminId is set, enforced in application code (not
+  // a DB constraint): public comments always set userId, admin-authored
+  // replies (posted from the admin panel) always set adminId instead.
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adminId     String?
+  admin       AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  // One level of nesting only, enforced in application code: a comment
+  // whose own parentId is already set cannot be replied to.
+  parentId    String?
+  parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentReplies")
+  body        String
+  // Only one pinned comment per promotion at a time — pinning a new one
+  // un-pins whichever was pinned before it, in application code.
+  isPinned    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  likes       CommentLike[]
+
+  @@index([promotionId, createdAt])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
+  @@map("comment_likes")
+}
+
+// A user's self-reported history of being a client at a given bank.
+// Used to compute whether a promotion's "cooldown" (karencja) period
+// has passed — see Promotion.cooldownMonths below.
+model UserBankHistory {
+  id                    String      @id @default(cuid())
+  userId                String
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankId                String
+  bank                  Bank        @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  // A user can have separate closure dates for their personal vs.
+  // business (etc.) account at the same bank — eligibility must be
+  // checked against the account type the promotion is actually for.
+  accountType           AccountType @default(PERSONAL)
+  wasClientFrom         DateTime?
+  wasClientUntil        DateTime?
+  eligibilityNotifiedAt DateTime?
+  updatedAt             DateTime    @updatedAt
+
+  @@unique([userId, bankId, accountType])
+  @@map("user_bank_history")
+}
+
+enum AdminNotificationType {
+  NEW_COMMENT
+  ELIGIBILITY_CLEARED
+}
+
+// Lightweight in-app notification feed for the admin panel. No email
+// is sent automatically — see the bell/reminders pages in /admin.
+model AdminNotification {
+  id                  String                 @id @default(cuid())
+  type                AdminNotificationType
+  title               String
+  body                String
+  read                Boolean                @default(false)
+  relatedUserId       String?
+  relatedPromotionId  String?
+  relatedBankId       String?
+  createdAt           DateTime               @default(now())
+
+  @@index([type, read])
+  @@map("admin_notifications")
+}
+
+// ---------------------------------------------------------------------
+// Banks
+// ---------------------------------------------------------------------
+
+model Bank {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  website   String?
+  // Short factual description shown on the bank's own listing page.
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  promotions Promotion[]
+  userHistory UserBankHistory[]
+
+  @@map("banks")
+}
+
+// ---------------------------------------------------------------------
+// Promotions
+// ---------------------------------------------------------------------
+
+enum Difficulty {
+  VERY_EASY
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum PromotionStatus {
+  DRAFT // visible only in the admin preview, never on the public site
+  ACTIVE
+  EXPIRED // set automatically once end_date has passed
+  ARCHIVED // manually retired by an admin, kept for history/SEO
+}
+
+enum AccountType {
+  PERSONAL // konto osobiste
+  SAVINGS // konto oszczędnościowe
+  YOUNG // konto dla młodych
+  BUSINESS
+  JOINT
+}
+
+model Promotion {
+  id     String @id @default(cuid())
+  bankId String
+  bank   Bank   @relation(fields: [bankId], references: [id], onDelete: Cascade)
+
+  name String
+  slug String @unique
+
+  accountType AccountType @default(PERSONAL)
+
+  // Amounts are stored in grosze (integer, PLN * 100) to avoid float
+  // rounding issues anywhere money is summed or compared.
+  maxBonusCents Int
+
+  difficulty Difficulty
+  // Internal score 0.0–10.0, computed/edited by an admin. Always
+  // presented on the frontend as "ocena serwisu", never as an
+  // independent/objective rating — see rationale field below.
+  rating       Decimal @db.Decimal(3, 1)
+  ratingReason String? // short human-readable justification shown to users
+
+  status PromotionStatus @default(DRAFT)
+
+  startDate DateTime
+  endDate   DateTime
+
+  // Abstraction required by the brief: never hardcode affiliate links
+  // in components. This is the only field a template may read.
+  affiliateUrl String
+  // Where the terms were sourced from, shown for transparency + used
+  // internally to know what to re-check on verification.
+  sourceUrl String?
+
+  lastVerifiedAt DateTime
+
+  eligibleFor    String? // free text: "nowi klienci", "byli klienci po 12 mies. od zamknięcia konta"
+  notEligibleFor String?
+
+  // Structured cooldown (karencja) in months since a user's account
+  // closure date at this bank (see UserBankHistory). Powers the
+  // automatic eligibility banner on the promotion page.
+  cooldownMonths Int?
+
+  // Alternative/additional rule: a fixed calendar date. If the user's
+  // account closure date is on or after this date, they don't
+  // qualify — used when a bank's terms say "since DD.MM.RRRR" rather
+  // than "N months since closure" (e.g. Erste's "since 1 sierpnia
+  // 2024"). Both fields can be set at once — the user must clear
+  // BOTH checks to be shown as eligible.
+  cooldownCutoffDate DateTime?
+
+  summary     String? // 1–2 sentence teaser for cards/search results
+  description String? // longer markdown body for the detail page
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  conditions     PromotionCondition[]
+  bonusParts     BonusPart[]
+  fees           Fees?
+  clicks         Click[]
+  impressions    Impression[]
+  comments       Comment[]
+  checklistSteps ChecklistStep[]
+  trackings      UserPromotionTracking[]
+
+  @@index([status, endDate])
+  @@index([bankId])
+  @@map("promotions")
+}
+
+// A single checkable line item in a promotion's personalized "cheat
+// sheet" (ściąga) — grouped by monthLabel (e.g. "Otwarcie konta",
+// "Miesiąc 1"), shown to a user who's tracking this promotion in
+// "Moje konto". Curated by hand per-promotion for now (seeded
+// directly, no admin UI yet) — start with one promotion, expand later.
+model ChecklistStep {
+  id          String    @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  monthLabel  String // e.g. "Otwarcie konta", "Miesiąc 1 (po otwarciu konta)"
+  title       String
+  // Set only on the step representing "collect the reward for this
+  // group" — most steps (the actual actions) leave this null.
+  rewardCents Int?
+  order       Int    @default(0)
+
+  progress ChecklistProgress[]
+
+  @@index([promotionId, order])
+  @@map("checklist_steps")
+}
+
+// One user's checked/unchecked state for one ChecklistStep. Presence
+// of a row = checked; absence = unchecked (no boolean column needed).
+model ChecklistProgress {
+  id     String        @id @default(cuid())
+  userId String
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stepId String
+  step   ChecklistStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  checkedAt DateTime @default(now())
+
+  @@unique([userId, stepId])
+  @@map("checklist_progress")
+}
+
+// Marks that a user is actively tracking a promotion's cheat sheet.
+// completedAt is set when they confirm "zamknąłem konto po tej
+// promocji" — at that point their UserBankHistory is also updated
+// with today as wasClientUntil, feeding the existing karencja/cooldown
+// mechanism automatically.
+model UserPromotionTracking {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  joinedAt        DateTime  @default(now())
+  completedAt     DateTime?
+  // Real-world date the user opened the account for this promotion —
+  // required at join time so month groups can be gated to the calendar
+  // month that has actually arrived (anti-abuse: can't check everything
+  // at once) and so month labels can show real Polish month names.
+  accountOpenedAt DateTime?
+
+  @@unique([userId, promotionId])
+  @@map("user_promotion_tracking")
+}
+
+// Individual, checkable requirements ("Otwórz konto przez właściwy kanał", ...)
+model PromotionCondition {
+  id          String  @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  type        String // e.g. "account_opening" | "card_payments" | "inflow" | "deadline" | "other"
+  order       Int     @default(0)
+
+  @@index([promotionId])
+  @@map("promotion_conditions")
+}
+
+// Optional breakdown of a promotion's total bonus into named parts,
+// e.g. "Premia podstawowa" 200 zł + "Premia za wpływ" 300 zł.
+model BonusPart {
+  id          String  @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  label     String
+  amountCents Int
+  order     Int    @default(0)
+
+  @@index([promotionId])
+  @@map("bonus_parts")
+}
+
+model Fees {
+  id          String  @id @default(cuid())
+  promotionId String  @unique
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  accountFeeCents Int @default(0)
+  cardFeeCents    Int @default(0)
+  atmFeeCents     Int @default(0)
+  otherFee        String? // free text for conditions like "0 zł przy wpływie 500 zł/mies."
+
+  @@map("fees")
+}
+
+// ---------------------------------------------------------------------
+// Analytics — kept intentionally lean. No personal data.
+// ---------------------------------------------------------------------
+
+model Impression {
+  id          String   @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  // Anonymous, rotated per-session id (not a persistent user identifier).
+  sessionId   String
+  source      String? // utm_source equivalent, e.g. "organic", "google-cpc"
+  // Set only if the visitor was logged in at the moment of the view —
+  // powers the admin "co ten użytkownik oglądał" activity view.
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([promotionId, createdAt])
+  @@index([userId])
+  @@map("impressions")
+}
+
+model Click {
+  id          String   @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  sessionId   String
+  source      String?
+  campaign    String?
+  // Set only if the visitor was logged in at the moment of the click —
+  // powers the admin "co kliknął ten użytkownik" view. Anonymous
+  // clicks (the vast majority) leave this null.
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([promotionId, createdAt])
+  @@index([userId])
+  @@map("clicks")
+}
+
+// Generic "someone loaded this page" event, fired site-wide (homepage,
+// listing, comparator, quiz, and promotion detail pages) — distinct from
+// Impression, which is promotion-specific. Powers the admin "Statystyki"
+// traffic trend and per-page breakdown.
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  createdAt DateTime @default(now())
+  sessionId String
+  // Salted SHA-256 of the visitor's IP address — never the raw IP.
+  // Lets the "unikalne wejścia" stat de-duplicate repeat visits from the
+  // same person without storing an actually-identifying value.
+  ipHash    String?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([path, createdAt])
+  @@index([createdAt])
+  @@index([ipHash, createdAt])
+  @@map("page_views")
+}
+
+// ---------------------------------------------------------------------
+// Content / knowledge hub
+// ---------------------------------------------------------------------
+
+enum ArticleCategory {
+  PROMOCJE_BANKOWE
+  KONTA_BANKOWE
+  FINANSE_OSOBISTE
+  CASHBACK
+  PORADNIKI
+}
+
+model Article {
+  id        String          @id @default(cuid())
+  title     String
+  slug      String          @unique
+  category  ArticleCategory
+  excerpt   String
+  body      String // markdown
+  authorId  String
+  author    AdminUser       @relation(fields: [authorId], references: [id])
+  published Boolean         @default(false)
+  publishedAt DateTime?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@map("articles")
+}

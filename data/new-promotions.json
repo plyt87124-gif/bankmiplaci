@@ -1,0 +1,425 @@
+[
+  {
+    "_comment": "Bank Pekao — Promocja Podróżna. UWAGA: to nie jest prosta premia — to system cashbacku (3%/6% zwrotu z transakcji, wypłacanego jako 20% wydatków podróżnych). maxBonusCents = pułap całego 'portfela zwrotów' (2400 zł), nie gwarantowana kwota.",
+    "bank": {
+      "name": "Bank Pekao",
+      "slug": "pekao",
+      "website": "https://www.pekao.com.pl",
+      "logoUrl": null
+    },
+    "promotion": {
+      "slug": "pekao-promocja-podrozna",
+      "name": "Promocja Podróżna",
+      "accountType": "PERSONAL",
+      "maxBonusCents": 240000,
+      "difficulty": "HARD",
+      "rating": 9.0,
+      "ratingReason": "Wysoki pułap zwrotów, ale kwota nie jest gwarantowana — zależy od wydatków podróżnych i aktywności kartą przez 12+2 miesiące.",
+      "status": "DRAFT",
+      "startDate": "2026-06-01",
+      "endDate": "2026-08-31",
+      "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5oqow",
+      "sourceUrl": "https://www.pekao.com.pl/dam/ROOT-EXTERNAL/DOCS/Promocja_Podrozna_regulamin.pdf",
+      "lastVerifiedAt": "2026-08-22",
+      "eligibleFor": "Nowi klienci (18+), którzy od 1.06.2024 r. do 31.05.2026 r. nie mieli zawartej żadnej umowy o jakiekolwiek produkty i usługi z Bankiem Pekao (nie tylko konto — dowolny produkt).",
+      "notEligibleFor": "Osoby, które w okresie 1.06.2024–31.05.2026 miały jakąkolwiek umowę z Bankiem Pekao. Promocja dotyczy wyłącznie rachunków indywidualnych — nie można otworzyć konta wspólnego.",
+      "cooldownMonths": null,
+      "cooldownCutoffDate": "2024-06-01",
+      "summary": "Płać kartą lub BLIKIEM, a naliczymy Ci zwrot 3–6% do puli — potem zamień go na realną wypłatę (20% wartości) wydając na paliwo, bilety lub wycieczki. Łącznie do 2400 zł w 12 miesięcy.",
+      "conditions": [
+        { "title": "Otwórz konto z kartą", "description": "Online (z weryfikacją AIS lub selfie), w aplikacji PeoPay na selfie, w oddziale lub placówce partnerskiej. Promocja dotyczy wyłącznie konta indywidualnego (nie wspólnego).", "type": "account_opening", "order": 0 },
+        { "title": "Wyraź wymagane zgody na przetwarzanie danych", "description": "Bez tego nie zostaniesz zarejestrowany/a do promocji.", "type": "other", "order": 1 },
+        { "title": "Płać kartą lub BLIKIEM, żeby naliczać zwroty do puli", "description": "Za każdą płatność bezgotówkową (w Polsce i za granicą) naliczamy zwrot: 3% wartości transakcji za pierwsze 20 transakcji w danym miesiącu (maks. 100 zł/mies.), a od 21. transakcji w tym samym miesiącu — 6% wartości (do łącznego limitu 200 zł miesięcznie). Naliczone zwroty trafiają do Twojego „portfela zwrotów” — to na razie tylko pula, nie realne pieniądze na koncie.", "type": "card_payments", "order": 2 },
+        { "title": "Zapłać za coś związanego z podróżą, żeby wypłacić realną nagrodę", "description": "Zapłać kartą lub BLIKIEM za: paliwo na stacji benzynowej, bilet lotniczy, bilet kolejowy/autokarowy (bez komunikacji miejskiej) albo wycieczkę w biurze podróży. Za taki zakup wypłacimy Ci 20% jego wartości — maksymalnie 2000 zł za jedną wypłatę — pod warunkiem, że masz tyle środków zgromadzonych w portfelu zwrotów. Pieniądze trafiają na konto (lub Skarbonkę) najpóźniej następnego dnia roboczego, pomniejszając pulę.", "type": "other", "order": 3 }
+      ],
+      "bonusParts": [
+        { "label": "Zwrot 3% z pierwszych 20 transakcji/mies. (maks. 100 zł/mies. × 12 mies.)", "amountCents": 120000, "order": 0 },
+        { "label": "Zwrot 6% z kolejnych transakcji/mies. (do wspólnego limitu 200 zł/mies. × 12 mies.)", "amountCents": 120000, "order": 1 }
+      ],
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Regulamin promocji nie zawiera Taryfy Opłat i Prowizji — sprawdź ją osobno na stronie banku przed publikacją." }
+    }
+  },
+  {
+    "_comment": "Revolut — kwota i warunki potwierdzone przez admina dla tego konkretnego linku partnerskiego.",
+    "bank": {
+      "name": "Revolut",
+      "slug": "revolut",
+      "website": "https://www.revolut.com/pl-PL",
+      "logoUrl": null
+    },
+    "promotion": {
+      "slug": "revolut-darmowy-okres-probny-i-nagroda",
+      "name": "Darmowy Okres Próbny i Nagroda Pieniężna",
+      "accountType": "PERSONAL",
+      "maxBonusCents": 10000,
+      "difficulty": "VERY_EASY",
+      "rating": 8.8,
+      "ratingReason": "Bardzo niski próg wejścia (wystarczy wydać 100 zł), ale sama nagroda jest niewielka na tle innych promocji w zestawieniu.",
+      "status": "DRAFT",
+      "startDate": "2026-08-22",
+      "endDate": "2026-12-31",
+      "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5oxyq",
+      "sourceUrl": "https://www.revolut.com/pl-PL/legal/general-promotion-terms/",
+      "lastVerifiedAt": "2026-08-22",
+      "eligibleFor": "Osoby rejestrujące się w Revolut po raz pierwszy, mieszkające na rynku objętym promocją (Polska wchodzi w zakres rynków EOG obsługiwanych przez Revolut Bank UAB).",
+      "notEligibleFor": "Osoby posiadające już Rachunek Osobisty Revolut.",
+      "cooldownMonths": null,
+      "cooldownCutoffDate": null,
+      "summary": "Zgarnij 100 zł nagrody — otwórz konto, utwórz wirtualną lub zamów fizyczną kartę, zasil konto i wydaj min. 100 zł w ciągu miesiąca od otwarcia.",
+      "conditions": [
+        { "title": "Zarejestruj się przez unikalny link partnerski", "description": "Zostaniesz przekierowany do rejestracji z podaniem numeru telefonu.", "type": "account_opening", "order": 0 },
+        { "title": "Przejdź weryfikację tożsamości (KYC)", "description": "Bez ograniczeń nałożonych na konto do końca okresu promocji.", "type": "other", "order": 1 },
+        { "title": "Utwórz wirtualną kartę lub zamów fizyczną", "description": null, "type": "other", "order": 2 },
+        { "title": "Zasil konto i wydaj min. 100 zł", "description": "W ciągu 1 miesiąca od otwarcia rachunku. Nagroda 100 zł trafi na konto w ciągu 3 dni od osiągnięcia tej kwoty.", "type": "inflow", "order": 3 }
+      ],
+      "bonusParts": [],
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Po zakończeniu darmowego okresu próbnego nalicza się standardowa opłata za wybrany plan subskrypcji (Plus/Premium/Metal) — sprawdź aktualny cennik Revolut." }
+    }
+  },
+  {
+    "_comment": "BNP Paribas — Podróżnik z Aplikacją. 12 nagród miesięcznych po 75 zł + nagroda dodatkowa 100 zł. Uproszczyłem 12 niemal identycznych warunków miesięcznych do jednego zbiorczego wpisu.",
+    "bank": {
+      "name": "BNP Paribas Bank Polska",
+      "slug": "bnp-paribas",
+      "website": "https://www.bnpparibas.pl",
+      "logoUrl": null
+    },
+    "promotion": {
+      "slug": "bnp-paribas-podroznik-z-aplikacja",
+      "name": "Podróżnik z Aplikacją",
+      "accountType": "PERSONAL",
+      "maxBonusCents": 100000,
+      "difficulty": "HARD",
+      "rating": 9.0,
+      "ratingReason": "Wysoka łączna kwota, ale rozłożona na 12 miesięcy regularnej aktywności — każdy miesiąc trzeba spełnić warunki od nowa.",
+      "status": "DRAFT",
+      "startDate": "2026-07-27",
+      "endDate": "2026-09-13",
+      "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5owe6",
+      "sourceUrl": "https://lp.bnpparibas.pl/ekstrasumy/utils/docs/Regulamin_promocji_PODROZNIK_Z_APLIKACJA.pdf",
+      "lastVerifiedAt": "2026-08-22",
+      "eligibleFor": "Osoby pełnoletnie, konsumenci, z pełną zdolnością do czynności prawnych, które w dniu wniosku nie mają innej Umowy ramowej o Konto Osobiste w BNP Paribas, oraz w ciągu 24 miesięcy przed wnioskiem nie były posiadaczem/współposiadaczem ROR w tym banku.",
+      "notEligibleFor": "Osoby posiadające już konto osobiste w BNP Paribas lub które miały je w ciągu ostatnich 24 miesięcy. Promocję można wykorzystać tylko raz.",
+      "cooldownMonths": 24,
+      "cooldownCutoffDate": null,
+      "summary": "Do 1000 zł w 12 miesięcznych nagrodach po 75 zł (za transakcje kartą, wpływ min. 1000 zł i logowanie do aplikacji) + 100 zł nagrody dodatkowej. Umowę zawiera się wyłącznie przez aplikację mobilną z wideoweryfikacją.",
+      "conditions": [
+        { "title": "Zawrzyj Umowę ramową przez aplikację mobilną", "description": "Z wideoweryfikacją tożsamości, w okresie trwania promocji (limit 10 000 zgłoszeń).", "type": "account_opening", "order": 0 },
+        { "title": "Wyraź wymagane zgody marketingowe", "description": "Zgoda na kontakt elektroniczny i telefoniczny, brak sprzeciwu wobec przetwarzania danych (art. 21 RODO).", "type": "other", "order": 1 },
+        { "title": "Co miesiąc przez 12 miesięcy: min. 7 transakcji kartą + wpływ min. 1000 zł", "description": "Warunek trzeba spełnić od nowa w każdym z 12 kolejnych miesięcy, by dostać kolejną nagrodę 75 zł.", "type": "card_payments", "order": 2 },
+        { "title": "Co miesiąc: zaloguj się do aplikacji GOmobile", "description": "Przynajmniej raz w danym miesiącu.", "type": "other", "order": 3 },
+        { "title": "Nagroda dodatkowa: posiadaj Konto Lokacyjne lub Konto Pełne Marzeń", "description": "Z saldem min. 100 zł na koniec 12. miesiąca.", "type": "other", "order": 4 }
+      ],
+      "bonusParts": [
+        { "label": "12 nagród miesięcznych (12 × 75 zł)", "amountCents": 90000, "order": 0 },
+        { "label": "Nagroda dodatkowa", "amountCents": 10000, "order": 1 }
+      ],
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Laureaci otrzymują bezterminowe zwolnienie z opłaty za kartę i część opłat za wypłaty gotówki za granicą — sprawdź pełną Taryfę Opłat i Prowizji." }
+    }
+  },
+  {
+    "_comment": "mBank — Cała naprzód, edycja I. Kwota zależy od wybranego wariantu konta: eKonto do usług / mKonto Intensive = do 1000 zł, eKonto możliwości = do 900 zł (bez Bonusu III). Wpisałem wyższy wariant, różnicę opisałem w summary.",
+    "bank": {
+      "name": "mBank",
+      "slug": "mbank",
+      "website": "https://www.mbank.pl",
+      "logoUrl": null
+    },
+    "promotion": {
+      "slug": "mbank-cala-naprzod-edycja-1",
+      "name": "Cała naprzód – zyskuj z kontem w mBanku (edycja I)",
+      "accountType": "PERSONAL",
+      "maxBonusCents": 100000,
+      "difficulty": "HARD",
+      "rating": 9.4,
+      "ratingReason": "Najwyższa łączna kwota w tym zestawieniu, ale wymaga śledzenia kilku warunków (wpływ, transakcje, saldo 'moje cele') przez 6 kolejnych miesięcy.",
+      "status": "DRAFT",
+      "startDate": "2026-05-28",
+      "endDate": "2026-08-31",
+      "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5oxyo",
+      "sourceUrl": "https://www.mbank.pl/pdf/promocje/konta/regulamin-promocji-cala-naprzod-zyskuj-z-kontem-w-mbanku-edycja-i.pdf",
+      "lastVerifiedAt": "2026-08-22",
+      "eligibleFor": "Osoby pełnoletnie z pełną zdolnością do czynności prawnych, które od 1.01.2022 r. nie były i nadal nie są posiadaczem ani współposiadaczem ROR lub konta oszczędnościowego w mBanku (na wskazanych numerach rozliczeniowych).",
+      "notEligibleFor": "Osoby posiadające lub które od 1.01.2022 r. posiadały ROR/konto oszczędnościowe w mBanku. Nie można otworzyć konta wspólnie z drugą osobą.",
+      "cooldownMonths": null,
+      "cooldownCutoffDate": "2022-01-01",
+      "summary": "Do 1000 zł premii i bonusów przy eKoncie do usług / mKoncie Intensive (do 900 zł przy eKoncie możliwości) za wpływy, transakcje kartą i oszczędzanie w 'moje cele' przez 6 miesięcy, plus promocyjne oprocentowanie oszczędności.",
+      "conditions": [
+        { "title": "Otwórz rachunek z kartą w okresie przystąpienia", "description": "eKonto możliwości, eKonto do usług lub mKonto Intensive — umowę trzeba zawrzeć najpóźniej do 09.09.2026.", "type": "account_opening", "order": 0 },
+        { "title": "Premia I (100 zł): wpływ w 7 dni + transakcje kartą min. 350 zł + saldo 'moje cele' min. 100 zł", "description": "Do końca pierwszego pełnego miesiąca po otwarciu konta.", "type": "inflow", "order": 1 },
+        { "title": "Premia II (400 zł): powtórz warunki przez 5 kolejnych miesięcy", "description": "Wpływ, transakcje min. 350 zł, wzrost salda 'moje cele' o min. 100 zł — w każdym z miesięcy 2–6.", "type": "card_payments", "order": 2 },
+        { "title": "Bonus I (100 zł): otwórz konto przez selfie/e-dowód/mObywatel", "description": "Dodatkowo musisz spełnić warunki Premii I i II.", "type": "other", "order": 3 },
+        { "title": "Bonus II (300 zł): wpływ wynagrodzenia w min. 4 z 6 miesięcy", "description": null, "type": "inflow", "order": 4 },
+        { "title": "Bonus III (100 zł, tylko eKonto do usług/mKonto Intensive): otwórz konto dla dziecka", "description": "eKonto Junior lub eKonto możliwości (13–17 lat) do końca pierwszego pełnego miesiąca.", "type": "other", "order": 5 }
+      ],
+      "bonusParts": [
+        { "label": "Premia I", "amountCents": 10000, "order": 0 },
+        { "label": "Premia II", "amountCents": 40000, "order": 1 },
+        { "label": "Bonus I", "amountCents": 10000, "order": 2 },
+        { "label": "Bonus II", "amountCents": 30000, "order": 3 },
+        { "label": "Bonus III", "amountCents": 10000, "order": 4 }
+      ],
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Opłaty za kartę zgodnie z Taryfą Prowizji i Opłat mBanku — regulamin promocji jej nie zawiera, sprawdź osobno." }
+    }
+  },
+  {
+    "_comment": "Credit Agricole — Kapitalna premia (Konto Biznes). Regulamin nie podaje jednej łącznej kwoty — 4900 zł to suma osobnych bonusów (kredyt+karta+ZUS/US+leasing), zaznaczone w summary. Dane opłat dla wariantu Solista Biznes (promocja dostępna też dla Sonata/Symfonia Biznes).",
+    "bank": { "name": "Credit Agricole", "slug": "creditagricole", "website": null, "logoUrl": null },
+    "promotion": {
+      "slug": "creditagricole-kapitalna-premia",
+      "name": "Kapitalna premia (Konto Biznes)",
+      "accountType": "BUSINESS",
+      "maxBonusCents": 490000,
+      "difficulty": "HARD",
+      "rating": 9.2,
+      "ratingReason": "Wysoka potencjalna suma, ale wymaga podpięcia kilku dodatkowych produktów (kredyt, leasing, terminal), żeby zbliżyć się do maksimum — realistyczny, łatwiejszy do zdobycia bonus to głównie cashback kartowy i przelewy do ZUS.",
+      "status": "DRAFT",
+      "startDate": "2026-07-01",
+      "endDate": "2026-12-31",
+      "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5oy0m",
+      "sourceUrl": "https://www.credit-agricole.pl/regulamin-promocji-konto-biznes",
+      "lastVerifiedAt": "2026-08-22",
+      "eligibleFor": "Klienci biznesowi/instytucjonalni (jednoosobowa działalność gospodarcza, wolne zawody, osoby prawne), którzy do 31.12.2024 nie posiadali Konta Biznes w Credit Agricole.",
+      "notEligibleFor": "Osoby, które po 31.12.2024 posiadały Konto Biznes w tym banku. Tylko jedno Konto Biznes na klienta objęte promocją, tylko jeden terminal POS na NIP.",
+      "cooldownMonths": null,
+      "cooldownCutoffDate": "2024-12-31",
+      "summary": "Pakiet bonusów dla Konta Biznes: do 2000 zł za kredyt firmowy, do 1800 zł cashbacku 5% od płatności kartą, do 600 zł za przelewy do ZUS/US, 500 zł za leasing, plus zwolnienie z opłat za prowadzenie konta i kartę na 12 miesięcy oraz terminal płatniczy na 24 miesiące. Łącznie do 4900 zł — to suma osobnych bonusów, regulamin nie podaje jednej łącznej kwoty wprost.",
+      "conditions": [
+        { "title": "Otwórz Konto Biznes (Solista/Sonata/Symfonia) z kartą", "description": "Zawrzyj umowę w okresie 1.07–31.12.2026 (w placówce, przez CA24 Infolinia lub w aplikacji CA24 Mobile z kodem KONTO), aktywuj dostęp do min. 1 kanału CA24, wyraź zgody marketingowe na 12 miesięcy i formalnie przystąp do promocji. Jeśli nie przystąpisz przy otwarciu, masz 30 dni na pisemne zgłoszenie w placówce.", "type": "account_opening", "order": 0 },
+        { "title": "Kredyt firmowy: 2000 zł", "description": "Podpisz umowę kredytu firmowego na min. 120 000 zł w ciągu 12 pełnych miesięcy kalendarzowych od otwarcia konta. Liczy się tylko jeden kredyt. Wypłata do końca miesiąca następującego po podpisaniu.", "type": "inflow", "order": 1 },
+        { "title": "Cashback 5% od płatności kartą: do 1800 zł", "description": "Przez 12 miesięcy (licząc od miesiąca po otwarciu konta), w każdym miesiącu min. 3 transakcje kartą — zwrot 5% wydatków, max 150 zł/mies., max 1800 zł łącznie. Nie liczą się m.in. hazard, przekazy pieniężne, doładowania Revolut/PayPal.", "type": "card_payments", "order": 2 },
+        { "title": "Przelewy do ZUS/US: do 600 zł", "description": "50 zł za każdy miesiąc (z 12 liczonych od miesiąca po otwarciu konta), w którym zrobisz min. 1 przelew do ZUS lub US, max 600 zł łącznie.", "type": "inflow", "order": 3 },
+        { "title": "Leasing: 500 zł", "description": "Opłać 3 kolejne miesięczne raty leasingu EFL z nowego Konta Biznes w ciągu 6 miesięcy i utrzymaj konto przez 6 pełnych miesięcy kalendarzowych. Liczy się tylko jedna umowa leasingowa.", "type": "other", "order": 4 },
+        { "title": "Terminal płatniczy: zwolnienie z opłat na 24 miesiące", "description": "Podpisz umowę z Elavon, podłącz terminal do Konta Biznes i aktywuj go w ciągu 3 miesięcy od otwarcia konta — dostajesz zwolnienie z opłaty za dzierżawę terminala na 24 miesiące.", "type": "deadline", "order": 5 }
+      ],
+      "bonusParts": [
+        { "label": "Kredyt firmowy (jednorazowo)", "amountCents": 200000, "order": 0 },
+        { "label": "Cashback 5% od płatności kartą (do 12 mies.)", "amountCents": 180000, "order": 1 },
+        { "label": "Przelewy do ZUS/US (do 12 mies.)", "amountCents": 60000, "order": 2 },
+        { "label": "Leasing (jednorazowo)", "amountCents": 50000, "order": 3 }
+      ],
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Przez pierwsze 12 miesięcy od otwarcia konta w ramach promocji: prowadzenie konta i wszystkie karty PLN — 0 zł, bez warunku. Po tym okresie standardowe zasady taryfy dla wariantu Solista Biznes: prowadzenie konta 0 zł, jeśli w poprzednim miesiącu był min. 1 przelew do ZUS lub wpływy min. 3000 zł (inaczej 15 zł/mies.); karta 0 zł pod tym samym warunkiem (inaczej 9 zł/mies.). Dane dla wariantu Solista Biznes — promocja dostępna też dla Sonata Biznes i Symfonia Biznes z innymi progami warunków i wyższymi opłatami standardowymi." }
+    }
+  },
+  {
+    "_comment": "mBank — Konto firmowe na zawsze za 0 zł, edycja 5. Promocja bez premii gotówkowej — tylko trwałe zwolnienia z opłat, dlatego maxBonusCents=0 (potwierdzone z Tobą 2026-08-22).",
+    "bank": { "name": "mBank", "slug": "mbank", "website": null, "logoUrl": null },
+    "promotion": {
+      "slug": "mbank-konto-firmowe-na-zawsze-za-0-zl-edycja-5",
+      "name": "Konto firmowe na zawsze za 0 zł (edycja 5)",
+      "accountType": "BUSINESS",
+      "maxBonusCents": 0,
+      "difficulty": "EASY",
+      "rating": 9.0,
+      "ratingReason": "Brak premii gotówkowej, ale trwałe zwolnienie z opłat za prowadzenie konta i kartę to realna, bezterminowa wartość — łatwe do spełnienia (jeden wniosek), ale traci się wszystko przy zmianie typu konta lub wniosku o kredyt.",
+      "status": "DRAFT",
+      "startDate": "2026-06-11",
+      "endDate": "2026-08-31",
+      "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5otfo",
+      "sourceUrl": "https://www.mbank.pl/pdf/firmy/promocje/konto-firmowe-na-zawsze-za-0-zl-edycja-5-11-06-26-31-08-26.pdf",
+      "lastVerifiedAt": "2026-08-22",
+      "eligibleFor": "Osoby fizyczne prowadzące jednoosobową działalność gospodarczą (JDG), składające wniosek w okresie 11.06–31.08.2026.",
+      "notEligibleFor": "Osoby, które już korzystały z tej promocji, lub które mają jakiekolwiek konto w mBanku na ten sam NIP.",
+      "cooldownMonths": null,
+      "cooldownCutoffDate": null,
+      "summary": "Bezterminowe zwolnienie z opłat: 0 zł za prowadzenie konta, 0 zł za pierwszą wybraną kartę, 20 darmowych przelewów PLN i 20 darmowych SEPA/mies. Opcjonalnie: 1 zł/mies. za mKsięgowość przez 3 miesiące, darmowy mOrganizer Finansów przez 24 miesiące, darmowe konto walutowe przez 24 miesiące. To promocja bez premii gotówkowej — jej wartość to same zwolnienia z opłat.",
+      "conditions": [
+        { "title": "Złóż wniosek o mBiznes Konto Standard", "description": "W okresie 11.06–31.08.2026, umowę podpisz w ciągu 30 dni od złożenia wniosku.", "type": "account_opening", "order": 0 },
+        { "title": "Wybierz kartę i opcjonalne dodatki na wniosku", "description": "Wybierz jedną z 4 kart debetowych (Mastercard Debit Business / WOŚP / WOŚP Mobilna, Visa Business Debit) — będzie zwolniona z opłat bezterminowo. Opcjonalnie zaznacz: mKsięgowość Komfort (1 zł/mies. przez 3 miesiące), mOrganizer Finansów Optymalny (za darmo przez 24 miesiące), konto walutowe EUR/USD (za darmo przez 24 miesiące).", "type": "other", "order": 1 },
+        { "title": "Nie zmieniaj typu konta ani nie wnioskuj o dodatkowe produkty", "description": "Zmiana rodzaju rachunku, wniosek o kredyt/limit w koncie lub zmiana taryfy podczas trwania promocji powoduje bezpowrotną utratę wszystkich warunków promocyjnych.", "type": "deadline", "order": 2 }
+      ],
+      "bonusParts": [],
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "W ramach tej promocji: prowadzenie konta i opłata za pierwszą wybraną kartę debetową — 0 zł bezterminowo, bez dodatkowych warunków poza samym otwarciem konta w promocji. Standardowa taryfa dla mBiznes Konto Standard poza promocją: prowadzenie 0 zł/19 zł (zależnie od przelewu do ZUS w miesiącu), karta 5 zł/mies. Uwaga: utrata warunków promocyjnych następuje przy zmianie typu konta, wniosku o kredyt/limit w koncie lub zmianie taryfy." }
+    }
+  },
+  {
+    "_comment": "Alior Bank — iKonto Biznes, 'Plusy Karty z Plusem'. Regulamin łączy 3 osobne mechaniki (Moneyback + Bonus na START + Bonus po roku) — zapisane jako jeden połączony wpis, zgodnie z konwencją reszty bazy (np. mBank/BNP z rozbiciem w bonusParts).",
+    "bank": { "name": "Alior Bank", "slug": "alior", "website": null, "logoUrl": null },
+    "promotion": {
+      "slug": "alior-plusy-karty-z-plusem-ikonto-biznes",
+      "name": "Plusy Karty z Plusem (iKonto Biznes)",
+      "accountType": "BUSINESS",
+      "maxBonusCents": 400000,
+      "difficulty": "HARD",
+      "rating": 9.3,
+      "ratingReason": "Wysoka łączna kwota, ale wymaga regularnej aktywności (transakcje kartą + przelew do ZUS) przez 10 kolejnych miesięcy, żeby zbliżyć się do maksimum.",
+      "status": "DRAFT",
+      "startDate": "2026-03-01",
+      "endDate": "2026-10-31",
+      "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5oy0g",
+      "sourceUrl": "https://www.aliorbank.pl/dam/jcr:f929810d-f3e3-4773-a283-c0b21f7ee0ba/regulamin-promocji-plusy-karty-z-plusem-ikonto.pdf",
+      "lastVerifiedAt": "2026-08-22",
+      "eligibleFor": "Jednoosobowa działalność gospodarcza (JDG, CEIDG), bez konta lub karty firmowej w Alior Banku w okresie 1.03.2025–28.02.2026.",
+      "notEligibleFor": "Osoby posiadające konto lub kartę firmową w Alior Banku w tym okresie.",
+      "cooldownMonths": null,
+      "cooldownCutoffDate": null,
+      "summary": "Do 4000 zł: 500 zł za start (wydaj min. 500 zł kartą/BLIK w ciągu 14 dni), do 3000 zł cashbacku (10% wydatków kartą, max 300 zł/mies. przez 10 miesięcy, wymaga też przelewu do ZUS) i 500 zł premii po roku za utrzymanie aktywności przez 10 z 12 miesięcy.",
+      "conditions": [
+        { "title": "Otwórz iKonto Biznes z kartą Mastercard z Plusem", "description": "W okresie 1.03–31.10.2026. Warunek wykluczający: brak konta/karty firmowej w Alior Banku między 1.03.2025 a 28.02.2026.", "type": "account_opening", "order": 0 },
+        { "title": "Bonus na START: 500 zł", "description": "W ciągu 14 dni kalendarzowych od otwarcia konta wykonaj transakcje kartą/BLIK na min. 500 zł i utrzymaj aktywne zgody marketingowe do dnia wypłaty. Wypłata w ciągu 15 dni roboczych kolejnego miesiąca.", "type": "card_payments", "order": 1 },
+        { "title": "Premia Moneyback: do 3000 zł", "description": "W każdym z 10 kolejnych miesięcy (licząc od miesiąca po pierwszym użyciu karty): transakcje kartą/BLIK min. 2000 zł oraz min. 1 przelew do ZUS w tym samym miesiącu → 10% wydanej kwoty, max 300 zł/mies. Wypłata w ciągu 15 dni roboczych kolejnego miesiąca.", "type": "card_payments", "order": 2 },
+        { "title": "Bonus po roku: 500 zł", "description": "Jeśli przez 12 pełnych miesięcy po miesiącu złożenia wniosku o kartę nie zamkniesz/nie przekształcisz konta, spełnisz warunek Moneyback w min. 10 z tych 12 miesięcy i utrzymasz zgody marketingowe do dnia wypłaty — dodatkowa premia wypłacana w 13. miesiącu.", "type": "deadline", "order": 3 }
+      ],
+      "bonusParts": [
+        { "label": "Premia Moneyback (do 10 mies.)", "amountCents": 300000, "order": 0 },
+        { "label": "Bonus na START", "amountCents": 50000, "order": 1 },
+        { "label": "Bonus po roku", "amountCents": 50000, "order": 2 }
+      ],
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Prowadzenie konta: 0 zł, bez warunków. Karta debetowa: 0 zł, jeśli w danym miesiącu wykonasz min. 4 transakcje bezgotówkowe (inaczej 8 zł/mies.)." }
+    }
+  },
+  {
+    "_comment": "Millennium — 'Nawet 5000 zł premii dla przedsiębiorców z Kontem Mój Biznes'. UWAGA: to inna promocja niż tekst wklejony w rozmowie ('Rozwiń swój biznes') — wybrana zgodnie z decyzją użytkownika 2026-08-22, bo ma potwierdzenie w prawdziwym regulaminie. Brak Cennika/Taryfy — pola opłat wymagają uzupełnienia.",
+    "bank": { "name": "Millennium", "slug": "millennium", "website": null, "logoUrl": null },
+    "promotion": {
+      "slug": "millennium-nawet-5000-zl-premii-mojbiznes",
+      "name": "Nawet 5000 zł premii z Kontem Mój Biznes",
+      "accountType": "BUSINESS",
+      "maxBonusCents": 500000,
+      "difficulty": "HARD",
+      "rating": 9.1,
+      "ratingReason": "Najwyższa kwota wśród kont firmowych w tej turze, ale rozbita na 4 osobne strumienie wymagające dodatkowych produktów (terminal, leasing) i konsekwentnej aktywności przez 6 miesięcy.",
+      "status": "DRAFT",
+      "startDate": "2026-04-01",
+      "endDate": "2026-09-30",
+      "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5oxrm",
+      "sourceUrl": null,
+      "lastVerifiedAt": "2026-08-22",
+      "eligibleFor": "JDG (CEIDG), otwierające Konto Mój Biznes zdalnie (Millenet/aplikacja/wniosek web) w okresie 1.04–30.09.2026 (lub do 40 000 otwartych kont), albo w placówce tylko jeśli kanał zdalny zawiódł nie z winy klienta.",
+      "notEligibleFor": "Pracownicy banku; osoby posiadające konto Klient Biznes w Millennium w okresie od 1.04.2024 do zgłoszenia.",
+      "cooldownMonths": null,
+      "cooldownCutoffDate": "2024-04-01",
+      "summary": "Do 5000 zł w 4 niezależnych bonusach: do 1200 zł za przelewy ZUS, do 1200 zł cashbacku z płatności mobilnych (Apple/Google/Samsung Pay), do 1800 zł za terminal płatniczy, 800 zł za ratę leasingu — każdy wymaga osobno utrzymania wpływów min. 1000 zł i płatności kartą min. 500 zł miesięcznie przez 6 kolejnych miesięcy.",
+      "conditions": [
+        { "title": "Otwórz Konto Mój Biznes", "description": "W okresie 1.04–30.09.2026 (lub do wyczerpania puli 40 000 kont), zdalnie przez Millenet/aplikację/wniosek web. Wyraź zgody marketingowe.", "type": "account_opening", "order": 0 },
+        { "title": "Warunki bazowe dla wszystkich 4 bonusów", "description": "Zaloguj się do aplikacji mobilnej do końca miesiąca po otwarciu konta. W każdym z 6 kolejnych miesięcy: wpływy zewnętrzne min. 1000 zł oraz płatności kartą min. 500 zł.", "type": "other", "order": 1 },
+        { "title": "Bonus za ZUS: do 1200 zł", "description": "200 zł za każdy z 6 miesięcy, w którym opłacisz ZUS przez formularz w Millenet/aplikacji z tego konta.", "type": "inflow", "order": 2 },
+        { "title": "Cashback z portfela mobilnego: do 1200 zł", "description": "5% zwrotu (max 200 zł/mies.) z płatności Apple Pay/Google Pay/Samsung Pay przez 6 miesięcy.", "type": "card_payments", "order": 3 },
+        { "title": "Bonus za terminal płatniczy: do 1800 zł", "description": "Podpisz umowę na terminal (PayTel lub Millennium POS) na 12 miesięcy do końca miesiąca po otwarciu konta, potem min. 1000 zł wpływu z terminala miesięcznie → 300 zł/mies. przez 6 miesięcy.", "type": "other", "order": 4 },
+        { "title": "Bonus za leasing: 800 zł", "description": "Jednorazowy przelew min. 1000 zł do Millennium Leasing jako rata leasingowa, do 31.12.2026.", "type": "deadline", "order": 5 }
+      ],
+      "bonusParts": [
+        { "label": "Bonus za ZUS (do 6 mies.)", "amountCents": 120000, "order": 0 },
+        { "label": "Cashback z portfela mobilnego (do 6 mies.)", "amountCents": 120000, "order": 1 },
+        { "label": "Bonus za terminal płatniczy (do 6 mies.)", "amountCents": 180000, "order": 2 },
+        { "label": "Bonus za leasing (jednorazowo)", "amountCents": 80000, "order": 3 }
+      ],
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Nie otrzymałem Cennika/Taryfy Opłat i Prowizji dla Millennium — te pola wymagają uzupełnienia po dostarczeniu dokumentu, zanim promocja zostanie opublikowana." }
+    }
+  },
+  {
+    "_comment": "Nest! BANK — Zyskaj do 3000 zł premii za wymianę i saldo w euro (BIZnest Konto). Brak Taryfy Opłat i Prowizji — przesłany dokument to tabela oprocentowania, nie opłat.",
+    "bank": { "name": "Nest! BANK", "slug": "nest", "website": null, "logoUrl": null },
+    "promotion": {
+      "slug": "nest-zyskaj-do-3000-zl-wymiana-saldo-eur",
+      "name": "Zyskaj do 3000 zł premii za wymianę i saldo w euro",
+      "accountType": "BUSINESS",
+      "maxBonusCents": 300000,
+      "difficulty": "HARD",
+      "rating": 9.0,
+      "ratingReason": "Wysoka premia, ale niszowa — opłaca się głównie firmom z dużym obrotem lub saldem w EUR (pełna premia wymaga średniego salda ponad 200 tys. EUR).",
+      "status": "DRAFT",
+      "startDate": "2026-04-17",
+      "endDate": "2026-11-30",
+      "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5oxrk",
+      "sourceUrl": "https://nestbank.pl/assets/gen/regulamin-promocji-zyskaj-do-3000-zl-premii-za-wymiane-i-saldo-w-euro.pdf",
+      "lastVerifiedAt": "2026-08-22",
+      "eligibleFor": "Nowi klienci biznesowi (siedziba i rezydencja podatkowa w Polsce), bez BIZnest Konto od 1.01.2026.",
+      "notEligibleFor": "Klienci posiadający BIZnest Konto od 1.01.2026.",
+      "cooldownMonths": null,
+      "cooldownCutoffDate": "2026-01-01",
+      "summary": "Do 3000 zł w dwóch niezależnych, jednorazowych premiach dla firm aktywnych w EUR: do 1000 zł za wolumen wymiany walut i do 2000 zł za średnie saldo na koncie EUR, liczone przez 3 pełne miesiące po otwarciu konta walutowego.",
+      "conditions": [
+        { "title": "Otwórz BIZnest Konto i BIZnest Konto Waluta EUR", "description": "Złóż wniosek w okresie 17.04–30.11.2026, zaznacz udział w promocji, podpisz umowę BIZnest Konto w ciągu 30 dni, wyraź zgodę marketingową i otwórz konto walutowe EUR w ciągu 30 dni od zakończenia okresu przystąpienia. Warunek wykluczający: brak BIZnest Konto od 1.01.2026.", "type": "account_opening", "order": 0 },
+        { "title": "Premia za wymianę walut: do 1000 zł", "description": "W ciągu 3 pełnych miesięcy kalendarzowych po otwarciu konta EUR, wymień łącznie (PLN↔EUR, między własnymi rachunkami rozliczeniowymi): 10 000 EUR → 50 zł, 25 000 EUR → 125 zł, 50 000 EUR → 250 zł, 100 000 EUR → 500 zł, 200 000 EUR → 1000 zł.", "type": "inflow", "order": 1 },
+        { "title": "Premia za saldo w EUR: do 2000 zł", "description": "Średnie saldo na koncie BIZnest Konto Waluta EUR w tych samych 3 miesiącach: 5 000–10 000 EUR → 50 zł, do 25 000 → 100 zł, do 50 000 → 250 zł, do 100 000 → 500 zł, do 200 000 → 1000 zł, powyżej 200 000 → 2000 zł. Niedostępne, jeśli korzystasz też z promocji „Oprocentowany rachunek dla przedsiębiorstw”.", "type": "inflow", "order": 2 }
+      ],
+      "bonusParts": [
+        { "label": "Premia za wymianę walut (jednorazowo)", "amountCents": 100000, "order": 0 },
+        { "label": "Premia za saldo w EUR (jednorazowo)", "amountCents": 200000, "order": 1 }
+      ],
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Nie otrzymałem Taryfy Opłat i Prowizji dla Nest Banku (przesłany dokument to tabela oprocentowania, nie opłat) — te pola wymagają uzupełnienia po dostarczeniu właściwego cennika, zanim promocja zostanie opublikowana." }
+    }
+  },
+  {
+    "_comment": "Bank Pekao — Premia do 4200 zł z Kontem Biznes z Żubrem. Promocja dla konta FIRMOWEGO — osobna od istniejącej w bazie 'Promocji Podróżnej' (konto osobiste). Taryfa dotyczy umów zawartych do 19.08.2026, warto zweryfikować aktualność przed publikacją.",
+    "bank": { "name": "Bank Pekao", "slug": "pekao", "website": null, "logoUrl": null },
+    "promotion": {
+      "slug": "pekao-premia-do-4200-zl-konto-biznes-z-zubrem",
+      "name": "Premia do 4200 zł z Kontem Biznes z Żubrem",
+      "accountType": "BUSINESS",
+      "maxBonusCents": 420000,
+      "difficulty": "HARD",
+      "rating": 9.4,
+      "ratingReason": "Najwyższa kwota wśród kont firmowych w tej turze, z realnie osiągalną częścią (200 zł + częściowy cashback) bez dodatkowych produktów — ale pełne 4200 zł wymaga podpięcia terminala, kredytu i leasingu.",
+      "status": "DRAFT",
+      "startDate": "2026-07-01",
+      "endDate": "2026-08-31",
+      "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5oy0i",
+      "sourceUrl": "https://pekao.com.pl/dam/ROOT-EXTERNAL/DOCS/Regulamin_promocji_Premia_do_4200_z_Kontem_Biznes_z_Zubrem.pdf",
+      "lastVerifiedAt": "2026-08-22",
+      "eligibleFor": "JDG z uproszczoną księgowością (KPiR/ryczałt/karta podatkowa), polski rezydent podatkowy, bez konta biznesowego w Pekao między 1.09.2024 a zgłoszeniem.",
+      "notEligibleFor": "Osoby posiadające konto biznesowe w Pekao w tym okresie. Promocja jednorazowa — zamknięcie i ponowne otwarcie konta nie uprawnia do ponownego udziału.",
+      "cooldownMonths": null,
+      "cooldownCutoffDate": "2024-09-01",
+      "summary": "Do 4200 zł w 5 niezależnych nagrodach: 200 zł za start, do 2000 zł cashbacku 4% od zakupów kartą (10 miesięcy), do 800 zł za terminal płatniczy, 600 zł za limit/kredyt firmowy, 600 zł za leasing — każda dodatkowo wymaga przelewu do ZUS min. 300 zł w danym miesiącu.",
+      "conditions": [
+        { "title": "Otwórz Konto Biznes z Żubrem z kartą Mastercard", "description": "Załóż firmę i konto w jednym wniosku, albo podpisz umowę zdalnie jeśli już prowadzisz działalność, w okresie 1.07–31.08.2026.", "type": "account_opening", "order": 0 },
+        { "title": "Nagroda za start: 200 zł", "description": "W ciągu 2 pełnych miesięcy kalendarzowych od otwarcia konta zrób min. 1 przelew do ZUS na min. 300 zł.", "type": "inflow", "order": 1 },
+        { "title": "Cashback 4% od zakupów kartą: do 2000 zł", "description": "Przez 10 kolejnych miesięcy (od pierwszego pełnego miesiąca po otwarciu konta): zakupy kartą/portfelem cyfrowym min. 500 zł oraz przelew do ZUS min. 300 zł w danym miesiącu → 4% wydatków (min. 20 zł, max 200 zł/mies.).", "type": "card_payments", "order": 2 },
+        { "title": "Terminal płatniczy: do 800 zł", "description": "Podpisz umowę na terminal w okresie promocji, potem przez 10 miesięcy: min. 1000 zł obrotu z terminala oraz przelew do ZUS min. 300 zł/mies. → 80 zł/mies.", "type": "other", "order": 3 },
+        { "title": "Limit/kredyt w koncie: 600 zł", "description": "Podpisz i aktywuj limit lub kredyt firmowy min. 5000 zł oraz zrób przelew do ZUS min. 300 zł, w okresie promocji.", "type": "other", "order": 4 },
+        { "title": "Leasing: 600 zł", "description": "Podpisz umowę leasingu z Pekao Leasing, opłać min. 1 ratę oraz zrób przelew do ZUS min. 300 zł, w okresie promocji.", "type": "deadline", "order": 5 }
+      ],
+      "bonusParts": [
+        { "label": "Nagroda za start", "amountCents": 20000, "order": 0 },
+        { "label": "Cashback 4% od zakupów kartą (do 10 mies.)", "amountCents": 200000, "order": 1 },
+        { "label": "Terminal płatniczy (do 10 mies.)", "amountCents": 80000, "order": 2 },
+        { "label": "Limit/kredyt w koncie", "amountCents": 60000, "order": 3 },
+        { "label": "Leasing", "amountCents": 60000, "order": 4 }
+      ],
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Prowadzenie konta: 0 zł, jeśli w danym miesiącu masz aktywne zgody na przetwarzanie danych oraz spełniasz jeden z warunków: wpływy min. 2000 zł, min. 1 przelew do ZUS, nowo założona firma (pierwsze 24 miesiące, dla umów od 1.08.2025), lub konto organizacji non-profit (inaczej 15 zł/mies.). Karta: 0 zł, jeśli bank rozliczy min. 500 zł transakcji bezgotówkowych kartą w miesiącu (inaczej 12 zł/mies.). Taryfa dotyczy umów zawartych do 19.08.2026 — sprawdź aktualność przed publikacją." }
+    }
+  },
+  {
+    "_comment": "PKO Bank Polski — Rozkręć firmę z premią do 5 tys. zł. Pierwsza promocja tego banku w bazie. Dane opłat dla PKO Konto Firmowe (podstawowe) — promocja dostępna też dla PKO Konto Firmowe Premium z innymi opłatami, zgodnie z decyzją użytkownika 2026-08-22.",
+    "bank": { "name": "PKO Bank Polski", "slug": "pko", "website": null, "logoUrl": null },
+    "promotion": {
+      "slug": "pko-rozkrec-firme-premia-do-5-tys-zl",
+      "name": "Rozkręć firmę z premią do 5 tys. zł",
+      "accountType": "BUSINESS",
+      "maxBonusCents": 500000,
+      "difficulty": "HARD",
+      "rating": 9.5,
+      "ratingReason": "Najwyższa łączna kwota i realnie osiągalna główna część (do 3600 zł za same transakcje kartą) bez konieczności dodatkowych produktów — resztę stanowią dodatkowe usługi (leasing, ubezpieczenie, księgowość).",
+      "status": "DRAFT",
+      "startDate": "2026-07-01",
+      "endDate": "2026-10-31",
+      "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5oy0k",
+      "sourceUrl": "https://www.pkobp.pl/k/firmy/konto-firmowe-promocja-5000",
+      "lastVerifiedAt": "2026-08-22",
+      "eligibleFor": "JDG (zarejestrowana lub w trakcie rejestracji), z rocznym przychodem do 15 mln zł, otwierająca konto przez iPKO/IKO/stronę banku (nie w placówce), bez konta w PKO między 1.09.2025 a 30.06.2026.",
+      "notEligibleFor": "Firmy, które miały konto w PKO w tym okresie. Konta założone w placówce nie kwalifikują się do promocji.",
+      "cooldownMonths": null,
+      "cooldownCutoffDate": null,
+      "summary": "Do 5000 zł w 5 nagrodach za PKO Konto Firmowe: do 3600 zł za transakcje kartą (3 miesiące), po 500 zł za leasing i najem długoterminowy, 100 zł za ubezpieczenie firmowe, 300 zł za aktywną e-Księgowość — wszystko w ciągu 3 miesięcy od otwarcia konta.",
+      "conditions": [
+        { "title": "Otwórz PKO Konto Firmowe przez iPKO, IKO lub stronę banku", "description": "W okresie 1.07–31.10.2026 lub do wyczerpania puli promocji. Konto założone w placówce NIE kwalifikuje się.", "type": "account_opening", "order": 0 },
+        { "title": "Zaloguj się do aplikacji IKO", "description": "Przynajmniej raz w ciągu 3 miesięcy od otwarcia konta — warunek wstępny dla pozostałych nagród.", "type": "other", "order": 1 },
+        { "title": "Transakcje kartą: do 3600 zł", "description": "W każdym z 3 kolejnych miesięcy: wydatki kartą min. 2000 zł → 5% tej kwoty, max 1200 zł/mies. (max 3600 zł łącznie za 3 miesiące).", "type": "card_payments", "order": 2 },
+        { "title": "Leasing PKO Leasing: 500 zł", "description": "Podpisz umowę leasingu min. 50 000 zł netto i odbierz przedmiot leasingu w ciągu 3 miesięcy od otwarcia konta.", "type": "other", "order": 3 },
+        { "title": "Najem długoterminowy PKO Masterlease: 500 zł", "description": "Podpisz umowę najmu min. 50 000 zł netto i odbierz pojazd w ciągu 3 miesięcy od otwarcia konta.", "type": "other", "order": 4 },
+        { "title": "Ubezpieczenie PKO Firma: 100 zł", "description": "Kup ubezpieczenie firmowe przez bank (nie przez agencje) i opłać min. 500 zł składki/pierwszej raty.", "type": "other", "order": 5 },
+        { "title": "e-Księgowość: 300 zł", "description": "Aktywuj i utrzymaj pakiet e-Księgowość z wybranym pakietem usług księgowych, opłać w pełni min. 2 faktury w standardowej cenie z konta PKO, w ciągu 3 miesięcy od otwarcia konta.", "type": "deadline", "order": 6 }
+      ],
+      "bonusParts": [
+        { "label": "Transakcje bezgotówkowe kartą (3 mies.)", "amountCents": 360000, "order": 0 },
+        { "label": "Leasing PKO Leasing", "amountCents": 50000, "order": 1 },
+        { "label": "Najem długoterminowy PKO Masterlease", "amountCents": 50000, "order": 2 },
+        { "label": "Ubezpieczenie PKO Firma", "amountCents": 10000, "order": 3 },
+        { "label": "e-Księgowość (min. 2 faktury)", "amountCents": 30000, "order": 4 }
+      ],
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Dane dla PKO Konto Firmowe (podstawowe): prowadzenie konta 0 zł, jeśli wpływy w poprzednim miesiącu wyniosły min. 2000 zł (inaczej 12 zł/mies.); 0 zł też przez pierwsze 6 miesięcy dla firm działających poniżej 12 miesięcy. Karta debetowa: 0 zł, jeśli w cyklu rozliczeniowym wykonasz min. 5 transakcji bezgotówkowych (inaczej 10 zł/mies.). Promocja dostępna też dla PKO Konto Firmowe Premium (wyższy pakiet, więcej darmowych przelewów, dostęp do iPKO biznes) z innymi, wyższymi opłatami standardowymi." }
+    }
+  }
+]

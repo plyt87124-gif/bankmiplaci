@@ -1,0 +1,50 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { randomUUID } from "crypto";
+import { getCurrentUser } from "@/lib/userSession";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * GET /out/:slug
+ *
+ * The only place in the codebase that ever reads `promotion.affiliateUrl`.
+ * Every "Przejdź do promocji" CTA points here instead of embedding the
+ * partner link directly, so:
+ *   - the real link can be swapped by an admin without a redeploy,
+ *   - every outbound click is counted for the admin CTR report,
+ *   - we can add rate limiting / consent checks in one place later.
+ *
+ * No cookies or persistent identifiers are set — `sessionId` here is a
+ * one-off random id used only to de-duplicate this single request in
+ * the clicks table, not to track the visitor.
+ */
+export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+  const promotion = await db.promotion.findUnique({
+    where: { slug: params.slug },
+    select: { id: true, affiliateUrl: true, status: true }
+  });
+
+  if (!promotion) {
+    return NextResponse.redirect(new URL("/promocje", request.url));
+  }
+
+  const { searchParams } = new URL(request.url);
+  const currentUser = await getCurrentUser();
+
+  try {
+    await db.click.create({
+      data: {
+        promotionId: promotion.id,
+        sessionId: randomUUID(),
+        source: searchParams.get("src") ?? undefined,
+        campaign: searchParams.get("cmp") ?? undefined,
+        userId: currentUser?.id
+      }
+    });
+  } catch {
+    // Tracking must never block the redirect itself.
+  }
+
+  return NextResponse.redirect(promotion.affiliateUrl, { status: 302 });
+}
