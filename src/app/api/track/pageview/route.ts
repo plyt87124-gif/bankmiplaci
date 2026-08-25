@@ -20,7 +20,7 @@ function clientIp(request: NextRequest): string | null {
   // Behind a proxy/load balancer, the real client IP is the first entry
   // in X-Forwarded-For; fall back to X-Real-IP for single-proxy setups.
   const forwardedFor = request.headers.get("x-forwarded-for");
-  if (forwardedFor) return forwardedFor.split(",")[0].trim();
+  if (forwardedFor) return (forwardedFor.split(",")[0] ?? forwardedFor).trim();
   return request.headers.get("x-real-ip");
 }
 

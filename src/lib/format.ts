@@ -12,7 +12,9 @@ export function formatDate(date: Date | string): string {
   return new Intl.DateTimeFormat("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
 }
 
-export const DIFFICULTY_LABEL: Record<string, string> = {
+import type { Difficulty, AccountType } from "@prisma/client";
+
+export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
   VERY_EASY: "Bardzo łatwa",
   EASY: "Łatwa",
   MEDIUM: "Średnia",
@@ -20,14 +22,14 @@ export const DIFFICULTY_LABEL: Record<string, string> = {
 };
 
 /** 1–5 effort score used by the "Ile wysiłku wymaga promocja?" meter. */
-export const DIFFICULTY_EFFORT: Record<string, number> = {
+export const DIFFICULTY_EFFORT: Record<Difficulty, number> = {
   VERY_EASY: 1,
   EASY: 2,
   MEDIUM: 3,
   HARD: 5
 };
 
-export const ACCOUNT_TYPE_LABEL: Record<string, string> = {
+export const ACCOUNT_TYPE_LABEL: Record<AccountType, string> = {
   PERSONAL: "Konto osobiste",
   SAVINGS: "Konto oszczędnościowe",
   YOUNG: "Konto dla młodych",

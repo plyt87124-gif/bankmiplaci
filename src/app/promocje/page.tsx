@@ -64,7 +64,7 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {promotions.map((p) => (
-                <PromotionCard key={p.id} promotion={p} />
+                <PromotionCard key={p.id} promotion={{ ...p, rating: Number(p.rating) }} />
               ))}
             </div>
           )}

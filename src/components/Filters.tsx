@@ -2,10 +2,11 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback, useTransition } from "react";
+import type { Difficulty, AccountType } from "@prisma/client";
 import { DIFFICULTY_LABEL, ACCOUNT_TYPE_LABEL } from "@/lib/format";
 
-const DIFFICULTIES = ["VERY_EASY", "EASY", "MEDIUM", "HARD"];
-const ACCOUNT_TYPES = ["PERSONAL", "SAVINGS", "YOUNG", "BUSINESS", "JOINT"];
+const DIFFICULTIES: Difficulty[] = ["VERY_EASY", "EASY", "MEDIUM", "HARD"];
+const ACCOUNT_TYPES: AccountType[] = ["PERSONAL", "SAVINGS", "YOUNG", "BUSINESS", "JOINT"];
 const SORTS: { value: string; label: string }[] = [
   { value: "top-rated", label: "Najlepsza ocena" },
   { value: "highest-bonus", label: "Najwyższa premia" },

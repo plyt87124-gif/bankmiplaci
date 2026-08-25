@@ -83,7 +83,7 @@ export default async function HomePage() {
         ) : (
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {topPromotions.slice(0, 6).map((p) => (
-              <PromotionCard key={p.id} promotion={p} />
+              <PromotionCard key={p.id} promotion={{ ...p, rating: Number(p.rating) }} />
             ))}
           </div>
         )}

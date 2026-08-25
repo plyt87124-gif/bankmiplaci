@@ -1,6 +1,7 @@
 import { CalendarClock, CheckCircle2 } from "lucide-react";
 import { formatDate, ACCOUNT_TYPE_LABEL } from "@/lib/format";
 import type { EligibilityResult } from "@/lib/services/eligibility";
+import type { AccountType } from "@prisma/client";
 
 export function EligibilityBanner({
   result,
@@ -9,10 +10,10 @@ export function EligibilityBanner({
 }: {
   result: EligibilityResult;
   bankName: string;
-  accountType: string;
+  accountType: AccountType;
 }) {
   if (result.status === "unknown") return null;
-  const accountLabel = ACCOUNT_TYPE_LABEL[accountType]?.toLowerCase() ?? "tego typu";
+  const accountLabel = ACCOUNT_TYPE_LABEL[accountType].toLowerCase();
 
   if (result.status === "eligible") {
     return (

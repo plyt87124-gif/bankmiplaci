@@ -17,7 +17,7 @@ const NAV = [
   { href: "/admin/uzytkownicy", label: "Użytkownicy", icon: Users },
   { href: "/admin/komentarze", label: "Komentarze", icon: MessageCircle },
   { href: "/admin/przypomnienia-karencja", label: "Przypomnienia (karencja)", icon: CalendarClock }
-];
+] as const;
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
