@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
  * daily alongside it — see scripts/check-eligibility.ts for the
  * crontab-friendly equivalent.
  */
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   const expected = `Bearer ${process.env.CRON_SECRET}`;
 
@@ -19,3 +19,7 @@ export async function POST(request: NextRequest) {
   const count = await checkEligibilityAndNotify();
   return NextResponse.json({ notified: count });
 }
+
+// Vercel Cron sends GET; POST is kept for manual/API-triggered runs.
+export const GET = handler;
+export const POST = handler;

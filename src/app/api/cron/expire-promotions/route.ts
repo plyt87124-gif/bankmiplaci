@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
  * promotion as active — this job only keeps the stored `status`
  * column in sync for reporting/admin purposes.
  */
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   const expected = `Bearer ${process.env.CRON_SECRET}`;
 
@@ -25,3 +25,7 @@ export async function POST(request: NextRequest) {
   const count = await expirePastPromotions();
   return NextResponse.json({ expired: count });
 }
+
+// Vercel Cron sends GET; POST is kept for manual/API-triggered runs.
+export const GET = handler;
+export const POST = handler;
