@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { X } from "lucide-react";
 
 type AuthMode = "login" | "register";
@@ -196,12 +197,14 @@ function AuthModal({
                 {loading ? "Logowanie..." : "Zaloguj się"}
               </button>
             </form>
-            <p className="mt-5 text-center text-sm text-ink-500">
-              Nie masz konta?{" "}
+            <div className="mt-5 flex items-center justify-between text-sm">
+              <Link href="/konto/zapomniane-haslo" className="text-teal-700 hover:underline">
+                Nie pamiętam hasła
+              </Link>
               <button onClick={() => onModeChange("register")} className="text-teal-700 hover:underline">
                 Załóż darmowe konto
               </button>
-            </p>
+            </div>
           </>
         ) : (
           <>

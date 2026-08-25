@@ -4,17 +4,25 @@ import { useState } from "react";
 
 export default function KontaktPage() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("sending");
+    setError(null);
     const form = new FormData(e.currentTarget);
     const res = await fetch("/api/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: form.get("email"), message: form.get("message") })
     });
-    setStatus(res.ok ? "sent" : "error");
+    if (res.ok) {
+      setStatus("sent");
+      return;
+    }
+    const data = await res.json().catch(() => null);
+    setError(data?.error ?? "Coś poszło nie tak. Spróbuj ponownie.");
+    setStatus("error");
   }
 
   return (
@@ -61,7 +69,7 @@ export default function KontaktPage() {
           >
             {status === "sending" ? "Wysyłanie..." : "Wyślij wiadomość"}
           </button>
-          {status === "error" && <p className="text-sm text-coral-600">Coś poszło nie tak. Spróbuj ponownie.</p>}
+          {status === "error" && <p className="text-sm text-coral-600">{error}</p>}
         </form>
       )}
     </div>
