@@ -133,8 +133,8 @@ export default async function PromotionDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_360px]">
-        <div>
+      <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_360px] lg:grid-rows-[auto_auto]">
+        <div className="lg:col-start-1 lg:row-start-1">
           <div className="flex items-center gap-3">
             <p className="text-sm font-medium text-ink-500">{promotion.bank.name}</p>
           </div>
@@ -169,7 +169,56 @@ export default async function PromotionDetailPage({ params }: PageProps) {
             ))}
           </div>
           <EffortMeter level={DIFFICULTY_EFFORT[promotion.difficulty] as 1 | 2 | 3 | 4 | 5} className="mt-4" />
+        </div>
 
+        {/* Sticky CTA sidebar — placed right after the intro in DOM order so
+            it appears here on mobile (single column) instead of at the very
+            bottom under the comments; row-span keeps it sticking alongside
+            the rest of the article on desktop's two-column layout. */}
+        <aside className="h-fit space-y-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+          <div className="rounded-xl2 border border-ink-100 bg-surface p-6 shadow-card">
+            <p className="text-xs text-ink-500">Do</p>
+            <p className="font-display text-3xl font-semibold">{formatPLN(promotion.maxBonusCents)}</p>
+            <p className="mt-1 text-sm text-ink-500">{promotion.bank.name} · {DIFFICULTY_LABEL[promotion.difficulty]}</p>
+
+            {expired ? (
+              <ButtonLink href="/promocje" className="mt-5 w-full">
+                Zobacz aktualne promocje
+              </ButtonLink>
+            ) : (
+              <ButtonLink
+                href={outboundHref(promotion.slug, { source: "detail-cta" })}
+                className="mt-5 w-full"
+                target="_blank"
+                rel="sponsored noopener noreferrer"
+              >
+                Przejdź do promocji
+              </ButtonLink>
+            )}
+
+            <ShareButton
+              url={`${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/promocje/${promotion.slug}`}
+              title={`${promotion.bank.name} — do ${formatPLN(promotion.maxBonusCents)} premii`}
+            />
+          </div>
+
+          {checklistStepCount > 0 && (
+            <JoinChecklistButton
+              promotionId={promotion.id}
+              loggedIn={Boolean(currentUser)}
+              // Mid-progress (joined, not finished yet) is independent of
+              // eligibility — only matters once they've completed the
+              // checklist. A completed tracking only stays "locked" while
+              // the resulting karencja hasn't cleared yet; if the user is
+              // eligible again (cooldown passed, or they corrected their
+              // dates in Moje konto), let them start a fresh round instead.
+              alreadyJoined={Boolean(promotionTracking) && !promotionTracking?.completedAt}
+              locked={Boolean(promotionTracking?.completedAt) && eligibility.status !== "eligible"}
+            />
+          )}
+        </aside>
+
+        <div className="lg:col-start-1 lg:row-start-2">
           {/* How to get the bonus */}
           <section className="mt-12">
             <h2 className="text-xl font-semibold">Jak otrzymać premię?</h2>
@@ -265,6 +314,27 @@ export default async function PromotionDetailPage({ params }: PageProps) {
                     </a>
                   </p>
                 )}
+                {promotion.additionalSourceUrls.length > 0 && (
+                  <p className="mt-1">
+                    Zobacz też:{" "}
+                    {promotion.additionalSourceUrls.map((url, i) => (
+                      <span key={url}>
+                        {i > 0 && ", "}
+                        <a href={url} target="_blank" rel="noopener noreferrer nofollow" className="underline">
+                          regulamin {i + 2}
+                        </a>
+                      </span>
+                    ))}
+                  </p>
+                )}
+                {promotion.fees?.sourceUrl && (
+                  <p className="mt-1">
+                    Taryfa opłat i prowizji:{" "}
+                    <a href={promotion.fees.sourceUrl} target="_blank" rel="noopener noreferrer nofollow" className="underline">
+                      pełny dokument na stronie banku
+                    </a>
+                  </p>
+                )}
                 <p className="mt-2 text-xs text-ink-500">
                   Warunki promocji mogą się zmienić po stronie banku. Zawsze zweryfikuj aktualny regulamin przed
                   podjęciem decyzji — nie stanowimy porady finansowej ani prawnej.
@@ -275,50 +345,6 @@ export default async function PromotionDetailPage({ params }: PageProps) {
 
           <PromotionComments promotionSlug={promotion.slug} currentUser={currentUser} />
         </div>
-
-        {/* Sticky CTA sidebar */}
-        <aside className="h-fit space-y-4 lg:sticky lg:top-24">
-          <div className="rounded-xl2 border border-ink-100 bg-surface p-6 shadow-card">
-            <p className="text-xs text-ink-500">Do</p>
-            <p className="font-display text-3xl font-semibold">{formatPLN(promotion.maxBonusCents)}</p>
-            <p className="mt-1 text-sm text-ink-500">{promotion.bank.name} · {DIFFICULTY_LABEL[promotion.difficulty]}</p>
-
-            {expired ? (
-              <ButtonLink href="/promocje" className="mt-5 w-full">
-                Zobacz aktualne promocje
-              </ButtonLink>
-            ) : (
-              <ButtonLink
-                href={outboundHref(promotion.slug, { source: "detail-cta" })}
-                className="mt-5 w-full"
-                target="_blank"
-                rel="sponsored noopener noreferrer"
-              >
-                Przejdź do promocji
-              </ButtonLink>
-            )}
-
-            <ShareButton
-              url={`${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/promocje/${promotion.slug}`}
-              title={`${promotion.bank.name} — do ${formatPLN(promotion.maxBonusCents)} premii`}
-            />
-          </div>
-
-          {checklistStepCount > 0 && (
-            <JoinChecklistButton
-              promotionId={promotion.id}
-              loggedIn={Boolean(currentUser)}
-              // Mid-progress (joined, not finished yet) is independent of
-              // eligibility — only matters once they've completed the
-              // checklist. A completed tracking only stays "locked" while
-              // the resulting karencja hasn't cleared yet; if the user is
-              // eligible again (cooldown passed, or they corrected their
-              // dates in Moje konto), let them start a fresh round instead.
-              alreadyJoined={Boolean(promotionTracking) && !promotionTracking?.completedAt}
-              locked={Boolean(promotionTracking?.completedAt) && eligibility.status !== "eligible"}
-            />
-          )}
-        </aside>
       </div>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
