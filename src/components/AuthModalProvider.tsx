@@ -198,7 +198,7 @@ function AuthModal({
               </button>
             </form>
             <div className="mt-5 flex items-center justify-between text-sm">
-              <Link href="/konto/zapomniane-haslo" className="text-teal-700 hover:underline">
+              <Link href="/konto/zapomniane-haslo" onClick={onClose} className="text-teal-700 hover:underline">
                 Nie pamiętam hasła
               </Link>
               <button onClick={() => onModeChange("register")} className="text-teal-700 hover:underline">
