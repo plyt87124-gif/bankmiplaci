@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { Prisma, PromotionStatus } from "@prisma/client";
+import { recomputeRatings } from "./ratings";
 
 export type SortKey = "top-rated" | "highest-bonus" | "easiest" | "newest" | "ending-soon";
 
@@ -105,5 +106,7 @@ export async function expirePastPromotions(): Promise<number> {
     where: { status: PromotionStatus.ACTIVE, endDate: { lt: new Date() } },
     data: { status: PromotionStatus.EXPIRED }
   });
+  // Promotions leaving the active set shift everyone else's relative score.
+  if (result.count > 0) await recomputeRatings();
   return result.count;
 }

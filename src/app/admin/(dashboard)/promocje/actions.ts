@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { promotionFormSchema, type PromotionFormValues } from "@/lib/validation/promotion";
+import { recomputeRatings } from "@/lib/services/ratings";
 import { PromotionStatus } from "@prisma/client";
 
 async function requireAdmin() {
@@ -26,7 +27,11 @@ export async function createPromotion(values: PromotionFormValues) {
       accountType: data.accountType,
       maxBonusCents: data.maxBonusCents,
       difficulty: data.difficulty,
-      rating: data.rating,
+      // Placeholder until recomputeRatings() runs below — it overwrites
+      // this immediately if the promotion is ACTIVE; DRAFT ones pick up
+      // a real value the moment they're published (see setPromotionStatus).
+      rating: data.ratingOverride ?? 9.0,
+      ratingOverride: data.ratingOverride ?? null,
       ratingReason: data.ratingReason,
       status: data.status,
       startDate: data.startDate,
@@ -45,6 +50,8 @@ export async function createPromotion(values: PromotionFormValues) {
       fees: { create: data.fees }
     }
   });
+
+  await recomputeRatings();
 
   revalidatePath("/promocje");
   revalidatePath("/admin/promocje");
@@ -67,7 +74,10 @@ export async function updatePromotion(id: string, values: PromotionFormValues) {
         accountType: data.accountType,
         maxBonusCents: data.maxBonusCents,
         difficulty: data.difficulty,
-        rating: data.rating,
+        // Placeholder — recomputeRatings() below overwrites this for any
+        // ACTIVE promotion; skipped only when ratingOverride pins it.
+        rating: data.ratingOverride ?? 9.0,
+        ratingOverride: data.ratingOverride ?? null,
         ratingReason: data.ratingReason,
         status: data.status,
         startDate: data.startDate,
@@ -88,6 +98,8 @@ export async function updatePromotion(id: string, values: PromotionFormValues) {
     })
   ]);
 
+  await recomputeRatings();
+
   revalidatePath("/promocje");
   revalidatePath(`/promocje/${data.slug}`);
   revalidatePath("/admin/promocje");
@@ -96,6 +108,8 @@ export async function updatePromotion(id: string, values: PromotionFormValues) {
 export async function setPromotionStatus(id: string, status: PromotionStatus) {
   await requireAdmin();
   await db.promotion.update({ where: { id }, data: { status } });
+  // Publishing/retiring a promotion changes who it's competing against.
+  await recomputeRatings();
   revalidatePath("/promocje");
   revalidatePath("/admin/promocje");
 }
@@ -103,6 +117,8 @@ export async function setPromotionStatus(id: string, status: PromotionStatus) {
 export async function deletePromotion(id: string) {
   await requireAdmin();
   await db.promotion.delete({ where: { id } });
+  // Removing a promotion can shift its former peers' relative scores.
+  await recomputeRatings();
   revalidatePath("/promocje");
   revalidatePath("/admin/promocje");
 }

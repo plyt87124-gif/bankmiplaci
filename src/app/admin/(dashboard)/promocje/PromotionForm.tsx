@@ -15,19 +15,24 @@ export function PromotionForm({
   banks,
   defaultValues,
   onSubmit,
-  submitLabel
+  submitLabel,
+  currentRating
 }: {
   banks: Bank[];
   defaultValues: Partial<PromotionFormValues>;
   onSubmit: (values: PromotionFormValues) => Promise<void>;
   submitLabel: string;
+  /** Last computed/effective rating, for display only — not a form field. */
+  currentRating?: number;
 }) {
   const [serverError, setServerError] = useState<string | null>(null);
+  const [overrideRating, setOverrideRating] = useState(defaultValues.ratingOverride != null);
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm<PromotionFormValues>({
     resolver: zodResolver(promotionFormSchema),
@@ -101,8 +106,34 @@ export function PromotionForm({
             <option value="HARD">Trudna</option>
           </select>
         </Field>
-        <Field label="Ocena serwisu (0–10)" error={errors.rating?.message}>
-          <input type="number" step="0.1" {...register("rating", { valueAsNumber: true })} className="input" />
+        <Field label="Ocena serwisu" error={errors.ratingOverride?.message}>
+          <p className="mb-2 text-sm text-ink-500">
+            {currentRating != null
+              ? `Aktualna ocena: ${currentRating.toFixed(1)}/10`
+              : "Zostanie wyliczona automatycznie po zapisaniu."}{" "}
+            — przeliczana na podstawie premii i trudności względem innych aktywnych promocji.
+          </p>
+          <label className="flex items-center gap-2 text-sm text-ink-700">
+            <input
+              type="checkbox"
+              checked={overrideRating}
+              onChange={(e) => {
+                setOverrideRating(e.target.checked);
+                if (!e.target.checked) setValue("ratingOverride", undefined);
+              }}
+            />
+            Nadpisz ręcznie
+          </label>
+          {overrideRating && (
+            <input
+              type="number"
+              step="0.1"
+              min={0}
+              max={10}
+              {...register("ratingOverride", { valueAsNumber: true })}
+              className="input mt-2"
+            />
+          )}
         </Field>
         <Field label="Uzasadnienie oceny" error={errors.ratingReason?.message}>
           <input {...register("ratingReason")} className="input" placeholder="Wysoka premia i niewiele wymaganych czynności." />

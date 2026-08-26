@@ -14,7 +14,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "expire:promotions": "tsx scripts/expire-promotions.ts",
     "check:eligibility": "tsx scripts/check-eligibility.ts",
-    "import:promotions": "tsx scripts/import-promotions.ts"
+    "import:promotions": "tsx scripts/import-promotions.ts",
+    "recompute:ratings": "tsx scripts/recompute-ratings.ts",
+    "checklist:reminders": "tsx scripts/checklist-deadline-reminders.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

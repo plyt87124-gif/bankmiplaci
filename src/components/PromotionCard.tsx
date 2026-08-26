@@ -56,7 +56,13 @@ export function PromotionCard({ promotion }: { promotion: PromotionCardData }) {
         </div>
       </div>
       <p className="mt-2 text-xs text-ink-500">{promotion.bank.name}</p>
-      <p className="mt-1 font-display text-base font-semibold text-ink-900">{promotion.name}</p>
+      {/* Reserve space for exactly 2 lines regardless of actual title
+          length, so the "Do / kwota" row below starts at the same Y
+          position across every card in a grid row — a 1-line title
+          shouldn't leave the amount higher than next to a 2-line one. */}
+      <p className="mt-1 line-clamp-2 min-h-[3rem] font-display text-base font-semibold text-ink-900">
+        {promotion.name}
+      </p>
 
       <div className="mt-5 flex items-end justify-between">
         <div>

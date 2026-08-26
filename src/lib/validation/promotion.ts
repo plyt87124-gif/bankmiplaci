@@ -31,7 +31,13 @@ export const promotionFormSchema = z
     accountType: z.enum(["PERSONAL", "SAVINGS", "YOUNG", "BUSINESS", "JOINT"]),
     maxBonusCents: z.number().int().positive("Podaj maksymalną premię w groszach"),
     difficulty: z.enum(["VERY_EASY", "EASY", "MEDIUM", "HARD"]),
-    rating: z.number().min(0).max(10),
+    // Ocena is computed automatically (see src/lib/services/ratings.ts) —
+    // ratingOverride is the only admin-writable escape hatch, left unset
+    // ("let the algorithm decide") unless an admin explicitly pins it.
+    ratingOverride: z.preprocess(
+      (v) => (v === "" || v === null || Number.isNaN(v) ? undefined : v),
+      z.number().min(0).max(10).optional()
+    ),
     ratingReason: z.string().max(280).optional(),
     status: z.enum(["DRAFT", "ACTIVE", "EXPIRED", "ARCHIVED"]),
     startDate: z.coerce.date(),

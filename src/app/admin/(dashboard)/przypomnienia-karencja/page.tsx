@@ -1,17 +1,28 @@
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
-import { markReminderRead } from "./actions";
-import { Mail, CalendarClock } from "lucide-react";
+import { CalendarClock, CheckCircle2, Circle, Mail, MailCheck, MousePointerClick } from "lucide-react";
 
 export default async function EligibilityRemindersPage() {
-  const [unread, read] = await Promise.all([
-    db.adminNotification.findMany({ where: { type: "ELIGIBILITY_CLEARED", read: false }, orderBy: { createdAt: "desc" } }),
-    db.adminNotification.findMany({ where: { type: "ELIGIBILITY_CLEARED", read: true }, orderBy: { createdAt: "desc" }, take: 20 })
-  ]);
+  const rows = await db.userBankHistory.findMany({
+    where: { eligibilityNotifiedAt: { not: null } },
+    include: { user: true, bank: true, eligibilityPromotion: { select: { name: true, slug: true } } },
+    orderBy: { eligibilityNotifiedAt: "desc" },
+    take: 100
+  });
 
-  const userIds = [...unread, ...read].map((n) => n.relatedUserId).filter((id): id is string => !!id);
-  const users = await db.user.findMany({ where: { id: { in: userIds } } });
-  const userById = new Map(users.map((u) => [u.id, u]));
+  const tokens = rows.map((r) => r.eligibilityEmailToken).filter((t): t is string => !!t);
+  const clicks =
+    tokens.length > 0
+      ? await db.click.findMany({
+          where: { campaign: { in: tokens } },
+          orderBy: { createdAt: "asc" },
+          select: { campaign: true, createdAt: true }
+        })
+      : [];
+  const ctaClickedAtByToken = new Map<string, Date>();
+  for (const c of clicks) {
+    if (c.campaign && !ctaClickedAtByToken.has(c.campaign)) ctaClickedAtByToken.set(c.campaign, c.createdAt);
+  }
 
   return (
     <div>
@@ -20,56 +31,100 @@ export default async function EligibilityRemindersPage() {
         <div>
           <h1 className="text-2xl font-semibold">Przypomnienia o zakończonej karencji</h1>
           <p className="mt-1 max-w-xl text-sm text-ink-500">
-            Ta sekcja pokazuje, kiedy zalogowanym użytkownikom minął okres karencji w danym banku — czyli mogą
-            już skorzystać z jego promocji. Nie wysyłamy tego automatycznie mailem (brak podłączonego dostawcy
-            poczty) — możesz jednak ręcznie napisać do takiej osoby, klikając jej adres e-mail poniżej.
+            Gdy zalogowanemu użytkownikowi mija okres karencji w danym banku, automatycznie wysyłamy mu maila z
+            linkiem do najlepiej ocenianej aktywnej promocji tego banku. Poniżej widzisz, komu i kiedy wysłaliśmy
+            maila, czy kliknął/ęła link w mailu, oraz czy następnie kliknęła/ął „Przejdź do promocji” na stronie.
           </p>
         </div>
       </div>
 
-      <section className="mt-8">
-        <h2 className="text-sm font-semibold text-ink-900">Nowe ({unread.length})</h2>
-        <div className="mt-3 space-y-2">
-          {unread.map((n) => {
-            const user = n.relatedUserId ? userById.get(n.relatedUserId) : undefined;
-            return (
-              <div key={n.id} className="flex items-center justify-between rounded-xl2 border border-gold-100 bg-gold-100/30 p-4">
-                <div>
-                  <p className="text-sm font-medium text-ink-900">{n.title}</p>
-                  <p className="mt-1 text-sm text-ink-700">{n.body}</p>
-                  <p className="mt-1 text-xs text-ink-300">{formatDate(n.createdAt)}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  {user && (
-                    <a
-                      href={`mailto:${user.email}?subject=${encodeURIComponent("Możesz już skorzystać z nowej promocji")}`}
-                      className="flex items-center gap-1.5 rounded-full border border-ink-100 bg-surface px-3 py-1.5 text-xs font-medium text-ink-700 hover:bg-ink-100"
-                    >
-                      <Mail className="h-3.5 w-3.5" /> Napisz do {user.email}
-                    </a>
-                  )}
-                  <form action={markReminderRead.bind(null, n.id)}>
-                    <button className="text-xs font-medium text-teal-700 hover:underline">Oznacz jako przeczytane</button>
-                  </form>
-                </div>
-              </div>
-            );
-          })}
-          {unread.length === 0 && <p className="text-sm text-ink-500">Brak nowych przypomnień.</p>}
-        </div>
-      </section>
-
-      <section className="mt-10">
-        <h2 className="text-sm font-semibold text-ink-500">Wcześniejsze (przeczytane)</h2>
-        <div className="mt-3 space-y-2">
-          {read.map((n) => (
-            <div key={n.id} className="rounded-xl2 border border-ink-100 bg-surface p-4 opacity-70">
-              <p className="text-sm text-ink-700">{n.body}</p>
-              <p className="mt-1 text-xs text-ink-300">{formatDate(n.createdAt)}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <div className="mt-8 overflow-x-auto rounded-xl2 border border-ink-100">
+        <table className="w-full min-w-[900px] text-sm">
+          <thead>
+            <tr className="border-b border-ink-100 bg-ink-100/40 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
+              <th className="p-3">Użytkownik</th>
+              <th className="p-3">Bank / konto</th>
+              <th className="p-3">Karencja minęła</th>
+              <th className="p-3">E-mail</th>
+              <th className="p-3">Kliknął link</th>
+              <th className="p-3">Kliknął „Przejdź do promocji”</th>
+              <th className="p-3">Promocja</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const ctaClickedAt = row.eligibilityEmailToken ? ctaClickedAtByToken.get(row.eligibilityEmailToken) : undefined;
+              return (
+                <tr key={row.id} className="border-b border-ink-100 last:border-0">
+                  <td className="p-3">
+                    <p className="font-medium text-ink-900">{row.user.name || row.user.email}</p>
+                    <p className="text-xs text-ink-500">{row.user.email}</p>
+                  </td>
+                  <td className="p-3">
+                    <p className="text-ink-900">{row.bank.name}</p>
+                    <p className="text-xs text-ink-500">{row.accountType}</p>
+                  </td>
+                  <td className="p-3 text-ink-700">{row.eligibilityClearedAt ? formatDate(row.eligibilityClearedAt) : "—"}</td>
+                  <td className="p-3">
+                    {row.eligibilityNotifiedAt ? (
+                      <span className="flex items-center gap-1.5 text-teal-700">
+                        <MailCheck className="h-4 w-4" /> {formatDate(row.eligibilityNotifiedAt)}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-ink-300">
+                        <Mail className="h-4 w-4" /> nie wysłano
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    {row.eligibilityLinkClickedAt ? (
+                      <span className="flex items-center gap-1.5 text-teal-700">
+                        <CheckCircle2 className="h-4 w-4" /> {formatDate(row.eligibilityLinkClickedAt)}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-ink-300">
+                        <Circle className="h-4 w-4" /> nie kliknął/ęła
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    {ctaClickedAt ? (
+                      <span className="flex items-center gap-1.5 text-teal-700">
+                        <MousePointerClick className="h-4 w-4" /> {formatDate(ctaClickedAt)}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-ink-300">
+                        <Circle className="h-4 w-4" /> nie kliknął/ęła
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    {row.eligibilityPromotion ? (
+                      <a
+                        href={`/promocje/${row.eligibilityPromotion.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-teal-700 hover:underline"
+                      >
+                        {row.eligibilityPromotion.name}
+                      </a>
+                    ) : (
+                      <span className="text-ink-300">—</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={7} className="p-6 text-center text-sm text-ink-500">
+                  Nikomu jeszcze nie minęła karencja od kiedy ta funkcja działa.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

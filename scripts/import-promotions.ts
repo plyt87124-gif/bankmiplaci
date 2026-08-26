@@ -30,6 +30,7 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import fs from "fs";
 import path from "path";
+import { recomputeRatings } from "../src/lib/services/ratings";
 
 const db = new PrismaClient();
 
@@ -66,7 +67,10 @@ interface ImportPromotion {
   accountType: string;
   maxBonusCents: number;
   difficulty: string;
+  // Placeholder; overwritten by recomputeRatings() at the end of this
+  // script for any ACTIVE promotion unless ratingOverride is set.
   rating: number;
+  ratingOverride?: number | null;
   ratingReason?: string | null;
   status: string;
   startDate: string;
@@ -129,7 +133,8 @@ async function main() {
       accountType: p.accountType as never,
       maxBonusCents: p.maxBonusCents,
       difficulty: p.difficulty as never,
-      rating: p.rating,
+      rating: p.ratingOverride ?? p.rating,
+      ratingOverride: p.ratingOverride ?? undefined,
       ratingReason: p.ratingReason ?? undefined,
       status: p.status as never,
       startDate: new Date(p.startDate),
@@ -169,6 +174,8 @@ async function main() {
       created += 1;
     }
   }
+
+  await recomputeRatings();
 
   console.log(`Gotowe. Utworzono ${created}, zaktualizowano ${updated} promocji.`);
   console.log("Pamiętaj: nowe promocje mają status z pliku JSON — sprawdź je w /admin/promocje przed publikacją.");

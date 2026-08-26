@@ -23,7 +23,7 @@ export default async function EditPromotionPage({ params }: { params: { id: stri
     accountType: promotion.accountType,
     maxBonusCents: promotion.maxBonusCents,
     difficulty: promotion.difficulty,
-    rating: Number(promotion.rating),
+    ratingOverride: promotion.ratingOverride != null ? Number(promotion.ratingOverride) : undefined,
     ratingReason: promotion.ratingReason ?? undefined,
     status: promotion.status,
     startDate: promotion.startDate,
@@ -112,7 +112,13 @@ export default async function EditPromotionPage({ params }: { params: { id: stri
       </div>
 
       <div className="mt-8">
-        <PromotionForm banks={banks} defaultValues={defaultValues} onSubmit={handleSubmit} submitLabel="Zapisz zmiany" />
+        <PromotionForm
+          banks={banks}
+          defaultValues={defaultValues}
+          onSubmit={handleSubmit}
+          submitLabel="Zapisz zmiany"
+          currentRating={Number(promotion.rating)}
+        />
       </div>
     </div>
   );

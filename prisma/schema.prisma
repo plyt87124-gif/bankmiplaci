@@ -135,7 +135,28 @@ model UserBankHistory {
   accountType           AccountType @default(PERSONAL)
   wasClientFrom         DateTime?
   wasClientUntil        DateTime?
+  // Set the moment the "karencja minęła" email actually goes out —
+  // doubles as the dedup flag so checkEligibilityAndNotify() never
+  // reprocesses this row.
   eligibilityNotifiedAt DateTime?
+  // The actual computed date the cooldown elapsed (wasClientUntil + the
+  // matching promotion's cooldownMonths) — distinct from
+  // eligibilityNotifiedAt, which is only when the once-daily cron
+  // happened to notice and process it (up to ~24h later).
+  eligibilityClearedAt DateTime?
+  // Opaque token embedded in that email's tracked link, so a click can
+  // be attributed back to this row even when opened in a browser with
+  // no logged-in session (email clients routinely open in a different
+  // context than the one the user is signed into on the site).
+  eligibilityEmailToken String? @unique
+  // Stamped the moment they click the tracked link in the email.
+  eligibilityLinkClickedAt DateTime?
+  // The single active promotion we linked them to at send time (picked
+  // from whichever were ACTIVE for this bank+accountType then) — lets
+  // the admin panel show both "did they open the email link" and "did
+  // they then click Przejdź do promocji" as two distinct funnel steps.
+  eligibilityPromotionId String?
+  eligibilityPromotion   Promotion? @relation(fields: [eligibilityPromotionId], references: [id], onDelete: SetNull)
   updatedAt             DateTime    @updatedAt
 
   @@unique([userId, bankId, accountType])
@@ -226,11 +247,18 @@ model Promotion {
   maxBonusCents Int
 
   difficulty Difficulty
-  // Internal score 0.0–10.0, computed/edited by an admin. Always
-  // presented on the frontend as "ocena serwisu", never as an
-  // independent/objective rating — see rationale field below.
-  rating       Decimal @db.Decimal(3, 1)
-  ratingReason String? // short human-readable justification shown to users
+  // Effective 0.0–10.0 score shown on the frontend as "ocena serwisu".
+  // Recomputed automatically by recomputeRatings() (see
+  // src/lib/services/ratings.ts) from maxBonusCents/difficulty relative
+  // to other currently ACTIVE promotions, every time the active set
+  // changes — UNLESS ratingOverride is set, in which case this mirrors
+  // ratingOverride instead. Never an independent/objective rating.
+  rating Decimal @db.Decimal(3, 1)
+  // Admin-set value that pins `rating` and skips the automatic
+  // recompute for this promotion. Null (the default) means "let the
+  // algorithm decide".
+  ratingOverride Decimal? @db.Decimal(3, 1)
+  ratingReason   String? // short human-readable justification shown to users
 
   status PromotionStatus @default(DRAFT)
 
@@ -243,6 +271,10 @@ model Promotion {
   // Where the terms were sourced from, shown for transparency + used
   // internally to know what to re-check on verification.
   sourceUrl String?
+  // Some promotions bundle several separate regulamin documents (e.g. a
+  // main promo + a referral program) — sourceUrl stays the primary one,
+  // these are shown as extra "Zobacz też" links.
+  additionalSourceUrls String[] @default([])
 
   lastVerifiedAt DateTime
 
@@ -276,6 +308,7 @@ model Promotion {
   comments       Comment[]
   checklistSteps ChecklistStep[]
   trackings      UserPromotionTracking[]
+  eligibilityHistories UserBankHistory[]
 
   @@index([status, endDate])
   @@index([bankId])
@@ -340,6 +373,12 @@ model UserPromotionTracking {
   // at once) and so month labels can show real Polish month names.
   accountOpenedAt DateTime?
 
+  // Group indexes (see checklistSchedule.ts) for which the "7 days left,
+  // you haven't checked this month off" reminder email has already been
+  // sent — dedup so sendChecklistDeadlineReminders() never emails twice
+  // for the same month.
+  remindedGroupIndexes Int[] @default([])
+
   @@unique([userId, promotionId])
   @@map("user_promotion_tracking")
 }
@@ -383,6 +422,8 @@ model Fees {
   cardFeeCents    Int @default(0)
   atmFeeCents     Int @default(0)
   otherFee        String? // free text for conditions like "0 zł przy wpływie 500 zł/mies."
+  // Link to the bank's own Taryfa Opłat i Prowizji / Cennik document.
+  sourceUrl       String?
 
   @@map("fees")
 }

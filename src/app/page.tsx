@@ -6,10 +6,12 @@ import { listActivePromotions, countActivePromotions } from "@/lib/services/prom
 import { PageViewTracker } from "@/components/PageViewTracker";
 
 export default async function HomePage() {
-  const [topPromotions, activeCount] = await Promise.all([
-    listActivePromotions({ sort: "top-rated" }),
+  const [personalPromotions, businessPromotions, activeCount] = await Promise.all([
+    listActivePromotions({ sort: "top-rated", accountType: "PERSONAL" }),
+    listActivePromotions({ sort: "top-rated", accountType: "BUSINESS" }),
     countActivePromotions()
   ]);
+  const hasAnyPromotions = personalPromotions.length > 0 || businessPromotions.length > 0;
 
   return (
     <>
@@ -64,7 +66,10 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Top promotions */}
+      {/* Top promotions — personal and business kept in separate rows so
+          business promotions (which currently tend to have larger
+          absolute bonuses) never crowd personal ones out of a single
+          mixed top-N list. */}
       <section className="container-page py-16">
         <div className="flex items-end justify-between">
           <h2 className="text-2xl font-semibold">Najlepsze promocje teraz</h2>
@@ -73,7 +78,7 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        {topPromotions.length === 0 ? (
+        {!hasAnyPromotions ? (
           <div className="mt-8 rounded-xl2 border border-dashed border-ink-100 bg-surface p-10 text-center">
             <p className="font-medium text-ink-700">Baza promocji jest obecnie pusta.</p>
             <p className="mt-1 text-sm text-ink-500">
@@ -81,11 +86,29 @@ export default async function HomePage() {
             </p>
           </div>
         ) : (
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {topPromotions.slice(0, 6).map((p) => (
-              <PromotionCard key={p.id} promotion={{ ...p, rating: Number(p.rating) }} />
-            ))}
-          </div>
+          <>
+            {personalPromotions.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-ink-500">Dla osób prywatnych</h3>
+                <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {personalPromotions.slice(0, 3).map((p) => (
+                    <PromotionCard key={p.id} promotion={{ ...p, rating: Number(p.rating) }} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {businessPromotions.length > 0 && (
+              <div className="mt-10">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-ink-500">Dla firm</h3>
+                <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {businessPromotions.slice(0, 3).map((p) => (
+                    <PromotionCard key={p.id} promotion={{ ...p, rating: Number(p.rating) }} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </section>
 

@@ -24,6 +24,7 @@ import { AlertTriangle, ShieldAlert, Eye } from "lucide-react";
 
 interface PageProps {
   params: { slug: string };
+  searchParams: { ref?: string };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -46,7 +47,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function PromotionDetailPage({ params }: PageProps) {
+export default async function PromotionDetailPage({ params, searchParams }: PageProps) {
   const promotion = await getPromotionBySlug(params.slug);
 
   if (!promotion) notFound();
@@ -150,7 +151,12 @@ export default async function PromotionDetailPage({ params }: PageProps) {
           {promotion.ratingReason && (
             <p className="mt-2 max-w-lg text-sm text-ink-500">
               {promotion.ratingReason}{" "}
-              <span className="text-ink-300">— ocena serwisu, nie porada finansowa.</span>
+              <span className="text-ink-300">
+                — ocena serwisu, nie porada finansowa.{" "}
+                <Link href="/jak-zarabiamy#ocena" className="underline">
+                  Jak liczymy tę ocenę?
+                </Link>
+              </span>
             </p>
           )}
 
@@ -187,7 +193,12 @@ export default async function PromotionDetailPage({ params }: PageProps) {
               </ButtonLink>
             ) : (
               <ButtonLink
-                href={outboundHref(promotion.slug, { source: "detail-cta" })}
+                href={outboundHref(
+                  promotion.slug,
+                  searchParams.ref
+                    ? { source: "eligibility-email", campaign: searchParams.ref }
+                    : { source: "detail-cta" }
+                )}
                 className="mt-5 w-full"
                 target="_blank"
                 rel="sponsored noopener noreferrer"

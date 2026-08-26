@@ -165,7 +165,7 @@ export function PromotionChecklist({
             </div>
           )}
 
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
             {visible.map((t) => (
               <ChecklistCard
                 key={t.id}
