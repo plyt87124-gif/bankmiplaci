@@ -145,7 +145,7 @@ export default async function HomePage() {
       )}
 
       {/* Trust strip */}
-      <section className="container-page grid gap-6 pb-20 sm:grid-cols-2">
+      <section className="container-page grid gap-6 pt-16 pb-20 sm:grid-cols-2">
         <div className="flex items-start gap-3 rounded-xl2 border border-ink-100 bg-surface p-5">
           <ShieldCheck className="mt-0.5 h-5 w-5 text-teal-600" />
           <div>
@@ -160,11 +160,7 @@ export default async function HomePage() {
           <div>
             <p className="font-medium text-ink-900">Pokazujemy koszty i wysiłek</p>
             <p className="mt-1 text-sm text-ink-500">
-              Nie tylko wysokość premii — sprawdzisz też opłaty i to, ile realnie trzeba zrobić.{" "}
-              <Link href="/jak-zarabiamy" className="underline">
-                Jak zarabiamy
-              </Link>
-              .
+              Nie tylko wysokość premii — sprawdzisz też opłaty i to, ile realnie trzeba zrobić.
             </p>
           </div>
         </div>

@@ -149,13 +149,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
           </div>
           {promotion.ratingReason && (
             <p className="mt-2 max-w-lg text-sm text-ink-500">
-              {promotion.ratingReason}{" "}
-              <span className="text-ink-300">
-                — ocena serwisu, nie porada finansowa.{" "}
-                <Link href="/jak-zarabiamy#ocena" className="underline">
-                  Jak liczymy tę ocenę?
-                </Link>
-              </span>
+              {promotion.ratingReason} <span className="text-ink-300">— ocena serwisu, nie porada finansowa.</span>
             </p>
           )}
 

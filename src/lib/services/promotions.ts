@@ -106,16 +106,18 @@ export interface EffortShowcaseItem {
 const DIFFICULTY_RANK: Record<Difficulty, number> = { VERY_EASY: 0, EASY: 1, MEDIUM: 2, HARD: 3 };
 
 /**
- * Two real, currently-active promotions used on the homepage "Ile wysiłku
- * wymaga promocja?" section — the easiest-difficulty example available and
- * the hardest-difficulty example available, picking the highest bonus
- * within each tier. Never fabricated: if the active set only spans one
- * difficulty tier (or is empty), returns fewer items rather than inventing
- * a second one.
+ * Two real, currently-active PERSONAL-account promotions used on the
+ * homepage "Ile wysiłku wymaga promocja?" section — the easiest-difficulty
+ * example available and the hardest-difficulty example available, picking
+ * the highest bonus within each tier. Restricted to personal accounts so
+ * the comparison stays apples-to-apples (business promotions tend to run
+ * larger and harder, which would skew the illustration). Never fabricated:
+ * if the active set only spans one difficulty tier (or is empty), returns
+ * fewer items rather than inventing a second one.
  */
 export async function getEffortShowcase(): Promise<EffortShowcaseItem[]> {
   const promos = await db.promotion.findMany({
-    where: activeWhere(),
+    where: { ...activeWhere(), accountType: "PERSONAL" },
     select: { slug: true, name: true, maxBonusCents: true, difficulty: true, bank: { select: { name: true } } }
   });
   if (promos.length === 0) return [];
