@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   ResponsiveContainer,
   LineChart,
@@ -14,6 +15,16 @@ import {
 } from "recharts";
 import type { DailyCount } from "@/lib/services/analytics";
 
+const SOURCE_LABEL: Record<string, string> = {
+  direct: "Bezpośrednie",
+  search: "Wyszukiwarki",
+  social: "Social media"
+};
+
+function sourceLabel(source: string): string {
+  return SOURCE_LABEL[source] ?? source;
+}
+
 interface TopPromotion {
   id: string;
   name: string;
@@ -23,35 +34,68 @@ interface TopPromotion {
 }
 
 interface Props {
+  days: number;
   totals: { pageViews: number; clicks: number; uniqueLoggedInVisitors: number };
   pageViewsTrend: DailyCount[];
   clicksTrend: DailyCount[];
   pageBreakdown: { path: string; count: number }[];
+  sourceBreakdown: { source: string; count: number }[];
+  bankBreakdown: { name: string; impressions: number; clicks: number }[];
   topByImpressions: TopPromotion[];
   topByClicks: TopPromotion[];
+  checklistStats: { activeCount: number; completedCount: number; avgProgressPercent: number };
+  eligibilityFunnel: { emailsSent: number; linksClicked: number; ctaClicked: number };
 }
+
+const RANGES = [7, 30, 90];
 
 function shortDate(iso: string) {
   const [, m, d] = iso.split("-");
   return `${d}.${m}`;
 }
 
-export function StatsCharts({ totals, pageViewsTrend, clicksTrend, pageBreakdown, topByImpressions, topByClicks }: Props) {
+export function StatsCharts({
+  days,
+  totals,
+  pageViewsTrend,
+  clicksTrend,
+  pageBreakdown,
+  sourceBreakdown,
+  bankBreakdown,
+  topByImpressions,
+  topByClicks,
+  checklistStats,
+  eligibilityFunnel
+}: Props) {
   const trend = pageViewsTrend.map((p, i) => ({
     date: shortDate(p.date),
     "Unikalne wejścia": p.count,
     "Kliknięcia w promocje": clicksTrend[i]?.count ?? 0
   }));
 
+  const sourceData = sourceBreakdown.map((s) => ({ source: sourceLabel(s.source), count: s.count }));
+
   return (
     <div className="mt-6 space-y-8">
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Unikalne wejścia (30 dni)" value={totals.pageViews} />
-        <StatCard label="Kliknięcia w linki partnerskie (30 dni)" value={totals.clicks} />
-        <StatCard label="Unikalni zalogowani użytkownicy (30 dni)" value={totals.uniqueLoggedInVisitors} />
+      <div className="flex gap-2">
+        {RANGES.map((r) => (
+          <Link
+            key={r}
+            href={`/admin/statystyki?days=${r}`}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium ${r === days ? "bg-ink-solid text-white" : "bg-ink-100 text-ink-700"}`}
+          >
+            {r} dni
+          </Link>
+        ))}
       </div>
 
-      <ChartCard title="Ruch w serwisie — ostatnie 30 dni">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label={`Unikalne wejścia (${days} dni)`} value={totals.pageViews} />
+        <StatCard label={`Kliknięcia w linki partnerskie (${days} dni)`} value={totals.clicks} />
+        <StatCard label={`Unikalni zalogowani użytkownicy (${days} dni)`} value={totals.uniqueLoggedInVisitors} />
+      </div>
+
+      <ChartCard title="Ruch w serwisie">
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={trend}>
             <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-ink-100" />
@@ -65,17 +109,69 @@ export function StatsCharts({ totals, pageViewsTrend, clicksTrend, pageBreakdown
         </ResponsiveContainer>
       </ChartCard>
 
-      <ChartCard title="Najpopularniejsze strony — ostatnie 30 dni">
+      <ChartCard title="Najpopularniejsze strony">
+        <p className="mb-2 text-xs text-ink-500">
+          Odwiedzający danej strony — ta sama osoba odwiedzająca kilka podstron liczy się osobno na każdej z nich,
+          więc suma słupków poniżej jest wyższa niż „Unikalne wejścia” z karty powyżej (tam liczymy unikalne IP raz
+          dla całego serwisu, niezależnie od liczby odwiedzonych podstron).
+        </p>
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={pageBreakdown} layout="vertical" margin={{ left: 40 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-ink-100" />
             <XAxis type="number" tick={{ fontSize: 12 }} allowDecimals={false} stroke="currentColor" className="text-ink-500" />
             <YAxis type="category" dataKey="path" tick={{ fontSize: 12 }} width={140} stroke="currentColor" className="text-ink-500" />
             <Tooltip />
-            <Bar dataKey="count" name="Unikalne wejścia" fill="#0F7B6C" radius={[0, 4, 4, 0]} />
+            <Bar dataKey="count" name="Odwiedzający stronę" fill="#0F7B6C" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartCard title="Źródła ruchu">
+          <p className="mb-2 text-xs text-ink-500">Skąd przyszli odwiedzający — klasyfikowane z document.referrer przy pierwszym wejściu na stronę.</p>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={sourceData} layout="vertical" margin={{ left: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-ink-100" />
+              <XAxis type="number" tick={{ fontSize: 12 }} allowDecimals={false} stroke="currentColor" className="text-ink-500" />
+              <YAxis type="category" dataKey="source" tick={{ fontSize: 12 }} width={110} stroke="currentColor" className="text-ink-500" />
+              <Tooltip />
+              <Bar dataKey="count" name="Odwiedzający" fill="#A9822A" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Ruch według banku">
+          <p className="mb-2 text-xs text-ink-500">Wyświetlenia i kliknięcia zsumowane po wszystkich promocjach danego banku.</p>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={bankBreakdown} layout="vertical" margin={{ left: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-ink-100" />
+              <XAxis type="number" tick={{ fontSize: 12 }} allowDecimals={false} stroke="currentColor" className="text-ink-500" />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={110} stroke="currentColor" className="text-ink-500" />
+              <Tooltip />
+              <Bar dataKey="impressions" name="Wyświetlenia" fill="#0F7B6C" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="clicks" name="Kliknięcia" fill="#A9822A" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartCard title="Zaangażowanie w ściągi">
+          <div className="grid grid-cols-3 gap-3">
+            <MiniStat label="Aktywnie śledzone" value={checklistStats.activeCount} />
+            <MiniStat label="Ukończone" value={checklistStats.completedCount} />
+            <MiniStat label="Śr. postęp" value={`${checklistStats.avgProgressPercent}%`} />
+          </div>
+        </ChartCard>
+
+        <ChartCard title="Lejek maili o karencji">
+          <div className="grid grid-cols-3 gap-3">
+            <MiniStat label="Maile wysłane" value={eligibilityFunnel.emailsSent} />
+            <MiniStat label="Link kliknięty" value={eligibilityFunnel.linksClicked} />
+            <MiniStat label="„Przejdź do promocji”" value={eligibilityFunnel.ctaClicked} />
+          </div>
+        </ChartCard>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <TopPromotionsTable title="Najczęściej wyświetlane promocje" rows={topByImpressions} primaryMetric="impressions" />
@@ -90,6 +186,15 @@ function StatCard({ label, value }: { label: string; value: number }) {
     <div className="rounded-xl2 border border-ink-100 bg-surface p-5">
       <p className="text-xs text-ink-500">{label}</p>
       <p className="mt-1 font-display text-2xl font-semibold">{value.toLocaleString("pl-PL")}</p>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-xl2 border border-ink-100 bg-paper p-3 text-center">
+      <p className="font-display text-xl font-semibold">{value}</p>
+      <p className="mt-1 text-[11px] text-ink-500">{label}</p>
     </div>
   );
 }

@@ -482,6 +482,11 @@ model PageView {
   // Lets the "unikalne wejścia" stat de-duplicate repeat visits from the
   // same person without storing an actually-identifying value.
   ipHash    String?
+  // Coarse traffic-source bucket, classified client-side from
+  // document.referrer at the moment of the (first, real) page load:
+  // "direct", "search", "social", or the referring hostname for
+  // anything else. Null for rows recorded before this field existed.
+  source    String?
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 

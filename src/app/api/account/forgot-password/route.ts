@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { db } from "@/lib/db";
 import { forgotPasswordSchema } from "@/lib/validation/account";
 import { sendEmail } from "@/lib/email";
 import { passwordResetEmailHtml } from "@/lib/emailTemplates";
-
-const TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-function hashToken(token: string) {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
+import { createPasswordResetToken, passwordResetUrl } from "@/lib/passwordReset";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -24,12 +18,8 @@ export async function POST(request: NextRequest) {
 
   if (!user) return NextResponse.json(genericResponse);
 
-  const rawToken = crypto.randomBytes(32).toString("hex");
-  await db.passwordResetToken.create({
-    data: { userId: user.id, tokenHash: hashToken(rawToken), expiresAt: new Date(Date.now() + TOKEN_TTL_MS) }
-  });
-
-  const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/konto/reset-hasla?token=${rawToken}`;
+  const rawToken = await createPasswordResetToken(user.id);
+  const resetUrl = passwordResetUrl(rawToken);
 
   await sendEmail({
     to: user.email,

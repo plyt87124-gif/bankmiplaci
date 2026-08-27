@@ -4,7 +4,7 @@ import { randomUUID, createHash } from "crypto";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/userSession";
 
-const bodySchema = z.object({ path: z.string().min(1).max(500) });
+const bodySchema = z.object({ path: z.string().min(1).max(500), source: z.string().max(200).optional() });
 
 /**
  * Hashed, never the raw IP — a fixed pepper is enough here since the
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
         path: parsed.data.path,
         sessionId: randomUUID(),
         ipHash: ip ? hashIp(ip) : null,
+        source: parsed.data.source,
         userId: currentUser?.id
       }
     });
