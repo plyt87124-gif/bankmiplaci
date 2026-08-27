@@ -9,7 +9,6 @@ import { outboundHref } from "@/lib/affiliate";
 import { Badge } from "@/components/ui/Badge";
 import { EffortMeter } from "@/components/ui/EffortMeter";
 import { ButtonLink } from "@/components/ui/Button";
-import { HowToGetBonus } from "@/components/HowToGetBonus";
 import { ConditionsChecklist } from "@/components/ConditionsChecklist";
 import { PromotionImpression } from "@/components/PromotionImpression";
 import { PageViewTracker } from "@/components/PageViewTracker";
@@ -230,14 +229,6 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
         </aside>
 
         <div className="lg:col-start-1 lg:row-start-2">
-          {/* How to get the bonus */}
-          <section className="mt-12">
-            <h2 className="text-xl font-semibold">Jak otrzymać premię?</h2>
-            <div className="mt-4">
-              <HowToGetBonus />
-            </div>
-          </section>
-
           {/* Bonus breakdown */}
           {promotion.bonusParts.length > 0 && (
             <section className="mt-12">

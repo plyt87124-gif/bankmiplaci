@@ -2,14 +2,17 @@ import Link from "next/link";
 import { ArrowRight, ShieldCheck, Scale, Sparkles } from "lucide-react";
 import { ButtonLink } from "@/components/ui/Button";
 import { PromotionCard } from "@/components/PromotionCard";
-import { listActivePromotions, countActivePromotions } from "@/lib/services/promotions";
+import { EffortMeter } from "@/components/ui/EffortMeter";
+import { listActivePromotions, countActivePromotions, getEffortShowcase } from "@/lib/services/promotions";
+import { formatPLN, DIFFICULTY_LABEL, DIFFICULTY_EFFORT } from "@/lib/format";
 import { PageViewTracker } from "@/components/PageViewTracker";
 
 export default async function HomePage() {
-  const [personalPromotions, businessPromotions, activeCount] = await Promise.all([
+  const [personalPromotions, businessPromotions, activeCount, effortShowcase] = await Promise.all([
     listActivePromotions({ sort: "top-rated", accountType: "PERSONAL" }),
     listActivePromotions({ sort: "top-rated", accountType: "BUSINESS" }),
-    countActivePromotions()
+    countActivePromotions(),
+    getEffortShowcase()
   ]);
   const hasAnyPromotions = personalPromotions.length > 0 || businessPromotions.length > 0;
 
@@ -106,39 +109,40 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* Effort explainer — signature element */}
-      <section className="border-y border-ink-100 bg-surface py-16">
-        <div className="container-page grid items-center gap-10 md:grid-cols-2">
-          <div>
-            <h2 className="text-2xl font-semibold">Ile wysiłku wymaga promocja?</h2>
-            <p className="mt-4 max-w-md text-ink-500">
-              700 zł premii nie zawsze znaczy tyle samo. Obok wysokości premii zawsze pokazujemy, ile realnie
-              trzeba zrobić, żeby ją otrzymać — żebyś mógł porównać „700 zł / łatwa” z „900 zł / trudna” w kilka
-              sekund.
-            </p>
-          </div>
-          <div className="space-y-4">
-            <div className="rounded-xl2 border border-ink-100 bg-paper p-5">
-              <div className="flex items-center justify-between">
-                <span className="font-display text-2xl font-semibold">700 zł</span>
-                <span className="text-sm text-ink-500">Łatwa</span>
-              </div>
-              <div className="mt-3 h-1.5 w-full rounded-full bg-ink-100">
-                <div className="h-full w-2/5 rounded-full bg-teal-600" />
-              </div>
+      {/* Effort explainer — signature element. Uses real active promotions
+          from the DB (easiest- and hardest-difficulty examples), never a
+          made-up amount, so the copy stays true even as the offer changes. */}
+      {effortShowcase.length > 0 && (
+        <section className="border-y border-ink-100 bg-surface py-16">
+          <div className="container-page grid items-center gap-10 md:grid-cols-2">
+            <div>
+              <h2 className="text-2xl font-semibold">Ile wysiłku wymaga promocja?</h2>
+              <p className="mt-4 max-w-md text-ink-500">
+                Wysokość premii nie zawsze znaczy tyle samo. Obok kwoty zawsze pokazujemy, ile realnie trzeba
+                zrobić, żeby ją otrzymać — jak w tych aktualnych promocjach z naszej bazy.
+              </p>
             </div>
-            <div className="rounded-xl2 border border-ink-100 bg-paper p-5">
-              <div className="flex items-center justify-between">
-                <span className="font-display text-2xl font-semibold">900 zł</span>
-                <span className="text-sm text-ink-500">Trudna</span>
-              </div>
-              <div className="mt-3 h-1.5 w-full rounded-full bg-ink-100">
-                <div className="h-full w-5/5 rounded-full bg-coral-600" />
-              </div>
+            <div className="space-y-4">
+              {effortShowcase.map((item) => (
+                <Link
+                  key={item.slug}
+                  href={`/promocje/${item.slug}`}
+                  className="block rounded-xl2 border border-ink-100 bg-paper p-5 transition-shadow hover:shadow-cardHover"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-ink-500">{item.bankName}</p>
+                      <span className="font-display text-2xl font-semibold">{formatPLN(item.maxBonusCents)}</span>
+                    </div>
+                    <span className="text-sm text-ink-500">{DIFFICULTY_LABEL[item.difficulty]}</span>
+                  </div>
+                  <EffortMeter level={DIFFICULTY_EFFORT[item.difficulty] as 1 | 2 | 3 | 4 | 5} className="mt-3" />
+                </Link>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Trust strip */}
       <section className="container-page grid gap-6 pb-20 sm:grid-cols-2">

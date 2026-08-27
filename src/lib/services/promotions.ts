@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { Prisma, PromotionStatus } from "@prisma/client";
+import { Prisma, PromotionStatus, Difficulty } from "@prisma/client";
 import { recomputeRatings } from "./ratings";
 
 export type SortKey = "top-rated" | "highest-bonus" | "easiest" | "newest" | "ending-soon";
@@ -93,6 +93,51 @@ export async function getPromotionBySlug(slug: string) {
 
 export async function countActivePromotions(): Promise<number> {
   return db.promotion.count({ where: activeWhere() });
+}
+
+export interface EffortShowcaseItem {
+  slug: string;
+  name: string;
+  bankName: string;
+  maxBonusCents: number;
+  difficulty: Difficulty;
+}
+
+const DIFFICULTY_RANK: Record<Difficulty, number> = { VERY_EASY: 0, EASY: 1, MEDIUM: 2, HARD: 3 };
+
+/**
+ * Two real, currently-active promotions used on the homepage "Ile wysiłku
+ * wymaga promocja?" section — the easiest-difficulty example available and
+ * the hardest-difficulty example available, picking the highest bonus
+ * within each tier. Never fabricated: if the active set only spans one
+ * difficulty tier (or is empty), returns fewer items rather than inventing
+ * a second one.
+ */
+export async function getEffortShowcase(): Promise<EffortShowcaseItem[]> {
+  const promos = await db.promotion.findMany({
+    where: activeWhere(),
+    select: { slug: true, name: true, maxBonusCents: true, difficulty: true, bank: { select: { name: true } } }
+  });
+  if (promos.length === 0) return [];
+
+  const items: EffortShowcaseItem[] = promos.map((p) => ({
+    slug: p.slug,
+    name: p.name,
+    bankName: p.bank.name,
+    maxBonusCents: p.maxBonusCents,
+    difficulty: p.difficulty
+  }));
+
+  const byEasiest = [...items].sort(
+    (a, b) => DIFFICULTY_RANK[a.difficulty] - DIFFICULTY_RANK[b.difficulty] || b.maxBonusCents - a.maxBonusCents
+  );
+  const byHardest = [...items].sort(
+    (a, b) => DIFFICULTY_RANK[b.difficulty] - DIFFICULTY_RANK[a.difficulty] || b.maxBonusCents - a.maxBonusCents
+  );
+  const easiest = byEasiest[0] as EffortShowcaseItem;
+  const hardest = byHardest[0] as EffortShowcaseItem;
+
+  return easiest.slug === hardest.slug ? [easiest] : [easiest, hardest];
 }
 
 /**

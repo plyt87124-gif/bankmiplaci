@@ -8,7 +8,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuthModal } from "@/components/AuthModalProvider";
 
 const NAV = [
-  { href: "/promocje", label: "Promocje" },
   { href: "/porownaj", label: "Porównaj konta" },
   { href: "/promocje?difficulty=VERY_EASY,EASY&sort=easiest", label: "Najłatwiejsze promocje" },
   { href: "/faq", label: "FAQ" }
@@ -54,10 +53,10 @@ export function Header({ user }: { user: HeaderUser | null }) {
               Zaloguj się
             </button>
           )}
+          <ThemeToggle />
           <ButtonLink href="/promocje" size="sm">
             Znajdź promocję <ArrowRight className="h-4 w-4" />
           </ButtonLink>
-          <ThemeToggle />
         </div>
 
         <ThemeToggle className="md:hidden" />
