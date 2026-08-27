@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Scale, Search } from "lucide-react";
+import { ArrowRight, ShieldCheck, Scale, Sparkles } from "lucide-react";
 import { ButtonLink } from "@/components/ui/Button";
 import { PromotionCard } from "@/components/PromotionCard";
 import { listActivePromotions, countActivePromotions } from "@/lib/services/promotions";
@@ -43,26 +43,20 @@ export default async function HomePage() {
             )}
           </div>
 
-          <form action="/promocje" className="self-start rounded-xl2 border border-ink-100 bg-paper p-6 shadow-card">
-            <label htmlFor="q" className="text-sm font-medium text-ink-700">
-              Czego szukasz?
-            </label>
-            <div className="mt-2 flex items-center gap-2 rounded-full border border-ink-100 bg-surface px-4 py-2.5">
-              <Search className="h-4 w-4 text-ink-300" />
-              <input
-                id="q"
-                name="q"
-                placeholder="np. konto z premią, promocje PKO, bez wpływu"
-                className="w-full bg-transparent text-sm outline-none placeholder:text-ink-300"
-              />
+          <div className="self-start rounded-xl2 border border-ink-100 bg-paper p-6 shadow-card">
+            <div className="flex items-center gap-2 text-teal-700">
+              <Sparkles className="h-5 w-5" />
+              <span className="text-xs font-semibold uppercase tracking-wide">Dopasowanie do Ciebie</span>
             </div>
-            <button className="mt-4 w-full rounded-full bg-ink-solid py-2.5 text-sm font-medium text-white hover:bg-teal-700">
-              Szukaj
-            </button>
-            <p className="mt-3 text-xs text-ink-500">
-              Wyszukiwanie działa wyłącznie na promocjach znajdujących się w naszej bazie.
+            <h2 className="mt-3 text-xl font-semibold text-ink-900">Nie wiesz, którą promocję wybrać?</h2>
+            <p className="mt-2 text-sm text-ink-500">
+              Odpowiedz na 5 krótkich pytań o to, ile pracy chcesz włożyć i jakie masz możliwości — pokażemy Ci 3
+              najlepiej dopasowane promocje z naszej bazy.
             </p>
-          </form>
+            <ButtonLink href="/quiz" size="lg" className="mt-5 w-full justify-center">
+              Dopasuj promocję do siebie <ArrowRight className="h-4 w-4" />
+            </ButtonLink>
+          </div>
         </div>
       </section>
 
@@ -143,20 +137,6 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Quiz teaser */}
-      <section className="container-page py-16">
-        <div className="rounded-xl2 border border-ink-100 bg-ink-solid p-10 text-center text-white md:p-14">
-          <h2 className="text-2xl font-semibold">Nie wiesz, którą promocję wybrać?</h2>
-          <p className="mx-auto mt-3 max-w-md text-white/70">
-            Odpowiedz na kilka pytań o to, ile pracy chcesz włożyć i jakie masz możliwości — pokażemy Ci 3
-            najlepiej dopasowane promocje.
-          </p>
-          <ButtonLink href="/quiz" variant="secondary" size="lg" className="mt-6">
-            Dopasuj promocję do siebie <ArrowRight className="h-4 w-4" />
-          </ButtonLink>
         </div>
       </section>
 
