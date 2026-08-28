@@ -168,6 +168,7 @@ enum AdminNotificationType {
   ELIGIBILITY_CLEARED
   NEW_USER
   PROMOTION_CLICK
+  PROMOTION_VIEW
 }
 
 // Lightweight in-app notification feed for the admin panel. No email

@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { CalendarClock, CheckCircle2, Circle, Mail, MailCheck, MousePointerClick } from "lucide-react";
+import { MarkNotificationsSeen } from "../MarkNotificationsSeen";
 
 export default async function EligibilityRemindersPage() {
   const rows = await db.userBankHistory.findMany({
@@ -26,6 +27,7 @@ export default async function EligibilityRemindersPage() {
 
   return (
     <div>
+      <MarkNotificationsSeen type="ELIGIBILITY_CLEARED" />
       <div className="flex items-start gap-3">
         <CalendarClock className="mt-1 h-6 w-6 text-gold-600" />
         <div>

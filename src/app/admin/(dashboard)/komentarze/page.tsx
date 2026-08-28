@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { deleteComment, pinComment, unpinComment, postAdminReply } from "./actions";
 import { Trash2, Pin, PinOff } from "lucide-react";
+import { MarkNotificationsSeen } from "../MarkNotificationsSeen";
 
 export default async function AdminCommentsPage() {
   const comments = await db.comment.findMany({
@@ -12,6 +13,7 @@ export default async function AdminCommentsPage() {
 
   return (
     <div>
+      <MarkNotificationsSeen type="NEW_COMMENT" />
       <h1 className="text-2xl font-semibold">Komentarze</h1>
       <p className="mt-1 text-sm text-ink-500">{comments.length} komentarzy pod wszystkimi promocjami.</p>
 

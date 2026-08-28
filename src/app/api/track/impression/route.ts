@@ -30,6 +30,25 @@ export async function POST(request: NextRequest) {
         userId: currentUser?.id
       }
     });
+
+    // Surface it to the admin as an in-app notification (its own bell —
+    // see NotificationBell in the admin layout). Best-effort: a lookup
+    // failure here must never affect the impression write above.
+    const promotion = await db.promotion.findUnique({
+      where: { id: parsed.data.promotionId },
+      select: { name: true, bank: { select: { name: true } } }
+    });
+    if (promotion) {
+      await db.adminNotification.create({
+        data: {
+          type: "PROMOTION_VIEW",
+          title: "Wejście na stronę promocji",
+          body: `${currentUser?.name || currentUser?.email || "Niezalogowany użytkownik"} wszedł/a na stronę promocji — ${promotion.bank.name}: ${promotion.name}.`,
+          relatedUserId: currentUser?.id,
+          relatedPromotionId: parsed.data.promotionId
+        }
+      });
+    }
   } catch {
     // Never fail the page for an analytics write.
   }
