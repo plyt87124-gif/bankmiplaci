@@ -6,7 +6,7 @@ import type { Difficulty, AccountType } from "@prisma/client";
 import { DIFFICULTY_LABEL, ACCOUNT_TYPE_LABEL } from "@/lib/format";
 
 const DIFFICULTIES: Difficulty[] = ["VERY_EASY", "EASY", "MEDIUM", "HARD"];
-const ACCOUNT_TYPES: AccountType[] = ["PERSONAL", "SAVINGS", "YOUNG", "BUSINESS", "JOINT"];
+const ACCOUNT_TYPES: AccountType[] = ["PERSONAL", "BUSINESS"];
 const SORTS: { value: string; label: string }[] = [
   { value: "top-rated", label: "Najlepsza ocena" },
   { value: "highest-bonus", label: "Najwyższa premia" },
