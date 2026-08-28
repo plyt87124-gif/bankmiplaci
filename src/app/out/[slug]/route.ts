@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
   const promotion = await db.promotion.findUnique({
     where: { slug: params.slug },
-    select: { id: true, affiliateUrl: true, status: true }
+    select: { id: true, name: true, affiliateUrl: true, status: true, bank: { select: { name: true } } }
   });
 
   if (!promotion) {
@@ -40,6 +40,19 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
         source: searchParams.get("src") ?? undefined,
         campaign: searchParams.get("cmp") ?? undefined,
         userId: currentUser?.id
+      }
+    });
+
+    // Surface it to the admin as an in-app notification. Awaited (not
+    // fire-and-forget) — on Vercel's serverless runtime, work left
+    // running after the response is sent isn't guaranteed to finish.
+    await db.adminNotification.create({
+      data: {
+        type: "PROMOTION_CLICK",
+        title: "Kliknięcie „Przejdź do promocji”",
+        body: `${currentUser?.name || currentUser?.email || "Niezalogowany użytkownik"} kliknął/ęła „Przejdź do promocji” — ${promotion.bank.name}: ${promotion.name}.`,
+        relatedUserId: currentUser?.id,
+        relatedPromotionId: promotion.id
       }
     });
   } catch {

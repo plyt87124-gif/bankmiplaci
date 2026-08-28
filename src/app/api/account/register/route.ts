@@ -31,6 +31,21 @@ export async function POST(request: NextRequest) {
     }
   });
 
+  // Surface it to the admin as an in-app notification (see the bell icon
+  // in /admin). Never let a notification-write failure block signup.
+  try {
+    await db.adminNotification.create({
+      data: {
+        type: "NEW_USER",
+        title: "Nowe konto użytkownika",
+        body: `${user.name || user.username} (${user.email}) założył/a konto.`,
+        relatedUserId: user.id
+      }
+    });
+  } catch {
+    // Never let a notification-write failure block signup.
+  }
+
   await createUserSession(user.id);
   return NextResponse.json({ ok: true });
 }

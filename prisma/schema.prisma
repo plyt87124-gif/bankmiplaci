@@ -166,6 +166,8 @@ model UserBankHistory {
 enum AdminNotificationType {
   NEW_COMMENT
   ELIGIBILITY_CLEARED
+  NEW_USER
+  PROMOTION_CLICK
 }
 
 // Lightweight in-app notification feed for the admin panel. No email
