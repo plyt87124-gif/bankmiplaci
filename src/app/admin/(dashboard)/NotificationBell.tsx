@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { LucideIcon } from "lucide-react";
+import { Eye, MousePointerClick, Bell } from "lucide-react";
 import { formatDateTime } from "@/lib/format";
 
 type NotificationType = "NEW_COMMENT" | "ELIGIBILITY_CLEARED" | "NEW_USER" | "PROMOTION_CLICK" | "PROMOTION_VIEW";
@@ -15,9 +15,19 @@ interface NotificationItem {
 
 interface Props {
   type: NotificationType;
-  icon: LucideIcon;
   label: string;
 }
+
+// Icon components are functions and can't be passed down as a prop from
+// the server layout (Next.js can't serialize a function across the
+// server/client boundary) — resolved here from `type` instead.
+const TYPE_ICON = {
+  NEW_COMMENT: Bell,
+  ELIGIBILITY_CLEARED: Bell,
+  NEW_USER: Bell,
+  PROMOTION_CLICK: MousePointerClick,
+  PROMOTION_VIEW: Eye
+} as const;
 
 /**
  * One bell per notification type — see admin layout.tsx for which types
@@ -25,7 +35,8 @@ interface Props {
  * clicks) versus a sidebar badge instead (events tied to one existing
  * admin page: comments, new users, karencja).
  */
-export function NotificationBell({ type, icon: Icon, label }: Props) {
+export function NotificationBell({ type, label }: Props) {
+  const Icon = TYPE_ICON[type];
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

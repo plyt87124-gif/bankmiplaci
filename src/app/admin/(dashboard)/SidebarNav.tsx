@@ -2,21 +2,42 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
+import { LayoutDashboard, Tag, Landmark, Users, MessageCircle, CalendarClock, BarChart3 } from "lucide-react";
 
-export interface NavItem {
+type BadgeType = "NEW_COMMENT" | "NEW_USER" | "ELIGIBILITY_CLEARED";
+
+interface NavItem {
   href: string;
   label: string;
-  icon: LucideIcon;
-  badgeType?: "NEW_COMMENT" | "NEW_USER" | "ELIGIBILITY_CLEARED";
+  icon: typeof LayoutDashboard;
+  badgeType?: BadgeType;
 }
+
+// Defined here (not passed down as a prop from the server layout) because
+// icon components are functions — Next.js can't serialize a function
+// across the server/client boundary, so this list has to live inside the
+// client component that actually renders it.
+const NAV: NavItem[] = [
+  { href: "/admin", label: "Pulpit", icon: LayoutDashboard },
+  { href: "/admin/statystyki", label: "Statystyki", icon: BarChart3 },
+  { href: "/admin/promocje", label: "Promocje", icon: Tag },
+  { href: "/admin/banki", label: "Banki", icon: Landmark },
+  { href: "/admin/uzytkownicy", label: "Użytkownicy", icon: Users, badgeType: "NEW_USER" },
+  { href: "/admin/komentarze", label: "Komentarze", icon: MessageCircle, badgeType: "NEW_COMMENT" },
+  {
+    href: "/admin/przypomnienia-karencja",
+    label: "Przypomnienia (karencja)",
+    icon: CalendarClock,
+    badgeType: "ELIGIBILITY_CLEARED"
+  }
+];
 
 /**
  * Left admin menu. Three items carry a small unread-count badge instead
  * of their own bell in the header (see layout.tsx) — the badge clears
  * once the admin actually visits that page (MarkNotificationsSeen).
  */
-export function SidebarNav({ items }: { items: NavItem[] }) {
+export function SidebarNav() {
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -32,7 +53,7 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
 
   return (
     <nav className="mt-8 space-y-1">
-      {items.map((item) => {
+      {NAV.map((item) => {
         const count = item.badgeType ? counts[item.badgeType] ?? 0 : 0;
         return (
           <Link
