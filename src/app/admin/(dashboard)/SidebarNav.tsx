@@ -22,7 +22,7 @@ const NAV: NavItem[] = [
   { href: "/admin/statystyki", label: "Statystyki", icon: BarChart3 },
   { href: "/admin/promocje", label: "Promocje", icon: Tag },
   { href: "/admin/banki", label: "Banki", icon: Landmark },
-  { href: "/admin/uzytkownicy", label: "Użytkownicy", icon: Users, badgeType: "NEW_USER" },
+  { href: "/admin/uzytkownicy", label: "Użytkownicy", icon: Users },
   { href: "/admin/komentarze", label: "Komentarze", icon: MessageCircle, badgeType: "NEW_COMMENT" },
   {
     href: "/admin/przypomnienia-karencja",

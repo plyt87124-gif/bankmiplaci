@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Eye, MousePointerClick, Bell } from "lucide-react";
+import { Eye, MousePointerClick, Bell, UserPlus } from "lucide-react";
 import { formatDateTime } from "@/lib/format";
 
 type NotificationType = "NEW_COMMENT" | "ELIGIBILITY_CLEARED" | "NEW_USER" | "PROMOTION_CLICK" | "PROMOTION_VIEW";
@@ -24,7 +24,7 @@ interface Props {
 const TYPE_ICON = {
   NEW_COMMENT: Bell,
   ELIGIBILITY_CLEARED: Bell,
-  NEW_USER: Bell,
+  NEW_USER: UserPlus,
   PROMOTION_CLICK: MousePointerClick,
   PROMOTION_VIEW: Eye
 } as const;

@@ -5,7 +5,6 @@ import { formatDate } from "@/lib/format";
 import { ActivityProvider } from "./ActivityProvider";
 import { ActivityDot } from "./ActivityDot";
 import { Download } from "lucide-react";
-import { MarkNotificationsSeen } from "../MarkNotificationsSeen";
 
 const ACTIVE_WINDOW_DAYS = 30;
 const PAGE_SIZE = 25;
@@ -105,7 +104,6 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
   return (
     <ActivityProvider initialUsers={users.map((u) => ({ id: u.id, lastLoginAt: u.lastLoginAt?.toISOString() ?? null }))}>
       <div>
-        <MarkNotificationsSeen type="NEW_USER" />
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">Użytkownicy</h1>

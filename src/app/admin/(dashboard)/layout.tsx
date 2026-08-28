@@ -26,6 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
         <div className="flex-1">
           <div className="flex h-14 items-center justify-end gap-2 border-b border-ink-100 bg-surface px-6">
+            <NotificationBell type="NEW_USER" label="Nowe konta użytkowników" />
             <NotificationBell type="PROMOTION_VIEW" label="Wejścia na strony promocji" />
             <NotificationBell type="PROMOTION_CLICK" label="Kliknięcia w linki afiliacyjne" />
           </div>

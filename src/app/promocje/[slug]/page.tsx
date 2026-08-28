@@ -195,6 +195,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
                 className="mt-5 w-full"
                 target="_blank"
                 rel="sponsored noopener noreferrer"
+                prefetch={false}
               >
                 Przejdź do promocji
               </ButtonLink>
