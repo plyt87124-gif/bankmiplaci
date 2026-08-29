@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { randomUUID, createHash } from "crypto";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/userSession";
+import { isInternalUser } from "@/lib/internalTraffic";
 
 const bodySchema = z.object({ path: z.string().min(1).max(500), source: z.string().max(200).optional() });
 
@@ -45,6 +46,8 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ ok: false }, { status: 400 });
 
   const currentUser = await getCurrentUser();
+  if (isInternalUser(currentUser?.email)) return NextResponse.json({ ok: true });
+
   const ip = clientIp(request);
   const userAgent = request.headers.get("user-agent") ?? "";
 

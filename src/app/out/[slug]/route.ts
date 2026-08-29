@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { getCurrentUser } from "@/lib/userSession";
+import { isInternalUser } from "@/lib/internalTraffic";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,13 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
 
   const { searchParams } = new URL(request.url);
   const currentUser = await getCurrentUser();
+
+  // Never skip the redirect itself for internal traffic — only the
+  // tracking write and notification are skipped, so testing the actual
+  // affiliate link still works, it just doesn't pollute the stats.
+  if (isInternalUser(currentUser?.email)) {
+    return NextResponse.redirect(promotion.affiliateUrl, { status: 302 });
+  }
 
   try {
     await db.click.create({
