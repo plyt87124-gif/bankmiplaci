@@ -3,8 +3,17 @@ import { db } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { getCurrentUser } from "@/lib/userSession";
 import { isInternalUser } from "@/lib/internalTraffic";
+import { hashVisitor, clientIp } from "@/lib/visitorHash";
+import { isLikelyBot } from "@/lib/botDetection";
+import { advisoryLockKey } from "@/lib/dedup";
 
 export const dynamic = "force-dynamic";
+
+// See DZIEŃ 1A report: covers double-click (sub-second) and a quick
+// back-button bounce from the bank's site (typically well under a
+// minute), without blocking a genuinely reconsidered second click a
+// few minutes later, and never affects clicks on different promotions.
+const CLICK_DEDUP_WINDOW_MS = 120_000;
 
 /**
  * GET /out/:slug
@@ -18,7 +27,8 @@ export const dynamic = "force-dynamic";
  *
  * No cookies or persistent identifiers are set — `sessionId` here is a
  * one-off random id used only to de-duplicate this single request in
- * the clicks table, not to track the visitor.
+ * the clicks table, not to track the visitor. `ipHash` (salted, no raw
+ * IP) is used only for the short click-dedup window below.
  */
 export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
   const promotion = await db.promotion.findUnique({
@@ -32,36 +42,68 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
 
   const { searchParams } = new URL(request.url);
   const currentUser = await getCurrentUser();
+  const userAgent = request.headers.get("user-agent") ?? "";
 
-  // Never skip the redirect itself for internal traffic — only the
-  // tracking write and notification are skipped, so testing the actual
-  // affiliate link still works, it just doesn't pollute the stats.
-  if (isInternalUser(currentUser?.email)) {
+  // Never skip the redirect itself for internal traffic or obvious bots —
+  // only the tracking write and notification are skipped, so testing the
+  // actual affiliate link (or a legitimate crawler fetching it) still works.
+  if (isInternalUser(currentUser?.email) || isLikelyBot(userAgent)) {
     return NextResponse.redirect(promotion.affiliateUrl, { status: 302 });
   }
 
-  try {
-    await db.click.create({
-      data: {
-        promotionId: promotion.id,
-        sessionId: randomUUID(),
-        source: searchParams.get("src") ?? undefined,
-        campaign: searchParams.get("cmp") ?? undefined,
-        userId: currentUser?.id
-      }
-    });
+  const ip = clientIp(request);
+  const visitorHash = ip ? hashVisitor(ip, userAgent) : null;
 
-    // Surface it to the admin as an in-app notification. Awaited (not
-    // fire-and-forget) — on Vercel's serverless runtime, work left
-    // running after the response is sent isn't guaranteed to finish.
-    await db.adminNotification.create({
-      data: {
-        type: "PROMOTION_CLICK",
-        title: "Kliknięcie „Przejdź do promocji”",
-        body: `${currentUser?.name || currentUser?.email || "Niezalogowany użytkownik"} kliknął/ęła „Przejdź do promocji” — ${promotion.bank.name}: ${promotion.name}.`,
-        relatedUserId: currentUser?.id,
-        relatedPromotionId: promotion.id
+  try {
+    await db.$transaction(async (tx) => {
+      if (visitorHash) {
+        // Serializes concurrent requests from the same visitor for the
+        // same promotion — a plain SELECT-then-INSERT is not race-safe
+        // under two truly simultaneous identical requests, this is.
+        // Transaction-scoped: releases automatically at commit/rollback,
+        // safe with Neon's pooled connections.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${advisoryLockKey(promotion.id, visitorHash)})`;
+
+        const recent = await tx.click.findFirst({
+          where: {
+            promotionId: promotion.id,
+            ipHash: visitorHash,
+            createdAt: { gte: new Date(Date.now() - CLICK_DEDUP_WINDOW_MS) }
+          },
+          select: { id: true }
+        });
+        if (recent) return; // duplicate within the window — skip silently
       }
+
+      await tx.click.create({
+        data: {
+          promotionId: promotion.id,
+          sessionId: randomUUID(),
+          source: searchParams.get("src") ?? undefined,
+          campaign: searchParams.get("cmp") ?? undefined,
+          trafficSource: searchParams.get("traffic_source") ?? undefined,
+          utmSource: searchParams.get("utm_source") ?? undefined,
+          utmMedium: searchParams.get("utm_medium") ?? undefined,
+          utmCampaign: searchParams.get("utm_campaign") ?? undefined,
+          utmContent: searchParams.get("utm_content") ?? undefined,
+          utmTerm: searchParams.get("utm_term") ?? undefined,
+          ipHash: visitorHash,
+          userId: currentUser?.id
+        }
+      });
+
+      // Surface it to the admin as an in-app notification. Awaited (not
+      // fire-and-forget) — on Vercel's serverless runtime, work left
+      // running after the response is sent isn't guaranteed to finish.
+      await tx.adminNotification.create({
+        data: {
+          type: "PROMOTION_CLICK",
+          title: "Kliknięcie „Przejdź do promocji”",
+          body: `${currentUser?.name || currentUser?.email || "Niezalogowany użytkownik"} kliknął/ęła „Przejdź do promocji” — ${promotion.bank.name}: ${promotion.name}.`,
+          relatedUserId: currentUser?.id,
+          relatedPromotionId: promotion.id
+        }
+      });
     });
   } catch {
     // Tracking must never block the redirect itself.

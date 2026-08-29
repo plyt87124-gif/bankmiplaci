@@ -5,7 +5,16 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/userSession";
 import { isInternalUser } from "@/lib/internalTraffic";
 
-const bodySchema = z.object({ promotionId: z.string().min(1), source: z.string().optional() });
+const bodySchema = z.object({
+  promotionId: z.string().min(1),
+  source: z.string().optional(),
+  trafficSource: z.string().max(200).optional(),
+  utmSource: z.string().max(200).optional(),
+  utmMedium: z.string().max(200).optional(),
+  utmCampaign: z.string().max(200).optional(),
+  utmContent: z.string().max(200).optional(),
+  utmTerm: z.string().max(200).optional()
+});
 
 /**
  * Fire-and-forget impression logging, called from PromotionImpression
@@ -29,6 +38,12 @@ export async function POST(request: NextRequest) {
         promotionId: parsed.data.promotionId,
         sessionId: randomUUID(),
         source: parsed.data.source,
+        trafficSource: parsed.data.trafficSource,
+        utmSource: parsed.data.utmSource,
+        utmMedium: parsed.data.utmMedium,
+        utmCampaign: parsed.data.utmCampaign,
+        utmContent: parsed.data.utmContent,
+        utmTerm: parsed.data.utmTerm,
         userId: currentUser?.id
       }
     });

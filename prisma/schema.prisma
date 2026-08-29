@@ -443,6 +443,16 @@ model Impression {
   // Anonymous, rotated per-session id (not a persistent user identifier).
   sessionId   String
   source      String? // utm_source equivalent, e.g. "organic", "google-cpc"
+  // Referrer-classified traffic bucket (direct/search/social/hostname) and
+  // real utm_* params, captured client-side from sessionStorage at the
+  // moment of the view — see AttributionCapture.tsx. Additive, unrelated
+  // to the older `source` field above (kept as-is for compatibility).
+  trafficSource String?
+  utmSource     String?
+  utmMedium     String?
+  utmCampaign   String?
+  utmContent    String?
+  utmTerm       String?
   // Set only if the visitor was logged in at the moment of the view —
   // powers the admin "co ten użytkownik oglądał" activity view.
   userId      String?
@@ -459,8 +469,23 @@ model Click {
   promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   sessionId   String
+  // Which CTA fired this click ("detail-cta" / "eligibility-email") — kept
+  // exactly as before, unrelated to real traffic-source attribution below.
   source      String?
+  // Karencja-reminder-email token correlation — kept exactly as before,
+  // unrelated to marketing campaign attribution below.
   campaign    String?
+  // Referrer-classified traffic bucket and real utm_* params, carried over
+  // from AttributionCapture's sessionStorage record via AffiliateCtaLink.
+  trafficSource String?
+  utmSource     String?
+  utmMedium     String?
+  utmCampaign   String?
+  utmContent    String?
+  utmTerm       String?
+  // Salted SHA-256 of IP+User-Agent (never the raw IP) — used only for the
+  // short dedup window below, not for long-term unique-visitor counting.
+  ipHash      String?
   // Set only if the visitor was logged in at the moment of the click —
   // powers the admin "co kliknął ten użytkownik" view. Anonymous
   // clicks (the vast majority) leave this null.
@@ -469,6 +494,7 @@ model Click {
 
   @@index([promotionId, createdAt])
   @@index([userId])
+  @@index([promotionId, ipHash, createdAt])
   @@map("clicks")
 }
 

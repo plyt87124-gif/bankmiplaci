@@ -9,9 +9,11 @@ import { outboundHref } from "@/lib/affiliate";
 import { Badge } from "@/components/ui/Badge";
 import { EffortMeter } from "@/components/ui/EffortMeter";
 import { ButtonLink } from "@/components/ui/Button";
+import { AffiliateCtaLink } from "@/components/AffiliateCtaLink";
 import { ConditionsChecklist } from "@/components/ConditionsChecklist";
 import { PromotionImpression } from "@/components/PromotionImpression";
 import { PageViewTracker } from "@/components/PageViewTracker";
+import { AttributionCapture } from "@/components/AttributionCapture";
 import { PromotionComments } from "@/components/PromotionComments";
 import { EligibilityBanner } from "@/components/EligibilityBanner";
 import { ShareButton } from "@/components/ShareButton";
@@ -94,6 +96,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
   return (
     <div className="container-page py-10">
       <PageViewTracker />
+      <AttributionCapture />
       <PromotionImpression promotionId={promotion.id} />
       <nav aria-label="breadcrumb" className="text-xs text-ink-500">
         <Link href="/" className="hover:underline">
@@ -185,7 +188,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
                 Zobacz aktualne promocje
               </ButtonLink>
             ) : (
-              <ButtonLink
+              <AffiliateCtaLink
                 href={outboundHref(
                   promotion.slug,
                   searchParams.ref
@@ -194,11 +197,11 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
                 )}
                 className="mt-5 w-full"
                 target="_blank"
-                rel="sponsored noopener noreferrer"
+                rel="sponsored nofollow noopener noreferrer"
                 prefetch={false}
               >
                 Przejdź do promocji
-              </ButtonLink>
+              </AffiliateCtaLink>
             )}
 
             <ShareButton

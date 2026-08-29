@@ -1,38 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { randomUUID, createHash } from "crypto";
+import { randomUUID } from "crypto";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/userSession";
 import { isInternalUser } from "@/lib/internalTraffic";
+import { hashVisitor, clientIp } from "@/lib/visitorHash";
 
 const bodySchema = z.object({ path: z.string().min(1).max(500), source: z.string().max(200).optional() });
-
-/**
- * Hashed, never the raw IP — a fixed pepper is enough here since the
- * goal is de-duplicating same-visitor hits for the "unikalne wejścia"
- * stat, not cryptographic security. Rotating this pepper would just
- * reset the dedup window, which is harmless.
- *
- * Mixing in the User-Agent (still nothing stored on the visitor's
- * device — it's just a request header the browser already sends on
- * every request) fixes the most common source of undercounting: a
- * shared IP (office, family Wi-Fi, mobile carrier NAT) no longer
- * collapses several different real visitors into one. It doesn't
- * (and can't, without a persistent client-side identifier, which
- * would need cookie consent) distinguish the same visitor switching
- * networks — that's a hard limit of any cookie-less approach.
- */
-function hashVisitor(ip: string, userAgent: string) {
-  return createHash("sha256").update(`bankmiplaci-pageview-pepper:${ip}:${userAgent}`).digest("hex");
-}
-
-function clientIp(request: NextRequest): string | null {
-  // Behind a proxy/load balancer, the real client IP is the first entry
-  // in X-Forwarded-For; fall back to X-Real-IP for single-proxy setups.
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  if (forwardedFor) return (forwardedFor.split(",")[0] ?? forwardedFor).trim();
-  return request.headers.get("x-real-ip");
-}
 
 /**
  * Fire-and-forget site-wide page view, mirroring the promotion-specific

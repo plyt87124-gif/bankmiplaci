@@ -6,6 +6,7 @@ import { EffortMeter } from "@/components/ui/EffortMeter";
 import { listActivePromotions, countActivePromotions, getEffortShowcase } from "@/lib/services/promotions";
 import { formatPLN, DIFFICULTY_LABEL, DIFFICULTY_EFFORT } from "@/lib/format";
 import { PageViewTracker } from "@/components/PageViewTracker";
+import { AttributionCapture } from "@/components/AttributionCapture";
 
 export default async function HomePage() {
   const [personalPromotions, businessPromotions, activeCount, effortShowcase] = await Promise.all([
@@ -19,6 +20,7 @@ export default async function HomePage() {
   return (
     <>
       <PageViewTracker />
+      <AttributionCapture />
       {/* Hero */}
       <section className="border-b border-ink-100 bg-surface">
         <div className="container-page grid gap-10 py-16 md:grid-cols-[1.1fr_0.9fr] md:py-24">

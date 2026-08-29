@@ -5,6 +5,7 @@ import { formatPLN, formatDate, DIFFICULTY_LABEL } from "@/lib/format";
 import { EmptyState } from "@/components/States";
 import { CompareFilters } from "./CompareFilters";
 import { PageViewTracker } from "@/components/PageViewTracker";
+import { AttributionCapture } from "@/components/AttributionCapture";
 
 export const metadata: Metadata = {
   title: "Porównaj konta bankowe",
@@ -21,6 +22,7 @@ export default async function ComparePage({ searchParams }: { searchParams: { hi
   return (
     <div className="container-page py-12">
       <PageViewTracker />
+      <AttributionCapture />
       <h1 className="text-3xl font-semibold">Porównaj konta bankowe</h1>
       <p className="mt-2 max-w-xl text-ink-500">
         Cztery najwyżej oceniane aktualne promocje zestawione obok siebie. Pełną listę znajdziesz na stronie{" "}
