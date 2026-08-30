@@ -21,7 +21,7 @@ import { JoinChecklistButton } from "@/components/JoinChecklistButton";
 import { getCurrentUser } from "@/lib/userSession";
 import { db } from "@/lib/db";
 import { computeEligibility } from "@/lib/services/eligibility";
-import { AlertTriangle, ShieldAlert, Eye } from "lucide-react";
+import { AlertTriangle, ShieldAlert, Eye, ArrowRight } from "lucide-react";
 
 interface PageProps {
   params: { slug: string };
@@ -198,12 +198,14 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
                     ? { source: "eligibility-email", campaign: searchParams.ref }
                     : { source: "detail-cta" }
                 )}
-                className="mt-5 w-full"
+                size="lg"
+                className="group mt-5 w-full text-base font-semibold shadow-cardHover"
                 target="_blank"
                 rel="sponsored nofollow noopener noreferrer"
                 prefetch={false}
               >
                 Przejdź do promocji
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </AffiliateCtaLink>
             )}
 

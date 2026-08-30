@@ -67,7 +67,7 @@ export async function listActivePromotions(filters: PromotionFilters = {}) {
 
   return db.promotion.findMany({
     where,
-    include: { bank: true, fees: true },
+    include: { bank: true, fees: true, conditions: { orderBy: { order: "asc" }, take: 1 } },
     orderBy: sortToOrderBy(filters.sort)
   });
 }
