@@ -13,7 +13,7 @@ import {
   Tooltip,
   Legend
 } from "recharts";
-import type { DailyCount } from "@/lib/services/analytics";
+import type { DailyCount, CampaignBreakdownRow } from "@/lib/services/analytics";
 
 const SOURCE_LABEL: Record<string, string> = {
   direct: "Bezpośrednie",
@@ -45,6 +45,7 @@ interface Props {
   topByClicks: TopPromotion[];
   checklistStats: { activeCount: number; completedCount: number; avgProgressPercent: number };
   eligibilityFunnel: { emailsSent: number; linksClicked: number; ctaClicked: number };
+  campaignBreakdown: CampaignBreakdownRow[];
 }
 
 const RANGES = [7, 30, 90];
@@ -65,7 +66,8 @@ export function StatsCharts({
   topByImpressions,
   topByClicks,
   checklistStats,
-  eligibilityFunnel
+  eligibilityFunnel,
+  campaignBreakdown
 }: Props) {
   const trend = pageViewsTrend.map((p, i) => ({
     date: shortDate(p.date),
@@ -155,6 +157,8 @@ export function StatsCharts({
         </ChartCard>
       </div>
 
+      <CampaignTable rows={campaignBreakdown} />
+
       <div className="grid gap-6 lg:grid-cols-2">
         <ChartCard title="Zaangażowanie w ściągi">
           <div className="grid grid-cols-3 gap-3">
@@ -243,6 +247,58 @@ function TopPromotionsTable({
               <tr>
                 <td className="p-2 text-ink-500" colSpan={4}>
                   Brak danych.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function CampaignTable({ rows }: { rows: CampaignBreakdownRow[] }) {
+  return (
+    <div className="rounded-xl2 border border-ink-100 bg-surface p-5">
+      <h2 className="text-sm font-semibold text-ink-900">Kampanie (UTM)</h2>
+      <p className="mt-1 text-xs text-ink-500">
+        Wyświetlenia promocji i kliknięcia w link afiliacyjny pogrupowane wg{" "}
+        <code className="font-mono">utm_source</code>/<code className="font-mono">utm_medium</code>/
+        <code className="font-mono">utm_campaign</code>/<code className="font-mono">utm_content</code> — zob.{" "}
+        <code className="font-mono">docs/marketing/utm-standard.md</code>.
+      </p>
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[560px] text-left text-sm">
+          <thead>
+            <tr className="border-b border-ink-100 text-ink-500">
+              <th className="p-2 font-medium">Źródło</th>
+              <th className="p-2 font-medium">Medium</th>
+              <th className="p-2 font-medium">Kampania</th>
+              <th className="p-2 font-medium">Content</th>
+              <th className="p-2 font-medium">Wyświetlenia</th>
+              <th className="p-2 font-medium">Kliknięcia</th>
+              <th className="p-2 font-medium">CTR</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr
+                key={`${r.utmSource}-${r.utmMedium}-${r.utmCampaign}-${r.utmContent}-${i}`}
+                className="border-b border-ink-100 last:border-0"
+              >
+                <td className="p-2 font-mono text-xs">{r.utmSource}</td>
+                <td className="p-2 font-mono text-xs text-ink-500">{r.utmMedium ?? "—"}</td>
+                <td className="p-2 font-mono text-xs text-ink-500">{r.utmCampaign ?? "—"}</td>
+                <td className="p-2 font-mono text-xs text-ink-500">{r.utmContent ?? "—"}</td>
+                <td className="p-2">{r.impressions}</td>
+                <td className="p-2">{r.clicks}</td>
+                <td className="p-2">{r.ctr}%</td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr>
+                <td className="p-2 text-ink-500" colSpan={7}>
+                  Brak danych — jeszcze żaden link z UTM nie wygenerował wejścia ani kliknięcia w wybranym okresie.
                 </td>
               </tr>
             )}

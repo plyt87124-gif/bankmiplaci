@@ -7,7 +7,8 @@ import {
   getSourceBreakdown,
   getChecklistStats,
   getEligibilityFunnelStats,
-  getBankBreakdown
+  getBankBreakdown,
+  getCampaignBreakdown
 } from "@/lib/services/analytics";
 import { StatsCharts } from "./StatsCharts";
 
@@ -26,7 +27,8 @@ export default async function StatsPage({ searchParams }: { searchParams: { days
     topByClicks,
     totals,
     checklistStats,
-    eligibilityFunnel
+    eligibilityFunnel,
+    campaignBreakdown
   ] = await Promise.all([
     getPageViewsTrend(days),
     getClicksTrend(days),
@@ -37,7 +39,8 @@ export default async function StatsPage({ searchParams }: { searchParams: { days
     getTopPromotionsByMetric("clicks", 10),
     getTrafficTotals(days),
     getChecklistStats(),
-    getEligibilityFunnelStats()
+    getEligibilityFunnelStats(),
+    getCampaignBreakdown(days)
   ]);
 
   return (
@@ -57,6 +60,7 @@ export default async function StatsPage({ searchParams }: { searchParams: { days
         topByClicks={topByClicks}
         checklistStats={checklistStats}
         eligibilityFunnel={eligibilityFunnel}
+        campaignBreakdown={campaignBreakdown}
       />
     </div>
   );

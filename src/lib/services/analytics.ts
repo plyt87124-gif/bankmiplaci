@@ -203,6 +203,84 @@ export async function getBankBreakdown(days = 30, limit = 10) {
   return rows.map((r) => ({ name: r.name, impressions: Number(r.impressions), clicks: Number(r.clicks) }));
 }
 
+export interface CampaignBreakdownRow {
+  utmSource: string;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmContent: string | null;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+}
+
+interface CampaignGroupRow {
+  utmSource: string;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmContent: string | null;
+  count: bigint;
+}
+
+/**
+ * Clicks/impressions grouped by UTM attribution (utm_source/medium/
+ * campaign/content — see docs/marketing/utm-standard.md). Impressions and
+ * clicks are two separate tables with their own utm_* columns (captured
+ * independently, at view-time and click-time), so this runs two GROUP BYs
+ * and merges them in JS by the (source, medium, campaign, content) key —
+ * simpler and safer than an SQL join across two unrelated tables, and
+ * avoids fan-out entirely.
+ */
+export async function getCampaignBreakdown(days = 30): Promise<CampaignBreakdownRow[]> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  const [impressionRows, clickRows] = await Promise.all([
+    db.$queryRaw<CampaignGroupRow[]>`
+      SELECT "utmSource", "utmMedium", "utmCampaign", "utmContent", COUNT(*)::bigint AS count
+      FROM "impressions"
+      WHERE "utmSource" IS NOT NULL AND "createdAt" >= ${since}
+      GROUP BY "utmSource", "utmMedium", "utmCampaign", "utmContent"`,
+    db.$queryRaw<CampaignGroupRow[]>`
+      SELECT "utmSource", "utmMedium", "utmCampaign", "utmContent", COUNT(*)::bigint AS count
+      FROM "clicks"
+      WHERE "utmSource" IS NOT NULL AND "createdAt" >= ${since}
+      GROUP BY "utmSource", "utmMedium", "utmCampaign", "utmContent"`
+  ]);
+
+  const keyOf = (r: CampaignGroupRow) => [r.utmSource, r.utmMedium, r.utmCampaign, r.utmContent].join(" ");
+
+  const merged = new Map<string, CampaignBreakdownRow>();
+  for (const r of impressionRows) {
+    merged.set(keyOf(r), {
+      utmSource: r.utmSource,
+      utmMedium: r.utmMedium,
+      utmCampaign: r.utmCampaign,
+      utmContent: r.utmContent,
+      impressions: Number(r.count),
+      clicks: 0,
+      ctr: 0
+    });
+  }
+  for (const r of clickRows) {
+    const k = keyOf(r);
+    const existing = merged.get(k);
+    if (existing) existing.clicks = Number(r.count);
+    else
+      merged.set(k, {
+        utmSource: r.utmSource,
+        utmMedium: r.utmMedium,
+        utmCampaign: r.utmCampaign,
+        utmContent: r.utmContent,
+        impressions: 0,
+        clicks: Number(r.count),
+        ctr: 0
+      });
+  }
+
+  return Array.from(merged.values())
+    .map((r) => ({ ...r, ctr: r.impressions > 0 ? Number(((r.clicks / r.impressions) * 100).toFixed(1)) : 0 }))
+    .sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions);
+}
+
 export async function getTrafficTotals(days = 30) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   const [uniquePageViewsRows, clicks, uniqueVisitors] = await Promise.all([
