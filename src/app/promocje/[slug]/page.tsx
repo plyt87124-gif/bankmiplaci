@@ -208,7 +208,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
                     : { source: "detail-cta" }
                 )}
                 size="lg"
-                className="group mt-5 w-full text-base font-semibold shadow-cardHover"
+                className="group mt-5 w-full bg-teal-600 text-base font-semibold text-white shadow-cardHover hover:bg-teal-700"
                 target="_blank"
                 rel="sponsored nofollow noopener noreferrer"
                 prefetch={false}
