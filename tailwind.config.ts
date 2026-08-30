@@ -46,9 +46,31 @@ const config: Config = {
       boxShadow: {
         card: "0 1px 2px rgba(14,27,42,0.04), 0 8px 24px -12px rgba(14,27,42,0.12)",
         cardHover: "0 2px 4px rgba(14,27,42,0.06), 0 16px 32px -12px rgba(14,27,42,0.16)"
+      },
+      // Only powers the `article-body` class (blog post Markdown) — deliberately
+      // NOT the plugin's default `prose` class, which stays inert everywhere
+      // else in the app (e.g. LegalPage.tsx's hand-rolled `[&_h2]:...` overrides
+      // must keep working exactly as before).
+      typography: {
+        DEFAULT: {
+          css: {
+            "--tw-prose-body": "rgb(var(--color-ink-700))",
+            "--tw-prose-headings": "rgb(var(--color-ink-900))",
+            "--tw-prose-bold": "rgb(var(--color-ink-900))",
+            "--tw-prose-links": "rgb(var(--color-teal-700))",
+            "--tw-prose-bullets": "rgb(var(--color-ink-300))",
+            "--tw-prose-hr": "rgb(var(--color-ink-100))",
+            "--tw-prose-th-borders": "rgb(var(--color-ink-100))",
+            "--tw-prose-td-borders": "rgb(var(--color-ink-100))",
+            "--tw-prose-quotes": "rgb(var(--color-ink-700))",
+            "--tw-prose-quote-borders": "rgb(var(--color-teal-100))",
+            maxWidth: "none",
+            "h1, h2, h3, h4": { fontFamily: "var(--font-fraunces), Georgia, serif" }
+          }
+        }
       }
     }
   },
-  plugins: []
+  plugins: [require("@tailwindcss/typography")({ className: "article-body" })]
 };
 export default config;
