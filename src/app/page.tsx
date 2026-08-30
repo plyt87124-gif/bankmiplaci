@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, Scale, Sparkles } from "lucide-react";
 import { ButtonLink } from "@/components/ui/Button";
@@ -7,6 +8,8 @@ import { listActivePromotions, countActivePromotions, getEffortShowcase } from "
 import { formatPLN, DIFFICULTY_LABEL, DIFFICULTY_EFFORT } from "@/lib/format";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { AttributionCapture } from "@/components/AttributionCapture";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function HomePage() {
   const [personalPromotions, businessPromotions, activeCount, effortShowcase] = await Promise.all([
