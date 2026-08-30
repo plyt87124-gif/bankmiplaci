@@ -41,7 +41,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title,
     description,
     alternates: { canonical: `/promocje/${promotion.slug}` },
-    openGraph: { title, description, type: "article" },
+    // Explicit images — a page-level openGraph object overrides (doesn't
+    // merge with) the site-wide opengraph-image.tsx convention, so without
+    // this the universal branded image silently disappears here.
+    openGraph: { title, description, type: "article", images: ["/opengraph-image"] },
     // Draft/expired/archived promotions are only ever reachable via an
     // admin preview link — never let search engines index them.
     robots: promotion.status === "ACTIVE" ? { index: true, follow: true } : { index: false, follow: false }
