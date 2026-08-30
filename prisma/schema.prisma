@@ -312,6 +312,7 @@ model Promotion {
   checklistSteps ChecklistStep[]
   trackings      UserPromotionTracking[]
   eligibilityHistories UserBankHistory[]
+  articles       Article[]
 
   @@index([status, endDate])
   @@index([bankId])
@@ -551,5 +552,14 @@ model Article {
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
+  // Optional link to the one promotion this article is a deep-dive guide
+  // for (e.g. "jak zdobyć 800 zł w Alior" -> Alior Konto z Premią). When
+  // set, the promotion detail page shows a "Dowiedz się więcej" section
+  // linking to the article — internal linking for SEO. Nullable because
+  // most articles (general finance guides) aren't tied to one promotion.
+  promotionId String?
+  promotion   Promotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+
+  @@index([promotionId])
   @@map("articles")
 }

@@ -21,7 +21,7 @@ import { JoinChecklistButton } from "@/components/JoinChecklistButton";
 import { getCurrentUser } from "@/lib/userSession";
 import { db } from "@/lib/db";
 import { computeEligibility } from "@/lib/services/eligibility";
-import { AlertTriangle, ShieldAlert, Eye, ArrowRight } from "lucide-react";
+import { AlertTriangle, ShieldAlert, Eye, ArrowRight, BookOpen } from "lucide-react";
 
 interface PageProps {
   params: { slug: string };
@@ -78,6 +78,15 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
   // Interactive month-by-month "cheat sheet" — only built out for one
   // promotion so far (see ChecklistStep seed data), expand later.
   const checklistStepCount = await db.checklistStep.count({ where: { promotionId: promotion.id } });
+
+  // Deep-dive blog guide for this specific promotion, if one has been
+  // written and linked (see Article.promotionId) — internal linking for
+  // SEO, generalizes automatically to every future promotion+article pair.
+  const relatedArticle = await db.article.findFirst({
+    where: { promotionId: promotion.id, published: true },
+    orderBy: { publishedAt: "desc" },
+    select: { slug: true, excerpt: true }
+  });
   const promotionTracking = currentUser
     ? await db.userPromotionTracking.findUnique({
         where: { userId_promotionId: { userId: currentUser.id, promotionId: promotion.id } }
@@ -252,6 +261,25 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
                 Premia maksymalna nie jest gwarantowana — otrzymasz ją tylko po spełnieniu wszystkich warunków
                 cząstkowych opisanych poniżej.
               </p>
+            </section>
+          )}
+
+          {/* Deep-dive guide, if one has been written for this promotion */}
+          {relatedArticle && (
+            <section className="mt-12 rounded-xl2 border border-teal-100 bg-teal-100/40 p-5">
+              <div className="flex items-start gap-3">
+                <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-teal-700" />
+                <div>
+                  <h2 className="text-base font-semibold text-ink-900">Dowiedz się więcej o tej promocji</h2>
+                  <p className="mt-1 text-sm text-ink-700">{relatedArticle.excerpt}</p>
+                  <Link
+                    href={`/blog/${relatedArticle.slug}`}
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:underline"
+                  >
+                    Przeczytaj poradnik <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
             </section>
           )}
 
