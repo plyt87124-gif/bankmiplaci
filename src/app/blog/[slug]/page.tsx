@@ -20,8 +20,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ArticlePage({ params }: PageProps) {
-  const article = await db.article.findUnique({ where: { slug: params.slug } });
+  const article = await db.article.findUnique({
+    where: { slug: params.slug },
+    include: { author: true }
+  });
   if (!article || !article.published) notFound();
+
+  const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/blog/${article.slug}`;
+  const datePublished = article.publishedAt ?? article.createdAt;
+  // Only worth reporting when the article was genuinely edited after
+  // publishing — otherwise dateModified would just echo datePublished
+  // (or drift from it by a few insert-time milliseconds), which isn't a
+  // "sensible update date" per Article schema guidance. A day+ gap is a
+  // real edit; anything closer is noise from how the row was created.
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+  const dateModified =
+    article.updatedAt.getTime() - datePublished.getTime() > ONE_DAY_MS ? article.updatedAt : undefined;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.excerpt,
+    datePublished: datePublished.toISOString(),
+    ...(dateModified ? { dateModified: dateModified.toISOString() } : {}),
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    url,
+    publisher: { "@type": "Organization", name: "Bankmiplaci.pl" },
+    author: { "@type": "Person", name: article.author.name }
+  };
 
   return (
     <article className="container-page max-w-2xl py-14">
@@ -33,6 +60,8 @@ export default async function ArticlePage({ params }: PageProps) {
       <div className="article-body article-body-sm mt-8">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.body}</ReactMarkdown>
       </div>
+
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </article>
   );
 }
