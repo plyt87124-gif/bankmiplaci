@@ -376,6 +376,32 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
             </div>
           </section>
 
+          {/* Second CTA, placed right above comments — same tracked /out/[slug]
+              redirect as the sidebar button, just a distinct `src` so the
+              admin CTR breakdown can tell the two positions apart. */}
+          <section className="mt-12 rounded-xl2 border border-ink-100 bg-surface p-6 text-center shadow-card">
+            <p className="text-sm text-ink-500">
+              Sprawdziłeś/aś już warunki? Przejdź bezpośrednio do wniosku na stronie {promotion.bank.name}.
+            </p>
+            {expired ? (
+              <ButtonLink href="/promocje" className="mt-4">
+                Zobacz aktualne promocje
+              </ButtonLink>
+            ) : (
+              <AffiliateCtaLink
+                href={outboundHref(promotion.slug, { source: "detail-cta-bottom" })}
+                size="lg"
+                className="group mt-4 bg-teal-600 text-base font-semibold text-white shadow-cardHover hover:bg-teal-700"
+                target="_blank"
+                rel="sponsored nofollow noopener noreferrer"
+                prefetch={false}
+              >
+                Otwieram konto w promocji
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </AffiliateCtaLink>
+            )}
+          </section>
+
           <PromotionComments promotionSlug={promotion.slug} currentUser={currentUser} />
         </div>
       </div>
