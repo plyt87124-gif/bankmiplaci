@@ -256,13 +256,14 @@ function ChecklistCard({
         </Link>
       </div>
 
-      {/* Month groups run left-to-right (horizontal scroll) instead of
-          stacked, so the whole promotion's timeline reads at a glance. */}
-      <div className="mt-4 flex gap-4 overflow-x-auto pb-2">
+      {/* Month groups run left-to-right, top-to-bottom — no horizontal
+          scrollbar, they wrap onto further rows instead so the whole
+          timeline is visible at once (the page itself still scrolls). */}
+      <div className="mt-4 flex flex-wrap gap-4">
         {groups.map((g) => {
           const monthAllChecked = g.actionSteps.length > 0 && g.actionSteps.every((s) => checked.has(s.id));
           return (
-            <div key={g.groupIndex} className={`w-72 shrink-0 ${!g.unlocked ? "opacity-50" : ""}`}>
+            <div key={g.groupIndex} className={`w-72 ${!g.unlocked ? "opacity-50" : ""}`}>
               <div className="flex items-center justify-between">
                 <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-500">
                   {!g.unlocked && <Lock className="h-3 w-3" />}

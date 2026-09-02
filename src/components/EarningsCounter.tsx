@@ -25,12 +25,19 @@ export function EarningsCounter() {
   const { total: totalCents } = useEarningsContext();
   const [displayed, setDisplayed] = useState(0);
   const [celebrate, setCelebrate] = useState(false);
-  const fromRef = useRef(0);
+  // Mirrors `displayed` on every animation frame — the actual source of
+  // truth for "where the number currently visually is". Needed because a
+  // fast double-click can retrigger this effect mid-animation: without a
+  // live ref, the new animation would start from the *last completed*
+  // value instead of wherever it was cut off, which could make `from`
+  // equal the new `to` and short-circuit the effect below, freezing the
+  // display mid-count instead of snapping/animating to the right number.
+  const displayedRef = useRef(0);
   const frameRef = useRef<number>();
   const celebrateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    const from = fromRef.current;
+    const from = displayedRef.current;
     const to = totalCents;
     if (from === to) return;
 
@@ -43,18 +50,17 @@ export function EarningsCounter() {
       // Round to the nearest whole złoty (not cent) while animating, so
       // formatPLN never flashes grosze mid-count — it only omits the
       // decimal when the cents value is an exact multiple of 100.
-      setDisplayed(Math.round((from + (to - from) * eased) / 100) * 100);
+      const value = Math.round((from + (to - from) * eased) / 100) * 100;
+      displayedRef.current = value;
+      setDisplayed(value);
       if (progress < 1) {
         frameRef.current = requestAnimationFrame(tick);
-      } else {
-        fromRef.current = to;
-        if (to > from) {
-          // Reached the new ceiling for this update — celebrate, then
-          // settle back down on its own (handled by the CSS keyframes).
-          setCelebrate(true);
-          clearTimeout(celebrateTimeoutRef.current);
-          celebrateTimeoutRef.current = setTimeout(() => setCelebrate(false), 700);
-        }
+      } else if (to > from) {
+        // Reached the new ceiling for this update — celebrate, then
+        // settle back down on its own (handled by the CSS keyframes).
+        setCelebrate(true);
+        clearTimeout(celebrateTimeoutRef.current);
+        celebrateTimeoutRef.current = setTimeout(() => setCelebrate(false), 700);
       }
     }
     frameRef.current = requestAnimationFrame(tick);
