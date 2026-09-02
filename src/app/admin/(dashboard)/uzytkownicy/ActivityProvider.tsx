@@ -1,33 +1,57 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
-const ACTIVE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const MINUTE_MS = 60 * 1000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+const WEEK_MS = 7 * DAY_MS;
+const MONTH_MS = 30 * DAY_MS;
+
+// "Online" has no real heartbeat behind it — the only live signal we have
+// is PageView rows, which fire on navigation (see PageViewTracker), not on
+// a timer while someone sits still reading one page. 5 minutes is a
+// generous-enough window to absorb that without the dot flickering off
+// mid-read, while still meaning something close to "here right now".
+const ONLINE_WINDOW_MS = 5 * MINUTE_MS;
 const POLL_INTERVAL_MS = 15000;
 
-export type ActivityStatus = "inactive" | "active" | "active-new";
+export type ActivityTier = "online" | "today" | "week" | "month" | "old" | "never";
 
 interface ActivityContextValue {
-  getStatus: (userId: string) => ActivityStatus;
+  getTier: (userId: string) => ActivityTier;
 }
 
-const ActivityContext = createContext<ActivityContextValue>({ getStatus: () => "inactive" });
+const ActivityContext = createContext<ActivityContextValue>({ getTier: () => "never" });
 
-export function useActivityStatus(userId: string): ActivityStatus {
-  return useContext(ActivityContext).getStatus(userId);
+export function useActivityTier(userId: string): ActivityTier {
+  return useContext(ActivityContext).getTier(userId);
+}
+
+export function tierFromLastSeen(lastSeenAt: string | null, now: number): ActivityTier {
+  if (!lastSeenAt) return "never";
+  const age = now - new Date(lastSeenAt).getTime();
+  if (age <= ONLINE_WINDOW_MS) return "online";
+  if (age <= DAY_MS) return "today";
+  if (age <= WEEK_MS) return "week";
+  if (age <= MONTH_MS) return "month";
+  return "old";
 }
 
 export function ActivityProvider({
   initialUsers,
   children
 }: {
-  initialUsers: { id: string; lastLoginAt: string | null }[];
+  initialUsers: { id: string; lastSeenAt: string | null }[];
   children: React.ReactNode;
 }) {
-  const pageLoadTime = useRef(Date.now());
-  const [lastLoginById, setLastLoginById] = useState<Record<string, string | null>>(() =>
-    Object.fromEntries(initialUsers.map((u) => [u.id, u.lastLoginAt]))
+  const [lastSeenById, setLastSeenById] = useState<Record<string, string | null>>(() =>
+    Object.fromEntries(initialUsers.map((u) => [u.id, u.lastSeenAt]))
   );
+  // Re-derive tiers on a ticking clock too, not only on poll — otherwise a
+  // user sitting on "online" would never age into "today" until the next
+  // fetch happens to land after the 5-minute mark.
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     async function poll() {
@@ -35,25 +59,20 @@ export function ActivityProvider({
         const res = await fetch("/api/admin/users/activity");
         const data = await res.json();
         if (data?.users) {
-          setLastLoginById(Object.fromEntries(data.users.map((u: { id: string; lastLoginAt: string | null }) => [u.id, u.lastLoginAt])));
+          setLastSeenById(Object.fromEntries(data.users.map((u: { id: string; lastSeenAt: string | null }) => [u.id, u.lastSeenAt])));
         }
       } catch {
         // Ignore transient polling failures.
       }
+      setNow(Date.now());
     }
     const interval = setInterval(poll, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
 
-  function getStatus(userId: string): ActivityStatus {
-    const lastLoginAt = lastLoginById[userId];
-    if (!lastLoginAt) return "inactive";
-    const loginTime = new Date(lastLoginAt).getTime();
-    if (Date.now() - loginTime > ACTIVE_WINDOW_MS) return "inactive";
-    // Logged in after this admin tab was opened — freshly active.
-    if (loginTime > pageLoadTime.current) return "active-new";
-    return "active";
+  function getTier(userId: string): ActivityTier {
+    return tierFromLastSeen(lastSeenById[userId] ?? null, now);
   }
 
-  return <ActivityContext.Provider value={{ getStatus }}>{children}</ActivityContext.Provider>;
+  return <ActivityContext.Provider value={{ getTier }}>{children}</ActivityContext.Provider>;
 }

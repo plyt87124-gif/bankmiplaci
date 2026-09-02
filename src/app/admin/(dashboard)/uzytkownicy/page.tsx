@@ -71,6 +71,25 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
     })
   ]);
 
+  // Same "last seen" enrichment as /api/admin/users/activity (which takes
+  // over from here after the first poll) — scoped to just this page's rows
+  // so the very first paint already shows the right tier/color instead of
+  // flashing the lastLoginAt-only guess for ~15s until the first poll lands.
+  const lastPageViews = users.length
+    ? await db.pageView.groupBy({
+        by: ["userId"],
+        where: { userId: { in: users.map((u) => u.id) } },
+        _max: { createdAt: true }
+      })
+    : [];
+  const lastPageViewByUserId = new Map(lastPageViews.map((row) => [row.userId as string, row._max.createdAt]));
+  const initialActivityUsers = users.map((u) => {
+    const lastPageViewAt = lastPageViewByUserId.get(u.id) ?? null;
+    const lastSeenAt =
+      lastPageViewAt && (!u.lastLoginAt || lastPageViewAt > u.lastLoginAt) ? lastPageViewAt : u.lastLoginAt;
+    return { id: u.id, lastSeenAt: lastSeenAt?.toISOString() ?? null };
+  });
+
   const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
   const baseParams = new URLSearchParams();
   if (q) baseParams.set("q", q);
@@ -102,7 +121,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
   }
 
   return (
-    <ActivityProvider initialUsers={users.map((u) => ({ id: u.id, lastLoginAt: u.lastLoginAt?.toISOString() ?? null }))}>
+    <ActivityProvider initialUsers={initialActivityUsers}>
       <div>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
