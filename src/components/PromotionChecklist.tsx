@@ -159,39 +159,47 @@ export function PromotionChecklist({
   return (
     <>
       {(visible.length > 0 || successMessage) && (
-        <section className="mt-8">
-          <h2 className="text-xl font-semibold">Twoje ściągi z promocji</h2>
-          <p className="mt-1 text-sm text-ink-500">
-            Odznaczaj kroki w miarę spełniania warunków promocji, którą aktywnie śledzisz.
-          </p>
+        // The parent page (konto/page.tsx) caps at max-w-2xl for readable
+        // header/form text, but that leaves the ściąga itself narrow on
+        // wide screens. This breaks it out to ~70% of the viewport width
+        // (capped so it doesn't get absurd on ultra-wide monitors) from
+        // the lg breakpoint up — full-width as before below that, so
+        // mobile is untouched.
+        <section className="mt-8 lg:relative lg:left-1/2 lg:right-1/2 lg:-mx-[50vw] lg:w-screen">
+          <div className="lg:mx-auto lg:w-[70vw] lg:max-w-[1400px]">
+            <h2 className="text-xl font-semibold">Twoje ściągi z promocji</h2>
+            <p className="mt-1 text-sm text-ink-500">
+              Odznaczaj kroki w miarę spełniania warunków promocji, którą aktywnie śledzisz.
+            </p>
 
-          {successMessage && (
-            <div className="mt-4 flex items-start gap-3 rounded-xl2 border border-teal-100 bg-teal-100/40 p-4">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-teal-600" />
-              <p className="text-sm text-teal-700">{successMessage}</p>
+            {successMessage && (
+              <div className="mt-4 flex items-start gap-3 rounded-xl2 border border-teal-100 bg-teal-100/40 p-4">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-teal-600" />
+                <p className="text-sm text-teal-700">{successMessage}</p>
+              </div>
+            )}
+
+            {/* Each card is now full-width, not squeezed into a 2-column
+                grid — its month columns need real horizontal room to sit
+                side by side instead of just wrapping one-per-row. */}
+            <div className="mt-4 space-y-4">
+              {visible.map((t) => (
+                <ChecklistCard
+                  key={t.id}
+                  tracking={t}
+                  checked={checked}
+                  onToggleStep={toggleStep}
+                  onToggleMonth={toggleMonth}
+                  confirming={confirmingId === t.id}
+                  onRequestConfirm={() => requestConfirm(t)}
+                  onCancelConfirm={() => setConfirmingId(null)}
+                  closedAt={closedAtDrafts[t.id] ?? new Date().toISOString().slice(0, 10)}
+                  onClosedAtChange={(v) => setClosedAtDrafts((prev) => ({ ...prev, [t.id]: v }))}
+                  onConfirm={() => complete(t)}
+                  pending={pending === t.id}
+                />
+              ))}
             </div>
-          )}
-
-          {/* Each card is now full-width, not squeezed into a 2-column
-              grid — its month columns need real horizontal room to sit
-              side by side instead of just wrapping one-per-row. */}
-          <div className="mt-4 space-y-4">
-            {visible.map((t) => (
-              <ChecklistCard
-                key={t.id}
-                tracking={t}
-                checked={checked}
-                onToggleStep={toggleStep}
-                onToggleMonth={toggleMonth}
-                confirming={confirmingId === t.id}
-                onRequestConfirm={() => requestConfirm(t)}
-                onCancelConfirm={() => setConfirmingId(null)}
-                closedAt={closedAtDrafts[t.id] ?? new Date().toISOString().slice(0, 10)}
-                onClosedAtChange={(v) => setClosedAtDrafts((prev) => ({ ...prev, [t.id]: v }))}
-                onConfirm={() => complete(t)}
-                pending={pending === t.id}
-              />
-            ))}
           </div>
         </section>
       )}
