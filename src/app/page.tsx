@@ -45,7 +45,15 @@ export default async function HomePage() {
             </div>
             {activeCount > 0 && (
               <p className="mt-8 inline-flex items-center gap-2 rounded-full bg-ink-100 px-4 py-2 text-sm font-medium text-ink-700">
-                <span className="h-2 w-2 rounded-full bg-teal-600" />
+                {/* Genuinely live count (fresh DB read on every request — the
+                    whole app renders dynamically because RootLayout reads the
+                    session cookie), so — unlike the admin "aktywni
+                    użytkownicy" dot (30-day login window, not real presence)
+                    — a pulsing dot here is an honest signal. */}
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-teal-600" />
+                </span>
                 {activeCount} aktualnych promocji w bazie
               </p>
             )}
