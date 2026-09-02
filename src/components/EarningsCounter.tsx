@@ -40,7 +40,10 @@ export function EarningsCounter() {
     function tick(now: number) {
       const progress = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayed(Math.round(from + (to - from) * eased));
+      // Round to the nearest whole złoty (not cent) while animating, so
+      // formatPLN never flashes grosze mid-count — it only omits the
+      // decimal when the cents value is an exact multiple of 100.
+      setDisplayed(Math.round((from + (to - from) * eased) / 100) * 100);
       if (progress < 1) {
         frameRef.current = requestAnimationFrame(tick);
       } else {
@@ -65,13 +68,13 @@ export function EarningsCounter() {
   if (totalCents <= 0) return null;
 
   return (
-    <div className="flex items-center gap-2 rounded-full border border-gold-600 bg-gold-100/40 px-3.5 py-1.5">
-      <Sparkles className="h-4 w-4 shrink-0 text-gold-600" />
+    <div className="flex items-center gap-2.5 rounded-full border border-gold-600 bg-gold-100/40 px-4 py-2">
+      <Sparkles className="h-5 w-5 shrink-0 text-gold-600" />
       <div className="leading-tight">
-        <p className="text-[10px] font-medium text-ink-500">Zdobyte:</p>
+        <p className="text-xs font-medium text-ink-500">Z nami już zdobyłeś/aś:</p>
         <span className="relative inline-block">
           <p
-            className={`font-display text-base font-semibold text-ink-900 ${celebrate ? "animate-earnings-pop" : ""}`}
+            className={`font-display text-xl font-semibold text-ink-900 ${celebrate ? "animate-earnings-pop" : ""}`}
           >
             {formatPLN(displayed)}
           </p>

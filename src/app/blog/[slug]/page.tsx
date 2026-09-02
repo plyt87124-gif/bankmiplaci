@@ -58,7 +58,21 @@ export default async function ArticlePage({ params }: PageProps) {
           react-markdown never injects raw HTML by default (no rehype-raw
           plugin), so this stays safe even without further sanitization. */}
       <div className="article-body article-body-sm mt-8">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.body}</ReactMarkdown>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            // Links inside article bodies open in a new tab — clicking
+            // "Sprawdź promocję..." shouldn't navigate away from the
+            // article itself, whether the link is internal or external.
+            a: ({ href, children, ...props }) => (
+              <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+                {children}
+              </a>
+            )
+          }}
+        >
+          {article.body}
+        </ReactMarkdown>
       </div>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />

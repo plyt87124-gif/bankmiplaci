@@ -71,20 +71,20 @@ export default async function AccountPage({ searchParams }: { searchParams: { on
     <div className="container-page max-w-2xl py-14">
       <EarningsProvider>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold">
-              {isOnboarding ? "Witaj! Jeszcze jedna rzecz" : "Moje konto"}
-            </h1>
-            <p className="mt-1 text-sm text-ink-500">{user.email}</p>
-          </div>
-          {/* Lifetime earnings badge, right next to the account header
-              (previously its own full-width block underneath) — the live
-              number is computed inside PromotionChecklist and pushed up
-              here via EarningsProvider. */}
-          <div className="flex items-center gap-3">
+          {/* Lifetime earnings badge sits next to the user's own info, not
+              next to the logout button — the live number is computed
+              inside PromotionChecklist and pushed up here via
+              EarningsProvider. */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div>
+              <h1 className="text-2xl font-semibold">
+                {isOnboarding ? "Witaj! Jeszcze jedna rzecz" : "Moje konto"}
+              </h1>
+              <p className="mt-1 text-sm text-ink-500">{user.email}</p>
+            </div>
             <EarningsCounter />
-            {!isOnboarding && <LogoutButton />}
           </div>
+          {!isOnboarding && <LogoutButton />}
         </div>
 
         <PromotionChecklist trackings={trackings} initialChecked={initialChecked} completedEarnedCents={completedEarnedCents} />
