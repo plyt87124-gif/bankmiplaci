@@ -7,21 +7,17 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [users, lastPageViews] = await Promise.all([
-    db.user.findMany({ select: { id: true, lastLoginAt: true } }),
-    // PageView fires on every page navigation while logged in (see
-    // PageViewTracker), not just at login — a much fresher "was actually
-    // browsing" signal than lastLoginAt, which is what lets the "online
-    // now" tier exist at all.
-    db.pageView.groupBy({ by: ["userId"], where: { userId: { not: null } }, _max: { createdAt: true } })
-  ]);
-
-  const lastSeenByUserId = new Map(lastPageViews.map((row) => [row.userId as string, row._max.createdAt]));
+  // lastActiveAt is touched on every authenticated pageview (see
+  // /api/track/pageview), unconditionally — including for internal/owner
+  // accounts excluded from visit-count analytics via isInternalUser. Using
+  // it directly (instead of a PageView groupBy) is both simpler and
+  // correct for those accounts, which previously showed stale/wrong tiers
+  // here because they never got a PageView row written at all.
+  const users = await db.user.findMany({ select: { id: true, lastLoginAt: true, lastActiveAt: true } });
 
   const result = users.map((u) => {
-    const lastPageViewAt = lastSeenByUserId.get(u.id) ?? null;
     const lastSeenAt =
-      lastPageViewAt && (!u.lastLoginAt || lastPageViewAt > u.lastLoginAt) ? lastPageViewAt : u.lastLoginAt;
+      u.lastActiveAt && (!u.lastLoginAt || u.lastActiveAt > u.lastLoginAt) ? u.lastActiveAt : u.lastLoginAt;
     return { id: u.id, lastSeenAt: lastSeenAt?.toISOString() ?? null };
   });
 

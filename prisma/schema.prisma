@@ -51,6 +51,15 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   lastLoginAt  DateTime?
+  // Touched on every authenticated pageview (see /api/track/pageview),
+  // deliberately BEFORE the isInternalUser check that excludes the site
+  // owner's own traffic from analytics — that exclusion is correct for
+  // visit counts, but it was also silently starving the admin "aktywni
+  // użytkownicy" online-dot of any signal for the owner's own account
+  // (PageView rows never got written for them, so their dot fell back to
+  // stale lastLoginAt). This field exists only to feed that dot; it's
+  // never shown as "last login" anywhere.
+  lastActiveAt DateTime?
 
   comments     Comment[]
   commentLikes CommentLike[]

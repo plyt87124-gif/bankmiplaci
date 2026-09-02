@@ -9,10 +9,11 @@ const WEEK_MS = 7 * DAY_MS;
 const MONTH_MS = 30 * DAY_MS;
 
 // "Online" has no real heartbeat behind it — the only live signal we have
-// is PageView rows, which fire on navigation (see PageViewTracker), not on
-// a timer while someone sits still reading one page. 5 minutes is a
-// generous-enough window to absorb that without the dot flickering off
-// mid-read, while still meaning something close to "here right now".
+// is User.lastActiveAt, touched on navigation (see PageViewTracker / the
+// /api/track/pageview route), not on a timer while someone sits still
+// reading one page. 5 minutes is a generous-enough window to absorb that
+// without the dot flickering off mid-read, while still meaning something
+// close to "here right now".
 const ONLINE_WINDOW_MS = 5 * MINUTE_MS;
 const POLL_INTERVAL_MS = 15000;
 

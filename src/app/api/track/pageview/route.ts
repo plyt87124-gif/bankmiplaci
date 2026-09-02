@@ -20,6 +20,17 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ ok: false }, { status: 400 });
 
   const currentUser = await getCurrentUser();
+
+  // Deliberately BEFORE the isInternalUser gate below: that gate exists to
+  // keep the owner's own browsing out of visit-count analytics, but the
+  // admin "aktywni użytkownicy" online-dot needs a real signal for every
+  // logged-in user including the owner — see User.lastActiveAt.
+  if (currentUser) {
+    db.user.update({ where: { id: currentUser.id }, data: { lastActiveAt: new Date() } }).catch(() => {
+      // Never fail the page for this — it's a best-effort presence signal.
+    });
+  }
+
   if (isInternalUser(currentUser?.email)) return NextResponse.json({ ok: true });
 
   const ip = clientIp(request);

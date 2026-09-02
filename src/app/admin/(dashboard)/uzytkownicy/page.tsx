@@ -66,27 +66,22 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
         username: true,
         createdAt: true,
         lastLoginAt: true,
+        lastActiveAt: true,
         _count: { select: { clicks: true, comments: true, impressions: true, promotionTracking: true } }
       }
     })
   ]);
 
-  // Same "last seen" enrichment as /api/admin/users/activity (which takes
-  // over from here after the first poll) — scoped to just this page's rows
-  // so the very first paint already shows the right tier/color instead of
-  // flashing the lastLoginAt-only guess for ~15s until the first poll lands.
-  const lastPageViews = users.length
-    ? await db.pageView.groupBy({
-        by: ["userId"],
-        where: { userId: { in: users.map((u) => u.id) } },
-        _max: { createdAt: true }
-      })
-    : [];
-  const lastPageViewByUserId = new Map(lastPageViews.map((row) => [row.userId as string, row._max.createdAt]));
+  // Same "last seen" logic as /api/admin/users/activity (which takes over
+  // from here after the first poll) — computed here too so the very first
+  // paint already shows the right tier/color instead of a ~15s flash of
+  // the lastLoginAt-only guess. lastActiveAt (not PageView) is the signal:
+  // it's touched on every authenticated pageview regardless of the
+  // internal-traffic analytics exclusion, so owner/test accounts get a
+  // real "online" signal too instead of falling back to stale login time.
   const initialActivityUsers = users.map((u) => {
-    const lastPageViewAt = lastPageViewByUserId.get(u.id) ?? null;
     const lastSeenAt =
-      lastPageViewAt && (!u.lastLoginAt || lastPageViewAt > u.lastLoginAt) ? lastPageViewAt : u.lastLoginAt;
+      u.lastActiveAt && (!u.lastLoginAt || u.lastActiveAt > u.lastLoginAt) ? u.lastActiveAt : u.lastLoginAt;
     return { id: u.id, lastSeenAt: lastSeenAt?.toISOString() ?? null };
   });
 
