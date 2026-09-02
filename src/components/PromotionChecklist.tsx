@@ -172,7 +172,10 @@ export function PromotionChecklist({
             </div>
           )}
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          {/* Each card is now full-width, not squeezed into a 2-column
+              grid — its month columns need real horizontal room to sit
+              side by side instead of just wrapping one-per-row. */}
+          <div className="mt-4 space-y-4">
             {visible.map((t) => (
               <ChecklistCard
                 key={t.id}
@@ -263,7 +266,7 @@ function ChecklistCard({
         {groups.map((g) => {
           const monthAllChecked = g.actionSteps.length > 0 && g.actionSteps.every((s) => checked.has(s.id));
           return (
-            <div key={g.groupIndex} className={`w-72 ${!g.unlocked ? "opacity-50" : ""}`}>
+            <div key={g.groupIndex} className={`w-64 ${!g.unlocked ? "opacity-50" : ""}`}>
               <div className="flex items-center justify-between">
                 <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-500">
                   {!g.unlocked && <Lock className="h-3 w-3" />}
