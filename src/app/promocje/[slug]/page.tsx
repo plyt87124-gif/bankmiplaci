@@ -293,21 +293,16 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
             </section>
           )}
 
-          {/* Eligibility */}
-          {(promotion.eligibleFor || promotion.notEligibleFor) && (
-            <section className="mt-12 grid gap-4 sm:grid-cols-2">
-              {promotion.eligibleFor && (
-                <div className="rounded-xl2 border border-teal-100 bg-teal-100/40 p-4">
-                  <p className="text-sm font-semibold text-teal-700">Promocja dla:</p>
-                  <p className="mt-1 text-sm text-ink-700">{promotion.eligibleFor}</p>
-                </div>
-              )}
-              {promotion.notEligibleFor && (
-                <div className="rounded-xl2 border border-coral-100 bg-coral-100/40 p-4">
-                  <p className="text-sm font-semibold text-coral-600">Kto nie może skorzystać?</p>
-                  <p className="mt-1 text-sm text-ink-700">{promotion.notEligibleFor}</p>
-                </div>
-              )}
+          {/* Eligibility — simplified to just the cutoff date itself
+              (Promotion.cooldownCutoffDate), not the full eligibleFor/
+              notEligibleFor prose. */}
+          {promotion.cooldownCutoffDate && (
+            <section className="mt-12 rounded-xl2 border border-teal-100 bg-teal-100/40 p-4">
+              <p className="text-sm font-semibold text-teal-700">Kiedy możesz otworzyć konto?</p>
+              <p className="mt-1 text-sm text-ink-700">
+                Możesz skorzystać z tej promocji, jeśli nie miałeś/aś konta w {promotion.bank.name} od{" "}
+                {formatDate(promotion.cooldownCutoffDate)}.
+              </p>
             </section>
           )}
 

@@ -60,10 +60,6 @@ export default async function ComparePage({
       label: "Koszt karty",
       render: (p) => (p.fees && p.fees.cardFeeCents > 0 ? formatPLN(p.fees.cardFeeCents) : "0 zł*")
     },
-    {
-      label: "Najważniejszy warunek",
-      render: (p) => <span className="line-clamp-2">{p.conditions[0]?.title ?? "—"}</span>
-    },
     { label: "Koniec promocji", render: (p) => formatDate(p.endDate) }
   ];
 

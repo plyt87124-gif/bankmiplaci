@@ -29,7 +29,6 @@ const DIFFICULTY_TONE: Record<Difficulty, "teal" | "gold" | "coral"> = {
 };
 
 export function PromotionCard({ promotion }: { promotion: PromotionCardData }) {
-  const topCondition = promotion.conditions?.[0]?.title;
   const isFree = !promotion.fees || promotion.fees.accountFeeCents === 0;
 
   return (
@@ -82,15 +81,6 @@ export function PromotionCard({ promotion }: { promotion: PromotionCardData }) {
         {isFree && <Badge tone="teal">Bez opłat za prowadzenie*</Badge>}
         <Badge tone="neutral">Do {formatDate(promotion.endDate)}</Badge>
       </div>
-
-      {/* Short pitch (Promotion.summary) instead of "Najważniejszy warunek" —
-          falls back to the top condition for the rare promotion that
-          doesn't have one yet, so nothing goes blank. */}
-      {promotion.summary ? (
-        <p className="mt-3 line-clamp-2 text-sm text-ink-500">{promotion.summary}</p>
-      ) : (
-        topCondition && <p className="mt-3 text-sm text-ink-500">Najważniejszy warunek: „{topCondition}”</p>
-      )}
 
       <span className="mt-4 inline-flex items-center text-sm font-medium text-teal-700 group-hover:underline">
         Sprawdź promocję →
