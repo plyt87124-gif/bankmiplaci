@@ -7,6 +7,8 @@ import { upsertBankHistory, deleteBankHistoryEntry } from "./actions";
 import { LogoutButton } from "./LogoutButton";
 import { ACCOUNT_TYPE_LABEL, formatDate } from "@/lib/format";
 import { PromotionChecklist } from "@/components/PromotionChecklist";
+import { EarningsProvider } from "@/components/EarningsContext";
+import { EarningsCounter } from "@/components/EarningsCounter";
 import { groupIndexFromOrder } from "@/lib/checklistSchedule";
 
 const TRACKED_ACCOUNT_TYPES = ["PERSONAL", "BUSINESS"] as const;
@@ -67,17 +69,26 @@ export default async function AccountPage({ searchParams }: { searchParams: { on
 
   return (
     <div className="container-page max-w-2xl py-14">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            {isOnboarding ? "Witaj! Jeszcze jedna rzecz" : "Moje konto"}
-          </h1>
-          <p className="mt-1 text-sm text-ink-500">{user.email}</p>
+      <EarningsProvider>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold">
+              {isOnboarding ? "Witaj! Jeszcze jedna rzecz" : "Moje konto"}
+            </h1>
+            <p className="mt-1 text-sm text-ink-500">{user.email}</p>
+          </div>
+          {/* Lifetime earnings badge, right next to the account header
+              (previously its own full-width block underneath) — the live
+              number is computed inside PromotionChecklist and pushed up
+              here via EarningsProvider. */}
+          <div className="flex items-center gap-3">
+            <EarningsCounter />
+            {!isOnboarding && <LogoutButton />}
+          </div>
         </div>
-        {!isOnboarding && <LogoutButton />}
-      </div>
 
-      <PromotionChecklist trackings={trackings} initialChecked={initialChecked} completedEarnedCents={completedEarnedCents} />
+        <PromotionChecklist trackings={trackings} initialChecked={initialChecked} completedEarnedCents={completedEarnedCents} />
+      </EarningsProvider>
 
       <section className="mt-8">
         <p className="text-sm text-ink-500">

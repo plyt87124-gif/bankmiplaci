@@ -1,14 +1,33 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Sparkles } from "lucide-react";
 import { formatPLN } from "@/lib/format";
+import { useEarningsContext } from "@/components/EarningsContext";
 
-/** Animated count-up used once the user has earned their first checklist reward. */
-export function EarningsCounter({ totalCents }: { totalCents: number }) {
+// 8 evenly-spaced burst directions for the "reached the new ceiling" spark
+// effect below — deterministic (no Math.random) so the animation is stable
+// across re-renders and doesn't need a key/remount trick.
+const PARTICLE_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+
+/**
+ * Animated count-up shown next to "Moje konto" (see EarningsProvider),
+ * once the user has earned their first checklist reward.
+ *
+ * Two explicit tweaks on top of the original quick tween: the count-up
+ * itself is slower (was 900ms, now 2.4s) so it reads as "building up" to
+ * something rather than just ticking over instantly, and the moment it
+ * reaches its new ceiling — the target amount for this update — it plays a
+ * brief spring-scale pop plus a small firework-style spark burst, then
+ * gently settles back to its normal size.
+ */
+export function EarningsCounter() {
+  const { total: totalCents } = useEarningsContext();
   const [displayed, setDisplayed] = useState(0);
+  const [celebrate, setCelebrate] = useState(false);
   const fromRef = useRef(0);
   const frameRef = useRef<number>();
+  const celebrateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     const from = fromRef.current;
@@ -16,7 +35,7 @@ export function EarningsCounter({ totalCents }: { totalCents: number }) {
     if (from === to) return;
 
     const start = performance.now();
-    const duration = 900;
+    const duration = 2400; // was 900ms — deliberately slower
 
     function tick(now: number) {
       const progress = Math.min(1, (now - start) / duration);
@@ -26,6 +45,13 @@ export function EarningsCounter({ totalCents }: { totalCents: number }) {
         frameRef.current = requestAnimationFrame(tick);
       } else {
         fromRef.current = to;
+        if (to > from) {
+          // Reached the new ceiling for this update — celebrate, then
+          // settle back down on its own (handled by the CSS keyframes).
+          setCelebrate(true);
+          clearTimeout(celebrateTimeoutRef.current);
+          celebrateTimeoutRef.current = setTimeout(() => setCelebrate(false), 700);
+        }
       }
     }
     frameRef.current = requestAnimationFrame(tick);
@@ -34,14 +60,32 @@ export function EarningsCounter({ totalCents }: { totalCents: number }) {
     };
   }, [totalCents]);
 
+  useEffect(() => () => clearTimeout(celebrateTimeoutRef.current), []);
+
   if (totalCents <= 0) return null;
 
   return (
-    <div className="mb-8 flex items-center gap-3 rounded-xl2 border border-gold-600 bg-gold-100/40 p-5">
-      <Sparkles className="h-6 w-6 shrink-0 text-gold-600" />
-      <div>
-        <p className="text-xs font-medium text-ink-500">Z nami zdobyłeś/aś już:</p>
-        <p className="font-display text-2xl font-semibold text-ink-900">{formatPLN(displayed)}</p>
+    <div className="flex items-center gap-2 rounded-full border border-gold-600 bg-gold-100/40 px-3.5 py-1.5">
+      <Sparkles className="h-4 w-4 shrink-0 text-gold-600" />
+      <div className="leading-tight">
+        <p className="text-[10px] font-medium text-ink-500">Zdobyte:</p>
+        <span className="relative inline-block">
+          <p
+            className={`font-display text-base font-semibold text-ink-900 ${celebrate ? "animate-earnings-pop" : ""}`}
+          >
+            {formatPLN(displayed)}
+          </p>
+          {celebrate &&
+            PARTICLE_ANGLES.map((angle, i) => (
+              <span
+                key={angle}
+                className={`animate-earnings-firework pointer-events-none absolute left-1/2 top-1/2 h-1.5 w-1.5 rounded-full ${
+                  i % 2 === 0 ? "bg-gold-600" : "bg-teal-500"
+                }`}
+                style={{ "--earnings-angle": `${angle}deg` } as CSSProperties}
+              />
+            ))}
+        </span>
       </div>
     </div>
   );

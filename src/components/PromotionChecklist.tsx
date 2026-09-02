@@ -7,7 +7,7 @@ import Link from "next/link";
 import { CheckSquare, Square, CheckCircle2, Lock, Building2 } from "lucide-react";
 import { formatPLN, formatDate } from "@/lib/format";
 import { groupIndexFromOrder, isGroupUnlocked, monthGroupLabel, unlockDateForGroup } from "@/lib/checklistSchedule";
-import { EarningsCounter } from "@/components/EarningsCounter";
+import { useEarningsContext } from "@/components/EarningsContext";
 
 interface Step {
   id: string;
@@ -91,6 +91,15 @@ export function PromotionChecklist({
   const activeEarnedCents = trackings.reduce((sum, t) => sum + trackingEarnedCents(t, checked), 0);
   const totalEarnedCents = completedEarnedCents + activeEarnedCents;
 
+  // The badge itself now lives next to the "Moje konto" header (see
+  // EarningsProvider in konto/page.tsx) — this is the only place that
+  // actually knows the live total, so push it up through context instead
+  // of rendering EarningsCounter inline here.
+  const { setTotal } = useEarningsContext();
+  useEffect(() => {
+    setTotal(totalEarnedCents);
+  }, [totalEarnedCents, setTotal]);
+
   async function toggleStep(stepId: string, next: boolean) {
     setChecked((prev) => {
       const s = new Set(prev);
@@ -149,8 +158,6 @@ export function PromotionChecklist({
 
   return (
     <>
-      <EarningsCounter totalCents={totalEarnedCents} />
-
       {(visible.length > 0 || successMessage) && (
         <section className="mt-8">
           <h2 className="text-xl font-semibold">Twoje ściągi z promocji</h2>

@@ -80,6 +80,27 @@
   .animate-reward-pop {
     animation: reward-pop 0.6s ease-out;
   }
+  /* Fired once the lifetime earnings badge (EarningsCounter, next to
+     "Moje konto") finishes counting up to its new ceiling after a
+     checklist box is checked — a spring-style overshoot/settle on the
+     number itself, paired with a small radial spark burst below. */
+  @keyframes earnings-pop {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.4); }
+    50% { transform: scale(0.92); }
+    75% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  .animate-earnings-pop {
+    animation: earnings-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes earnings-firework {
+    0% { transform: translate(-50%, -50%) rotate(var(--earnings-angle)) translateY(0) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) rotate(var(--earnings-angle)) translateY(-22px) scale(0); opacity: 0; }
+  }
+  .animate-earnings-firework {
+    animation: earnings-firework 0.7s ease-out forwards;
+  }
   /* Shared native form-control styling — explicit bg/text so selects,
      inputs and textareas never fall back to the browser's own default
      field appearance, which doesn't track our light/dark theme. */
