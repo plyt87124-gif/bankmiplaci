@@ -18,10 +18,25 @@ interface SearchParams {
   page?: string;
 }
 
-function sortToOrderBy(sort: SortKey): Prisma.UserOrderByWithRelationInput {
+// "Last seen" everywhere on this page (count, filter, sort, the per-row
+// date) now means the same thing the dot means: whichever of
+// lastLoginAt/lastActiveAt is more recent — not lastLoginAt alone. See
+// ActivityProvider.tsx for why lastActiveAt exists as a separate signal.
+function lastSeenAt(u: { lastLoginAt: Date | null; lastActiveAt: Date | null }): Date | null {
+  if (u.lastActiveAt && (!u.lastLoginAt || u.lastActiveAt > u.lastLoginAt)) return u.lastActiveAt;
+  return u.lastLoginAt;
+}
+
+function sortToOrderBy(sort: SortKey): Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[] {
   switch (sort) {
     case "active":
-      return { lastLoginAt: "desc" };
+      // Not a true max(a,b) — Prisma can't express that directly — but
+      // lastActiveAt, once set, is always >= that same visit's
+      // lastLoginAt (pageviews fire right after login too), so sorting
+      // by it first with lastLoginAt as the tiebreaker/fallback for rows
+      // that have never had a pageview recorded gives the same effective
+      // order as lastSeenAt() above for virtually every real case.
+      return [{ lastActiveAt: { sort: "desc", nulls: "last" } }, { lastLoginAt: "desc" }];
     case "engagement":
       return { clicks: { _count: "desc" } };
     case "newest":
@@ -36,23 +51,35 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
   const sort: SortKey = searchParams.sort === "active" || searchParams.sort === "engagement" ? searchParams.sort : "newest";
   const page = Math.max(1, Number(searchParams.page) || 1);
   const activeSince = new Date(Date.now() - ACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  // Seen within the window via EITHER signal — a user who logged in
+  // longer ago but has been actively browsing since still counts.
+  const seenRecently: Prisma.UserWhereInput = {
+    OR: [{ lastLoginAt: { gte: activeSince } }, { lastActiveAt: { gte: activeSince } }]
+  };
 
+  // Combined with AND (not spread) since the search box also needs an OR
+  // clause of its own — spreading two `OR` keys into one object would
+  // silently drop the first.
   const where: Prisma.UserWhereInput = {
-    ...(showActiveOnly ? { lastLoginAt: { gte: activeSince } } : {}),
-    ...(q
-      ? {
-          OR: [
-            { email: { contains: q, mode: "insensitive" } },
-            { name: { contains: q, mode: "insensitive" } },
-            { username: { contains: q, mode: "insensitive" } }
+    AND: [
+      ...(showActiveOnly ? [seenRecently] : []),
+      ...(q
+        ? [
+            {
+              OR: [
+                { email: { contains: q, mode: "insensitive" as const } },
+                { name: { contains: q, mode: "insensitive" as const } },
+                { username: { contains: q, mode: "insensitive" as const } }
+              ]
+            }
           ]
-        }
-      : {})
+        : [])
+    ]
   };
 
   const [totalCount, activeCount, filteredCount, users] = await Promise.all([
     db.user.count(),
-    db.user.count({ where: { lastLoginAt: { gte: activeSince } } }),
+    db.user.count({ where: seenRecently }),
     db.user.count({ where }),
     db.user.findMany({
       where,
@@ -75,15 +102,11 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
   // Same "last seen" logic as /api/admin/users/activity (which takes over
   // from here after the first poll) — computed here too so the very first
   // paint already shows the right tier/color instead of a ~15s flash of
-  // the lastLoginAt-only guess. lastActiveAt (not PageView) is the signal:
-  // it's touched on every authenticated pageview regardless of the
-  // internal-traffic analytics exclusion, so owner/test accounts get a
-  // real "online" signal too instead of falling back to stale login time.
-  const initialActivityUsers = users.map((u) => {
-    const lastSeenAt =
-      u.lastActiveAt && (!u.lastLoginAt || u.lastActiveAt > u.lastLoginAt) ? u.lastActiveAt : u.lastLoginAt;
-    return { id: u.id, lastSeenAt: lastSeenAt?.toISOString() ?? null };
-  });
+  // the lastLoginAt-only guess. Also used directly below for the per-row
+  // "Ostatnio aktywny/a" date, so it's consistent with the dot and with
+  // sort=active — not a separate lastLoginAt-only value.
+  const usersWithLastSeen = users.map((u) => ({ ...u, lastSeen: lastSeenAt(u) }));
+  const initialActivityUsers = usersWithLastSeen.map((u) => ({ id: u.id, lastSeenAt: u.lastSeen?.toISOString() ?? null }));
 
   const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
   const baseParams = new URLSearchParams();
@@ -123,7 +146,8 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
             <h1 className="text-2xl font-semibold">Użytkownicy</h1>
             <p className="mt-1 flex items-center gap-2 text-sm text-ink-500">
               <span className="inline-flex h-2 w-2 rounded-full bg-teal-500" />
-              {activeCount} aktywnych (zalogowani w ciągu ostatnich {ACTIVE_WINDOW_DAYS} dni) z {totalCount} wszystkich kont.
+              {activeCount} aktywnych (zalogowani lub aktywnych w ciągu ostatnich {ACTIVE_WINDOW_DAYS} dni) z {totalCount}{" "}
+              wszystkich kont.
             </p>
           </div>
           <a
@@ -178,7 +202,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
         </div>
 
         <div className="mt-6 space-y-2">
-          {users.map((user) => (
+          {usersWithLastSeen.map((user) => (
             <Link
               key={user.id}
               href={`/admin/uzytkownicy/${user.id}`}
@@ -197,7 +221,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
                 <span>{user._count.clicks} kliknięć</span>
                 <span>{user._count.comments} komentarzy</span>
                 <span>{user._count.promotionTracking} ściąg</span>
-                <span>Ostatnio zalogowany: {user.lastLoginAt ? formatDate(user.lastLoginAt) : "—"}</span>
+                <span>Ostatnio aktywny/a: {user.lastSeen ? formatDate(user.lastSeen) : "—"}</span>
               </div>
             </Link>
           ))}
