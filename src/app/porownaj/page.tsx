@@ -95,19 +95,29 @@ export default async function ComparePage({
                   &nbsp;
                 </th>
                 {compareSet.map((p) => (
-                  <th key={p.id} className="min-w-[190px] border-l border-ink-100 p-4 align-top font-medium text-ink-900">
-                    {p.bank.logoUrl ? (
-                      <div className="relative h-7 w-24">
-                        <Image src={p.bank.logoUrl} alt={p.bank.name} fill sizes="96px" className="object-contain object-left" />
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-ink-700">
-                        <Building2 className="h-5 w-5 shrink-0 text-ink-400" />
-                        <span className="font-display text-sm font-semibold">{p.bank.name}</span>
-                      </div>
-                    )}
-                    <p className="mt-2 text-xs font-normal text-ink-500">{p.bank.name}</p>
-                    <p className="line-clamp-2 font-display text-sm font-semibold">{p.name}</p>
+                  <th key={p.id} className="min-w-[190px] border-l border-ink-100 p-0 align-top font-medium text-ink-900">
+                    {/* Whole column is clickable through to the promotion —
+                        the "Zobacz szczegóły →" button at the bottom stays
+                        as an explicit, separate link (own new tab too). */}
+                    <a
+                      href={`/promocje/${p.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block p-4 hover:bg-ink-100/40"
+                    >
+                      {p.bank.logoUrl ? (
+                        <div className="relative h-7 w-24">
+                          <Image src={p.bank.logoUrl} alt={p.bank.name} fill sizes="96px" className="object-contain object-left" />
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-ink-700">
+                          <Building2 className="h-5 w-5 shrink-0 text-ink-400" />
+                          <span className="font-display text-sm font-semibold">{p.bank.name}</span>
+                        </div>
+                      )}
+                      <p className="mt-2 text-xs font-normal text-ink-500">{p.bank.name}</p>
+                      <p className="line-clamp-2 font-display text-sm font-semibold">{p.name}</p>
+                    </a>
                   </th>
                 ))}
               </tr>
@@ -117,8 +127,15 @@ export default async function ComparePage({
                 <tr key={row.label} className="border-b border-ink-100 last:border-0">
                   <td className="sticky left-0 z-10 bg-surface p-4 font-medium text-ink-700">{row.label}</td>
                   {compareSet.map((p) => (
-                    <td key={p.id} className="border-l border-ink-100 p-4 text-ink-900">
-                      {row.render(p)}
+                    <td key={p.id} className="border-l border-ink-100 p-0 text-ink-900">
+                      <a
+                        href={`/promocje/${p.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-4 hover:bg-ink-100/40"
+                      >
+                        {row.render(p)}
+                      </a>
                     </td>
                   ))}
                 </tr>
@@ -129,6 +146,8 @@ export default async function ComparePage({
                   <td key={p.id} className="border-l border-ink-100 p-4">
                     <Link
                       href={`/promocje/${p.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center whitespace-nowrap rounded-full bg-teal-100 px-3 py-1.5 text-sm font-medium text-teal-700 transition-colors hover:bg-teal-100/70"
                     >
                       Zobacz szczegóły →
