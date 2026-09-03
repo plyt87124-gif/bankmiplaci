@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/userSession";
 import { isInternalUser } from "@/lib/internalTraffic";
 import { hashVisitor, clientIp } from "@/lib/visitorHash";
+import { touchUserActivity } from "@/lib/userActivity";
 
 const bodySchema = z.object({ path: z.string().min(1).max(500), source: z.string().max(200).optional() });
 
@@ -21,15 +22,8 @@ export async function POST(request: NextRequest) {
 
   const currentUser = await getCurrentUser();
 
-  // Deliberately BEFORE the isInternalUser gate below: that gate exists to
-  // keep the owner's own browsing out of visit-count analytics, but the
-  // admin "aktywni użytkownicy" online-dot needs a real signal for every
-  // logged-in user including the owner — see User.lastActiveAt.
-  if (currentUser) {
-    db.user.update({ where: { id: currentUser.id }, data: { lastActiveAt: new Date() } }).catch(() => {
-      // Never fail the page for this — it's a best-effort presence signal.
-    });
-  }
+  // Deliberately BEFORE the isInternalUser gate below — see touchUserActivity.
+  if (currentUser) touchUserActivity(currentUser.id);
 
   if (isInternalUser(currentUser?.email)) return NextResponse.json({ ok: true });
 

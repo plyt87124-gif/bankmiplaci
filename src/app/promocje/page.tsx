@@ -4,7 +4,6 @@ import { listActivePromotions } from "@/lib/services/promotions";
 import { PromotionCard } from "@/components/PromotionCard";
 import { Filters } from "@/components/Filters";
 import { NoResultsState } from "@/components/States";
-import { PageViewTracker } from "@/components/PageViewTracker";
 import { AttributionCapture } from "@/components/AttributionCapture";
 import type { SortKey } from "@/lib/services/promotions";
 
@@ -42,7 +41,6 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
 
   return (
     <div className="container-page py-12">
-      <PageViewTracker />
       <AttributionCapture />
       <nav aria-label="breadcrumb" className="text-xs text-ink-500">
         <a href="/" className="hover:underline">

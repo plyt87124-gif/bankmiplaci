@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import useSWR from "swr";
 import { PromotionCard, type PromotionCardData } from "@/components/PromotionCard";
-import { PageViewTracker } from "@/components/PageViewTracker";
 import { AttributionCapture } from "@/components/AttributionCapture";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -53,7 +52,6 @@ export default function QuizPage() {
 
   return (
     <div className="container-page max-w-xl py-14">
-      <PageViewTracker />
       <AttributionCapture />
       <h1 className="text-3xl font-semibold">Dopasuj promocję do siebie</h1>
       <p className="mt-3 text-ink-500">

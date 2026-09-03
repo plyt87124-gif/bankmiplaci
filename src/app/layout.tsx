@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AuthModalProvider } from "@/components/AuthModalProvider";
+import { PageViewTracker } from "@/components/PageViewTracker";
 import { getCurrentUser } from "@/lib/userSession";
 
 const fraunces = Fraunces({
@@ -52,6 +53,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark")}}catch(e){}})()`
           }}
         />
+        {/* Site-wide now (was previously bolted onto 5 individual pages,
+            missing everything else — blog, FAQ, konto, legal pages…),
+            which is also what feeds User.lastActiveAt for the admin
+            "aktywny/a" dot on every page, not just promotion pages. */}
+        <PageViewTracker />
         <AuthModalProvider>
           <Header user={user} />
           <main className="flex-1">{children}</main>

@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/userSession";
 import { isInternalUser } from "@/lib/internalTraffic";
+import { touchUserActivity } from "@/lib/userActivity";
 
 const bodySchema = z.object({
   promotionId: z.string().min(1),
@@ -30,6 +31,8 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ ok: false }, { status: 400 });
 
   const currentUser = await getCurrentUser();
+  // Before the isInternalUser gate — see touchUserActivity.
+  if (currentUser) touchUserActivity(currentUser.id);
   if (isInternalUser(currentUser?.email)) return NextResponse.json({ ok: true });
 
   try {

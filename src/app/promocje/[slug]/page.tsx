@@ -12,7 +12,6 @@ import { ButtonLink } from "@/components/ui/Button";
 import { AffiliateCtaLink } from "@/components/AffiliateCtaLink";
 import { ConditionsChecklist } from "@/components/ConditionsChecklist";
 import { PromotionImpression } from "@/components/PromotionImpression";
-import { PageViewTracker } from "@/components/PageViewTracker";
 import { AttributionCapture } from "@/components/AttributionCapture";
 import { PromotionComments } from "@/components/PromotionComments";
 import { EligibilityBanner } from "@/components/EligibilityBanner";
@@ -107,7 +106,6 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
 
   return (
     <div className="container-page py-10">
-      <PageViewTracker />
       <AttributionCapture />
       <PromotionImpression promotionId={promotion.id} />
       <nav aria-label="breadcrumb" className="text-xs text-ink-500">

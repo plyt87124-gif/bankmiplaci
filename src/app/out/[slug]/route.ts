@@ -6,6 +6,7 @@ import { isInternalUser } from "@/lib/internalTraffic";
 import { hashVisitor, clientIp } from "@/lib/visitorHash";
 import { isLikelyBot } from "@/lib/botDetection";
 import { advisoryLockKey } from "@/lib/dedup";
+import { touchUserActivity } from "@/lib/userActivity";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,13 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   const { searchParams } = new URL(request.url);
   const currentUser = await getCurrentUser();
   const userAgent = request.headers.get("user-agent") ?? "";
+
+  // Clicking straight through to a bank's site from a page loaded earlier
+  // (a different tab, or a page left open since yesterday) never re-fires
+  // PageViewTracker, so without this the admin "aktywny/a" dot could sit
+  // stale despite a click just having happened. Before the internal/bot
+  // gate below — see touchUserActivity.
+  if (currentUser) touchUserActivity(currentUser.id);
 
   // Never skip the redirect itself for internal traffic or obvious bots —
   // only the tracking write and notification are skipped, so testing the

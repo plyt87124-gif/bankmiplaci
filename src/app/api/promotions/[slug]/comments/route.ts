@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/userSession";
 import { commentSchema } from "@/lib/validation/account";
+import { touchUserActivity } from "@/lib/userActivity";
 
 function authorName(c: { user: { name: string | null; email: string } | null; admin: { name: string } | null }) {
   if (c.admin) return c.admin.name;
@@ -77,6 +78,7 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
 export async function POST(request: NextRequest, { params }: { params: { slug: string } }) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Musisz być zalogowany, aby komentować." }, { status: 401 });
+  touchUserActivity(user.id);
 
   const promotion = await db.promotion.findUnique({ where: { slug: params.slug }, select: { id: true, name: true } });
   if (!promotion) return NextResponse.json({ error: "Nie znaleziono promocji." }, { status: 404 });

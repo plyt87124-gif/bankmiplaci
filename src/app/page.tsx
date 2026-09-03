@@ -6,7 +6,6 @@ import { PromotionCard } from "@/components/PromotionCard";
 import { EffortMeter } from "@/components/ui/EffortMeter";
 import { listActivePromotions, countActivePromotions, getEffortShowcase } from "@/lib/services/promotions";
 import { formatPLN, DIFFICULTY_LABEL, DIFFICULTY_EFFORT } from "@/lib/format";
-import { PageViewTracker } from "@/components/PageViewTracker";
 import { AttributionCapture } from "@/components/AttributionCapture";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
@@ -22,7 +21,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <PageViewTracker />
       <AttributionCapture />
       {/* Hero */}
       <section className="border-b border-ink-100 bg-surface">

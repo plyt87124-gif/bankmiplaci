@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/userSession";
 import { groupIndexFromOrder, isGroupUnlocked } from "@/lib/checklistSchedule";
+import { touchUserActivity } from "@/lib/userActivity";
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Musisz być zalogowany." }, { status: 401 });
+  touchUserActivity(user.id);
 
   const body = await request.json().catch(() => null);
   const stepId = typeof body?.stepId === "string" ? body.stepId : null;

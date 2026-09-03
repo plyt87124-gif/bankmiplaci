@@ -7,7 +7,6 @@ import { listActivePromotions } from "@/lib/services/promotions";
 import { formatPLN, formatDate, DIFFICULTY_LABEL } from "@/lib/format";
 import { EmptyState } from "@/components/States";
 import { CompareFilters } from "./CompareFilters";
-import { PageViewTracker } from "@/components/PageViewTracker";
 import { AttributionCapture } from "@/components/AttributionCapture";
 import { cn } from "@/lib/cn";
 
@@ -65,7 +64,6 @@ export default async function ComparePage({
 
   return (
     <div className="container-page py-12">
-      <PageViewTracker />
       <AttributionCapture />
       <h1 className="text-3xl font-semibold">Porównaj konta bankowe</h1>
       <p className="mt-2 max-w-xl text-ink-500">
