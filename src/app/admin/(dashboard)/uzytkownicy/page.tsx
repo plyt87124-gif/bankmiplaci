@@ -5,8 +5,8 @@ import { formatDate } from "@/lib/format";
 import { ActivityProvider } from "./ActivityProvider";
 import { ActivityDot } from "./ActivityDot";
 import { Download } from "lucide-react";
+import { ONLINE_WINDOW_MS } from "@/lib/activityWindows";
 
-const ACTIVE_WINDOW_DAYS = 30;
 const PAGE_SIZE = 25;
 
 type SortKey = "newest" | "active" | "engagement";
@@ -50,11 +50,14 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
   const q = searchParams.q?.trim() || "";
   const sort: SortKey = searchParams.sort === "active" || searchParams.sort === "engagement" ? searchParams.sort : "newest";
   const page = Math.max(1, Number(searchParams.page) || 1);
-  const activeSince = new Date(Date.now() - ACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
-  // Seen within the window via EITHER signal — a user who logged in
-  // longer ago but has been actively browsing since still counts.
+  // Same 5-minute window as the dot's green "online" tier (ActivityProvider)
+  // — this count/filter is meant to answer "who's online right now", not a
+  // loose "seen sometime this month", so it has to use the same threshold
+  // the dot uses or the two visibly disagree (an orange-dot user showing
+  // up under "Tylko aktywni" was exactly the reported problem).
+  const onlineSince = new Date(Date.now() - ONLINE_WINDOW_MS);
   const seenRecently: Prisma.UserWhereInput = {
-    OR: [{ lastLoginAt: { gte: activeSince } }, { lastActiveAt: { gte: activeSince } }]
+    OR: [{ lastLoginAt: { gte: onlineSince } }, { lastActiveAt: { gte: onlineSince } }]
   };
 
   // Combined with AND (not spread) since the search box also needs an OR
@@ -146,8 +149,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
             <h1 className="text-2xl font-semibold">Użytkownicy</h1>
             <p className="mt-1 flex items-center gap-2 text-sm text-ink-500">
               <span className="inline-flex h-2 w-2 rounded-full bg-teal-500" />
-              {activeCount} aktywnych (zalogowani lub aktywnych w ciągu ostatnich {ACTIVE_WINDOW_DAYS} dni) z {totalCount}{" "}
-              wszystkich kont.
+              {activeCount} online teraz z {totalCount} wszystkich kont.
             </p>
           </div>
           <a
@@ -187,7 +189,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
             href={`/admin/uzytkownicy?active=1${q ? `&q=${encodeURIComponent(q)}` : ""}`}
             className={`rounded-full px-3 py-1.5 text-xs font-medium ${showActiveOnly ? "bg-ink-solid text-white" : "bg-ink-100 text-ink-700"}`}
           >
-            Tylko aktywni ({activeCount})
+            Tylko online ({activeCount})
           </Link>
           <span className="mx-1 h-5 w-px bg-ink-100" />
           <Link href={sortHref("newest")} className={`rounded-full px-3 py-1.5 text-xs font-medium ${sort === "newest" ? "bg-ink-solid text-white" : "bg-ink-100 text-ink-700"}`}>
@@ -228,7 +230,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
 
           {users.length === 0 && (
             <p className="rounded-xl2 border border-dashed border-ink-100 bg-surface p-8 text-center text-sm text-ink-500">
-              {q ? "Brak wyników dla tego wyszukiwania." : showActiveOnly ? "Brak aktywnych użytkowników w tym okresie." : "Nikt jeszcze nie założył konta."}
+              {q ? "Brak wyników dla tego wyszukiwania." : showActiveOnly ? "Nikt nie jest teraz online." : "Nikt jeszcze nie założył konta."}
             </p>
           )}
         </div>
