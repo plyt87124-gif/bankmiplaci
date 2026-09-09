@@ -4,6 +4,17 @@ import { PromotionStatus } from "@prisma/client";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
+// sitemap.ts is a standalone metadata route, not part of the app's layout
+// tree — it does NOT inherit the "force dynamic" behavior that RootLayout's
+// cookie read gives every normal page. Without this, Next.js statically
+// generates it once at build time and caches it until the next deploy, so
+// every promotion/article added directly to the DB (the normal way content
+// gets added on this site, via handoff scripts — no redeploy involved)
+// silently never appeared in the live sitemap until whatever the next
+// unrelated code deploy happened to be. Revalidating hourly keeps it fresh
+// without hitting the DB on every crawler request.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [promotions, articles] = await Promise.all([
     db.promotion.findMany({
