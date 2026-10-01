@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getPromotionBySlug } from "@/lib/services/promotions";
-import { formatPLN, formatDate, DIFFICULTY_LABEL, DIFFICULTY_EFFORT, isExpired } from "@/lib/format";
+import { formatPLN, formatDate, formatFeeCompact, DIFFICULTY_LABEL, DIFFICULTY_EFFORT, isExpired } from "@/lib/format";
 import { outboundHref } from "@/lib/affiliate";
 import { Badge } from "@/components/ui/Badge";
 import { EffortMeter } from "@/components/ui/EffortMeter";
@@ -171,7 +171,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
             {[
               { label: "Premia", value: formatPLN(promotion.maxBonusCents) },
               { label: "Trudność", value: DIFFICULTY_LABEL[promotion.difficulty] },
-              { label: "Koszt", value: promotion.fees && promotion.fees.accountFeeCents > 0 ? formatPLN(promotion.fees.accountFeeCents) : "0 zł*" },
+              { label: "Koszt", value: formatFeeCompact(promotion.fees?.accountFeeCents, promotion.fees?.accountFeeWaiverCondition) },
               { label: "Koniec promocji", value: formatDate(promotion.endDate) }
             ].map((stat) => (
               <div key={stat.label} className="rounded-xl2 border border-ink-100 bg-surface p-4">
@@ -304,18 +304,51 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
             </section>
           )}
 
-          {/* Fees */}
+          {/* Fees — each row distinguishes "not verified" (nieustalone,
+              shown when accountFeeCents/cardFeeCents is null — no Fees
+              row at all, or the field left blank in the admin panel)
+              from a confirmed, unconditional 0 zł, from a fee that's
+              only waived under a stated condition. Never collapse the
+              first case into the second. */}
           {promotion.fees && (
             <section className="mt-12">
               <h2 className="text-xl font-semibold">Czy konto jest darmowe?</h2>
               <div className="mt-4 divide-y divide-ink-100 rounded-xl2 border border-ink-100 bg-surface">
                 {[
-                  { label: "Prowadzenie konta", value: promotion.fees.accountFeeCents },
-                  { label: "Karta", value: promotion.fees.cardFeeCents }
+                  {
+                    label: "Prowadzenie konta",
+                    cents: promotion.fees.accountFeeCents,
+                    waiverCondition: promotion.fees.accountFeeWaiverCondition
+                  },
+                  {
+                    label: "Karta",
+                    cents: promotion.fees.cardFeeCents,
+                    waiverCondition: promotion.fees.cardFeeWaiverCondition
+                  }
                 ].map((row) => (
-                  <div key={row.label} className="flex items-center justify-between p-4">
-                    <span className="text-sm text-ink-700">{row.label}</span>
-                    <span className="font-mono text-sm font-medium">{row.value === 0 ? "0 zł" : formatPLN(row.value)}</span>
+                  <div key={row.label} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-ink-700">{row.label}</span>
+                      <span className="font-mono text-sm font-medium">
+                        {row.cents == null ? (
+                          <span className="text-ink-500">Nieustalone</span>
+                        ) : row.waiverCondition ? (
+                          "0 zł*"
+                        ) : (
+                          formatPLN(row.cents)
+                        )}
+                      </span>
+                    </div>
+                    {row.cents != null && row.waiverCondition && (
+                      <p className="mt-1 text-xs text-ink-500">
+                        * {row.waiverCondition} — w przeciwnym razie {formatPLN(row.cents)}/mies.
+                      </p>
+                    )}
+                    {row.cents == null && (
+                      <p className="mt-1 text-xs text-ink-500">
+                        Nie zweryfikowaliśmy jeszcze tej opłaty — sprawdź aktualną taryfę banku przed podjęciem decyzji.
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

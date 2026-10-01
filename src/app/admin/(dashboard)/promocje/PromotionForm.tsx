@@ -42,7 +42,10 @@ export function PromotionForm({
       difficulty: "EASY",
       conditions: [],
       bonusParts: [],
-      fees: { accountFeeCents: 0, cardFeeCents: 0, atmFeeCents: 0 },
+      // No fee defaults here on purpose — an admin adding a new promotion
+      // who leaves these blank means "not verified yet", not "free". See
+      // Fees in prisma/schema.prisma.
+      fees: {},
       ...defaultValues
     } as PromotionFormValues
   });
@@ -267,19 +270,45 @@ export function PromotionForm({
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Opłaty</h2>
+        <p className="text-xs text-ink-500">
+          Zostaw pole puste, jeśli opłaty nie zweryfikowano — puste pole nigdy nie jest prezentowane jako „0 zł”.
+          Wpisz 0, tylko jeśli masz potwierdzenie z taryfy banku, że opłata jest bezwarunkowo darmowa.
+        </p>
         <div className="grid grid-cols-3 gap-4">
-          <Field label="Prowadzenie konta (grosze)">
+          <Field label="Prowadzenie konta (grosze, puste = nieustalone)" error={errors.fees?.accountFeeCents?.message}>
             <input type="number" {...register("fees.accountFeeCents", { valueAsNumber: true })} className="input" />
           </Field>
-          <Field label="Karta (grosze)">
+          <Field label="Karta (grosze, puste = nieustalone)" error={errors.fees?.cardFeeCents?.message}>
             <input type="number" {...register("fees.cardFeeCents", { valueAsNumber: true })} className="input" />
           </Field>
-          <Field label="Bankomat (grosze)">
+          <Field label="Bankomat (grosze, puste = nieustalone)" error={errors.fees?.atmFeeCents?.message}>
             <input type="number" {...register("fees.atmFeeCents", { valueAsNumber: true })} className="input" />
           </Field>
         </div>
-        <Field label="Inne opłaty / warunki zwolnienia z opłat">
-          <textarea {...register("fees.otherFee")} className="input" rows={2} placeholder="0 zł przy wpływie min. 500 zł/mies." />
+        <Field label="Warunek zwolnienia z opłaty za konto (opcjonalnie)">
+          <input
+            {...register("fees.accountFeeWaiverCondition")}
+            className="input"
+            placeholder="np. przy wpływie min. 500 zł w poprzednim miesiącu"
+          />
+          <p className="mt-1 text-xs text-ink-500">
+            Jeśli wypełnisz, pole „Prowadzenie konta” powyżej to opłata, gdy warunek NIE jest spełniony — opłata po
+            spełnieniu warunku jest zawsze 0 zł.
+          </p>
+        </Field>
+        <Field label="Warunek zwolnienia z opłaty za kartę (opcjonalnie)">
+          <input
+            {...register("fees.cardFeeWaiverCondition")}
+            className="input"
+            placeholder="np. przy rozliczonych transakcjach kartą na min. 350 zł w poprzednim miesiącu"
+          />
+          <p className="mt-1 text-xs text-ink-500">
+            Jeśli wypełnisz, pole „Karta” powyżej to opłata, gdy warunek NIE jest spełniony — opłata po spełnieniu
+            warunku jest zawsze 0 zł.
+          </p>
+        </Field>
+        <Field label="Inne opłaty / uwagi">
+          <textarea {...register("fees.otherFee")} className="input" rows={2} placeholder="np. opłata za przelew zagraniczny 15 zł" />
         </Field>
       </section>
 

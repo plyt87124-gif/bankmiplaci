@@ -13,10 +13,25 @@ export const bonusPartSchema = z.object({
   order: z.number().int().min(0).default(0)
 });
 
+// A fee amount left blank in the form (-> NaN from valueAsNumber, or ""
+// if ever submitted as a plain string) means "not verified yet", NOT
+// "confirmed 0 zł" — so it must become `undefined`/null here, never
+// silently default to 0. See prisma/schema.prisma Fees for the same
+// null-means-unverified convention at the data layer.
+const optionalFeeCents = z.preprocess(
+  (v) => (v === "" || v === null || (typeof v === "number" && Number.isNaN(v)) ? undefined : v),
+  z.number().int().min(0).optional()
+);
+
 export const feesSchema = z.object({
-  accountFeeCents: z.number().int().min(0).default(0),
-  cardFeeCents: z.number().int().min(0).default(0),
-  atmFeeCents: z.number().int().min(0).default(0),
+  accountFeeCents: optionalFeeCents,
+  // Free text describing the condition under which accountFeeCents is
+  // waived to 0 (e.g. "przy wpływie min. 500 zł/mies."). Leave unset for
+  // a plain, unconditional fee.
+  accountFeeWaiverCondition: z.string().optional(),
+  cardFeeCents: optionalFeeCents,
+  cardFeeWaiverCondition: z.string().optional(),
+  atmFeeCents: optionalFeeCents,
   otherFee: z.string().optional()
 });
 

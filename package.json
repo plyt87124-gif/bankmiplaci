@@ -16,7 +16,8 @@
     "check:eligibility": "tsx scripts/check-eligibility.ts",
     "import:promotions": "tsx scripts/import-promotions.ts",
     "recompute:ratings": "tsx scripts/recompute-ratings.ts",
-    "checklist:reminders": "tsx scripts/checklist-deadline-reminders.ts"
+    "checklist:reminders": "tsx scripts/checklist-deadline-reminders.ts",
+    "audit:fees": "tsx scripts/audit-unverified-fees.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

@@ -22,6 +22,7 @@ interface PageProps {
     minBonus?: string;
     noFees?: string;
     sort?: string;
+    niedostepna?: string;
   };
 }
 
@@ -48,6 +49,15 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
         </a>{" "}
         / <span className="text-ink-700">Promocje</span>
       </nav>
+
+      {/* Shown when /out/[slug] redirected here instead of to the partner
+          because the promotion is no longer active (draft, expired,
+          archived, or past its end date) — see src/app/out/[slug]/route.ts. */}
+      {searchParams.niedostepna === "1" && (
+        <div className="mt-4 rounded-xl2 border border-coral-100 bg-coral-100/40 p-4 text-sm text-coral-600">
+          Ta promocja nie jest już dostępna — sprawdź aktualne promocje poniżej.
+        </div>
+      )}
 
       <h1 className="mt-3 text-3xl font-semibold">Wszystkie promocje bankowe</h1>
       <p className="mt-2 max-w-xl text-ink-500">

@@ -431,10 +431,22 @@ model Fees {
   promotionId String  @unique
   promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
 
-  accountFeeCents Int @default(0)
-  cardFeeCents    Int @default(0)
-  atmFeeCents     Int @default(0)
-  otherFee        String? // free text for conditions like "0 zł przy wpływie 500 zł/mies."
+  // Nullable, no default: null means "not verified yet", never "free".
+  // A confirmed, unconditional fee of zero must be written explicitly as
+  // 0 — the admin form and every display path treat null and 0
+  // differently. Never backfill existing nulls with 0 (or vice versa)
+  // without having actually re-checked the bank's taryfa.
+  accountFeeCents Int?
+  // When set, this is the fee charged WHEN accountFeeWaiverCondition is
+  // NOT met (the "otherwise" rate) — e.g. 900 (9 zł) for mBank's eKonto
+  // do usług card. The waived rate is always 0 by definition; there is
+  // no separate field for it. Leave accountFeeWaiverCondition null for
+  // a plain unconditional fee (0 or otherwise).
+  accountFeeWaiverCondition String?
+  cardFeeCents    Int?
+  cardFeeWaiverCondition String?
+  atmFeeCents     Int?
+  otherFee        String? // free text for anything the structured fields above don't capture
   // Link to the bank's own Taryfa Opłat i Prowizji / Cennik document.
   sourceUrl       String?
 
@@ -558,6 +570,14 @@ model Article {
   author    AdminUser       @relation(fields: [authorId], references: [id])
   published Boolean         @default(false)
   publishedAt DateTime?
+  // Set explicitly whenever title/excerpt/body is genuinely revised after
+  // publishing — deliberately separate from `updatedAt`, which Prisma
+  // bumps on ANY write (linking a promotion, fixing a typo in an
+  // unrelated field, a future admin panel resave with no real content
+  // change). Null means "never substantively updated since publish";
+  // the detail page's dateModified comes from this field, never from
+  // updatedAt or a time-since-publish heuristic.
+  contentUpdatedAt DateTime?
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 

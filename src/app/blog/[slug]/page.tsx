@@ -28,14 +28,12 @@ export default async function ArticlePage({ params }: PageProps) {
 
   const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/blog/${article.slug}`;
   const datePublished = article.publishedAt ?? article.createdAt;
-  // Only worth reporting when the article was genuinely edited after
-  // publishing — otherwise dateModified would just echo datePublished
-  // (or drift from it by a few insert-time milliseconds), which isn't a
-  // "sensible update date" per Article schema guidance. A day+ gap is a
-  // real edit; anything closer is noise from how the row was created.
-  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-  const dateModified =
-    article.updatedAt.getTime() - datePublished.getTime() > ONE_DAY_MS ? article.updatedAt : undefined;
+  // contentUpdatedAt is set explicitly only when the article's actual
+  // content was revised — unlike `updatedAt`, which Prisma bumps on any
+  // write at all (see Article in prisma/schema.prisma). No time-since-
+  // publish threshold: a same-day correction is just as real an update
+  // as one a month later, so it's shown exactly when the field is set.
+  const dateModified = article.contentUpdatedAt ?? undefined;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -53,7 +51,13 @@ export default async function ArticlePage({ params }: PageProps) {
   return (
     <article className="container-page max-w-2xl py-14">
       <h1 className="text-3xl font-semibold">{article.title}</h1>
-      {article.publishedAt && <p className="mt-2 text-sm text-ink-500">{formatDate(article.publishedAt)}</p>}
+      {/* Real byline from the actual authoring AdminUser — never a name,
+          credential, or review date that isn't backed by a DB field. */}
+      <p className="mt-2 text-sm text-ink-500">
+        {article.author.name}
+        {article.publishedAt && <> · {formatDate(article.publishedAt)}</>}
+        {dateModified && <> · zaktualizowano {formatDate(dateModified)}</>}
+      </p>
       {/* `body` is authored by trusted admins in the panel, stored as markdown.
           react-markdown never injects raw HTML by default (no rehype-raw
           plugin), so this stays safe even without further sanitization. */}

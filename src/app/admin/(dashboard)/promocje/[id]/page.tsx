@@ -44,14 +44,17 @@ export default async function EditPromotionPage({ params }: { params: { id: stri
       order: c.order
     })),
     bonusParts: promotion.bonusParts.map((b) => ({ label: b.label, amountCents: b.amountCents, order: b.order })),
+    // No Fees row yet -> every field unset ("nieustalone"), never 0.
     fees: promotion.fees
       ? {
-          accountFeeCents: promotion.fees.accountFeeCents,
-          cardFeeCents: promotion.fees.cardFeeCents,
-          atmFeeCents: promotion.fees.atmFeeCents,
+          accountFeeCents: promotion.fees.accountFeeCents ?? undefined,
+          accountFeeWaiverCondition: promotion.fees.accountFeeWaiverCondition ?? undefined,
+          cardFeeCents: promotion.fees.cardFeeCents ?? undefined,
+          cardFeeWaiverCondition: promotion.fees.cardFeeWaiverCondition ?? undefined,
+          atmFeeCents: promotion.fees.atmFeeCents ?? undefined,
           otherFee: promotion.fees.otherFee ?? undefined
         }
-      : { accountFeeCents: 0, cardFeeCents: 0, atmFeeCents: 0 }
+      : {}
   };
 
   async function handleSubmit(values: PromotionFormValues) {

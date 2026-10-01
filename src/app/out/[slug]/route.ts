@@ -31,14 +31,33 @@ const CLICK_DEDUP_WINDOW_MS = 120_000;
  * the clicks table, not to track the visitor. `ipHash` (salted, no raw
  * IP) is used only for the short click-dedup window below.
  */
+// Where we send someone instead of the partner when the promotion isn't
+// redirectable — never the draft/expired promotion itself (that would
+// leak its content to anyone probing a stale or guessed /out/ link).
+function safeFallbackRedirect(request: NextRequest): NextResponse {
+  return NextResponse.redirect(new URL("/promocje?niedostepna=1", request.url));
+}
+
 export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
   const promotion = await db.promotion.findUnique({
     where: { slug: params.slug },
-    select: { id: true, name: true, affiliateUrl: true, status: true, bank: { select: { name: true } } }
+    select: { id: true, name: true, affiliateUrl: true, status: true, endDate: true, bank: { select: { name: true } } }
   });
 
   if (!promotion) {
     return NextResponse.redirect(new URL("/promocje", request.url));
+  }
+
+  // The only gate that decides whether ANYONE (including internal users,
+  // crawlers, and bots below) can reach the partner through this slug.
+  // Mirrors the public listing's own activeWhere() (see
+  // src/lib/services/promotions.ts): status must be ACTIVE AND endDate
+  // not yet passed, so a promotion a scheduled job hasn't flipped to
+  // EXPIRED yet still can't be clicked through. DRAFT/EXPIRED/ARCHIVED
+  // never redirect to the bank, regardless of who's asking.
+  const isRedirectable = promotion.status === "ACTIVE" && promotion.endDate >= new Date();
+  if (!isRedirectable) {
+    return safeFallbackRedirect(request);
   }
 
   const { searchParams } = new URL(request.url);
@@ -55,6 +74,8 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   // Never skip the redirect itself for internal traffic or obvious bots —
   // only the tracking write and notification are skipped, so testing the
   // actual affiliate link (or a legitimate crawler fetching it) still works.
+  // (isRedirectable was already checked above, so this never sends a bot
+  // or internal user to the partner for an inactive promotion either.)
   if (isInternalUser(currentUser?.email) || isLikelyBot(userAgent)) {
     return NextResponse.redirect(promotion.affiliateUrl, { status: 302 });
   }
