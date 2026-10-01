@@ -311,6 +311,15 @@ model Promotion {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // Set explicitly by createPromotion/updatePromotion (real admin edits
+  // to this promotion's own fields) — deliberately separate from
+  // `updatedAt`, which Prisma bumps on ANY write, including
+  // recomputeRatings() nudging just `rating` because a DIFFERENT
+  // promotion's bonus changed and shifted this one's percentile score.
+  // sitemap.ts's lastModified for promotions reads this, not updatedAt,
+  // so a crawler isn't told to recrawl a page whose own content didn't
+  // actually change. Null falls back to createdAt (see sitemap.ts).
+  contentUpdatedAt DateTime?
 
   conditions     PromotionCondition[]
   bonusParts     BonusPart[]

@@ -45,6 +45,11 @@ export async function createPromotion(values: PromotionFormValues) {
       cooldownCutoffDate: data.cooldownCutoffDate,
       summary: data.summary,
       description: data.description,
+      // See Promotion.contentUpdatedAt in prisma/schema.prisma — a real
+      // admin-authored edit, as opposed to recomputeRatings() below
+      // nudging `rating` and bumping `updatedAt` on every active
+      // promotion whenever any one of them changes.
+      contentUpdatedAt: new Date(),
       conditions: { create: data.conditions },
       bonusParts: { create: data.bonusParts },
       fees: { create: data.fees }
@@ -91,6 +96,7 @@ export async function updatePromotion(id: string, values: PromotionFormValues) {
         cooldownCutoffDate: data.cooldownCutoffDate,
         summary: data.summary,
         description: data.description,
+        contentUpdatedAt: new Date(),
         conditions: { create: data.conditions },
         bonusParts: { create: data.bonusParts },
         fees: { upsert: { create: data.fees, update: data.fees } }

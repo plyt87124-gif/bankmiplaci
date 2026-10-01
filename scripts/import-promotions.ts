@@ -146,7 +146,10 @@ async function main() {
       notEligibleFor: p.notEligibleFor ?? undefined,
       cooldownMonths: p.cooldownMonths ?? undefined,
       cooldownCutoffDate: p.cooldownCutoffDate ? new Date(p.cooldownCutoffDate) : undefined,
-      summary: p.summary ?? undefined
+      summary: p.summary ?? undefined,
+      // See Promotion.contentUpdatedAt — this import is a genuine content
+      // write (create or re-import), unlike recomputeRatings() below.
+      contentUpdatedAt: new Date()
     };
 
     if (existing) {

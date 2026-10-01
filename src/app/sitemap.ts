@@ -19,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [promotions, articles] = await Promise.all([
     db.promotion.findMany({
       where: { status: PromotionStatus.ACTIVE, endDate: { gte: new Date() } },
-      select: { slug: true, updatedAt: true }
+      select: { slug: true, contentUpdatedAt: true, createdAt: true }
     }),
     db.article.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } })
   ]);
@@ -31,12 +31,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/quiz`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${siteUrl}/faq`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${siteUrl}/jak-zarabiamy`, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${siteUrl}/jak-to-dziala`, changeFrequency: "monthly", priority: 0.4 },
     { url: `${siteUrl}/blog`, changeFrequency: "weekly", priority: 0.5 }
   ];
 
   const promotionRoutes: MetadataRoute.Sitemap = promotions.map((p) => ({
     url: `${siteUrl}/promocje/${p.slug}`,
-    lastModified: p.updatedAt,
+    // contentUpdatedAt (set on genuine admin/import edits), not the raw
+    // `updatedAt` Prisma column — recomputeRatings() can bump a
+    // promotion's `rating` (and so its `updatedAt`) purely because a
+    // DIFFERENT promotion's bonus changed its relative percentile, with
+    // this one's own page content untouched. See Promotion.
+    // contentUpdatedAt in prisma/schema.prisma.
+    lastModified: p.contentUpdatedAt ?? p.createdAt,
     changeFrequency: "weekly",
     priority: 0.8
   }));

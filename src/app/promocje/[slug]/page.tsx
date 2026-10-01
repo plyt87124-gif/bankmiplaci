@@ -44,9 +44,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // merge with) the site-wide opengraph-image.tsx convention, so without
     // this the universal branded image silently disappears here.
     openGraph: { title, description, type: "article", images: ["/opengraph-image"] },
-    // Draft/expired/archived promotions are only ever reachable via an
-    // admin preview link — never let search engines index them.
-    robots: promotion.status === "ACTIVE" ? { index: true, follow: true } : { index: false, follow: false }
+    // Draft/expired/archived promotions — and an ACTIVE one whose
+    // endDate has already passed but a scheduled job hasn't flipped its
+    // status to EXPIRED yet (the same belt-and-braces check
+    // listActivePromotions() uses, see src/lib/services/promotions.ts
+    // activeWhere()) — are never indexable. Checking status alone here
+    // previously let a stale-but-still-"ACTIVE" promotion stay
+    // index:true past its own end date.
+    robots:
+      promotion.status === "ACTIVE" && promotion.endDate >= new Date()
+        ? { index: true, follow: true }
+        : { index: false, follow: false }
   };
 }
 
