@@ -139,11 +139,13 @@ export async function joinChecklist(
     if (!allowed) return { ok: false, status: 409, error: LOCKED_ERROR };
     // Restarting a promotion the user already completed once (karencja cleared, or they
     // corrected their bank-history dates): wipe last cycle's ticks so the new round
-    // starts at 0, re-open the tracking and set the date of the new cycle.
+    // starts at 0, re-open the tracking, set the date of the new cycle and clear the
+    // month-deadline reminder markers of the previous cycle (remindedGroupIndexes), so the
+    // new cycle's months get their own reminders. Only this branch resets them.
     const restarted = await client.$transaction(async (tx) => {
       const { count } = await tx.userPromotionTracking.updateMany({
         where: { id: existing!.id, userId, completedAt: { not: null } },
-        data: { completedAt: null, joinedAt: now, accountOpenedAt: date }
+        data: { completedAt: null, joinedAt: now, accountOpenedAt: date, remindedGroupIndexes: [] }
       });
       if (count !== 1) return false;
       await tx.checklistProgress.deleteMany({

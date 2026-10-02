@@ -196,7 +196,7 @@ test("simultaneous requests filling an older date-less ściąga: one date wins a
 async function completedSheet(tag: string, o: { months: number | null; closedOn: string | null; cutoff?: string | null }) {
   const s = await setup(tag, { months: o.months, cutoff: o.cutoff });
   await client.userPromotionTracking.create({
-    data: { userId: s.user.id, promotionId: s.promo.id, joinedAt: JOINED, accountOpenedAt: D("2026-06-01"), completedAt: D("2026-08-15") }
+    data: { userId: s.user.id, promotionId: s.promo.id, joinedAt: JOINED, accountOpenedAt: D("2026-06-01"), completedAt: D("2026-08-15"), remindedGroupIndexes: [1, 2] }
   });
   await tick(s.user.id, s.steps.map((x) => x.id));
   if (o.closedOn) {
@@ -274,4 +274,81 @@ test("simultaneous restarts: the ściąga is restarted once; a request with anot
   await tick(user.id, [steps[0]!.id]);
   await joinChecklist(client, user.id, promo.id, stored!, NOW);
   assert.equal((await snapshot(user.id, promo.id)).ticks.length, 1);
+});
+
+// ---------------------------------------------------------------- reminder markers (remindedGroupIndexes)
+
+const markers = async (userId: string, promotionId: string) => (await snapshot(userId, promotionId)).t?.remindedGroupIndexes;
+
+test("markers [1, 2]: a permitted restart clears them together with the rest of the old cycle", async () => {
+  const { user, promo } = await completedSheet("q1", { months: 0, closedOn: "2026-08-15" });
+  assert.deepEqual(await markers(user.id, promo.id), [1, 2]);
+  assert.deepEqual(await joinChecklist(client, user.id, promo.id, "2026-09-12", NOW), { ok: true, outcome: "restarted" });
+  const t = (await snapshot(user.id, promo.id)).t!;
+  assert.deepEqual(t.remindedGroupIndexes, []);
+  assert.equal(t.completedAt, null);
+  assert.equal(dayOf(t.accountOpenedAt), "2026-09-12");
+});
+
+test("markers [1, 2] are kept when the same date is repeated on an unfinished ściąga", async () => {
+  const { user, promo } = await setup("q2");
+  await client.userPromotionTracking.create({ data: { userId: user.id, promotionId: promo.id, accountOpenedAt: D("2026-09-12"), remindedGroupIndexes: [1, 2] } });
+  assert.deepEqual(await joinChecklist(client, user.id, promo.id, "2026-09-12", NOW), { ok: true, outcome: "unchanged" });
+  assert.deepEqual(await markers(user.id, promo.id), [1, 2]);
+});
+
+test("markers [1, 2] are kept when a different date is refused", async () => {
+  const { user, promo } = await setup("q3");
+  await client.userPromotionTracking.create({ data: { userId: user.id, promotionId: promo.id, accountOpenedAt: D("2026-09-12"), remindedGroupIndexes: [1, 2] } });
+  assert.equal((await joinChecklist(client, user.id, promo.id, "2026-09-25", NOW)).ok, false);
+  assert.deepEqual(await markers(user.id, promo.id), [1, 2]);
+});
+
+test("markers [1, 2] are kept when a locked restart is refused", async () => {
+  for (const c of [
+    { tag: "q4", months: 12, closedOn: "2026-08-15" },
+    { tag: "q5", months: 0, closedOn: null as string | null }
+  ]) {
+    const { user, promo } = await completedSheet(c.tag, c);
+    assert.equal((await joinChecklist(client, user.id, promo.id, "2026-09-12", NOW)).ok, false, c.tag);
+    const t = (await snapshot(user.id, promo.id)).t!;
+    assert.deepEqual(t.remindedGroupIndexes, [1, 2], c.tag);
+    assert.ok(t.completedAt, c.tag);
+  }
+});
+
+test("markers [1, 2] are kept when an empty date of an older unfinished ściąga is filled", async () => {
+  const { user, promo } = await setup("q6");
+  await client.userPromotionTracking.create({ data: { userId: user.id, promotionId: promo.id, remindedGroupIndexes: [1, 2] } });
+  assert.deepEqual(await joinChecklist(client, user.id, promo.id, "2026-09-12", NOW), { ok: true, outcome: "date-saved" });
+  assert.deepEqual(await markers(user.id, promo.id), [1, 2]);
+});
+
+test("a repeated request after a restart does not wipe a marker already written in the new cycle", async () => {
+  const { user, promo } = await completedSheet("q7", { months: 0, closedOn: "2026-08-15" });
+  assert.equal((await joinChecklist(client, user.id, promo.id, "2026-09-12", NOW)).ok, true);
+  assert.deepEqual(await markers(user.id, promo.id), []);
+
+  // the reminder job records a month of the NEW cycle
+  await client.userPromotionTracking.updateMany({ where: { userId: user.id, promotionId: promo.id }, data: { remindedGroupIndexes: [1] } });
+
+  assert.deepEqual(await joinChecklist(client, user.id, promo.id, "2026-09-12", NOW), { ok: true, outcome: "unchanged" });
+  assert.deepEqual(await markers(user.id, promo.id), [1], "same date repeated");
+  assert.equal((await joinChecklist(client, user.id, promo.id, "2026-09-13", NOW)).ok, false);
+  assert.deepEqual(await markers(user.id, promo.id), [1], "other date refused");
+});
+
+test("duplicate restart requests: the markers are cleared once, and a marker written afterwards survives a late duplicate", async () => {
+  const { user, promo } = await completedSheet("q8", { months: 0, closedOn: "2026-08-15" });
+  const results = await Promise.all([
+    joinChecklist(client, user.id, promo.id, "2026-09-12", NOW),
+    joinChecklist(client, user.id, promo.id, "2026-09-12", NOW)
+  ]);
+  assert.equal(results.filter((r) => r.ok && r.outcome === "restarted").length, 1, JSON.stringify(results));
+  assert.ok(results.every((r) => r.ok));
+  assert.deepEqual(await markers(user.id, promo.id), []);
+
+  await client.userPromotionTracking.updateMany({ where: { userId: user.id, promotionId: promo.id }, data: { remindedGroupIndexes: [2] } });
+  assert.deepEqual(await joinChecklist(client, user.id, promo.id, "2026-09-12", NOW), { ok: true, outcome: "unchanged" });
+  assert.deepEqual(await markers(user.id, promo.id), [2]);
 });
