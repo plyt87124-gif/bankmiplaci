@@ -190,8 +190,8 @@ export default async function PromotionDetailPage(props: PageProps) {
         </div>
       )}
 
-      <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_360px] lg:grid-rows-[auto_auto]">
-        <div className="lg:col-start-1 lg:row-start-1">
+      <div className="mt-6 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_auto]">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <div className="flex items-center gap-3">
             <p className="text-sm font-medium text-ink-500">{promotion.bank.name}</p>
           </div>
@@ -231,7 +231,7 @@ export default async function PromotionDetailPage(props: PageProps) {
             it appears here on mobile (single column) instead of at the very
             bottom under the comments; row-span keeps it sticking alongside
             the rest of the article on desktop's two-column layout. */}
-        <aside className="h-fit space-y-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+        <aside className="min-w-0 h-fit space-y-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:row-span-2">
           <div className="rounded-xl2 border border-ink-100 bg-surface p-6 shadow-card">
             <p className="text-xs text-ink-500">Do</p>
             <p className="font-display text-3xl font-semibold">{formatPLN(promotion.maxBonusCents)}</p>
@@ -287,7 +287,7 @@ export default async function PromotionDetailPage(props: PageProps) {
           )}
         </aside>
 
-        <div className="lg:col-start-1 lg:row-start-2">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-2">
           {/* Bonus breakdown */}
           {openBonusParts.length > 0 && (
             <section className="mt-12">
