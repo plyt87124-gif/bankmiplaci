@@ -80,6 +80,9 @@ jobs:
 
       - run: npx tsc --noEmit
 
+      - name: ESLint (non-interactive)
+        run: npm run lint
+
       - run: npm test
 
       - name: Database tests - clearing fields writes NULL, import keeps deadlines, contentUpdatedAt only on real changes, zero cooldown + notifications, opening-date backfill, join and reminder-marker reset

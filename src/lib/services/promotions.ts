@@ -53,7 +53,12 @@ export async function listActivePromotions(filters: PromotionFilters = {}) {
     ...(filters.difficulty?.length ? { difficulty: { in: filters.difficulty as never[] } } : {}),
     ...(filters.minBonusCents ? { maxBonusCents: { gte: filters.minBonusCents } } : {}),
     ...(filters.maxAccountFeeCents !== undefined
-      ? { fees: { accountFeeCents: { lte: filters.maxAccountFeeCents } } }
+      ? { fees: {
+          accountFeeCents: { lte: filters.maxAccountFeeCents },
+          ...(filters.maxAccountFeeCents === 0 ? {
+            OR: [{ accountFeeWaiverCondition: null }, { accountFeeWaiverCondition: "" }]
+          } : {})
+        } }
       : {}),
     ...(filters.q
       ? {

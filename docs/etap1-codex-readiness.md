@@ -65,3 +65,35 @@ do jej aktualnego SHA; zielone CI dla `c4f2843` nie potwierdza nowej aktualizacj
 Sprawdzenie PowerShell używało wersji 7.6.6 na Linuxie, atrap poleceń
 zewnętrznych i plików tymczasowych. Nie potwierdza zachowania paneli Neon i
 Vercel, Windows PowerShell 5.1 ani rzeczywistej kopii danych produkcyjnych.
+
+## Kontynuacja pierwotnych kryteriów — 3 października 2026
+
+Pełne CI dla opublikowanego `b412645` zakończyło się sukcesem: 49 testów
+hermetycznych, 93 bazodanowe, 8 scenariuszy narzędzia korekt, migracje,
+zwykły build i HTTP smoke. Statyczny przegląd Claude nie znalazł problemu
+w migracji zależności, lecz osobna kontrola kryteriów etapu 1 ujawniła luki
+w kosztach importu i datach artykułów. Kolejna poprawka na tej samej gałęzi:
+
+- ESLint ma konfigurację i działa bez pytań interaktywnych; CI uruchamia go
+  jawnie. Poprawiono cudzysłów, link nawigacyjny i zależność memoizacji.
+- Kwota opłaty z warunkiem oznacza stawkę bez zwolnienia. Admin i importer
+  odrzucają 0 z niepustym warunkiem; stare sprzeczne rekordy nie dostają
+  etykiety darmowości ani wyniku w filtrze bez opłat.
+- Import rozróżnia pominięte pole (zachowaj), NULL (nieustalona opłata) i
+  jawne zero; zachowuje źródło i warunki, waliduje cały plan przed zapisem.
+  Testy DB sprawdzają odczyt oraz przerwanie całej partii bez częściowych zmian.
+- W historycznej paczce `data/new-promotions.json` usunięto zera oznaczające
+  nieznane, warunkowe lub czasowo zwolnione opłaty; pozostawiono dwa opisane
+  bezwarunkowe zwolnienia dla kont i jedno dla karty. Nie dopisano nowych
+  stawek ani dat weryfikacji. Przed użyciem tej starej paczki trzeba sprawdzić
+  aktualne taryfy i statusy wszystkich ofert; ta zmiana nie jest taką weryfikacją.
+- NULL `publishedAt` nie staje się datą utworzenia rekordu. Podpis mówi
+  „Data publikacji nieustalona”, JSON-LD pomija `datePublished`.
+- HTTP smoke obejmuje autora, publikację/aktualizację (także tego samego dnia),
+  brak fałszywej daty, pojedynczy canonical, nieznaną stronę 404, link do
+  poradnika oraz DRAFT/ARCHIVED i brak kliknięć dla zablokowanych przekierowań.
+
+Wynik CI musi dotyczyć najnowszego headu tej poprawki; poprzedni zielony run
+nie potwierdza nowych zmian. Pozostają podgląd wizualny mobile/desktop,
+potwierdzenie właściwych aktualnych źródeł bankowych i decyzja właściciela
+o dalszych krokach produkcyjnych. Nie wykonywano merge'a ani wdrożenia.

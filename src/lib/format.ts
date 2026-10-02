@@ -68,8 +68,9 @@ export function isExpired(endDate: Date | string): boolean {
  */
 export function formatFeeCompact(cents: number | null | undefined, waiverCondition?: string | null): string {
   if (cents == null) return "Nieustalone";
-  if (cents === 0) return "0 zł";
-  return waiverCondition ? `${formatPLN(cents)}*` : formatPLN(cents);
+  const hasWaiver = Boolean(waiverCondition?.trim());
+  if (cents === 0) return hasWaiver ? "Nieustalone" : "0 zł";
+  return hasWaiver ? `${formatPLN(cents)}*` : formatPLN(cents);
 }
 
 /**
@@ -78,6 +79,6 @@ export function formatFeeCompact(cents: number | null | undefined, waiverConditi
  * row, or accountFeeCents left blank). Powers the "Bez opłat za
  * prowadzenie*" badge; a missing/unverified fee must not earn it.
  */
-export function isConfirmedFreeAccount(fees: { accountFeeCents: number | null } | null | undefined): boolean {
-  return fees != null && fees.accountFeeCents === 0;
+export function isConfirmedFreeAccount(fees: { accountFeeCents: number | null; accountFeeWaiverCondition?: string | null } | null | undefined): boolean {
+  return fees != null && fees.accountFeeCents === 0 && !fees.accountFeeWaiverCondition?.trim();
 }

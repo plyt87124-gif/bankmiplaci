@@ -149,7 +149,7 @@ export default async function PromotionDetailPage(props: PageProps) {
         <div className="mt-4 flex items-start gap-3 rounded-xl2 border border-gold-100 bg-gold-100/60 p-4">
           <Eye className="mt-0.5 h-5 w-5 shrink-0 text-gold-600" />
           <p className="text-sm text-ink-700">
-            To jest <strong>podgląd administratora</strong> — ta promocja ma status „Wersja robocza" i nie jest
+            To jest <strong>podgląd administratora</strong> — ta promocja ma status „Wersja robocza” i nie jest
             widoczna publicznie ani indeksowana przez wyszukiwarki. Zobaczysz ją tylko Ty, będąc zalogowanym/ą
             do panelu.
           </p>
@@ -400,21 +400,21 @@ export default async function PromotionDetailPage(props: PageProps) {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-ink-700">{row.label}</span>
                       <span className="font-mono text-sm font-medium">
-                        {row.cents == null ? (
+                        {row.cents == null || (row.cents === 0 && row.waiverCondition?.trim()) ? (
                           <span className="text-ink-500">Nieustalone</span>
-                        ) : row.waiverCondition ? (
+                        ) : row.waiverCondition?.trim() ? (
                           "0 zł*"
                         ) : (
                           formatPLN(row.cents)
                         )}
                       </span>
                     </div>
-                    {row.cents != null && row.waiverCondition && (
+                    {row.cents != null && row.cents > 0 && row.waiverCondition?.trim() && (
                       <p className="mt-1 text-xs text-ink-500">
                         * {row.waiverCondition} — w przeciwnym razie {formatPLN(row.cents)}/mies.
                       </p>
                     )}
-                    {row.cents == null && (
+                    {(row.cents == null || (row.cents === 0 && row.waiverCondition?.trim())) && (
                       <p className="mt-1 text-xs text-ink-500">
                         Nie zweryfikowaliśmy jeszcze tej opłaty — sprawdź aktualną taryfę banku przed podjęciem decyzji.
                       </p>

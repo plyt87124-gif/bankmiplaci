@@ -17,6 +17,8 @@
  *    conditions, fees.sourceUrl, ... - are kept in the comparison).
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { z } from "zod";
+import { feeWaiverProblems } from "@/lib/feeValidation";
 import { overlayDefined, promotionContentChanged, type PromotionContentLike } from "@/lib/promotionContent";
 
 export interface ImportBank {
@@ -47,10 +49,33 @@ export interface ImportBonusPart {
 }
 
 export interface ImportFees {
-  accountFeeCents: number;
-  cardFeeCents: number;
-  atmFeeCents: number;
+  accountFeeCents?: number | null;
+  accountFeeWaiverCondition?: string | null;
+  cardFeeCents?: number | null;
+  cardFeeWaiverCondition?: string | null;
+  atmFeeCents?: number | null;
   otherFee?: string | null;
+  sourceUrl?: string | null;
+}
+
+const importFeesSchema = z.object({
+  accountFeeCents: z.number().int().min(0).nullable().optional(),
+  accountFeeWaiverCondition: z.string().trim().nullable().optional(),
+  cardFeeCents: z.number().int().min(0).nullable().optional(),
+  cardFeeWaiverCondition: z.string().trim().nullable().optional(),
+  atmFeeCents: z.number().int().min(0).nullable().optional(),
+  otherFee: z.string().nullable().optional(),
+  sourceUrl: z.string().url().nullable().optional()
+});
+
+/** Omitted fields preserve stored data; on creation an unknown amount stays NULL. */
+export function resolveImportFees(slug: string, stored: ImportFees | null | undefined, incoming: unknown) {
+  const parsed = importFeesSchema.safeParse(incoming === undefined ? {} : incoming);
+  if (!parsed.success) return { fees: {} as ImportFees, updates: {} as ImportFees, problems: parsed.error.issues.map((i) => `${slug}: fees.${i.path.join(".")}: ${i.message}`) };
+  const fields = Object.keys(importFeesSchema.shape) as (keyof ImportFees)[];
+  const base = Object.fromEntries(fields.map((key) => [key, stored?.[key] ?? null])) as ImportFees;
+  const fees = overlayDefined(base, parsed.data);
+  return { fees, updates: parsed.data, problems: feeWaiverProblems(fees).map((p) => `${slug}: fees.${p.field}: ${p.message}`) };
 }
 
 export interface ImportPromotion {
@@ -79,7 +104,7 @@ export interface ImportPromotion {
   summary?: string | null;
   conditions: ImportCondition[];
   bonusParts: ImportBonusPart[];
-  fees: ImportFees;
+  fees?: ImportFees;
 }
 
 export interface ImportEntry {
@@ -165,6 +190,8 @@ interface Plan {
   entry: ImportEntry;
   existing: ExistingPromotion | null;
   parts: ResolvedBonusPart[];
+  fees: ImportFees;
+  feeUpdates: ImportFees;
 }
 
 function baseDataFor(p: ImportPromotion, bankId: string): Prisma.PromotionUncheckedCreateInput {
@@ -203,11 +230,17 @@ export async function importPromotions(
       // ---- phase 1: plan every entry, read-only -------------------------------------------
       const plans: Plan[] = [];
       const problems: string[] = [];
+      const seenSlugs = new Set<string>();
       for (const entry of entries) {
         if (!entry.bank?.slug || !entry.promotion?.slug) {
           log(`Pominięto wpis bez bank.slug lub promotion.slug: ${entry._comment ?? "(bez opisu)"}`);
           continue;
         }
+        if (seenSlugs.has(entry.promotion.slug)) {
+          problems.push(`${entry.promotion.slug}: duplicate slug in one import`);
+          continue;
+        }
+        seenSlugs.add(entry.promotion.slug);
         const existing = await tx.promotion.findUnique({
           where: { slug: entry.promotion.slug },
           include: { conditions: true, bonusParts: true, fees: true }
@@ -218,7 +251,9 @@ export async function importPromotions(
           entry.promotion.bonusParts
         );
         problems.push(...resolved.problems);
-        plans.push({ entry, existing, parts: resolved.parts });
+        const resolvedFees = resolveImportFees(entry.promotion.slug, existing?.fees, entry.promotion.fees);
+        problems.push(...resolvedFees.problems);
+        plans.push({ entry, existing, parts: resolved.parts, fees: resolvedFees.fees, feeUpdates: resolvedFees.updates });
       }
       if (problems.length > 0) throw new ImportAbortError(problems);
 
@@ -226,7 +261,7 @@ export async function importPromotions(
       let created = 0;
       let updated = 0;
       let contentChangedCount = 0;
-      for (const { entry, existing, parts } of plans) {
+      for (const { entry, existing, parts, fees, feeUpdates } of plans) {
         const p = entry.promotion;
         const bank = await tx.bank.upsert({
           where: { slug: entry.bank.slug },
@@ -251,7 +286,7 @@ export async function importPromotions(
               contentUpdatedAt: new Date(),
               conditions: { create: p.conditions },
               bonusParts: { create: parts },
-              fees: { create: p.fees }
+              fees: { create: fees }
             }
           });
           created += 1;
@@ -265,10 +300,7 @@ export async function importPromotions(
           ...overlayDefined(existing as unknown as PromotionContentLike, baseData as unknown as Record<string, unknown>),
           conditions: p.conditions,
           bonusParts: parts,
-          fees: overlayDefined(
-            (existing.fees ?? {}) as NonNullable<PromotionContentLike["fees"]>,
-            p.fees as unknown as Record<string, unknown>
-          )
+          fees
         };
         const changed = promotionContentChanged(existing as unknown as PromotionContentLike, effective);
 
@@ -281,7 +313,7 @@ export async function importPromotions(
             ...(changed ? { contentUpdatedAt: new Date() } : {}),
             conditions: { create: p.conditions },
             bonusParts: { create: parts },
-            fees: { upsert: { create: p.fees, update: p.fees } }
+            fees: { upsert: { create: fees, update: feeUpdates } }
           }
         });
         updated += 1;
@@ -289,6 +321,8 @@ export async function importPromotions(
       }
       return { created, updated, contentChanged: contentChangedCount };
     },
-    { timeout: 120_000, maxWait: 20_000 }
+    // A concurrent edit after planning must abort, not invalidate validation or
+    // overwrite a later admin save. Caller can inspect the conflict and rerun.
+    { timeout: 120_000, maxWait: 20_000, isolationLevel: "Serializable" }
   );
 }

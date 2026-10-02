@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { listActivePromotions } from "@/lib/services/promotions";
 import { PromotionCard } from "@/components/PromotionCard";
@@ -45,9 +46,9 @@ export default async function PromotionsPage(props: PageProps) {
     <div className="container-page py-12">
       <AttributionCapture />
       <nav aria-label="breadcrumb" className="text-xs text-ink-500">
-        <a href="/" className="hover:underline">
+        <Link href="/" className="hover:underline">
           Strona główna
-        </a>{" "}
+        </Link>{" "}
         / <span className="text-ink-700">Promocje</span>
       </nav>
 

@@ -16,7 +16,7 @@ export interface PromotionCardData {
   ratingReason?: string | null;
   endDate: Date;
   summary?: string | null;
-  fees?: { accountFeeCents: number | null } | null;
+  fees?: { accountFeeCents: number | null; accountFeeWaiverCondition?: string | null } | null;
   conditions?: { title: string }[];
   bank: { name: string; logoUrl?: string | null };
 }

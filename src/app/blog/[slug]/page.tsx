@@ -29,7 +29,7 @@ export default async function ArticlePage(props0: PageProps) {
   if (!article || !article.published) notFound();
 
   const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/blog/${article.slug}`;
-  const datePublished = article.publishedAt ?? article.createdAt;
+  const datePublished = article.publishedAt;
   // contentUpdatedAt is set explicitly only when the article's actual
   // content was revised — unlike `updatedAt`, which Prisma bumps on any
   // write at all (see Article in prisma/schema.prisma). No time-since-
@@ -42,7 +42,7 @@ export default async function ArticlePage(props0: PageProps) {
     "@type": "Article",
     headline: article.title,
     description: article.excerpt,
-    datePublished: datePublished.toISOString(),
+    ...(datePublished ? { datePublished: datePublished.toISOString() } : {}),
     ...(dateModified ? { dateModified: dateModified.toISOString() } : {}),
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     url,
@@ -57,7 +57,7 @@ export default async function ArticlePage(props0: PageProps) {
           credential, or review date that isn't backed by a DB field. */}
       <p className="mt-2 text-sm text-ink-500">
         {article.author.name}
-        {article.publishedAt && <> · {formatDate(article.publishedAt)}</>}
+        {datePublished ? <> · {formatDate(datePublished)}</> : <> · Data publikacji nieustalona</>}
         {dateModified && <> · zaktualizowano {formatDate(dateModified)}</>}
       </p>
       {/* `body` is authored by trusted admins in the panel, stored as markdown.

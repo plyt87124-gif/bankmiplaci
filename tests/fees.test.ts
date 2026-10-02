@@ -21,6 +21,22 @@ test("confirmed zero, fixed cost, and conditional waiver read differently", () =
   assert.equal(isConfirmedFreeAccount({ accountFeeCents: 4500 }), false);
 });
 
+test("legacy zero with a waiver is ambiguous, never an unconditional free account", () => {
+  assert.equal(formatFeeCompact(0, "wpływ 500 zł"), "Nieustalone");
+  assert.equal(isConfirmedFreeAccount({ accountFeeCents: 0, accountFeeWaiverCondition: "wpływ 500 zł" }), false);
+  assert.equal(isConfirmedFreeAccount({ accountFeeCents: 0, accountFeeWaiverCondition: "  " }), true);
+  assert.equal(formatFeeCompact(0, "  "), "0 zł");
+});
+
+test("admin rejects zero with a waiver and accepts unknown or the actual non-waived rate", () => {
+  for (const [amount, condition] of [["accountFeeCents", "accountFeeWaiverCondition"], ["cardFeeCents", "cardFeeWaiverCondition"]] as const) {
+    assert.equal(feesSchema.safeParse({ [amount]: 0, [condition]: "warunek" }).success, false);
+    assert.equal(feesSchema.safeParse({ [amount]: null, [condition]: "warunek" }).success, true);
+    assert.equal(feesSchema.safeParse({ [amount]: 900, [condition]: "warunek" }).success, true);
+    assert.equal(feesSchema.safeParse({ [amount]: 0, [condition]: "  " }).success, true);
+  }
+});
+
 test("a blank fee input becomes an explicit NULL (never undefined, never 0) - Prisma skips undefined on update", () => {
   const parsed = feesSchema.parse({ accountFeeCents: NaN, cardFeeCents: "", atmFeeCents: null });
   assert.equal(parsed.accountFeeCents, null);
