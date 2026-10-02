@@ -47,10 +47,23 @@ async function isolatedPage(context) {
   const page = await context.newPage();
   const consoleErrors = [];
   const failedRequests = [];
+  const expectedAbortedRequests = [];
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
-  page.on("requestfailed", (request) => failedRequests.push(`${request.method()} ${request.url()}: ${request.failure()?.errorText}`));
+  page.on("requestfailed", (request) => {
+    const failure = `${request.method()} ${request.url()}: ${request.failure()?.errorText}`;
+    const url = new URL(request.url());
+    // Next.js may cancel speculative RSC prefetches when navigation settles or
+    // the page closes. These are browser-initiated cancellations, not failed
+    // application requests; retain them in the evidence without failing CI.
+    if (
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+      url.searchParams.has("_rsc") &&
+      request.failure()?.errorText === "net::ERR_ABORTED"
+    ) expectedAbortedRequests.push(failure);
+    else failedRequests.push(failure);
+  });
   await page.route("**/*", async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return route.continue();
@@ -59,7 +72,7 @@ async function isolatedPage(context) {
     }
     return route.abort("blockedbyclient");
   });
-  return { page, consoleErrors, failedRequests };
+  return { page, consoleErrors, failedRequests, expectedAbortedRequests };
 }
 
 async function main() {
@@ -80,7 +93,15 @@ async function main() {
       const dimensions = await observed.page.evaluate(() => ({ innerWidth, scrollWidth: document.documentElement.scrollWidth }));
       const screenshot = `${viewport.name}-${name}.png`;
       await observed.page.screenshot({ path: path.join(OUT, screenshot), fullPage: true });
-      const item = { viewport: viewport.name, route, screenshot, ...dimensions, consoleErrors: observed.consoleErrors, failedRequests: observed.failedRequests };
+      const item = {
+        viewport: viewport.name,
+        route,
+        screenshot,
+        ...dimensions,
+        consoleErrors: observed.consoleErrors,
+        failedRequests: observed.failedRequests,
+        expectedAbortedRequests: observed.expectedAbortedRequests
+      };
       report.pages.push(item);
       assert.ok(dimensions.scrollWidth <= dimensions.innerWidth, `${viewport.name} ${route}: horizontal overflow ${dimensions.scrollWidth} > ${dimensions.innerWidth}`);
       assert.deepEqual(observed.consoleErrors, [], `${viewport.name} ${route}: console errors`);
