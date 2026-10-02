@@ -48,6 +48,7 @@ async function isolatedPage(context) {
   const consoleErrors = [];
   const failedRequests = [];
   const expectedAbortedRequests = [];
+  const interceptedExternalRequests = [];
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
@@ -68,11 +69,12 @@ async function isolatedPage(context) {
     const url = new URL(route.request().url());
     if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return route.continue();
     if (url.hostname === "example.test" || url.hostname === "example.com") {
+      interceptedExternalRequests.push(route.request().url());
       return route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>stub</title>stub" });
     }
     return route.abort("blockedbyclient");
   });
-  return { page, consoleErrors, failedRequests, expectedAbortedRequests };
+  return { page, consoleErrors, failedRequests, expectedAbortedRequests, interceptedExternalRequests };
 }
 
 async function main() {
@@ -145,9 +147,9 @@ async function main() {
   await observed.page.goto(`${BASE}/promocje/ci-open`, { waitUntil: "networkidle" });
   const cta = observed.page.getByRole("link", { name: /Przejdź do promocji/ }).first();
   await cta.click();
-  await observed.page.waitForURL("https://example.com/partner");
-  report.cta = { target: observed.page.url(), externalNetworkSent: false };
-  assert.equal(observed.page.url(), "https://example.com/partner");
+  await observed.page.waitForTimeout(1000);
+  report.cta = { target: observed.interceptedExternalRequests.at(-1), externalNetworkSent: false };
+  assert.equal(report.cta.target, "https://example.com/partner");
   await context.close();
 
   console.log(`ci-visual: ${report.pages.length} page/viewport checks passed`);
