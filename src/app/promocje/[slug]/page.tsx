@@ -410,7 +410,7 @@ export default async function PromotionDetailPage(props: PageProps) {
                       </span>
                     </div>
                     {row.cents != null && row.cents > 0 && row.waiverCondition?.trim() && (
-                      <p className="mt-1 text-xs text-ink-500">
+                      <p className="mt-1 break-all text-xs text-ink-500">
                         * {row.waiverCondition} — w przeciwnym razie {formatPLN(row.cents)}/mies.
                       </p>
                     )}
@@ -430,7 +430,7 @@ export default async function PromotionDetailPage(props: PageProps) {
                 ))}
               </div>
               {promotion.fees.otherFee && (
-                <p className="mt-2 text-sm text-ink-500">* {promotion.fees.otherFee}</p>
+                <p className="mt-2 break-all text-sm text-ink-500">* {promotion.fees.otherFee}</p>
               )}
             </section>
           )}
