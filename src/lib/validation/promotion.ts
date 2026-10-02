@@ -21,12 +21,14 @@ export const bonusPartSchema = z.object({
 
 // A fee amount left blank in the form (-> NaN from valueAsNumber, or ""
 // if ever submitted as a plain string) means "not verified yet", NOT
-// "confirmed 0 zł" — so it must become `undefined`/null here, never
-// silently default to 0. See prisma/schema.prisma Fees for the same
-// null-means-unverified convention at the data layer.
+// "confirmed 0 zł". It becomes an explicit `null` - never `undefined` and never
+// 0. The distinction matters on UPDATE: Prisma skips `undefined` keys, so an
+// administrator clearing a stored fee would silently keep the old amount;
+// `null` is written as NULL, and an entered 0 stays 0. See Fees in
+// prisma/schema.prisma for the null-means-unverified convention.
 const optionalFeeCents = z.preprocess(
-  (v) => (v === "" || v === null || (typeof v === "number" && Number.isNaN(v)) ? undefined : v),
-  z.number().int().min(0).optional()
+  (v) => (v === undefined || v === "" || v === null || (typeof v === "number" && Number.isNaN(v)) ? null : v),
+  z.number().int().min(0).nullable().optional()
 );
 
 export const feesSchema = z.object({

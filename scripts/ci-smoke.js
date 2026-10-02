@@ -46,6 +46,11 @@ async function seed() {
   await mk("ci-pastdeadline", { status: "ACTIVE", endDate: day(warsawYesterday) });
   await mk("ci-notpromoted", { status: "EXPIRED", endDate: day(warsawNextMonth) });
   await mk("ci-affoff", { status: "ACTIVE", endDate: day(warsawNextMonth), affiliateLinkEnabled: false });
+  // fees cleared by an administrator are stored as NULL and must read "Nieustalone", never "0 zł"
+  await mk("ci-nullfees", {
+    status: "ACTIVE", endDate: day(warsawNextMonth),
+    fees: { create: { accountFeeCents: null, cardFeeCents: null, atmFeeCents: null } }
+  });
   await mk("ci-closedpart", {
     status: "ACTIVE", endDate: day(warsawNextMonth),
     bonusParts: { create: [{ label: "Konto", amountCents: 150000, order: 0 }, { label: "Kantor ZAMKNIETY", amountCents: 30000, order: 1, availableUntil: day("2026-09-30") }] }
@@ -97,6 +102,11 @@ async function verify() {
     // indexing is separate from availability
     assert.equal(robots((await get("/promocje/ci-pastdeadline")).text), "index, follow");
     assert.equal(robots((await get("/promocje/ci-notpromoted")).text), "noindex, follow");
+
+    // cleared (NULL) fees show as "Nieustalone" on the page, never as a free "0 zł"
+    const nf = (await get("/promocje/ci-nullfees")).text;
+    assert.ok((nf.match(/Nieustalone/g) ?? []).length >= 3, "fee stat + both fee rows say Nieustalone");
+    assert.ok(!nf.includes("0 zł*"), "no fake free marker");
 
     // closed bonus part is listed apart and not summed
     const cp = (await get("/promocje/ci-closedpart")).text;

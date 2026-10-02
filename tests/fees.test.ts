@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { formatFeeCompact, isConfirmedFreeAccount } from "../src/lib/format";
 import { feesSchema } from "../src/lib/validation/promotion";
+import { feesWriteData } from "../src/lib/services/promotionWrite";
 
 test("unknown fee is never shown as free", () => {
   assert.equal(formatFeeCompact(null), "Nieustalone");
@@ -20,10 +21,30 @@ test("confirmed zero, fixed cost, and conditional waiver read differently", () =
   assert.equal(isConfirmedFreeAccount({ accountFeeCents: 4500 }), false);
 });
 
-test("a blank fee input stays 'not verified' and is not coerced to 0", () => {
-  const parsed = feesSchema.parse({ accountFeeCents: NaN, cardFeeCents: NaN, atmFeeCents: NaN });
-  assert.equal(parsed.accountFeeCents, undefined);
-  assert.equal(parsed.cardFeeCents, undefined);
-  assert.equal(feesSchema.parse({ cardFeeCents: 0 }).cardFeeCents, 0);
-  assert.deepEqual(feesSchema.parse({}), {});
+test("a blank fee input becomes an explicit NULL (never undefined, never 0) - Prisma skips undefined on update", () => {
+  const parsed = feesSchema.parse({ accountFeeCents: NaN, cardFeeCents: "", atmFeeCents: null });
+  assert.equal(parsed.accountFeeCents, null);
+  assert.equal(parsed.cardFeeCents, null);
+  assert.equal(parsed.atmFeeCents, null);
+  // an absent key is "not verified" too, and an entered 0 stays 0
+  assert.deepEqual(
+    [feesSchema.parse({}).accountFeeCents, feesSchema.parse({ cardFeeCents: 0 }).cardFeeCents],
+    [null, 0]
+  );
+});
+
+test("feesWriteData: amounts are number|null, blank text is null, fees.sourceUrl is never in the payload", () => {
+  const data = feesWriteData(
+    feesSchema.parse({ accountFeeCents: NaN, cardFeeCents: 0, atmFeeCents: 750, accountFeeWaiverCondition: "  ", otherFee: "" })
+  );
+  assert.deepEqual(data, {
+    accountFeeCents: null,
+    accountFeeWaiverCondition: null,
+    cardFeeCents: 0,
+    cardFeeWaiverCondition: null,
+    atmFeeCents: 750,
+    otherFee: null
+  });
+  for (const value of Object.values(data)) assert.notEqual(value, undefined);
+  assert.ok(!("sourceUrl" in data));
 });

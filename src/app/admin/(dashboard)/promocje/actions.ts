@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { promotionFormSchema, type PromotionFormValues } from "@/lib/validation/promotion";
 import { recomputeRatings } from "@/lib/services/ratings";
 import { PromotionStatus } from "@prisma/client";
-import { promotionContentChanged, type PromotionContentLike } from "@/lib/promotionContent";
+import { feesWriteData, updatePromotionRecord } from "@/lib/services/promotionWrite";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -54,7 +54,7 @@ export async function createPromotion(values: PromotionFormValues) {
       contentUpdatedAt: new Date(),
       conditions: { create: data.conditions },
       bonusParts: { create: data.bonusParts },
-      fees: { create: data.fees }
+      fees: { create: feesWriteData(data.fees) }
     }
   });
 
@@ -69,54 +69,9 @@ export async function updatePromotion(id: string, values: PromotionFormValues) {
   await requireAdmin();
   const data = promotionFormSchema.parse(values);
 
-  // Bump contentUpdatedAt only if the submitted form really differs from
-  // what's stored — a save with no edit, or one that only re-sends the same
-  // values, must not look like a content update (it feeds sitemap <lastmod>).
-  const existing = await db.promotion.findUnique({
-    where: { id },
-    include: { conditions: true, bonusParts: true, fees: true }
-  });
-  const contentChanged =
-    !existing ||
-    promotionContentChanged(existing as unknown as PromotionContentLike, data as unknown as PromotionContentLike);
-
-  await db.$transaction([
-    db.promotionCondition.deleteMany({ where: { promotionId: id } }),
-    db.bonusPart.deleteMany({ where: { promotionId: id } }),
-    db.promotion.update({
-      where: { id },
-      data: {
-        bankId: data.bankId,
-        name: data.name,
-        slug: data.slug,
-        accountType: data.accountType,
-        maxBonusCents: data.maxBonusCents,
-        difficulty: data.difficulty,
-        // Placeholder — recomputeRatings() below overwrites this for any
-        // ACTIVE promotion; skipped only when ratingOverride pins it.
-        rating: data.ratingOverride ?? 9.0,
-        ratingOverride: data.ratingOverride ?? null,
-        ratingReason: data.ratingReason,
-        status: data.status,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        affiliateUrl: data.affiliateUrl,
-        affiliateLinkEnabled: data.affiliateLinkEnabled,
-        sourceUrl: data.sourceUrl || undefined,
-        lastVerifiedAt: data.lastVerifiedAt,
-        eligibleFor: data.eligibleFor,
-        notEligibleFor: data.notEligibleFor,
-        cooldownMonths: data.cooldownMonths,
-        cooldownCutoffDate: data.cooldownCutoffDate,
-        summary: data.summary,
-        description: data.description,
-        ...(contentChanged ? { contentUpdatedAt: new Date() } : {}),
-        conditions: { create: data.conditions },
-        bonusParts: { create: data.bonusParts },
-        fees: { upsert: { create: data.fees, update: data.fees } }
-      }
-    })
-  ]);
+  // The write itself (clearing a fee writes NULL, contentUpdatedAt moves only on a
+  // real change) lives in the service so it is tested against a real database.
+  await updatePromotionRecord(db, id, data);
 
   await recomputeRatings();
 

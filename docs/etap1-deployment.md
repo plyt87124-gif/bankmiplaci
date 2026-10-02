@@ -18,7 +18,8 @@ Branch: `fix/etap1-claude-code-poprawki`. Weryfikacja treści Erste: `docs/etap1
 Kroków 1 i 2 nie wolno zamienić miejscami. Kroku 4 nie wolno wykonać przed 2. Plik `plan-*.json` z dry-runu musi powstać **po** kroku 2
 (dry-run sprzed migracji ma inne wartości „przed” — `--apply` odmówi z komunikatem, że dane zmieniły się od dry-runu).
 
-Przed mergem usuń z `vercel.json` blok `git.deploymentEnabled` (wyłącza on automatyczne wdrożenia tylko dla gałęzi review, patrz sekcja 6).
+Blok `git.deploymentEnabled` w `vercel.json` zostaje: dotyczy wyłącznie gałęzi `fix/etap1-claude-code-poprawki` (klucz = nazwa gałęzi), więc **nie blokuje `main`**
+ani żadnej innej gałęzi — wdrożenie produkcyjne po merge'u do `main` działa jak dotąd. Nie należy włączać dla tej gałęzi podglądu Vercel (patrz sekcja 6).
 
 ## 2. Migracje
 
@@ -86,11 +87,12 @@ curl -s  https://bankmiplaci.pl/promocje/<slug> | grep -o '<meta name="robots"[^
   (`.env*`, pliki `plan-*`/`revert-*` są w `.gitignore`; w dokumentach jest nazwa partnera eBrokerPartner, bez żadnych linków/identyfikatorów kampanii).
 * **Vercel**: `DATABASE_URL` jest ustawiony dla środowisk Development, Preview **i Production** (ta sama wartość) — gdyby push uruchomił podgląd Vercel,
   łączyłby się z bazą produkcyjną (której schemat nie ma nowych kolumn → build by się wysypał, a działający podgląd mógłby zapisywać statystyki do produkcji).
-  Dlatego `vercel.json` wyłącza automatyczne wdrożenia dla tego jednego brancha (`git.deploymentEnabled`), a po pushu sprawdzono, że wdrożenie nie powstało.
+  Dlatego `vercel.json` wyłącza automatyczne wdrożenia dla tego jednego brancha (`git.deploymentEnabled`; klucz to nazwa gałęzi, więc `main` i inne gałęzie nie są dotknięte),
+  a po pushu sprawdzono, że wdrożenie nie powstało. Blok może zostać po merge'u — jest nieszkodliwy; Preview korzystający z bazy produkcyjnej nie powinien być uruchamiany.
   Podgląd Vercel z osobną bazą wymagałby dodania zmiennej `DATABASE_URL` w zakresie Preview — zmiana w koncie Vercel, której nie robiłem.
 * **GitHub Actions** (`.github/workflows/ci.yml`, uruchamiany tylko dla `fix/**` i PR): Ubuntu, Node 24 (jak w projekcie Vercel), kontener Postgres 16 tworzony na czas przebiegu,
   bez sekretów repozytorium: `npm ci` → pilnuje, że `scripts.build === "next build"` (shim Windows nigdy nie trafia do zwykłego builda) → `prisma migrate deploy` na pustej bazie →
-  `migrate diff` (migracje = schema.prisma) → `tsc` → `npm test` → self-test korekt → seed fixtur → **zwykły** `npm run build` → test HTTP zbudowanej aplikacji
+  `migrate diff` (migracje = schema.prisma) → `tsc` → `npm test` → **`npm run test:db`** (testy na prawdziwej bazie, sekcja 10) → self-test korekt → seed fixtur → **zwykły** `npm run build` → test HTTP zbudowanej aplikacji
   (w tym `/opengraph-image` → 200 `image/png`, czego nie da się sprawdzić na Windowsie). Wersje zależności nie zostały zmienione.
 * Windowsowy shim jest wyłącznie w `npm run build:win` (`scripts/build-win.cjs`); `npm run build` jest niezmienione.
 
@@ -147,3 +149,19 @@ Przetestowane: 7 testów jednostkowych (`tests/checklist.test.ts`) oraz w przegl
 6. **Lint** — w repozytorium nie ma konfiguracji ESLint (`next lint` pyta interaktywnie); nie dodawałem jej bez Twojej decyzji.
 7. **Zgłoszenia map w GSC** (cztery błędne) — czynność administracyjna w Google, poza kodem.
 8. Gdyby Vercel mimo wszystko utworzył podgląd tego brancha (np. po zmianie nazwy brancha) — nie odwiedzać go: łączy się z bazą produkcyjną.
+
+## 10. Poprawki po przeglądzie: czyszczenie opłat, import terminów nagród, daty aktualizacji
+
+Wszystkie trzy błędy to ta sama klasa: **`undefined` w Prisma oznacza „nie ruszaj”**, a nie „wyczyść”, więc kod, który porównuje lub zapisuje surowe dane wejściowe,
+rozjeżdża się z tym, co faktycznie ląduje w bazie. Testy poniżej działają na prawdziwej bazie (`npm run test:db`, w CI na kontenerze Postgres) i przechodzą przez te same
+funkcje co panel admina i import (`src/lib/services/promotionWrite.ts`, `promotionImport.ts`, `src/lib/promotionForm.ts`). Każdy z nich został zweryfikowany mutacją:
+po przywróceniu starego zachowania odpowiedni test pada.
+
+| # | Błąd | Naprawa | Testy (`tests/db/…`, `tests/*.test.ts`) |
+|---|---|---|---|
+| 1 | Wyczyszczone pole opłaty szło do `upsert.update` jako `undefined` → stara kwota zostawała | Puste pole → jawny `null` (`optionalFeeCents`, `feesWriteData`); wpisane `0` zostaje `0`; puste pola tekstowe (warunek zwolnienia, uwagi) → `null`; `fees.sourceUrl` poza formularzem, więc zostaje | `fees-clear`: każda z trzech kwot osobno (wyczyszczenie → `NULL`, pozostałe bez zmian, strona = „Nieustalone”), wpisanie `0` → `0`, wszystkie trzy naraz → ponowne wpisanie → `0`, mieszane (`NULL`/0/750), czyszczenie tekstów, rekord bez wiersza `fees`; `fees.test`: schemat i `feesWriteData`; `ci-smoke`: strona z `NULL` mówi „Nieustalone” (≥3 razy), bez „0 zł*” |
+| 2 | Import kasował i odtwarzał `bonus_parts` bez `availableUntil` → termin znikał, nagroda znów otwarta dla nowych | `resolveBonusParts`: pominięte pole = dziedziczenie przy jednoznacznym dopasowaniu etykiety (dokładnie 1 zapisana i 1 w pliku); `null` = jawne usunięcie; data = ustawienie. Niejednoznaczność przy zapisanym terminie, brak zapisanej części z terminem w pliku, nieprawidłowa data (także 31 lutego) → `ImportAbortError` **przed jakąkolwiek zmianą**. Planowanie wszystkich wpisów (tylko odczyt) i zapis są w jednej transakcji | `import-availability`: ponowny import bez pola → termin 30.09 zostaje, 02.10 zamknięta dla nowych, 30.09 20:00 jeszcze otwarta; `null`/data jawnie; niejednoznaczność i brakująca część → stan bazy identyczny przed/po (nawet podsumowanie tego samego wpisu); błędny wpis nr 2 → wpis nr 1 **nie** zastosowany; awaria w fazie zapisu → rollback całości; `import.test`: 6 przypadków reguł (etykiety, `null` vs pominięcie, niejednoznaczność, daty) |
+| 3 | Migawka treści porównywała surowe dane (z `additionalSourceUrls`, `fees.sourceUrl`, `description` itd. brakującymi w formularzu/imporcie) ze stanem w bazie → każdy zapis wyglądał na zmianę | Porównanie **stanu zapisanego z efektywnym stanem po zapisie**: zapisany stan nałożony tylko na klucze, które Prisma naprawdę ustawi (`overlayDefined`); ten sam obiekt służy do zapisu i do porównania | `content-dates`: dwa kolejne zapisy bez edycji rekordu z dodatkowymi źródłami, `fees.sourceUrl`, opisem, warunkiem zwolnienia i terminem Kantoru → `contentUpdatedAt` pozostaje `NULL`, wszystko zachowane; identyczny import → bez zmiany (`contentChanged = 0`); prawdziwa zmiana (formularz i import) → przesuwa; zapis bez edycji po zmianie → nie przesuwa ponownie; wykrywane zmiany: wyczyszczona opłata, kwota, warunek zwolnienia, tekst warunku |
+
+Poza zakresem, zauważone: w formularzu admina pusta wartość „Źródło warunków (URL)”, „Okres karencji” i „data graniczna” również nie czyści zapisanej wartości (to samo `undefined` → pominięcie).
+Nie zmieniałem tego — to osobna decyzja o semantyce formularza.

@@ -114,3 +114,23 @@ export function promotionContentSnapshot(p: PromotionContentLike): string {
 export function promotionContentChanged(before: PromotionContentLike, after: PromotionContentLike): boolean {
   return promotionContentSnapshot(before) !== promotionContentSnapshot(after);
 }
+
+/**
+ * What Prisma actually does with an `update`/`upsert.update` payload: keys
+ * whose value is `undefined` are SKIPPED (the stored value stays), keys with
+ * `null` are written as NULL. The "effective state after a write" is therefore
+ * the stored state overlaid with only the defined keys of the payload.
+ *
+ * contentUpdatedAt must be decided by comparing the stored state with this
+ * effective state - not with the raw input, which lacks fields the writer
+ * deliberately leaves alone (additionalSourceUrls, fees.sourceUrl,
+ * description when the form doesn't submit it, ...) and would make every
+ * save look like an edit.
+ */
+export function overlayDefined<T extends object>(base: T, patch: Partial<Record<keyof T | string, unknown>>): T {
+  const out: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value !== undefined) out[key] = value;
+  }
+  return out as T;
+}
