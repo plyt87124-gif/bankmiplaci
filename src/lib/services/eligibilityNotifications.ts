@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { PromotionStatus } from "@prisma/client";
 import { sendEmail } from "@/lib/email";
+import { signupCutoff } from "@/lib/promotionAvailability";
 import { eligibilityReminderEmailHtml } from "@/lib/emailTemplates";
 
 /**
@@ -31,7 +32,15 @@ export async function checkEligibilityAndNotify(): Promise<number> {
 
   const bankIds = [...new Set(pending.map((p) => p.bankId))];
   const activePromotions = await db.promotion.findMany({
-    where: { bankId: { in: bankIds }, status: PromotionStatus.ACTIVE, cooldownMonths: { not: null } },
+    where: {
+      bankId: { in: bankIds },
+      status: PromotionStatus.ACTIVE,
+      // Same rule as the public listing: an offer whose last day has passed
+      // must not be recommended in an email just because its status has not
+      // been flipped to EXPIRED yet.
+      endDate: { gte: signupCutoff() },
+      cooldownMonths: { not: null }
+    },
     select: { id: true, slug: true, name: true, rating: true, bankId: true, accountType: true, cooldownMonths: true }
   });
 

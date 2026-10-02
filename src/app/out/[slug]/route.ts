@@ -7,6 +7,7 @@ import { hashVisitor, clientIp } from "@/lib/visitorHash";
 import { isLikelyBot } from "@/lib/botDetection";
 import { advisoryLockKey } from "@/lib/dedup";
 import { touchUserActivity } from "@/lib/userActivity";
+import { isSignupOpen } from "@/lib/promotionAvailability";
 
 export const dynamic = "force-dynamic";
 
@@ -50,13 +51,15 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
 
   // The only gate that decides whether ANYONE (including internal users,
   // crawlers, and bots below) can reach the partner through this slug.
-  // Mirrors the public listing's own activeWhere() (see
-  // src/lib/services/promotions.ts): status must be ACTIVE AND endDate
-  // not yet passed, so a promotion a scheduled job hasn't flipped to
-  // EXPIRED yet still can't be clicked through. DRAFT/EXPIRED/ARCHIVED
-  // never redirect to the bank, regardless of who's asking.
-  const isRedirectable = promotion.status === "ACTIVE" && promotion.endDate >= new Date();
-  if (!isRedirectable) {
+  // Same rule as the listing, sitemap, CTA button and banners
+  // (src/lib/promotionAvailability.ts): ACTIVE AND the last day (Polish
+  // calendar) not yet over, so an offer whose cron hasn't flipped it to
+  // EXPIRED yet still can't be clicked through, and one on its last day
+  // still can. DRAFT/EXPIRED/ARCHIVED never redirect to the bank,
+  // regardless of who's asking — "ACTIVE" is also the switch for whether
+  // we currently promote the offer, so it is NOT restored just because
+  // the bank's own sign-up window is open.
+  if (!isSignupOpen(promotion)) {
     return safeFallbackRedirect(request);
   }
 

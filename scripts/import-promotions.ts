@@ -31,6 +31,7 @@ import { PrismaClient, Prisma } from "@prisma/client";
 import fs from "fs";
 import path from "path";
 import { recomputeRatings } from "../src/lib/services/ratings";
+import { promotionContentChanged, type PromotionContentLike } from "../src/lib/promotionContent";
 
 const db = new PrismaClient();
 
@@ -52,6 +53,8 @@ interface ImportBonusPart {
   label: string;
   amountCents: number;
   order: number;
+  /** Last day a new participant can join this reward's sub-offer (YYYY-MM-DD); omit = promotion's endDate. */
+  availableUntil?: string;
 }
 
 interface ImportFees {
@@ -124,7 +127,16 @@ async function main() {
     });
 
     const p = entry.promotion;
-    const existing = await db.promotion.findUnique({ where: { slug: p.slug } });
+    const existing = await db.promotion.findUnique({
+      where: { slug: p.slug },
+      include: { conditions: true, bonusParts: true, fees: true }
+    });
+    const bonusPartsData = p.bonusParts.map((b) => ({
+      label: b.label,
+      amountCents: b.amountCents,
+      order: b.order,
+      availableUntil: b.availableUntil ? new Date(b.availableUntil) : undefined
+    }));
 
     const baseData: Prisma.PromotionUncheckedCreateInput = {
       bankId: bank.id,
@@ -146,11 +158,21 @@ async function main() {
       notEligibleFor: p.notEligibleFor ?? undefined,
       cooldownMonths: p.cooldownMonths ?? undefined,
       cooldownCutoffDate: p.cooldownCutoffDate ? new Date(p.cooldownCutoffDate) : undefined,
-      summary: p.summary ?? undefined,
-      // See Promotion.contentUpdatedAt — this import is a genuine content
-      // write (create or re-import), unlike recomputeRatings() below.
-      contentUpdatedAt: new Date()
+      summary: p.summary ?? undefined
     };
+
+    // contentUpdatedAt moves only if the imported data actually differs from
+    // what is stored (see src/lib/promotionContent.ts) — re-importing an
+    // identical file must not make every promotion look freshly edited.
+    const incoming = {
+      ...baseData,
+      ratingOverride: p.ratingOverride,
+      bankId: bank.id,
+      conditions: p.conditions,
+      bonusParts: bonusPartsData,
+      fees: p.fees
+    } as unknown as PromotionContentLike;
+    const contentChanged = !existing || promotionContentChanged(existing as unknown as PromotionContentLike, incoming);
 
     if (existing) {
       await db.promotionCondition.deleteMany({ where: { promotionId: existing.id } });
@@ -159,8 +181,9 @@ async function main() {
         where: { id: existing.id },
         data: {
           ...baseData,
+          ...(contentChanged ? { contentUpdatedAt: new Date() } : {}),
           conditions: { create: p.conditions },
-          bonusParts: { create: p.bonusParts },
+          bonusParts: { create: bonusPartsData },
           fees: { upsert: { create: p.fees, update: p.fees } }
         }
       });
@@ -169,8 +192,9 @@ async function main() {
       await db.promotion.create({
         data: {
           ...baseData,
+          contentUpdatedAt: new Date(),
           conditions: { create: p.conditions },
-          bonusParts: { create: p.bonusParts },
+          bonusParts: { create: bonusPartsData },
           fees: { create: p.fees }
         }
       });

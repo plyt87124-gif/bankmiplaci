@@ -4,7 +4,8 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getPromotionBySlug } from "@/lib/services/promotions";
-import { formatPLN, formatDate, formatFeeCompact, DIFFICULTY_LABEL, DIFFICULTY_EFFORT, isExpired } from "@/lib/format";
+import { formatPLN, formatDate, formatFeeCompact, DIFFICULTY_LABEL, DIFFICULTY_EFFORT } from "@/lib/format";
+import { isDeadlinePassed, isBonusPartOpen, robotsForStatus } from "@/lib/promotionAvailability";
 import { outboundHref } from "@/lib/affiliate";
 import { Badge } from "@/components/ui/Badge";
 import { EffortMeter } from "@/components/ui/EffortMeter";
@@ -44,17 +45,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // merge with) the site-wide opengraph-image.tsx convention, so without
     // this the universal branded image silently disappears here.
     openGraph: { title, description, type: "article", images: ["/opengraph-image"] },
-    // Draft/expired/archived promotions — and an ACTIVE one whose
-    // endDate has already passed but a scheduled job hasn't flipped its
-    // status to EXPIRED yet (the same belt-and-braces check
-    // listActivePromotions() uses, see src/lib/services/promotions.ts
-    // activeWhere()) — are never indexable. Checking status alone here
-    // previously let a stale-but-still-"ACTIVE" promotion stay
-    // index:true past its own end date.
-    robots:
-      promotion.status === "ACTIVE" && promotion.endDate >= new Date()
-        ? { index: true, follow: true }
-        : { index: false, follow: false }
+    // Indexing and sign-up availability are separate decisions: only ACTIVE
+    // promotions are indexed (unchanged), the rest are noindex but keep
+    // `follow` so links to current offers stay discoverable. Whether new
+    // people can still join is isSignupOpen()'s job (CTA, /out, banners),
+    // not a reason to drop the page from the index. See
+    // src/lib/promotionAvailability.ts.
+    robots: robotsForStatus(promotion.status)
   };
 }
 
@@ -100,8 +97,20 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
       })
     : null;
 
-  const expired = promotion.status === "EXPIRED" || promotion.status === "ARCHIVED" || isExpired(promotion.endDate);
-  const bonusPartsSum = promotion.bonusParts.reduce((sum, p) => sum + p.amountCents, 0);
+  // Two different reasons a visitor can't sign up here, worded differently:
+  // the deadline's last day has passed, vs. the offer is not currently
+  // promoted by us (status EXPIRED/ARCHIVED) although its date hasn't
+  // passed. Same availability rule as /out (promotionAvailability.ts).
+  const deadlinePassed = isDeadlinePassed(promotion.endDate);
+  const notPromoted = (promotion.status === "EXPIRED" || promotion.status === "ARCHIVED") && !deadlinePassed;
+  const expired = promotion.status === "EXPIRED" || promotion.status === "ARCHIVED" || deadlinePassed;
+  // Rewards from a sub-offer whose own sign-up window has closed (e.g. a
+  // Kantor bonus that ended before the main offer) stay in the data for
+  // people who already joined, but are never shown as available or summed
+  // into the headline amount for a new visitor.
+  const openBonusParts = promotion.bonusParts.filter((p) => isBonusPartOpen(p));
+  const closedBonusParts = promotion.bonusParts.filter((p) => !isBonusPartOpen(p));
+  const bonusPartsSum = openBonusParts.reduce((sum, p) => sum + p.amountCents, 0);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -144,8 +153,17 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
         <div className="mt-4 flex items-start gap-3 rounded-xl2 border border-coral-100 bg-coral-100/60 p-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-coral-600" />
           <p className="text-sm text-coral-600">
-            Ta promocja nie jest już aktywna. Zostawiamy jej opis jako archiwalny — nie skorzystasz już z tej
-            oferty na podanych warunkach.{" "}
+            {notPromoted ? (
+              <>
+                Nie udostępniamy obecnie linku do tej oferty. Termin zapisów podany w regulaminie banku to{" "}
+                {formatDate(promotion.endDate)} — przed podjęciem decyzji sprawdź jej aktualność na stronie banku.{" "}
+              </>
+            ) : (
+              <>
+                Ta promocja nie jest już aktywna. Zostawiamy jej opis jako archiwalny — nie skorzystasz już z tej
+                oferty na podanych warunkach.{" "}
+              </>
+            )}
             <Link href="/promocje" className="underline">
               Zobacz aktualne promocje
             </Link>
@@ -248,11 +266,11 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
 
         <div className="lg:col-start-1 lg:row-start-2">
           {/* Bonus breakdown */}
-          {promotion.bonusParts.length > 0 && (
+          {openBonusParts.length > 0 && (
             <section className="mt-12">
               <h2 className="text-xl font-semibold">Z czego składa się premia?</h2>
               <div className="mt-4 divide-y divide-ink-100 rounded-xl2 border border-ink-100 bg-surface">
-                {promotion.bonusParts.map((part) => (
+                {openBonusParts.map((part) => (
                   <div key={part.id} className="flex items-center justify-between p-4">
                     <span className="text-sm text-ink-700">{part.label}</span>
                     <span className="font-mono text-sm font-medium">{formatPLN(part.amountCents)}</span>
@@ -267,6 +285,27 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
                 Premia maksymalna nie jest gwarantowana — otrzymasz ją tylko po spełnieniu wszystkich warunków
                 cząstkowych opisanych poniżej.
               </p>
+            </section>
+          )}
+
+          {closedBonusParts.length > 0 && (
+            <section className="mt-6 rounded-xl2 border border-ink-100 bg-ink-100/40 p-4">
+              <h3 className="text-sm font-semibold text-ink-700">Zakończone dla nowych uczestników</h3>
+              <p className="mt-1 text-xs text-ink-500">
+                Zapisy do tych części oferty już się zakończyły. Nie są wliczone w kwotę powyżej; informacja
+                przydatna tylko osobom, które przystąpiły do nich wcześniej.
+              </p>
+              <ul className="mt-3 divide-y divide-ink-100 text-sm text-ink-500">
+                {closedBonusParts.map((part) => (
+                  <li key={part.id} className="flex items-center justify-between gap-3 py-2">
+                    <span>
+                      {part.label}
+                      {part.availableUntil && <> (zapisy do {formatDate(part.availableUntil)})</>}
+                    </span>
+                    <span className="font-mono">{formatPLN(part.amountCents)}</span>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 

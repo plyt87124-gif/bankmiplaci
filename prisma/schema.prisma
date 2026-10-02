@@ -430,6 +430,14 @@ model BonusPart {
   label     String
   amountCents Int
   order     Int    @default(0)
+  // Last day (00:00 UTC of the calendar date, see src/lib/
+  // promotionAvailability.ts) a NEW participant can still join the part of
+  // the offer this reward belongs to — for rewards from a separate
+  // sub-promotion with its own deadline (e.g. Erste's Kantor bonus, which
+  // closed 30.09 while the account offer runs to 30.11). Null = same as
+  // the promotion's endDate. A part past this date stays in the data (people
+  // who already joined still follow it) but is not counted as available.
+  availableUntil DateTime?
 
   @@index([promotionId])
   @@map("bonus_parts")

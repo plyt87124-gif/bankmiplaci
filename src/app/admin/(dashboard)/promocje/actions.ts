@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { promotionFormSchema, type PromotionFormValues } from "@/lib/validation/promotion";
 import { recomputeRatings } from "@/lib/services/ratings";
 import { PromotionStatus } from "@prisma/client";
+import { promotionContentChanged, type PromotionContentLike } from "@/lib/promotionContent";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -67,6 +68,17 @@ export async function updatePromotion(id: string, values: PromotionFormValues) {
   await requireAdmin();
   const data = promotionFormSchema.parse(values);
 
+  // Bump contentUpdatedAt only if the submitted form really differs from
+  // what's stored — a save with no edit, or one that only re-sends the same
+  // values, must not look like a content update (it feeds sitemap <lastmod>).
+  const existing = await db.promotion.findUnique({
+    where: { id },
+    include: { conditions: true, bonusParts: true, fees: true }
+  });
+  const contentChanged =
+    !existing ||
+    promotionContentChanged(existing as unknown as PromotionContentLike, data as unknown as PromotionContentLike);
+
   await db.$transaction([
     db.promotionCondition.deleteMany({ where: { promotionId: id } }),
     db.bonusPart.deleteMany({ where: { promotionId: id } }),
@@ -96,7 +108,7 @@ export async function updatePromotion(id: string, values: PromotionFormValues) {
         cooldownCutoffDate: data.cooldownCutoffDate,
         summary: data.summary,
         description: data.description,
-        contentUpdatedAt: new Date(),
+        ...(contentChanged ? { contentUpdatedAt: new Date() } : {}),
         conditions: { create: data.conditions },
         bonusParts: { create: data.bonusParts },
         fees: { upsert: { create: data.fees, update: data.fees } }

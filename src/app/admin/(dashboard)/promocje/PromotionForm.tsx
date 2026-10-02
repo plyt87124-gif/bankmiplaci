@@ -261,6 +261,15 @@ export function PromotionForm({
               className="input w-40"
               placeholder="Kwota w groszach"
             />
+            <label className="flex shrink-0 flex-col text-xs text-ink-500">
+              Zapisy do (opcjonalnie)
+              <input
+                type="date"
+                {...register(`bonusParts.${index}.availableUntil`)}
+                className="input mt-1 w-40"
+                title="Ostatni dzień, w którym nowy uczestnik może przystąpić do tej części oferty — puste = termin całej promocji"
+              />
+            </label>
             <button type="button" onClick={() => bonusParts.remove(index)} className="p-2 text-ink-300 hover:text-coral-600">
               <Trash2 className="h-4 w-4" />
             </button>

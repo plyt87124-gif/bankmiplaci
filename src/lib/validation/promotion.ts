@@ -10,7 +10,13 @@ export const conditionSchema = z.object({
 export const bonusPartSchema = z.object({
   label: z.string().min(2),
   amountCents: z.number().int().positive("Kwota musi być dodatnia"),
-  order: z.number().int().min(0).default(0)
+  order: z.number().int().min(0).default(0),
+  // Last day a new participant can join the sub-offer this reward belongs
+  // to, when it differs from the promotion's own endDate. Blank = same as
+  // the promotion. Must round-trip through the form: updatePromotion
+  // recreates every bonus part from the submitted values, so a form that
+  // dropped this field would silently erase it on the next save.
+  availableUntil: z.preprocess((v) => (v === "" || v === null || v === undefined ? undefined : v), z.coerce.date().optional())
 });
 
 // A fee amount left blank in the form (-> NaN from valueAsNumber, or ""

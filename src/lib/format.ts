@@ -26,6 +26,7 @@ export function formatDateTime(date: Date | string): string {
 }
 
 import type { Difficulty, AccountType } from "@prisma/client";
+import { isDeadlinePassed } from "@/lib/promotionAvailability";
 
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
   VERY_EASY: "Bardzo łatwa",
@@ -50,8 +51,9 @@ export const ACCOUNT_TYPE_LABEL: Record<AccountType, string> = {
   JOINT: "Konto wspólne"
 };
 
+/** Whole last day (Polish calendar) has passed — see promotionAvailability.ts. */
 export function isExpired(endDate: Date | string): boolean {
-  return new Date(endDate).getTime() < Date.now();
+  return isDeadlinePassed(endDate);
 }
 
 /**

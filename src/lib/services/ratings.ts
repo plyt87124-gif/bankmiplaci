@@ -1,5 +1,6 @@
 import { Difficulty, PromotionStatus } from "@prisma/client";
 import { db } from "@/lib/db";
+import { signupCutoff } from "@/lib/promotionAvailability";
 
 /**
  * Self-updating "ocena serwisu" algorithm.
@@ -98,7 +99,7 @@ function percentileScore(
  */
 export async function recomputeRatings(): Promise<number> {
   const rows = await db.promotion.findMany({
-    where: { status: PromotionStatus.ACTIVE, endDate: { gte: new Date() } },
+    where: { status: PromotionStatus.ACTIVE, endDate: { gte: signupCutoff() } },
     select: {
       id: true,
       accountType: true,

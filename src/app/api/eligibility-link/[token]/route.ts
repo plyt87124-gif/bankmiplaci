@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { isSignupOpen } from "@/lib/promotionAvailability";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest, { params }: { params: { token: string } }) {
   const row = await db.userBankHistory.findUnique({
     where: { eligibilityEmailToken: params.token },
-    include: { bank: true, eligibilityPromotion: { select: { slug: true, status: true } } }
+    include: { bank: true, eligibilityPromotion: { select: { slug: true, status: true, endDate: true } } }
   });
 
   if (!row) {
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest, { params }: { params: { token: s
     });
   }
 
-  if (row.eligibilityPromotion && row.eligibilityPromotion.status === "ACTIVE") {
+  if (row.eligibilityPromotion && isSignupOpen(row.eligibilityPromotion)) {
     return NextResponse.redirect(
       new URL(`/promocje/${row.eligibilityPromotion.slug}?ref=${params.token}`, request.url)
     );

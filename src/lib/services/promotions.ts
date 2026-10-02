@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { Prisma, PromotionStatus, Difficulty } from "@prisma/client";
 import { recomputeRatings } from "./ratings";
+import { signupCutoff } from "@/lib/promotionAvailability";
 
 export type SortKey = "top-rated" | "highest-bonus" | "easiest" | "newest" | "ending-soon";
 
@@ -24,7 +25,7 @@ export interface PromotionFilters {
 function activeWhere(): Prisma.PromotionWhereInput {
   return {
     status: PromotionStatus.ACTIVE,
-    endDate: { gte: new Date() }
+    endDate: { gte: signupCutoff() }
   };
 }
 
@@ -150,7 +151,7 @@ export async function getEffortShowcase(): Promise<EffortShowcaseItem[]> {
  */
 export async function expirePastPromotions(): Promise<number> {
   const result = await db.promotion.updateMany({
-    where: { status: PromotionStatus.ACTIVE, endDate: { lt: new Date() } },
+    where: { status: PromotionStatus.ACTIVE, endDate: { lt: signupCutoff() } },
     data: { status: PromotionStatus.EXPIRED }
   });
   // Promotions leaving the active set shift everyone else's relative score.
