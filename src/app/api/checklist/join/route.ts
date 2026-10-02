@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/userSession";
 import { touchUserActivity } from "@/lib/userActivity";
+import { checklistRestartAllowed } from "@/lib/services/checklistTracking";
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
@@ -29,6 +30,15 @@ export async function POST(request: NextRequest) {
   });
 
   if (existing?.completedAt) {
+    // Same lock the promotion page shows (isChecklistRestartLocked): a completed
+    // ściąga restarts only once the shared eligibility rule says "eligible".
+    const { allowed } = await checklistRestartAllowed(db, user.id, promotionId);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Ściąga odblokuje się ponownie po upływie okresu karencji dla tego banku." },
+        { status: 409 }
+      );
+    }
     // Restarting a promotion the user already completed once (e.g. their
     // karencja cleared, or they corrected their bank-history dates) — wipe
     // last cycle's checkmarks so the new round starts at 0, and re-open

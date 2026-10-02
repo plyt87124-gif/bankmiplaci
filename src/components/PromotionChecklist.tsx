@@ -251,6 +251,8 @@ function ChecklistCard({
         </Link>
       </div>
 
+      {!tracking.accountOpenedAt && <OpenedAtPrompt trackingId={tracking.id} />}
+
       {/* Month groups run left-to-right, top-to-bottom — no horizontal
           scrollbar, they wrap onto further rows instead so the whole
           timeline is visible at once (the page itself still scrolls). */}
@@ -357,6 +359,68 @@ function ChecklistCard({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+const warsawToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());
+
+/**
+ * Older ściągi were started before the opening date was asked for. Without it
+ * we can't tell which months are open or whether a sub-offer with its own
+ * deadline (e.g. Kantor at Erste) applies, so the owner can supply the real
+ * date once. Existing ticks stay exactly as they are; the server refuses
+ * future/invalid dates and never overwrites a date that is already saved.
+ */
+function OpenedAtPrompt({ trackingId }: { trackingId: string }) {
+  const router = useRouter();
+  const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    const res = await fetch("/api/checklist/opened-at", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trackingId, accountOpenedAt: value })
+    }).catch(() => null);
+    const data = res ? await res.json().catch(() => null) : null;
+    setSaving(false);
+    if (!res || !res.ok) {
+      setError(data?.error ?? "Nie udało się zapisać daty.");
+      return;
+    }
+    router.refresh();
+  }
+
+  return (
+    <div className="mt-4 rounded-xl2 border border-gold-600 bg-gold-100/40 p-3" data-testid="opened-at-prompt">
+      <p className="text-sm font-medium text-ink-900">Podaj datę otwarcia konta</p>
+      <p className="mt-1 text-xs text-ink-500">
+        Tę ściągę założyłeś/aś, zanim pytaliśmy o datę otwarcia konta. Bez niej nie wiemy, które miesiące są już
+        dostępne ani czy przysługują Ci bonusy z własnym terminem zapisu. Wpisz rzeczywistą datę, kiedy otworzyłeś/aś
+        konto — Twoje odhaczenia zostaną zachowane. Datę można zapisać tylko raz.
+      </p>
+      <div className="mt-3 flex flex-wrap items-end gap-2">
+        <input
+          type="date"
+          value={value}
+          max={warsawToday()}
+          onChange={(e) => setValue(e.target.value)}
+          aria-label="Data otwarcia konta"
+          className="rounded-lg border border-ink-100 bg-surface px-2.5 py-2 text-sm text-ink-900 outline-none focus:border-teal-500"
+        />
+        <button
+          onClick={save}
+          disabled={saving || !value}
+          className="rounded-full bg-ink-solid px-4 py-2 text-xs font-medium text-white hover:bg-teal-700 disabled:opacity-60"
+        >
+          {saving ? "Zapisywanie..." : "Zapisz datę"}
+        </button>
+      </div>
+      {error && <p className="mt-2 text-xs text-coral-600">{error}</p>}
     </div>
   );
 }

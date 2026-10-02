@@ -177,3 +177,40 @@ To samo `undefined` → pominięcie dotyczyło trzech pól formularza admina (pu
 Testy `tests/db/source-cooldown-clear.test.ts` (17): odczyt istniejących wartości do formularza i zapis bez edycji; wyczyszczenie każdego pola osobno (pozostałe dwa, dodatkowe źródła i `fees.sourceUrl` bez zmian); same spacje w URL; wszystkie trzy naraz → ponowne wpisanie; `0` → `0` przez zapis bez edycji, `0` → puste → `0`; `NULL` ↔ `0`; po wyczyszczeniu kolejne zapisy bez edycji i ponowne czyszczenie pustych pól nie przesuwają `contentUpdatedAt`; dwa kolejne zapisy rekordu z wypełnionymi polami i rekordu bez nich; brak kluczy ≠ wyczyszczenie; błędny URL odrzucony; import z pominiętymi polami / z tymi samymi wartościami / po wyczyszczeniu w adminie. Mutacja: ze starym kodem `src` 9 z 17 pada (wszystkie przypadki czyszczenia). Sprawdzone też ręcznie w prawdziwym formularzu (lokalna baza): wyczyszczenie trzech pól → `NULL` ×3, `0` → `0`, zapis bez edycji nie rusza `contentUpdatedAt`.
 
 Wciąż poza zakresem, zauważone: pola tekstowe „Promocja dla”, „Kto nie może skorzystać”, „Podsumowanie” po wyczyszczeniu zapisują pusty ciąg `""`, a nie `NULL` (treść jest porównywana jako pusta, więc nie powoduje fałszywych zmian dat). Reguła `computeEligibility` traktuje `cooldownMonths = 0` jak brak reguły („nieznane”) — zachowanie bez zmian.
+
+## 11. Zerowa karencja i uzupełnianie daty otwarcia konta w „Moje konto”
+
+### 11a. `cooldownMonths = 0` (jedna reguła na stronie, w ściądze i w powiadomieniach)
+
+Znaczenie danych: **`0` = reguła miesięczna bez dodatkowego oczekiwania** (kwalifikacja od znanej daty zamknięcia konta), **`NULL` = brak reguły miesięcznej**. Wcześniej strona traktowała `0` jak brak reguły (`!cooldownMonths` → „nieznane”, a ściąga zostawała zablokowana na zawsze), a powiadomienia liczyły `0` jako zerowe oczekiwanie — dwie różne odpowiedzi. Teraz jedna funkcja, `computeEligibility` (`src/lib/services/eligibility.ts`), jest używana przez: baner na stronie promocji, blokadę ponownego dołączenia do ściągi (`isChecklistRestartLocked`, także po stronie serwera w `POST /api/checklist/join`) i powiadomienia „karencja minęła” (`eligibilityNotifications.ts`).
+
+| Dane | Wynik |
+|---|---|
+| brak reguł (`NULL` i brak daty granicznej) | nieznane — nic nie zakładamy, także gdy użytkownik ma datę zamknięcia |
+| brak daty zamknięcia konta w historii użytkownika | nieznane (dla każdej reguły) — kwalifikacja nie jest zakładana |
+| `0` + data zamknięcia w przeszłości lub dziś | kwalifikuje się od tej daty |
+| data zamknięcia w przyszłości | nie kwalifikuje się do tego dnia (konto nie jest jeszcze zamknięte), nawet przy samej dacie granicznej |
+| `0` + data graniczna spełniona (zamknięcie **przed** nią) | kwalifikuje się |
+| `0` + data graniczna niespełniona (zamknięcie w dniu granicznym lub później) | nie, `cutoffFailed` — niezależnie od upływu czasu |
+| `N > 0` | jak dotąd: zamknięcie + N miesięcy (miesiące kalendarzowe UTC) |
+
+Dni porównywane są jako dni kalendarzowe w Polsce (ten sam zegar co termin zapisu): data zamknięcia „dzisiaj” jest już przeszłością także tuż po północy czasu polskiego.
+
+Powiadomienia: decyzja per promocja (aktywna, przed terminem, z regułą miesięczną, `0` wliczone), a nie „najniższe N z banku”. Użytkownik jest powiadamiany i linkowany tylko do promocji, którą naprawdę spełnia (z datą graniczną); najlepiej oceniona **z tych spełnianych**. Wiersz z datą zamknięcia w przyszłości nie jest oznaczany jako powiadomiony, więc zostanie wzięty w dniu zamknięcia. `checkEligibilityAndNotify` przyjmuje opcjonalnie `client`, `send`, `now`, `userIds` (domyślnie jak cron: baza, `sendEmail`, teraz, wszyscy), dzięki czemu testy nie wysyłają żadnych e-maili.
+
+Zmiana zachowania do świadomej oceny: dla promocji z `cooldownMonths = 0` każdy użytkownik, który poda datę zamknięcia konta w tym banku, dostanie następnego dnia powiadomienie (tak było już przed zmianą w powiadomieniach; teraz strona i ściąga mówią to samo). Nowe: `POST /api/checklist/join` odmawia (409) ponownego startu ukończonej ściągi, gdy ta sama reguła mówi „zablokowana” — wcześniej blokada była tylko w interfejsie.
+
+Testy: `tests/eligibility.test.ts` (18, hermetyczne: 0 ze znaną datą / dziś / tuż po północy w Polsce, `NULL` bez reguły, brak historii, przyszła data zamknięcia, `0` z zaliczoną i niezaliczoną datą graniczną, granica dnia granicznego, blokada ściągi), `tests/db/eligibility-notify.test.ts` (11, z podstawionym nadawcą — żadnych e-maili), `tests/db/checklist-restart.test.ts` (9: trasa dołączania i strona dają tę samą odpowiedź w każdym przypadku). Mutacje: `0` traktowane jak `NULL` → 11 testów pada; pominięta data graniczna → 6 pada.
+
+### 11b. Data otwarcia konta dla starszych ściąg
+
+Starsze, nieukończone ściągi nie mają `accountOpenedAt`, więc nie wiadomo, które miesiące są dostępne i czy obowiązują terminy części (Kantor). W „Moje konto” na karcie takiej ściągi jest pole „Podaj datę otwarcia konta” (`POST /api/checklist/opened-at`, logika w `setAccountOpenedAt`, `src/lib/services/checklistTracking.ts`):
+
+* zapisywana jest **tylko** kolumna `accountOpenedAt` (00:00 UTC wybranego dnia, jak w „join”); `id`, `joinedAt`, `remindedGroupIndexes` i wszystkie odhaczenia (`ChecklistProgress`) zostają bez zmian. Dostępność miesięcy, kroków Kantora i nagród nie jest nigdzie zapisana — jest wyliczana z `accountOpenedAt` przy każdym odczycie (istniejące reguły), więc przelicza się sama;
+* odrzucane: format inny niż `RRRR-MM-DD`, nieistniejące dni (31 lutego), data późniejsza niż dziś w Polsce, data przed 2000-01-01 (literówki typu `0026`);
+* zapis jednym `UPDATE … WHERE id AND userId AND completedAt IS NULL AND accountOpenedAt IS NULL`: cudza ściąga i nieistniejące id dają identyczne 404 (bez zgadywania id), data już zapisana i ściąga ukończona dają 409 — **zapisanej daty nie można nadpisać** (bramkuje miesiące i nagrody), a dwa równoczesne zapisy kończą się jednym zwycięzcą;
+* data **po** terminie Kantora (≥ 01.10.2026): krok i nagroda Kantora znikają z widoku i z sumy, ale zapisane odhaczenie zostaje w bazie; data **do** terminu (≤ 30.09.2026): Kantor wymagany, nagroda liczona po jego odhaczeniu. Bez daty nagroda z terminem liczy się wyłącznie, gdy użytkownik sam odhaczył krok Kantora (istniejąca reguła „nieznana data”).
+
+Testy: `tests/db/tracking-opened-at.test.ts` (data przed / po / dokładnie w dniu terminu, zachowanie id, `joinedAt`, odhaczeń i `remindedGroupIndexes`, otwieranie miesięcy według zapisanej daty, odrzucenie dat przyszłych / nieprawidłowych bez zapisu, cudza ściąga, brak nadpisania, ściąga z datą z „join”, ukończona, wyścig). Mutacja: bez filtrów właściciel / `accountOpenedAt IS NULL` / `completedAt IS NULL` → 5 testów pada. Sprawdzone ręcznie w prawdziwej stronie „Moje konto” (lokalna baza): data z przyszłości odrzucona komunikatem, data 01.10.2026 zapisana, Kantor i jego nagroda zniknęły (500 zł → 200 zł), odhaczenia i `joinedAt` bez zmian.
+
+Bez zmian (zgodnie z poleceniem): puste teksty `""` zapisywane jako `""`.

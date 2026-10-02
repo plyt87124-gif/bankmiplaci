@@ -20,7 +20,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { JoinChecklistButton } from "@/components/JoinChecklistButton";
 import { getCurrentUser } from "@/lib/userSession";
 import { db } from "@/lib/db";
-import { computeEligibility } from "@/lib/services/eligibility";
+import { computeEligibility, isChecklistRestartLocked } from "@/lib/services/eligibility";
 import { AlertTriangle, ShieldAlert, Eye, ArrowRight, BookOpen } from "lucide-react";
 
 interface PageProps {
@@ -279,7 +279,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
               // eligible again (cooldown passed, or they corrected their
               // dates in Moje konto), let them start a fresh round instead.
               alreadyJoined={Boolean(promotionTracking) && !promotionTracking?.completedAt}
-              locked={Boolean(promotionTracking?.completedAt) && eligibility.status !== "eligible"}
+              locked={isChecklistRestartLocked(promotionTracking?.completedAt, eligibility)}
             />
           )}
         </aside>

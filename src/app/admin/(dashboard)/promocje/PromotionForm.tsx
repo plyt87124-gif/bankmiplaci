@@ -216,7 +216,7 @@ export function PromotionForm({
           Wypełnij liczbę miesięcy, jeśli regulamin mówi „N miesięcy/lat od zamknięcia konta”. Wypełnij datę
           graniczną, jeśli regulamin mówi „od DD.MM.RRRR nie prowadziliśmy dla Ciebie konta” (jak np. w Erste).
           Możesz wypełnić oba naraz — użytkownik musi wtedy spełnić obie reguły, żeby zobaczyć „kwalifikujesz
-          się”. Zostaw puste, jeśli zasada jest bardziej złożona — opisz ją wtedy tylko w polach tekstowych
+          się”. Wpisz 0, jeśli po zamknięciu konta nie ma dodatkowego oczekiwania; puste pole oznacza brak reguły miesięcznej (wtedy strona niczego nie zakłada). Zostaw puste, jeśli zasada jest bardziej złożona — opisz ją wtedy tylko w polach tekstowych
           powyżej.
         </p>
       </section>

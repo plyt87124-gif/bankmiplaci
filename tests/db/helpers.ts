@@ -25,8 +25,19 @@ export const PREFIX = "dbt-";
 const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
 
 export async function cleanup() {
+  const users = await client.user.findMany({ where: { email: { startsWith: PREFIX } }, select: { id: true } });
+  const userIds = users.map((u) => u.id);
+  await client.adminNotification.deleteMany({ where: { relatedUserId: { in: userIds } } });
+  await client.user.deleteMany({ where: { id: { in: userIds } } }); // cascades history, tracking, progress
   await client.promotion.deleteMany({ where: { slug: { startsWith: PREFIX } } });
   await client.bank.deleteMany({ where: { slug: { startsWith: PREFIX } } });
+}
+
+/** A throw-away site user (never a real e-mail address; nothing here sends mail). */
+export function makeUser(tag: string) {
+  return client.user.create({
+    data: { email: `${PREFIX}${tag}@example.test`, username: `${PREFIX.replace("-", "_")}${tag}`.slice(0, 20), passwordHash: "x", name: `Test ${tag}` }
+  });
 }
 
 export const INCLUDE = { conditions: true, bonusParts: { orderBy: { order: "asc" as const } }, fees: true };
