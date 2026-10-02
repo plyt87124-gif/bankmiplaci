@@ -213,4 +213,19 @@ Starsze, nieukończone ściągi nie mają `accountOpenedAt`, więc nie wiadomo, 
 
 Testy: `tests/db/tracking-opened-at.test.ts` (data przed / po / dokładnie w dniu terminu, zachowanie id, `joinedAt`, odhaczeń i `remindedGroupIndexes`, otwieranie miesięcy według zapisanej daty, odrzucenie dat przyszłych / nieprawidłowych bez zapisu, cudza ściąga, brak nadpisania, ściąga z datą z „join”, ukończona, wyścig). Mutacja: bez filtrów właściciel / `accountOpenedAt IS NULL` / `completedAt IS NULL` → 5 testów pada. Sprawdzone ręcznie w prawdziwej stronie „Moje konto” (lokalna baza): data z przyszłości odrzucona komunikatem, data 01.10.2026 zapisana, Kantor i jego nagroda zniknęły (500 zł → 200 zł), odhaczenia i `joinedAt` bez zmian.
 
+### 11c. `/api/checklist/join` zgodny z `/opened-at`
+
+Po przeglądzie `39ed64b` dwa błędy w `/join`: (1) `new Date(...)` + porównanie z `Date.now()` przyjmowało nieistniejące `2026-02-31` i odrzucało poprawną dzisiejszą datę tuż po północy w Polsce (UTC bywa wtedy jeszcze „wczoraj”); (2) `upsert.update: { accountOpenedAt }` pozwalał ponowionym żądaniem nadpisać zapisaną datę mimo komunikatu „Datę można zapisać tylko raz”.
+
+Logika jest teraz w `joinChecklist` (`src/lib/services/checklistTracking.ts`), a trasa to cienka nakładka:
+
+* data przez to samo `parseAccountOpenedAt` co `/opened-at` (tylko `RRRR-MM-DD`, istniejący dzień, nie później niż dziś w Europe/Warsaw, nie przed 2000-01-01);
+* brak ściągi → `INSERT` (równoczesny duplikat trafia w klucz unikalny i jest traktowany jak „ściąga już istnieje”);
+* nieukończona, **bez** daty → `UPDATE … WHERE accountOpenedAt IS NULL AND completedAt IS NULL` (atomowo, jak `/opened-at`);
+* nieukończona, data już zapisana → **ta sama data = sukces bez zmian (idempotentnie)**, inna data = 409 „Data otwarcia konta jest już zapisana…”; odhaczenia, `joinedAt`, `id` nietknięte;
+* ukończona → blokada karencji jak dotąd (409), a gdy dozwolone: restart w jednej transakcji `UPDATE … WHERE completedAt IS NOT NULL` (+ usunięcie odhaczeń tej promocji) **ustawia datę nowego cyklu**; równoczesny drugi restart nie wykona się drugi raz;
+* `JoinChecklistButton`: wartość początkowa i `max` pola daty według dnia w Europe/Warsaw (nie UTC); błąd z serwera jest wyświetlany pod przyciskiem (wcześniej odmowa była niema).
+
+Testy `tests/db/checklist-join.test.ts` (17, prawdziwa baza, ścieżką zapisu `/join`): utworzenie z datą 00:00 UTC; `2026-02-31` i inne daty nieprawidłowe / przyszłe → 400 bez śladu w bazie; dzisiejsza data o 00:30 w Polsce przyjęta, jutrzejsza nie; ponowione żądanie z **inną** datą → 409, wiersz i wszystkie odhaczenia (wraz z `checkedAt`) identyczne; ta sama data → `unchanged`; uzupełnienie pustej daty starszej ściągi z zachowaniem odhaczeń; trzy rodzaje równoczesności (pierwsze dołączenie z różnymi datami: jeden zwycięzca; z taką samą: wszystkie sukces, jeden wiersz; uzupełnianie pustej daty czterema datami: jeden zwycięzca, nieprzepisywalny); restart ukończonej ściągi ustawia nową datę, czyści tylko odhaczenia tej promocji, jest chroniony jak zwykła data; pięć wariantów blokady → 409 bez zmian; data restartu walidowana; równoczesne restarty → jeden restart. Uruchomione na portacie dawnej logiki trasy: 13 z 17 pada (m.in. 31 lutego, północ w Polsce, nadpisanie daty, równoczesne zapisy, walidacja daty restartu).
+
 Bez zmian (zgodnie z poleceniem): puste teksty `""` zapisywane jako `""`.

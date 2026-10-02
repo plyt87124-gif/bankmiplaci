@@ -9,6 +9,12 @@
  *    Kantor steps and rewards is not stored anywhere; it is derived from
  *    accountOpenedAt on every read (checklistAvailability.ts / checklistSchedule.ts),
  *    so it "recomputes" by itself the moment the date exists.
+ *  - joinChecklist: the write behind POST /api/checklist/join. Same date
+ *    validation as setAccountOpenedAt (parseAccountOpenedAt), and the same
+ *    guarantee that a saved date is never silently replaced: joining again with
+ *    the SAME date is a harmless no-op, with a DIFFERENT date it is refused (409).
+ *    Only restarting a COMPLETED ściąga (when the lock allows it) sets the date of
+ *    a new cycle.
  *  - restart lock: a COMPLETED ściąga can be started again only when the
  *    shared eligibility rule (services/eligibility.ts) says "eligible".
  */
@@ -72,10 +78,96 @@ export async function setAccountOpenedAt(
   return {
     ok: false,
     status: 409,
-    error: own.completedAt
-      ? "Ta ściąga jest już ukończona."
-      : "Data otwarcia konta jest już zapisana i nie można jej zmienić."
+    error: own.completedAt ? "Ta ściąga jest już ukończona." : DATE_ALREADY_SAVED_ERROR
   };
+}
+
+export type JoinResult =
+  | { ok: true; outcome: "created" | "date-saved" | "unchanged" | "restarted" }
+  | { ok: false; status: 400 | 404 | 409; error: string };
+
+const sameDay = (a: Date, b: Date) => a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
+const isUniqueViolation = (e: unknown) => typeof e === "object" && e !== null && (e as { code?: string }).code === "P2002";
+
+export const LOCKED_ERROR = "Ściąga odblokuje się ponownie po upływie okresu karencji dla tego banku.";
+export const DATE_ALREADY_SAVED_ERROR = "Data otwarcia konta jest już zapisana i nie można jej zmienić.";
+
+/**
+ * Every write is conditional in the statement itself (no read-then-write gap), so
+ * concurrent requests can neither overwrite a saved date nor restart a ściąga twice:
+ *   - no tracking yet            -> INSERT (a racing duplicate hits the unique key and
+ *                                   is treated as "tracking exists")
+ *   - completed tracking         -> lock check, then UPDATE ... WHERE completedAt IS NOT NULL
+ *                                   + wipe of that promotion's ticks in one transaction
+ *   - unfinished, no date yet    -> UPDATE ... WHERE accountOpenedAt IS NULL AND completedAt IS NULL
+ *   - unfinished, date saved     -> same day: no-op success; any other day: 409
+ */
+export async function joinChecklist(
+  client: PrismaClient,
+  userId: string,
+  promotionId: string,
+  rawOpenedAt: unknown,
+  now: Date = new Date()
+): Promise<JoinResult> {
+  const parsed = parseAccountOpenedAt(rawOpenedAt, now);
+  if (!parsed.ok) return { ok: false, status: 400, error: parsed.error };
+  const date = parsed.date;
+
+  const promotion = await client.promotion.findUnique({
+    where: { id: promotionId },
+    select: { id: true, checklistSteps: { select: { id: true } } }
+  });
+  if (!promotion) return { ok: false, status: 404, error: "Nie znaleziono promocji." };
+
+  const find = () => client.userPromotionTracking.findUnique({ where: { userId_promotionId: { userId, promotionId } } });
+  let existing = await find();
+
+  if (!existing) {
+    try {
+      await client.userPromotionTracking.create({ data: { userId, promotionId, accountOpenedAt: date } });
+      return { ok: true, outcome: "created" };
+    } catch (e) {
+      if (!isUniqueViolation(e)) throw e;
+      existing = await find(); // a concurrent request created it first
+    }
+  }
+
+  if (existing?.completedAt) {
+    // Same lock the promotion page shows: a completed ściąga restarts only once the
+    // shared eligibility rule says "eligible".
+    const { allowed } = await checklistRestartAllowed(client, userId, promotionId, now);
+    if (!allowed) return { ok: false, status: 409, error: LOCKED_ERROR };
+    // Restarting a promotion the user already completed once (karencja cleared, or they
+    // corrected their bank-history dates): wipe last cycle's ticks so the new round
+    // starts at 0, re-open the tracking and set the date of the new cycle.
+    const restarted = await client.$transaction(async (tx) => {
+      const { count } = await tx.userPromotionTracking.updateMany({
+        where: { id: existing!.id, userId, completedAt: { not: null } },
+        data: { completedAt: null, joinedAt: now, accountOpenedAt: date }
+      });
+      if (count !== 1) return false;
+      await tx.checklistProgress.deleteMany({
+        where: { userId, stepId: { in: promotion.checklistSteps.map((s) => s.id) } }
+      });
+      return true;
+    });
+    if (restarted) return { ok: true, outcome: "restarted" };
+    existing = await find(); // restarted by a concurrent request: judge it as an unfinished ściąga
+  }
+
+  // Unfinished ściąga: fill an empty date atomically ...
+  const { count } = await client.userPromotionTracking.updateMany({
+    where: { userId, promotionId, completedAt: null, accountOpenedAt: null },
+    data: { accountOpenedAt: date }
+  });
+  if (count === 1) return { ok: true, outcome: "date-saved" };
+
+  // ... otherwise the date is already saved (or the ściąga was just completed): never replace it.
+  const current = await find();
+  if (current && !current.completedAt && current.accountOpenedAt && sameDay(current.accountOpenedAt, date)) {
+    return { ok: true, outcome: "unchanged" };
+  }
+  return { ok: false, status: 409, error: current?.completedAt ? LOCKED_ERROR : DATE_ALREADY_SAVED_ERROR };
 }
 
 interface PromotionRules {

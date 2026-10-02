@@ -79,7 +79,7 @@ jobs:
 
       - run: npm test
 
-      - name: Database tests - clearing fields writes NULL, import keeps deadlines, contentUpdatedAt only on real changes, zero cooldown + notifications, opening-date backfill
+      - name: Database tests - clearing fields writes NULL, import keeps deadlines, contentUpdatedAt only on real changes, zero cooldown + notifications, opening-date backfill and join
         run: npm run test:db
 
       - name: Data-correction machinery (transaction, compare-and-set, plan binding, revert)

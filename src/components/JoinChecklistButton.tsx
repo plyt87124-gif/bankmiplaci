@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { ListChecks, CheckCircle2 } from "lucide-react";
 import { useAuthModal } from "@/components/AuthModalProvider";
 
-const today = () => new Date().toISOString().slice(0, 10);
+// Today's calendar date in Poland (the clock the server validates against), not the
+// UTC date: right after midnight in Poland the UTC date is still yesterday.
+const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());
 
 export function JoinChecklistButton({
   promotionId,
@@ -24,19 +26,24 @@ export function JoinChecklistButton({
   const [joined, setJoined] = useState(alreadyJoined);
   const [loading, setLoading] = useState(false);
   const [accountOpenedAt, setAccountOpenedAt] = useState(today());
+  const [error, setError] = useState<string | null>(null);
 
   async function join() {
     setLoading(true);
+    setError(null);
     const res = await fetch("/api/checklist/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ promotionId, accountOpenedAt })
-    });
+    }).catch(() => null);
     setLoading(false);
-    if (res.ok) {
+    if (res?.ok) {
       setJoined(true);
       router.push("/konto");
+      return;
     }
+    const data = res ? await res.json().catch(() => null) : null;
+    setError(data?.error ?? "Nie udało się dodać ściągi. Spróbuj ponownie.");
   }
 
   function onButtonClick() {
@@ -107,6 +114,7 @@ export function JoinChecklistButton({
       >
         {loading ? "Dodawanie..." : "Śledź swój postęp"}
       </button>
+      {error && <p className="mt-2 text-xs text-coral-600">{error}</p>}
     </div>
   );
 }
