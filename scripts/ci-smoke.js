@@ -109,7 +109,13 @@ async function verify() {
     const checkCanonical = (html, path) => {
       const tags = html.match(/<link\b[^>]*rel="canonical"[^>]*>/g) ?? [];
       assert.equal(tags.length, 1, `${path}: exactly one canonical`);
-      assert.ok(tags[0].includes(`href="${process.env.NEXT_PUBLIC_SITE_URL}${path}"`), `${path}: own absolute canonical`);
+      const href = tags[0].match(/\bhref="([^"]+)"/)?.[1];
+      assert.ok(href, `${path}: canonical has href`);
+      // Next normalizes the root to the origin without a trailing slash.
+      // URL comparison accepts that equivalent spelling, while still rejecting
+      // a relative canonical, wrong host, wrong path or extra query string.
+      assert.match(href, /^https?:\/\//, `${path}: canonical is absolute`);
+      assert.equal(new URL(href).href, new URL(path, process.env.NEXT_PUBLIC_SITE_URL).href, `${path}: own absolute canonical`);
     };
     checkCanonical(home.text, "/");
     checkCanonical((await get("/promocje/ci-open")).text, "/promocje/ci-open");
