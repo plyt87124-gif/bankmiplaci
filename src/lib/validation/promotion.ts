@@ -68,15 +68,22 @@ export const promotionFormSchema = z
     affiliateUrl: z.string().url("Podaj poprawny adres URL"),
     // Whether our partner link is live for this offer (separate from status/dates).
     affiliateLinkEnabled: z.boolean().default(true),
-    sourceUrl: z.string().url().optional().or(z.literal("")),
+    // Optional text/number/date fields the admin may deliberately clear. A blank
+    // input is an explicit `null` (written as NULL); an ABSENT key stays `undefined`
+    // (= "not sent", the stored value is kept). A typed 0 in cooldownMonths stays 0.
+    sourceUrl: z.preprocess(
+      (v) => (v === null || (typeof v === "string" && v.trim() === "") ? null : typeof v === "string" ? v.trim() : v),
+      z.string().url().nullable().optional()
+    ),
     lastVerifiedAt: z.coerce.date(),
     eligibleFor: z.string().optional(),
     notEligibleFor: z.string().optional(),
     cooldownMonths: z.preprocess(
-      (v) => (v === "" || v === null || Number.isNaN(v) ? undefined : v),
-      z.number().int().min(0).max(120).optional()
+      (v) => (v === "" || v === null || (typeof v === "number" && Number.isNaN(v)) ? null : v),
+      z.number().int().min(0).max(120).nullable().optional()
     ),
-    cooldownCutoffDate: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.coerce.date().optional()),
+    // (z.coerce.date() would turn null into 1970-01-01, but nullable() sees null first.)
+    cooldownCutoffDate: z.preprocess((v) => (v === "" || v === null ? null : v), z.coerce.date().nullable().optional()),
     summary: z.string().max(240).optional(),
     description: z.string().optional(),
     conditions: z.array(conditionSchema).default([]),

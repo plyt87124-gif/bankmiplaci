@@ -39,7 +39,7 @@ export async function createPromotion(values: PromotionFormValues) {
       endDate: data.endDate,
       affiliateUrl: data.affiliateUrl,
       affiliateLinkEnabled: data.affiliateLinkEnabled,
-      sourceUrl: data.sourceUrl || undefined,
+      sourceUrl: data.sourceUrl,
       lastVerifiedAt: data.lastVerifiedAt,
       eligibleFor: data.eligibleFor,
       notEligibleFor: data.notEligibleFor,

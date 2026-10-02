@@ -13,8 +13,14 @@
  *  2. contentUpdatedAt is decided from the stored state versus the EFFECTIVE
  *     state after the write (stored state overlaid with the keys Prisma will
  *     really set). Fields this write leaves alone - additionalSourceUrls,
- *     fees.sourceUrl, description/cooldown/sourceUrl when the form sends nothing -
- *     are therefore not mistaken for edits.
+ *     fees.sourceUrl, and any field whose key is absent from the payload - are
+ *     therefore not mistaken for edits.
+ *
+ * The same rule covers "Źródło warunków" (sourceUrl), "Okres karencji"
+ * (cooldownMonths) and "Data graniczna" (cooldownCutoffDate): a blank input is
+ * parsed to `null` and written as NULL, a typed 0 months stays 0, and only an
+ * absent key (never produced by the form) keeps the stored value. The
+ * additionalSourceUrls list is not part of the payload and is never touched.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { PromotionFormValues } from "@/lib/validation/promotion";
@@ -53,7 +59,7 @@ export function promotionFormScalars(data: PromotionFormValues) {
     endDate: data.endDate,
     affiliateUrl: data.affiliateUrl,
     affiliateLinkEnabled: data.affiliateLinkEnabled,
-    sourceUrl: data.sourceUrl || undefined,
+    sourceUrl: data.sourceUrl,
     lastVerifiedAt: data.lastVerifiedAt,
     eligibleFor: data.eligibleFor,
     notEligibleFor: data.notEligibleFor,

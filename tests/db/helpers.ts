@@ -64,11 +64,22 @@ export const reload = (id: string) => client.promotion.findUniqueOrThrow({ where
  */
 export function submit(
   row: Awaited<ReturnType<typeof reload>>,
-  edits: Partial<PromotionFormValues> & { fees?: Record<string, number | string | undefined> } = {}
+  edits: Partial<Omit<PromotionFormValues, "cooldownCutoffDate" | "sourceUrl" | "cooldownMonths">> & {
+    fees?: Record<string, number | string | undefined>;
+    /** What the browser inputs hold: text "" / NaN (valueAsNumber) / date "" when blank. */
+    sourceUrl?: string;
+    cooldownMonths?: number;
+    cooldownCutoffDate?: string;
+  } = {}
 ): PromotionFormValues {
-  const defaults = promotionToFormDefaults(row);
+  // A blank text/number/date input submits "" / NaN / "" - never an absent key.
+  const defaults: Record<string, unknown> = { ...promotionToFormDefaults(row) };
+  if (defaults.sourceUrl === undefined) defaults.sourceUrl = "";
+  if (defaults.cooldownMonths === undefined) defaults.cooldownMonths = NaN;
+  if (defaults.cooldownCutoffDate === undefined) defaults.cooldownCutoffDate = "";
+  const formFees = (promotionToFormDefaults(row).fees ?? {}) as Record<string, unknown>;
   const amounts = ["accountFeeCents", "cardFeeCents", "atmFeeCents"] as const;
-  const fees: Record<string, unknown> = { ...(defaults.fees ?? {}) };
+  const fees: Record<string, unknown> = { ...formFees };
   for (const k of amounts) if (fees[k] === undefined || fees[k] === null) fees[k] = NaN;
   Object.assign(fees, edits.fees ?? {});
   const { fees: _ignored, ...rest } = edits;

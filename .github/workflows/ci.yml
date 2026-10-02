@@ -79,7 +79,7 @@ jobs:
 
       - run: npm test
 
-      - name: Database tests - clearing fees writes NULL, import keeps bonus-part deadlines, contentUpdatedAt only on real changes
+      - name: Database tests - clearing fees/source/cooldown writes NULL, import keeps bonus-part deadlines, contentUpdatedAt only on real changes
         run: npm run test:db
 
       - name: Data-correction machinery (transaction, compare-and-set, plan binding, revert)
