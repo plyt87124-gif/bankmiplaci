@@ -61,7 +61,7 @@ export function PromotionCard({ promotion }: { promotion: PromotionCardData }) {
           length, so the "Do / kwota" row below starts at the same Y
           position across every card in a grid row — a 1-line title
           shouldn't leave the amount higher than next to a 2-line one. */}
-      <p className="mt-1 line-clamp-2 min-h-[3rem] font-display text-base font-semibold text-ink-900">
+      <p className="mt-1 line-clamp-2 min-h-[3rem] break-words [overflow-wrap:anywhere] font-display text-base font-semibold text-ink-900">
         {promotion.name}
       </p>
 

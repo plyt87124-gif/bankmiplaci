@@ -5,6 +5,7 @@ node_modules
 *.log
 /prisma/dev.db
 tsconfig.tsbuildinfo
+/visual-artifacts
 
 .vercel
 .env*

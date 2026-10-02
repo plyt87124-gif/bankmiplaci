@@ -97,5 +97,19 @@ jobs:
       - name: Production build (plain `npm run build`, Linux)
         run: npm run build
 
+      - name: Install Chromium for isolated visual checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Chromium mobile and desktop checks
+        run: node scripts/ci-visual.js
+
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-evidence-${{ github.sha }}
+          path: visual-artifacts
+          if-no-files-found: warn
+
       - name: HTTP smoke test of the built app
         run: node scripts/ci-smoke.js verify

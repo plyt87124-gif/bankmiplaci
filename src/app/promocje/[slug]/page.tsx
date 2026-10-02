@@ -415,9 +415,16 @@ export default async function PromotionDetailPage(props: PageProps) {
                       </p>
                     )}
                     {(row.cents == null || (row.cents === 0 && row.waiverCondition?.trim())) && (
-                      <p className="mt-1 text-xs text-ink-500">
-                        Nie zweryfikowaliśmy jeszcze tej opłaty — sprawdź aktualną taryfę banku przed podjęciem decyzji.
-                      </p>
+                      <div className="mt-1 break-words [overflow-wrap:anywhere] text-xs text-ink-500">
+                        <p>
+                          Nie zweryfikowaliśmy jeszcze tej opłaty — sprawdź aktualną taryfę banku przed podjęciem decyzji.
+                        </p>
+                        {row.waiverCondition?.trim() && (
+                          <p className="mt-1">
+                            Znany warunek zwolnienia: {row.waiverCondition}. Stawka poza warunkiem jest nieustalona.
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}

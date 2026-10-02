@@ -63,6 +63,27 @@ async function seed() {
     status: "ACTIVE", endDate: day(warsawNextMonth),
     fees: { create: { accountFeeCents: null, cardFeeCents: null, atmFeeCents: null } }
   });
+  await mk("ci-conditional-legacy", {
+    status: "ACTIVE", endDate: day(warsawNextMonth),
+    name: "Warunkowa opłata — historyczny zapis wymagający ostrożnej prezentacji",
+    fees: { create: {
+      accountFeeCents: 0,
+      accountFeeWaiverCondition: "wpływ co najmniej 1000 zł miesięcznie",
+      cardFeeCents: null,
+      atmFeeCents: null
+    } }
+  });
+  await mk("ci-long-content", {
+    status: "ACTIVE", endDate: day(warsawNextMonth),
+    name: "Bardzo długa nazwa promocji sprawdzająca układ Superdlugieslowobezspacji12345678901234567890",
+    summary: "Długi wariant testowy, który ma ujawnić poziome przewijanie lub nachodzenie tekstu na inne elementy interfejsu.",
+    fees: { create: {
+      accountFeeCents: 1900,
+      accountFeeWaiverCondition: "Brak opłaty po spełnieniu długiego warunku: wykonaj pięć transakcji, zapewnij wpływ i utrzymaj wymagane zgody. Superdlugieslowobezspacji123456789012345678901234567890 musi się bezpiecznie zawinąć, a pełna treść nie może nachodzić na kwotę ani przycisk.",
+      cardFeeCents: null,
+      atmFeeCents: null
+    } }
+  });
   await mk("ci-closedpart", {
     status: "ACTIVE", endDate: day(warsawNextMonth),
     bonusParts: { create: [{ label: "Konto", amountCents: 150000, order: 0 }, { label: "Kantor ZAMKNIETY", amountCents: 30000, order: 1, availableUntil: day("2026-09-30") }] }
