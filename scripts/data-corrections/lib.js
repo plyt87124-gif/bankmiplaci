@@ -6,6 +6,11 @@
  *  - Identified by slug / row id, never by pattern.
  *  - Dry run by default: prints each field "before -> after" and writes nothing.
  *  - One transaction: all changes commit together or none do.
+ *  - Bound to the reviewed dry run: every dry run writes plan-<name>-<time>.json
+ *    (what it saw and what it would write). `--apply --plan <file>` re-reads the
+ *    database, rebuilds the changes and ABORTS unless they are identical to that
+ *    file - so what gets written is exactly what was reviewed, even if the data
+ *    moved on after the review.
  *  - Compare-and-set: every UPDATE is guarded by `WHERE <col> IS NOT DISTINCT
  *    FROM <value seen in the dry run>`. If anybody (admin, import, cron) changed
  *    that column in the meantime, 0 rows match, the transaction rolls back and
@@ -23,7 +28,9 @@
 const fs = require("fs");
 
 function loadDb() {
-  const envText = fs.readFileSync(".env.production.check", "utf8");
+  // DATA_CORRECTION_ENV_FILE lets the same scripts be rehearsed against a local/CI
+  // database; the default is the production pull used for the real run.
+  const envText = fs.readFileSync(process.env.DATA_CORRECTION_ENV_FILE || ".env.production.check", "utf8");
   const m = envText.match(/DATABASE_URL="([^"]+)"/);
   if (!m) throw new Error("DATABASE_URL not found in .env.production.check");
   process.env.DATABASE_URL = m[1];
@@ -55,13 +62,26 @@ function dateReviver(_key, value) {
 // and a JS Date parameter would be typed timestamptz, which Postgres converts
 // using the SESSION time zone before comparing - wrong unless that happens to
 // be UTC. Parsing the ISO text as a plain timestamp is zone-independent.
-function bind(params, value) {
+function bind(params, value, enumType) {
   if (value instanceof Date) {
     params.push(value.toISOString());
     return `$${params.length}::text::timestamp`;
   }
   params.push(value);
-  return `$${params.length}`;
+  // Postgres enum columns (e.g. "PromotionStatus") reject a text parameter
+  // without an explicit cast.
+  return enumType ? `$${params.length}::text::"${enumType}"` : `$${params.length}`;
+}
+
+/** udt_name of every USER-DEFINED (enum) column touched by the changes, keyed "table.column". */
+async function enumTypes(db, changes) {
+  const tables = [...new Set(changes.map((c) => c.table))];
+  const rows = await db.$queryRawUnsafe(
+    `select table_name, column_name, udt_name from information_schema.columns
+      where table_schema = 'public' and table_name = any($1::text[]) and data_type = 'USER-DEFINED'`,
+    tables
+  );
+  return new Map(rows.map((r) => [`${r.table_name}.${r.column_name}`, r.udt_name]));
 }
 
 const fmt = (v) => {
@@ -83,6 +103,39 @@ const fmt = (v) => {
  *   source: "where the new value comes from"
  * }
  */
+function changeKey(c) {
+  return `${c.table}#${c.id}#${c.group ?? "dane"}`;
+}
+function digest(c) {
+  return JSON.stringify({ table: c.table, id: c.id, set: c.set, expect: c.expect, stamp: c.stamp ?? [] });
+}
+
+/** Records exactly what a dry run saw and would write. */
+function writePlan(name, changes) {
+  const file = `plan-${name}-${Date.now()}.json`;
+  fs.writeFileSync(
+    file,
+    JSON.stringify({ name, createdAt: new Date().toISOString(), changes: changes.map((c) => ({ key: changeKey(c), label: c.label, digest: digest(c) })) }, null, 2)
+  );
+  return file;
+}
+
+/** Throws unless every selected change is byte-identical to what the reviewed dry run recorded. */
+function assertMatchesPlan(file, changes) {
+  const plan = JSON.parse(fs.readFileSync(file, "utf8"));
+  const byKey = new Map(plan.changes.map((c) => [c.key, c]));
+  for (const c of changes) {
+    const planned = byKey.get(changeKey(c));
+    if (!planned) throw new Error(`Not in the reviewed plan ${file}: ${c.label}. Re-run the dry run and review it first.`);
+    if (planned.digest !== digest(c)) {
+      throw new Error(
+        `The data changed since the dry run in ${file}: ${c.label}. Nothing was written. ` +
+          `Re-run the dry run, review the new diff, and apply with the new plan file.`
+      );
+    }
+  }
+}
+
 function printPlan(name, changes, columns) {
   console.log(`\n=== ${name}: ${changes.length} row change(s) ===`);
   for (const c of changes) {
@@ -125,26 +178,27 @@ async function applyChanges(db, name, changes, columns) {
   fs.writeFileSync(file, JSON.stringify(backup, dateReplacer, 2));
   console.log(`\nBackup of previous values written to ${file} (keep it to revert).`);
 
+  const types = await enumTypes(db, changes);
   await db.$transaction(
     async (tx) => {
-      for (const c of changes) await casUpdate(tx, c);
+      for (const c of changes) await casUpdate(tx, c, types);
     },
     { timeout: 60_000 }
   );
   console.log("Applied in one transaction.");
 }
 
-async function casUpdate(tx, c) {
+async function casUpdate(tx, c, types) {
   const params = [];
   const setParts = [];
   for (const k of Object.keys(c.set)) {
-    setParts.push(`"${k}" = ${bind(params, c.set[k])}`);
+    setParts.push(`"${k}" = ${bind(params, c.set[k], types.get(`${c.table}.${k}`))}`);
   }
   for (const k of c.stamp ?? []) setParts.push(`"${k}" = now()`);
   if (c.touchUpdatedAt) setParts.push(`"updatedAt" = now()`);
   const whereParts = [];
   for (const k of Object.keys(c.set)) {
-    whereParts.push(`"${k}" IS NOT DISTINCT FROM ${bind(params, c.expect[k])}`);
+    whereParts.push(`"${k}" IS NOT DISTINCT FROM ${bind(params, c.expect[k], types.get(`${c.table}.${k}`))}`);
   }
   params.push(c.id);
   const sql = `UPDATE "${c.table}" SET ${setParts.join(", ")} WHERE id = $${params.length} AND ${whereParts.join(" AND ")}`;
@@ -159,20 +213,21 @@ async function casUpdate(tx, c) {
 
 async function revertFrom(db, file, force) {
   const backup = JSON.parse(fs.readFileSync(file, "utf8"), dateReviver);
+  const types = await enumTypes(db, backup.changes);
   await db.$transaction(
     async (tx) => {
       for (const c of backup.changes) {
         const params = [];
         const setParts = [];
         for (const [k, v] of Object.entries(c.restore)) {
-          setParts.push(`"${k}" = ${bind(params, v)}`);
+          setParts.push(`"${k}" = ${bind(params, v, types.get(`${c.table}.${k}`))}`);
         }
         if (c.touchUpdatedAt) setParts.push(`"updatedAt" = now()`);
         const whereParts = [];
         if (!force) {
           for (const k of Object.keys(c.expectNow)) {
             if (c.stamp.includes(k)) continue;
-            whereParts.push(`"${k}" IS NOT DISTINCT FROM ${bind(params, c.expectNow[k])}`);
+            whereParts.push(`"${k}" IS NOT DISTINCT FROM ${bind(params, c.expectNow[k], types.get(`${c.table}.${k}`))}`);
           }
         }
         params.push(c.id);
@@ -191,4 +246,4 @@ async function revertFrom(db, file, force) {
   console.log(`Reverted from ${file}.`);
 }
 
-module.exports = { loadDb, existingColumns, printPlan, applyChanges, revertFrom, fmt };
+module.exports = { loadDb, existingColumns, printPlan, applyChanges, revertFrom, writePlan, assertMatchesPlan, fmt };

@@ -64,6 +64,8 @@ export const promotionFormSchema = z
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
     affiliateUrl: z.string().url("Podaj poprawny adres URL"),
+    // Whether our partner link is live for this offer (separate from status/dates).
+    affiliateLinkEnabled: z.boolean().default(true),
     sourceUrl: z.string().url().optional().or(z.literal("")),
     lastVerifiedAt: z.coerce.date(),
     eligibleFor: z.string().optional(),

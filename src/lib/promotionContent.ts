@@ -30,6 +30,8 @@ export interface PromotionContentLike {
   ratingOverride?: Maybe<number | string | { toString(): string }>;
   ratingReason?: Maybe<string>;
   status: string;
+  /** Whether the partner link is live; changes whether the page shows the CTA. Undefined = true. */
+  affiliateLinkEnabled?: boolean | null;
   startDate: DateLike;
   endDate: DateLike;
   sourceUrl?: Maybe<string>;
@@ -83,6 +85,7 @@ export function promotionContentSnapshot(p: PromotionContentLike): string {
     ratingOverride: dec(p.ratingOverride),
     ratingReason: text(p.ratingReason),
     status: p.status,
+    affiliateLinkEnabled: p.affiliateLinkEnabled !== false,
     startDate: day(p.startDate),
     endDate: day(p.endDate),
     sourceUrl: text(p.sourceUrl),

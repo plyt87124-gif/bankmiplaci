@@ -7,7 +7,7 @@ import { hashVisitor, clientIp } from "@/lib/visitorHash";
 import { isLikelyBot } from "@/lib/botDetection";
 import { advisoryLockKey } from "@/lib/dedup";
 import { touchUserActivity } from "@/lib/userActivity";
-import { isSignupOpen } from "@/lib/promotionAvailability";
+import { isSignupOpen, isAffiliateLinkLive } from "@/lib/promotionAvailability";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +42,16 @@ function safeFallbackRedirect(request: NextRequest): NextResponse {
 export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
   const promotion = await db.promotion.findUnique({
     where: { slug: params.slug },
-    select: { id: true, name: true, affiliateUrl: true, status: true, endDate: true, bank: { select: { name: true } } }
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      affiliateUrl: true,
+      status: true,
+      endDate: true,
+      affiliateLinkEnabled: true,
+      bank: { select: { name: true } }
+    }
   });
 
   if (!promotion) {
@@ -61,6 +70,12 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   // the bank's own sign-up window is open.
   if (!isSignupOpen(promotion)) {
     return safeFallbackRedirect(request);
+  }
+  // The offer is current but the affiliate campaign is not confirmed live:
+  // send the visitor to the offer page (which says so), never to the
+  // partner, and log nothing - there was no partner click.
+  if (!isAffiliateLinkLive(promotion)) {
+    return NextResponse.redirect(new URL(`/promocje/${promotion.slug}`, request.url));
   }
 
   const { searchParams } = new URL(request.url);

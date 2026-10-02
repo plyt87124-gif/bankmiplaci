@@ -79,6 +79,8 @@ interface ImportPromotion {
   startDate: string;
   endDate: string;
   affiliateUrl: string;
+  /** Omit to leave an existing promotion's flag untouched (new ones default to true). */
+  affiliateLinkEnabled?: boolean;
   sourceUrl?: string | null;
   lastVerifiedAt: string;
   eligibleFor?: string | null;
@@ -152,6 +154,7 @@ async function main() {
       startDate: new Date(p.startDate),
       endDate: new Date(p.endDate),
       affiliateUrl: p.affiliateUrl,
+      affiliateLinkEnabled: p.affiliateLinkEnabled ?? undefined,
       sourceUrl: p.sourceUrl ?? undefined,
       lastVerifiedAt: new Date(p.lastVerifiedAt),
       eligibleFor: p.eligibleFor ?? undefined,
@@ -167,6 +170,7 @@ async function main() {
     const incoming = {
       ...baseData,
       ratingOverride: p.ratingOverride,
+      affiliateLinkEnabled: p.affiliateLinkEnabled ?? existing?.affiliateLinkEnabled ?? true,
       bankId: bank.id,
       conditions: p.conditions,
       bonusParts: bonusPartsData,

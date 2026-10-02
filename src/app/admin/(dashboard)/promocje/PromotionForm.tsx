@@ -38,6 +38,7 @@ export function PromotionForm({
     resolver: zodResolver(promotionFormSchema),
     defaultValues: {
       status: "DRAFT",
+      affiliateLinkEnabled: true,
       accountType: "PERSONAL",
       difficulty: "EASY",
       conditions: [],
@@ -171,6 +172,16 @@ export function PromotionForm({
         <Field label="Link afiliacyjny (affiliate_url)" error={errors.affiliateUrl?.message}>
           <input {...register("affiliateUrl")} className="input" placeholder="https://partner.example.com/..." />
         </Field>
+        <label className="flex items-start gap-2 text-sm text-ink-700">
+          <input type="checkbox" {...register("affiliateLinkEnabled")} className="mt-1" />
+          <span>
+            Link partnerski aktywny
+            <span className="block text-xs text-ink-500">
+              Odznacz, jeśli oferta w banku trwa, ale kampania afiliacyjna nie jest potwierdzona: strona pokaże ofertę
+              bez przycisku „Przejdź do promocji”, a /out/… nie przekieruje do partnera.
+            </span>
+          </span>
+        </label>
         <Field label="Źródło warunków (URL regulaminu banku)" error={errors.sourceUrl?.message}>
           <input {...register("sourceUrl")} className="input" placeholder="https://bank.example.com/regulamin" />
         </Field>

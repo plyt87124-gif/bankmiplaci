@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/userSession";
 import { groupIndexFromOrder, isGroupUnlocked } from "@/lib/checklistSchedule";
+import { stepAvailability } from "@/lib/checklistAvailability";
 import { touchUserActivity } from "@/lib/userActivity";
 
 export async function POST(request: NextRequest) {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
 
   const step = await db.checklistStep.findUnique({
     where: { id: stepId },
-    select: { id: true, order: true, rewardCents: true, promotionId: true }
+    select: { id: true, order: true, rewardCents: true, promotionId: true, availableUntil: true }
   });
   if (!step) return NextResponse.json({ error: "Nie znaleziono kroku." }, { status: 404 });
 
@@ -31,6 +32,13 @@ export async function POST(request: NextRequest) {
       where: { userId_promotionId: { userId: user.id, promotionId: step.promotionId } },
       select: { accountOpenedAt: true }
     });
+    // A step of a sub-offer with its own sign-up deadline (e.g. Erste's
+    // Kantor bonus) can't be ticked by someone whose real account-opening
+    // date is after it. An unknown date is allowed through (the step is shown
+    // as optional and no reward is assumed - checklistAvailability.ts).
+    if (stepAvailability(step, tracking?.accountOpenedAt) === "unavailable") {
+      return NextResponse.json({ error: "Ten krok nie jest dostępny dla Twojej daty otwarcia konta." }, { status: 400 });
+    }
     const groupIndex = groupIndexFromOrder(step.order);
     if (!isGroupUnlocked(tracking?.accountOpenedAt ?? null, groupIndex)) {
       return NextResponse.json({ error: "Ten miesiąc jeszcze się nie rozpoczął." }, { status: 400 });

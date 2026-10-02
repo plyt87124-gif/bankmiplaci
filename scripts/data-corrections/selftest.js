@@ -9,9 +9,12 @@ const fs = require("fs");
 const path = require("path");
 const assert = require("node:assert/strict");
 
-for (const line of fs.readFileSync(".env", "utf8").split(/\r?\n/)) {
-  const m = line.match(/^DATABASE_URL="?([^"]+)"?$/);
-  if (m) process.env.DATABASE_URL = m[1];
+// CI passes DATABASE_URL in the environment; locally it comes from .env.
+if (!process.env.DATABASE_URL && fs.existsSync(".env")) {
+  for (const line of fs.readFileSync(".env", "utf8").split(/\r?\n/)) {
+    const m = line.match(/^DATABASE_URL="?([^"]+)"?$/);
+    if (m) process.env.DATABASE_URL = m[1];
+  }
 }
 if (!/@(localhost|127\.0\.0\.1)[:/]/.test(process.env.DATABASE_URL ?? "")) {
   console.error("Refusing to run: DATABASE_URL is not a local database.");
@@ -19,7 +22,7 @@ if (!/@(localhost|127\.0\.0\.1)[:/]/.test(process.env.DATABASE_URL ?? "")) {
 }
 
 const { PrismaClient } = require("@prisma/client");
-const { existingColumns, applyChanges, revertFrom } = require("./lib");
+const { existingColumns, applyChanges, revertFrom, writePlan, assertMatchesPlan } = require("./lib");
 const db = new PrismaClient();
 
 async function main() {
@@ -93,11 +96,30 @@ async function main() {
     assert.equal((await readPromo()).ratingReason, "A");
     console.log("ok 5  revert refuses to clobber later edits unless --force");
 
-    // 6. --apply refuses when a required column does not exist
+    // 7. plan binding: data moved on after the reviewed dry run -> apply is refused
+    await db.promotion.update({ where: { id: promo.id }, data: { ratingReason: "A" } });
+    const reviewed = mk();
+    const planFile = writePlan("selftest-plan", reviewed);
+    assertMatchesPlan(planFile, mk()); // unchanged data: accepted
+    await db.promotion.update({ where: { id: promo.id }, data: { ratingReason: "A2" } });
+    const drifted = mk();
+    drifted[0].expect.ratingReason = "A2"; // what a fresh read now sees
+    assert.throws(() => assertMatchesPlan(planFile, drifted), /changed since the dry run/);
+    fs.unlinkSync(planFile);
+    console.log("ok 6  --apply is bound to the reviewed plan: drifted data is refused");
+
+    // 7. enum column (Postgres enum "PromotionStatus"): bound with an explicit cast, reverts too
+    await applyChanges(db, "selftest", [{ table: "promotions", id: promo.id, label: "status", set: { status: "ACTIVE" }, expect: { status: "EXPIRED" } }], columns);
+    assert.equal((await readPromo()).status, "ACTIVE");
+    await revertFrom(db, latestBackup(), false);
+    assert.equal((await readPromo()).status, "EXPIRED");
+    console.log("ok 7  enum columns (status) are written and reverted");
+
+    // 8. --apply refuses when a required column does not exist
     const fake = mk();
     fake[1].requires = ["bonus_parts.doesNotExistYet"];
     await assert.rejects(() => applyChanges(db, "selftest", fake, columns), /do not exist in the database yet/);
-    console.log("ok 6  --apply refuses when the schema migration is not deployed");
+    console.log("ok 8  --apply refuses when the schema migration is not deployed");
   } finally {
     await db.promotion.delete({ where: { id: promo.id } }).catch(() => {});
     await db.bank.delete({ where: { id: bank.id } }).catch(() => {});

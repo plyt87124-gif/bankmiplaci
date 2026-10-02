@@ -1,3 +1,4 @@
+import { resolveGroups } from "@/lib/checklistAvailability";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
@@ -17,7 +18,7 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
       orderBy: { joinedAt: "desc" },
       include: {
         promotion: {
-          include: { bank: true, checklistSteps: { select: { id: true, rewardCents: true } } }
+          include: { bank: true, checklistSteps: { select: { id: true, order: true, rewardCents: true, availableUntil: true } } }
         }
       }
     }),
@@ -99,7 +100,7 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
         ) : (
           <div className="mt-3 space-y-2">
             {trackings.map((t) => {
-              const actionSteps = t.promotion.checklistSteps.filter((s) => s.rewardCents === null);
+              const actionSteps = resolveGroups(t.promotion.checklistSteps, t.accountOpenedAt).flatMap((g) => g.requiredSteps);
               const checkedCount = actionSteps.filter((s) => checkedStepIds.has(s.id)).length;
               return (
                 <div key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl2 border border-ink-100 bg-surface p-4 text-sm">

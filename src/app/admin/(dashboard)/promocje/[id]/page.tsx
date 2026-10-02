@@ -39,6 +39,7 @@ export default async function EditPromotionPage({ params }: { params: { id: stri
     startDate: dateInput(promotion.startDate),
     endDate: dateInput(promotion.endDate),
     affiliateUrl: promotion.affiliateUrl,
+    affiliateLinkEnabled: promotion.affiliateLinkEnabled,
     sourceUrl: promotion.sourceUrl ?? undefined,
     lastVerifiedAt: dateInput(promotion.lastVerifiedAt),
     eligibleFor: promotion.eligibleFor ?? undefined,

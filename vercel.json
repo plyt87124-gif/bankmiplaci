@@ -1,4 +1,9 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "fix/etap1-claude-code-poprawki": false
+    }
+  },
   "crons": [
     { "path": "/api/cron/expire-promotions", "schedule": "0 3 * * *" },
     { "path": "/api/cron/check-eligibility", "schedule": "15 3 * * *" },

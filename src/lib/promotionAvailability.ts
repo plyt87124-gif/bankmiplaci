@@ -52,6 +52,20 @@ export function isSignupOpen(
   return promotion.status === "ACTIVE" && !isDeadlinePassed(promotion.endDate, now);
 }
 
+/**
+ * Is OUR partner link allowed to send people to the bank? Needs the offer to
+ * be open (isSignupOpen) AND the affiliate campaign to be switched on
+ * (Promotion.affiliateLinkEnabled). The two are different facts: an offer can
+ * be current in the bank while the campaign is unconfirmed - then the page
+ * presents the offer, with no partner link and /out/[slug] blocked.
+ */
+export function isAffiliateLinkLive(
+  promotion: { status: string; endDate: Date | string; affiliateLinkEnabled?: boolean | null },
+  now: Date = new Date()
+): boolean {
+  return isSignupOpen(promotion, now) && promotion.affiliateLinkEnabled !== false;
+}
+
 /** Bonus part / extra reward that can still be joined (null = same as the promotion). */
 export function isBonusPartOpen(part: { availableUntil?: Date | string | null }, now: Date = new Date()): boolean {
   return part.availableUntil == null || !isDeadlinePassed(part.availableUntil, now);

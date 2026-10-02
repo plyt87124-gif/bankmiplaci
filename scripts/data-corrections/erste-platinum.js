@@ -2,8 +2,9 @@
  * PROPOSAL (not applied) - Erste Platinum: split the account offer from the
  * closed Kantor bonus, correct the payout schedule, fix the account fee.
  *
- *   node scripts/data-corrections/erste-platinum.js                    dry run (default) - writes nothing
- *   node scripts/data-corrections/erste-platinum.js --apply            one transaction + compare-and-set + revert file
+ *   node scripts/data-corrections/erste-platinum.js                    dry run (default) - writes nothing, records plan-*.json
+ *   node scripts/data-corrections/erste-platinum.js --apply --groups=dane,widocznosc --plan <plan-file>
+ *                                                                      only if the data still equals the reviewed plan; one transaction + compare-and-set + revert file
  *   node scripts/data-corrections/erste-platinum.js --revert <file>    [--force]
  *
  * Preparing this file is NOT approval to run --apply. Do not run it before the
@@ -26,19 +27,28 @@
  *      p.13/123: "0 zl albo 45 zl; 0 zl, gdy spelnisz warunek: wplywy co najmniej 10 000 zl lub srednie
  *      saldo aktywow co najmniej 150 000 zl"; Tabela 2 - Karty debetowe, Visa Platinum, pkt 1: 0 zl.
  *
+ * Two independent groups (--apply needs an explicit --groups=...; nothing is applied by default):
+ *   dane         texts, dates, amounts, fees, article, Kantor bonus parts + checklist steps get their own
+ *                sign-up deadline (BonusPart.availableUntil / ChecklistStep.availableUntil).
+ *   widocznosc   status EXPIRED -> ACTIVE (the bank's offer is current until 30.11.2026, so the page, listing
+ *                and sitemap show it) TOGETHER WITH Promotion.affiliateLinkEnabled = false, so there is still
+ *                no "Przejdz do promocji" button and /out/<slug> keeps refusing to redirect to the partner.
+ *                Turning the affiliate link on is a separate, later decision (admin form checkbox) once the
+ *                campaign is confirmed in the eBrokerPartner panel - the bank's regulamin alone does not
+ *                establish that, and this script never enables it.
+ *
  * Deliberately NOT changed: slug, users' trackings / checklist progress / steps' order and ids,
- * `status` (stays EXPIRED = no affiliate link, no redirect - it is only switched back to ACTIVE by a
- * person once eBrokerPartner confirms the campaign is live), affiliateUrl, rating, and lastVerifiedAt
- * (this check covered the dates, rewards and fees above, not the whole offer, so the date is not bumped).
+ * affiliateUrl, rating, and lastVerifiedAt (this check covered the dates, rewards and fees above,
+ * not the whole offer, so the date is not bumped).
  *
  * Separate dates this correction keeps apart:
  *   sign-up for the account offer .... Promotion.endDate            30.11.2026   [A]
  *   sign-up for the Kantor bonus ..... BonusPart.availableUntil     30.09.2026   [K]
  *   Kantor exchange window ........... 31.10.2026 / 30.11.2026 (people who already joined) [K]
  *   payouts .......................... per-month table in the article, [A] p.5, [K] p.5
- *   affiliate campaign ............... Promotion.status (owner decision, not touched)
+ *   affiliate campaign ............... Promotion.affiliateLinkEnabled (stays false; owner decision)
  */
-const { loadDb, existingColumns, printPlan, applyChanges, revertFrom, fmt } = require("./lib");
+const { loadDb, existingColumns, printPlan, applyChanges, revertFrom, writePlan, assertMatchesPlan, fmt } = require("./lib");
 
 const SLUG = "erste-platinum-1500-plus-300-zl";
 const ARTICLE_SLUG = "erste-bank-jak-zdobyc-do-1500-zl-premii";
@@ -127,13 +137,28 @@ async function main() {
         "Wysoka premia (do 1500 zł), ale wymaga regularnej aktywności (wpływ 10 000 zł/mies., 10 płatności/mies.) przez wiele miesięcy."
     };
     changes.push({
+      group: "dane",
       table: "promotions",
       id: p.id,
-      label: `Promotion ${SLUG} (slug unchanged; status stays ${p.status})`,
+      label: `Promotion ${SLUG} (slug unchanged)`,
       source: "[A] p.2 Czas promocji; [K] p.2 (Kantor sign-ups closed 30.09 -> no longer part of the headline amount)",
       set,
       expect: Object.fromEntries(Object.keys(set).map((k) => [k, p[k]])),
       touchUpdatedAt: true,
+      ...stampFor("promotions", p)
+    });
+
+    // --- visibility: offer current in the bank, affiliate link still OFF -----------------
+    changes.push({
+      group: "widocznosc",
+      table: "promotions",
+      id: p.id,
+      label: "Promotion: show the current bank offer (ACTIVE) while the partner link stays OFF",
+      source: "[A] p.2 - sign-ups open until 30.11.2026. affiliateLinkEnabled is set to false in the same transaction.",
+      set: { status: "ACTIVE", affiliateLinkEnabled: false },
+      expect: { status: p.status, affiliateLinkEnabled: p.affiliateLinkEnabled ?? null },
+      touchUpdatedAt: true,
+      requires: reqs("promotions", ["affiliateLinkEnabled"]),
       ...stampFor("promotions", p)
     });
 
@@ -182,7 +207,7 @@ async function main() {
     // --- checklist: same ids/orders/progress, only the wording ----------------------------
     const stepByOrder = (o) => steps.find((s) => s.order === o);
     const stepTitles = {
-      2: "Tylko jeśli przystąpiłeś/aś do promocji Kantor Erste do 30.09.2026 (zapisy zamknięte): wymień min. 200 jednostek waluty obcej w Kantorze Erste — do 31.10.2026 (przystąpienie w sierpniu) lub do 30.11.2026 (we wrześniu); opcjonalnie +100 jednostek innej waluty",
+      2: "Kantor Erste: wymień min. 200 jednostek waluty obcej — do 31.10.2026 (przystąpienie w sierpniu) lub do 30.11.2026 (we wrześniu); opcjonalnie +100 jednostek innej waluty",
       3: "Kantor Erste: odbierz nagrodę do 300 zł (do 25.11.2026 przy przystąpieniu w sierpniu, do 20.12.2026 — we wrześniu)",
       14: "Odbierz nagrodę: 200 zł (do końca miesiąca następującego po miesiącu wykonania warunków)",
       24: "Odbierz nagrodę: 200 zł (do końca miesiąca następującego po miesiącu wykonania warunków)",
@@ -192,13 +217,21 @@ async function main() {
     for (const [order, title] of Object.entries(stepTitles)) {
       const s = stepByOrder(Number(order));
       if (!s) continue;
+      // The two Kantor steps (order 2 = the exchange, 3 = its 300 zl reward row)
+      // also get their own sign-up deadline. The app then decides per participant,
+      // from the REAL account-opening date (UserPromotionTracking.accountOpenedAt,
+      // never joinedAt), whether they are shown / required: before the deadline
+      // as today, after it hidden, with no date optional and never auto-credited.
+      const isKantor = Number(order) === 2 || Number(order) === 3;
+      const set = isKantor ? { title, availableUntil: new Date("2026-09-30T00:00:00.000Z") } : { title };
       changes.push({
         table: "checklist_steps",
         id: s.id,
-        label: `Checklist step order ${order} (id and progress untouched)`,
-        source: Number(order) <= 3 ? "[K]" : "[A] p.5 Nagrody",
-        set: { title },
-        expect: { title: s.title }
+        label: `Checklist step order ${order} (id, order and users' progress untouched)${isKantor ? " + Kantor sign-up deadline" : ""}`,
+        source: Number(order) <= 3 ? "[K] p.2" : "[A] p.5 Nagrody",
+        set,
+        expect: Object.fromEntries(Object.keys(set).map((k) => [k, s[k] ?? null])),
+        ...(isKantor ? { requires: reqs("checklist_steps", ["availableUntil"]) } : {})
       });
     }
 
@@ -234,6 +267,7 @@ async function main() {
       requires: reqs("articles", ["contentUpdatedAt"])
     });
 
+    for (const c of changes) c.group ??= "dane";
     printPlan("Erste Platinum", changes, columns);
     const plus = (t) => t.split("\n").map((l) => "+ " + l).join("\n");
     const minus = (t) => t.split("\n").map((l) => "- " + l).join("\n");
@@ -241,16 +275,26 @@ async function main() {
     console.log(`@@ directly after the line "${OLD_PAYOUT_SECTION_END}" - ADDED:\n${plus(NEW_PAYOUT_SECTION)}`);
     console.log(`\n@@ section "Czy można dostać dodatkowe 300 zł za wymianę walut?" - REMOVED:\n${minus(KANTOR_OLD_TAIL)}`);
     console.log(`\n@@ same place - ADDED:\n${plus(KANTOR_NEW_TAIL)}`);
-    console.log("\nDeliberately unchanged: slug, status, affiliateUrl, rating, lastVerifiedAt, trackings, checklist ids/order/progress.");
-    console.log(`Current status stays ${p.status}; flipping it to ACTIVE (links, listing, sitemap, redirect all return together) is a separate owner decision.`);
+    console.log("\nDeliberately unchanged: slug, affiliateUrl, rating, lastVerifiedAt, trackings, checklist ids/order/progress.");
+    console.log(`Current status: ${p.status}. Group "widocznosc" makes it ACTIVE with affiliateLinkEnabled=false (page visible, no partner link, /out blocked); enabling the link is a later owner decision.`);
     console.log(`Tracking rows on this promotion: ${(await db.$queryRawUnsafe(`select count(*)::int n from user_promotion_tracking where "promotionId" = $1`, p.id))[0].n}`);
     void fmt;
 
     if (!apply) {
-      console.log("\nDry run only - nothing written. Re-run with --apply after review (schema migrations + new app version must be live).");
+      const planFile = writePlan("erste-platinum", changes);
+      console.log(`\nDry run only - nothing written to the database. Plan recorded in ${planFile}.`);
+      console.log("To apply after review (schema migrations + new app version must be live):");
+      console.log(`  node scripts/data-corrections/erste-platinum.js --apply --groups=dane,widocznosc --plan ${planFile}`);
       return;
     }
-    await applyChanges(db, "erste-platinum", changes, columns);
+    const groups = (args.find((a) => a.startsWith("--groups=")) ?? "").slice(9).split(",").filter(Boolean);
+    const planArg = args.indexOf("--plan");
+    if (!groups.length || planArg === -1) {
+      throw new Error("--apply needs an explicit --groups=dane,widocznosc (any subset) and --plan <file from the reviewed dry run>.");
+    }
+    const selected = changes.filter((c) => groups.includes(c.group));
+    assertMatchesPlan(args[planArg + 1], selected);
+    await applyChanges(db, "erste-platinum", selected, columns);
   } finally {
     await db.$disconnect();
   }

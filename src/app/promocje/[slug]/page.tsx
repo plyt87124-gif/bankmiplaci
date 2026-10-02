@@ -104,6 +104,10 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
   const deadlinePassed = isDeadlinePassed(promotion.endDate);
   const notPromoted = (promotion.status === "EXPIRED" || promotion.status === "ARCHIVED") && !deadlinePassed;
   const expired = promotion.status === "EXPIRED" || promotion.status === "ARCHIVED" || deadlinePassed;
+  // The offer is current but our partner link is switched off (campaign not
+  // confirmed): present the offer, show NO partner link. Separate from
+  // `expired` - see Promotion.affiliateLinkEnabled.
+  const affiliateOff = !expired && !promotion.affiliateLinkEnabled;
   // Rewards from a sub-offer whose own sign-up window has closed (e.g. a
   // Kantor bonus that ended before the main offer) stay in the data for
   // people who already joined, but are never shown as available or summed
@@ -145,6 +149,17 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
             To jest <strong>podgląd administratora</strong> — ta promocja ma status „Wersja robocza" i nie jest
             widoczna publicznie ani indeksowana przez wyszukiwarki. Zobaczysz ją tylko Ty, będąc zalogowanym/ą
             do panelu.
+          </p>
+        </div>
+      )}
+
+      {affiliateOff && (
+        <div className="mt-4 flex items-start gap-3 rounded-xl2 border border-ink-100 bg-ink-100/40 p-4">
+          <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-ink-500" />
+          <p className="text-sm text-ink-700">
+            Według regulaminu banku oferta jest aktualna (zapisy do {formatDate(promotion.endDate)}), ale nie
+            udostępniamy obecnie naszego linku do niej. Warunki znajdziesz poniżej i w regulaminie banku — przed
+            decyzją sprawdź ich aktualność na stronie banku.
           </p>
         </div>
       )}
@@ -219,10 +234,15 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
             <p className="font-display text-3xl font-semibold">{formatPLN(promotion.maxBonusCents)}</p>
             <p className="mt-1 text-sm text-ink-500">{promotion.bank.name} · {DIFFICULTY_LABEL[promotion.difficulty]}</p>
 
-            {expired ? (
-              <ButtonLink href="/promocje" className="mt-5 w-full">
-                Zobacz aktualne promocje
-              </ButtonLink>
+            {expired || affiliateOff ? (
+              <>
+                {affiliateOff && (
+                  <p className="mt-5 text-sm text-ink-500">Nie udostępniamy obecnie linku do tej oferty.</p>
+                )}
+                <ButtonLink href="/promocje" className="mt-4 w-full">
+                  Zobacz aktualne promocje
+                </ButtonLink>
+              </>
             ) : (
               <AffiliateCtaLink
                 href={outboundHref(
@@ -454,11 +474,11 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
               admin CTR breakdown can tell the two positions apart. */}
           <section className="mt-12 rounded-xl2 border border-ink-100 bg-surface p-6 text-center shadow-card">
             <p className="text-sm text-ink-500">
-              {expired
+              {expired || affiliateOff
                 ? "Ta oferta nie jest obecnie dostępna przez Bankmiplaci."
                 : `Sprawdziłeś/aś już warunki? Przejdź bezpośrednio do wniosku na stronie ${promotion.bank.name}.`}
             </p>
-            {expired ? (
+            {expired || affiliateOff ? (
               <ButtonLink href="/promocje" className="mt-4">
                 Zobacz aktualne promocje
               </ButtonLink>

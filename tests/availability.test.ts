@@ -5,6 +5,7 @@ import {
   signupCutoff,
   isDeadlinePassed,
   isSignupOpen,
+  isAffiliateLinkLive,
   isBonusPartOpen,
   robotsForStatus
 } from "../src/lib/promotionAvailability";
@@ -70,4 +71,17 @@ test("indexing is independent of the deadline; noindex pages keep follow", () =>
   // robotsForStatus takes no date at all: a past-deadline ACTIVE page is not
   // dropped from the index by this function (sign-up is blocked elsewhere).
   assert.equal(robotsForStatus.length, 1);
+});
+
+test("the partner link is a separate switch: offer open + flag off = shown, but no redirect", () => {
+  const now = d("2026-10-02T09:00:00Z");
+  const open = { status: "ACTIVE", endDate: d("2026-11-30T00:00:00Z") };
+  assert.equal(isSignupOpen(open, now), true);
+  assert.equal(isAffiliateLinkLive({ ...open, affiliateLinkEnabled: true }, now), true);
+  assert.equal(isAffiliateLinkLive({ ...open, affiliateLinkEnabled: false }, now), false);
+  // missing flag (rows read before the column existed) behaves like true
+  assert.equal(isAffiliateLinkLive(open, now), true);
+  // the flag can never open a closed offer
+  assert.equal(isAffiliateLinkLive({ status: "EXPIRED", endDate: open.endDate, affiliateLinkEnabled: true }, now), false);
+  assert.equal(isAffiliateLinkLive({ status: "ACTIVE", endDate: d("2026-09-30T00:00:00Z"), affiliateLinkEnabled: true }, now), false);
 });

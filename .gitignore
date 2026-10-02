@@ -8,3 +8,7 @@ tsconfig.tsbuildinfo
 
 .vercel
 .env*
+
+# one-off data-correction artifacts (contain row values; keep local)
+plan-*.json
+revert-*.json

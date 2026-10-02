@@ -6,7 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { CheckSquare, Square, CheckCircle2, Lock, Building2 } from "lucide-react";
 import { formatPLN, formatDate } from "@/lib/format";
-import { groupIndexFromOrder, isGroupUnlocked, monthGroupLabel, unlockDateForGroup } from "@/lib/checklistSchedule";
+import { isGroupUnlocked, monthGroupLabel, unlockDateForGroup } from "@/lib/checklistSchedule";
+import { resolveGroups, isRewardEarned, earnedCentsFor, type ResolvedGroup } from "@/lib/checklistAvailability";
 import { useEarningsContext } from "@/components/EarningsContext";
 
 interface Step {
@@ -15,6 +16,8 @@ interface Step {
   title: string;
   rewardCents: number | null;
   order: number;
+  /** Deadline for joining the sub-offer this step belongs to; see checklistAvailability.ts. */
+  availableUntil?: string | Date | null;
 }
 
 interface Tracking {
@@ -29,45 +32,26 @@ interface Tracking {
   steps: Step[];
 }
 
-interface Group {
-  groupIndex: number;
+interface Group extends ResolvedGroup<Step> {
   label: string;
-  actionSteps: Step[];
-  rewardStep: Step | null;
   unlocked: boolean;
   unlockDate: Date | null;
 }
 
 function buildGroups(steps: Step[], accountOpenedAt: Date | null): Group[] {
-  const map = new Map<number, Step[]>();
-  for (const s of steps) {
-    const idx = groupIndexFromOrder(s.order);
-    const list = map.get(idx) ?? [];
-    list.push(s);
-    map.set(idx, list);
-  }
-  return Array.from(map.entries())
-    .sort(([a], [b]) => a - b)
-    .map(([groupIndex, groupSteps]) => {
-      const rewardStep = groupSteps.find((s) => s.rewardCents !== null) ?? null;
-      const actionSteps = groupSteps.filter((s) => s.rewardCents === null);
-      return {
-        groupIndex,
-        label: monthGroupLabel(accountOpenedAt, groupIndex, groupSteps[0]?.monthLabel ?? ""),
-        actionSteps,
-        rewardStep,
-        unlocked: isGroupUnlocked(accountOpenedAt, groupIndex),
-        unlockDate: accountOpenedAt ? unlockDateForGroup(accountOpenedAt, groupIndex) : null
-      };
-    });
+  // Which steps/rewards this participant can use is decided by the date they
+  // actually took up the offer (accountOpenedAt), not by when they registered
+  // here - see src/lib/checklistAvailability.ts.
+  return resolveGroups(steps, accountOpenedAt).map((g) => ({
+    ...g,
+    label: monthGroupLabel(accountOpenedAt, g.groupIndex, steps.find((s) => Math.floor(s.order / 10) === g.groupIndex)?.monthLabel ?? ""),
+    unlocked: isGroupUnlocked(accountOpenedAt, g.groupIndex),
+    unlockDate: accountOpenedAt ? unlockDateForGroup(accountOpenedAt, g.groupIndex) : null
+  }));
 }
 
 function trackingEarnedCents(tracking: Tracking, checked: Set<string>): number {
-  const opened = tracking.accountOpenedAt ? new Date(tracking.accountOpenedAt) : null;
-  return buildGroups(tracking.steps, opened).reduce((sum, g) => {
-    const allDone = g.actionSteps.length > 0 && g.actionSteps.every((s) => checked.has(s.id));
-    return sum + (allDone && g.rewardStep ? g.rewardStep.rewardCents ?? 0 : 0);
-  }, 0);
+  return earnedCentsFor(tracking.steps, tracking.accountOpenedAt, checked);
 }
 
 export function PromotionChecklist({
@@ -235,12 +219,12 @@ function ChecklistCard({
   const accountOpenedAt = tracking.accountOpenedAt ? new Date(tracking.accountOpenedAt) : null;
   const groups = useMemo(() => buildGroups(tracking.steps, accountOpenedAt), [tracking.steps, tracking.accountOpenedAt]);
 
-  const actionSteps = tracking.steps.filter((s) => s.rewardCents === null);
-  const checkedActionCount = actionSteps.filter((s) => checked.has(s.id)).length;
-  const earnedCents = groups.reduce((sum, g) => {
-    const allDone = g.actionSteps.length > 0 && g.actionSteps.every((s) => checked.has(s.id));
-    return sum + (allDone && g.rewardStep ? g.rewardStep.rewardCents ?? 0 : 0);
-  }, 0);
+  // Steps this participant is actually required to do (a step for a sub-offer
+  // they joined too late for is not counted, a step of unknown eligibility is
+  // optional).
+  const requiredSteps = groups.flatMap((g) => g.requiredSteps);
+  const checkedActionCount = requiredSteps.filter((s) => checked.has(s.id)).length;
+  const earnedCents = groups.reduce((sum, g) => sum + (isRewardEarned(g, checked) ? g.rewardStep!.rewardCents ?? 0 : 0), 0);
 
   return (
     <div className="rounded-xl2 border border-ink-100 bg-surface p-5">
@@ -258,7 +242,7 @@ function ChecklistCard({
               {tracking.bankName} — {tracking.promotionName}
             </p>
             <p className="text-xs text-ink-500">
-              {checkedActionCount}/{actionSteps.length} kroków · zdobyte dotąd: {formatPLN(earnedCents)}
+              {checkedActionCount}/{requiredSteps.length} kroków · zdobyte dotąd: {formatPLN(earnedCents)}
             </p>
           </div>
         </div>
@@ -272,7 +256,8 @@ function ChecklistCard({
           timeline is visible at once (the page itself still scrolls). */}
       <div className="mt-4 flex flex-wrap gap-4">
         {groups.map((g) => {
-          const monthAllChecked = g.actionSteps.length > 0 && g.actionSteps.every((s) => checked.has(s.id));
+          const monthAllChecked = g.bulkSteps.length > 0 && g.bulkSteps.every((s) => checked.has(s.id));
+          const rewardEarned = isRewardEarned(g, checked);
           return (
             <div key={g.groupIndex} className={`w-64 ${!g.unlocked ? "opacity-50" : ""}`}>
               <div className="flex items-center justify-between">
@@ -282,7 +267,7 @@ function ChecklistCard({
                 </p>
                 {g.unlocked ? (
                   <button
-                    onClick={() => onToggleMonth(g.actionSteps, monthAllChecked)}
+                    onClick={() => onToggleMonth(g.bulkSteps, monthAllChecked)}
                     className="text-xs font-medium text-teal-700 hover:underline"
                   >
                     {monthAllChecked ? "Odznacz cały miesiąc" : "Zaznacz cały miesiąc"}
@@ -294,8 +279,9 @@ function ChecklistCard({
                 )}
               </div>
               <ul className="mt-2 space-y-1.5">
-                {g.actionSteps.map((s) => {
+                {g.visibleSteps.map((s) => {
                   const isChecked = checked.has(s.id);
+                  const unknown = g.unknownSteps.includes(s);
                   return (
                     <li key={s.id}>
                       <button
@@ -308,13 +294,21 @@ function ChecklistCard({
                         ) : (
                           <Square className="mt-0.5 h-4 w-4 shrink-0 text-ink-300" />
                         )}
-                        <span className="text-sm text-ink-700">{s.title}</span>
+                        <span className="text-sm text-ink-700">
+                          {s.title}
+                          {unknown && (
+                            <span className="mt-1 block text-[11px] text-ink-500">
+                              Opcjonalny: nie mamy daty otwarcia konta, więc nie wiemy, czy ten bonus Ci przysługuje.
+                              Odhacz, tylko jeśli faktycznie z niego korzystasz.
+                            </span>
+                          )}
+                        </span>
                       </button>
                     </li>
                   );
                 })}
               </ul>
-              {g.rewardStep && <RewardRow title={g.rewardStep.title} unlocked={monthAllChecked} />}
+              {g.rewardStep && <RewardRow title={g.rewardStep.title} unlocked={rewardEarned} />}
             </div>
           );
         })}

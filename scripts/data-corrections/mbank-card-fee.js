@@ -2,8 +2,8 @@
  * PROPOSAL (not applied) - mBank "Cala naprzod ed. II + Biedronka": the
  * eKonto do uslug card is NOT unconditionally free.
  *
- *   node scripts/data-corrections/mbank-card-fee.js                    dry run (default) - writes nothing
- *   node scripts/data-corrections/mbank-card-fee.js --apply            one transaction + compare-and-set + revert file
+ *   node scripts/data-corrections/mbank-card-fee.js                    dry run (default) - writes nothing, records plan-*.json
+ *   node scripts/data-corrections/mbank-card-fee.js --apply --plan <plan-file>   only if the data still equals the reviewed plan; one transaction + compare-and-set + revert file
  *   node scripts/data-corrections/mbank-card-fee.js --revert <file>    [--force]
  *
  * Preparing this file is NOT approval to run --apply. --apply refuses to run
@@ -32,7 +32,7 @@
  * whole offer, so the verification date is not bumped (an earlier draft of this proposal
  * did bump it; that was wrong and has been removed).
  */
-const { loadDb, existingColumns, printPlan, applyChanges, revertFrom } = require("./lib");
+const { loadDb, existingColumns, printPlan, applyChanges, revertFrom, writePlan, assertMatchesPlan } = require("./lib");
 
 const SLUG = "mbank-cala-naprzod-edycja-2-bony-biedronka";
 const ARTICLE_SLUG = "mbank-1000-zl-premii-300-zl-biedronka";
@@ -137,9 +137,16 @@ async function main() {
     console.log("\nDeliberately unchanged: lastVerifiedAt, accountFeeCents (0, unconditional per the taryfa), slug, status, affiliateUrl, rating.");
 
     if (!apply) {
-      console.log("\nDry run only - nothing written. Re-run with --apply after review.");
+      const planFile = writePlan("mbank-card-fee", changes);
+      console.log(`
+Dry run only - nothing written to the database. Plan recorded in ${planFile}.`);
+      console.log("To apply after review (schema migrations + new app version must be live):");
+      console.log(`  node scripts/data-corrections/mbank-card-fee.js --apply --plan ${planFile}`);
       return;
     }
+    const planArg = args.indexOf("--plan");
+    if (planArg === -1) throw new Error("--apply needs --plan <file from the reviewed dry run>.");
+    assertMatchesPlan(args[planArg + 1], changes);
     await applyChanges(db, "mbank-card-fee", changes, columns);
   } finally {
     await db.$disconnect();
