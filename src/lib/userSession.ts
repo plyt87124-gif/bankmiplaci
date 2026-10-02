@@ -24,7 +24,7 @@ export async function createUserSession(userId: string) {
     .setExpirationTime(`${MAX_AGE_SECONDS}s`)
     .sign(getSecret());
 
-  cookies().set(COOKIE_NAME, token, {
+  (await cookies()).set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -33,12 +33,12 @@ export async function createUserSession(userId: string) {
   });
 }
 
-export function clearUserSession() {
-  cookies().delete(COOKIE_NAME);
+export async function clearUserSession() {
+  (await cookies()).delete(COOKIE_NAME);
 }
 
 export async function getCurrentUser() {
-  const token = cookies().get(COOKIE_NAME)?.value;
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token) return null;
 
   try {

@@ -19,11 +19,12 @@ export const metadata: Metadata = {
 const ACCOUNT_TYPE_LABEL: Record<string, string> = { PERSONAL: "Osobiste", BUSINESS: "Firmowe" };
 const COUNT_VALUES = ["4", "8", "12", "all"] as const;
 
-export default async function ComparePage({
-  searchParams
-}: {
-  searchParams: { typ?: string; liczba?: string };
-}) {
+export default async function ComparePage(
+  props: {
+    searchParams: Promise<{ typ?: string; liczba?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const accountType = searchParams.typ === "PERSONAL" || searchParams.typ === "BUSINESS" ? searchParams.typ : undefined;
   const promotions = await listActivePromotions({ sort: "top-rated", accountType });
 

@@ -45,7 +45,8 @@ function sortToOrderBy(sort: SortKey): Prisma.UserOrderByWithRelationInput | Pri
   }
 }
 
-export default async function AdminUsersPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function AdminUsersPage(props: { searchParams: Promise<SearchParams> }) {
+  const searchParams = await props.searchParams;
   const showActiveOnly = searchParams.active === "1";
   const q = searchParams.q?.trim() || "";
   const sort: SortKey = searchParams.sort === "active" || searchParams.sort === "engagement" ? searchParams.sort : "newest";

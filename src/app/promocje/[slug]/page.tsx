@@ -24,11 +24,12 @@ import { computeEligibility, isChecklistRestartLocked } from "@/lib/services/eli
 import { AlertTriangle, ShieldAlert, Eye, ArrowRight, BookOpen } from "lucide-react";
 
 interface PageProps {
-  params: { slug: string };
-  searchParams: { ref?: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ ref?: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata(props: PageProps): Promise<Metadata> {
+  const params = await props.params;
   const promotion = await getPromotionBySlug(params.slug);
   if (!promotion) return { title: "Promocja nie znaleziona" };
 
@@ -55,7 +56,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function PromotionDetailPage({ params, searchParams }: PageProps) {
+export default async function PromotionDetailPage(props: PageProps) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const promotion = await getPromotionBySlug(params.slug);
 
   if (!promotion) notFound();

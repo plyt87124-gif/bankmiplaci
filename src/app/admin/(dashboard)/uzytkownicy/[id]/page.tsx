@@ -8,7 +8,8 @@ import { sendPasswordResetLink } from "../actions";
 import { DeleteUserButton } from "./DeleteUserButton";
 import { ArrowLeft, KeyRound, CheckCircle2, Circle, MailCheck, MousePointerClick } from "lucide-react";
 
-export default async function AdminUserDetailPage({ params }: { params: { id: string } }) {
+export default async function AdminUserDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await db.user.findUnique({ where: { id: params.id } });
   if (!user) notFound();
 

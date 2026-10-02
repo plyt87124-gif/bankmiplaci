@@ -6,10 +6,11 @@ import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 
 interface PageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata(props: PageProps): Promise<Metadata> {
+  const params = await props.params;
   const article = await db.article.findUnique({ where: { slug: params.slug } });
   if (!article || !article.published) return { title: "Artykuł nie znaleziony" };
   return {
@@ -19,7 +20,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ArticlePage({ params }: PageProps) {
+export default async function ArticlePage(props0: PageProps) {
+  const params = await props0.params;
   const article = await db.article.findUnique({
     where: { slug: params.slug },
     include: { author: true }

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     q?: string;
     bank?: string;
     accountType?: string;
@@ -23,10 +23,11 @@ interface PageProps {
     noFees?: string;
     sort?: string;
     niedostepna?: string;
-  };
+  }>;
 }
 
-export default async function PromotionsPage({ searchParams }: PageProps) {
+export default async function PromotionsPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   const [promotions, banks] = await Promise.all([
     listActivePromotions({
       q: searchParams.q,

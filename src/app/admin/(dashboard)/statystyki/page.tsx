@@ -14,7 +14,8 @@ import { StatsCharts } from "./StatsCharts";
 
 const VALID_RANGES = [7, 30, 90];
 
-export default async function StatsPage({ searchParams }: { searchParams: { days?: string } }) {
+export default async function StatsPage(props: { searchParams: Promise<{ days?: string }> }) {
+  const searchParams = await props.searchParams;
   const days = VALID_RANGES.includes(Number(searchParams.days)) ? Number(searchParams.days) : 30;
 
   const [

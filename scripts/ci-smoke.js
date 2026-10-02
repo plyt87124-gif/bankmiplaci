@@ -13,6 +13,7 @@
  */
 const { spawn } = require("child_process");
 const assert = require("node:assert/strict");
+const bcrypt = require("bcryptjs");
 
 if (!/@(localhost|127\.0\.0\.1)[:/]/.test(process.env.DATABASE_URL ?? "")) {
   console.error("Refusing to run: DATABASE_URL is not a local/test database.");
@@ -23,6 +24,8 @@ const { PrismaClient } = require("@prisma/client");
 const db = new PrismaClient();
 const PORT = 3999;
 const BASE = `http://localhost:${PORT}`;
+const SESSION_EMAIL = "ci-smoke-session@example.test";
+const SESSION_PASSWORD = "CI-only-session-test-2026";
 const day = (iso) => new Date(`${iso}T00:00:00Z`);
 const warsawToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 const warsawYesterday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(Date.now() - 86400000));
@@ -30,12 +33,16 @@ const warsawNextMonth = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/War
 
 async function get(path, opts = {}) {
   const res = await fetch(BASE + path, { redirect: "manual", ...opts });
-  return { status: res.status, location: res.headers.get("location"), type: res.headers.get("content-type"), text: res.status < 300 || res.status >= 400 ? await res.text() : "" };
+  return { status: res.status, location: res.headers.get("location"), type: res.headers.get("content-type"), cookie: res.headers.get("set-cookie"), text: res.status < 300 || res.status >= 400 ? await res.text() : "" };
 }
 const robots = (html) => (html.match(/<meta name="robots" content="([^"]*)"/) ?? [])[1];
 
 async function seed() {
   const bank = await db.bank.create({ data: { name: "CI Bank", slug: "ci-bank" } });
+  await db.user.create({ data: {
+    email: SESSION_EMAIL, username: "ci_smoke_session", name: "Smoke CI",
+    passwordHash: await bcrypt.hash(SESSION_PASSWORD, 4)
+  } });
   const base = {
     bankId: bank.id, accountType: "PERSONAL", maxBonusCents: 150000, difficulty: "EASY", rating: 9,
     startDate: day("2026-01-01"), lastVerifiedAt: day("2026-10-02"), affiliateUrl: "https://example.com/partner"
@@ -58,6 +65,7 @@ async function seed() {
 }
 
 async function cleanup() {
+  await db.user.deleteMany({ where: { email: SESSION_EMAIL } });
   await db.promotion.deleteMany({ where: { slug: { startsWith: "ci-" } } });
   await db.bank.deleteMany({ where: { slug: "ci-bank" } });
 }
@@ -74,6 +82,23 @@ async function verify() {
     // pages & assets that must exist
     assert.equal((await get("/")).status, 200);
     assert.equal((await get("/jak-to-dziala")).status, 200, "/jak-to-dziala (was a 404)");
+    assert.equal((await get("/porownaj?typ=PERSONAL&liczba=4")).status, 200, "async searchParams on comparison page");
+    assert.equal((await get("/api/promotions/ci-open/comments")).status, 200, "async params on comments route");
+
+    // Next 15 makes cookies() asynchronous. Verify the real login -> account -> logout flow.
+    assert.equal((await get("/konto")).status, 307, "anonymous account request redirects to login");
+    const login = await get("/api/account/login", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier: SESSION_EMAIL, password: SESSION_PASSWORD })
+    });
+    assert.equal(login.status, 200, "login succeeds");
+    assert.ok(login.cookie?.startsWith("premia_session="), "login writes a session cookie");
+    const sessionCookie = login.cookie.split(";")[0];
+    assert.equal((await get("/konto?onboarding=1", { headers: { Cookie: sessionCookie } })).status, 200, "async cookies read the logged-in account");
+    const logout = await get("/api/account/logout", { method: "POST", headers: { Cookie: sessionCookie } });
+    assert.equal(logout.status, 200, "logout succeeds");
+    assert.ok(logout.cookie?.startsWith("premia_session=;"), "logout clears the cookie before sending the response");
+    assert.equal((await get("/konto")).status, 307, "account redirects after browser discards the cleared cookie");
     const og = await get("/opengraph-image");
     assert.equal(og.status, 200, "/opengraph-image builds and serves on Linux");
     assert.match(og.type ?? "", /image\/png/);

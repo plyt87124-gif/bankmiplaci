@@ -26,7 +26,7 @@ function classifySource(): string {
 
 export function PageViewTracker() {
   const pathname = usePathname();
-  const source = useRef<string>();
+  const source = useRef<string | undefined>(undefined);
   if (source.current === undefined) source.current = classifySource();
 
   useEffect(() => {

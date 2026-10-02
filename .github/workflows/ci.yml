@@ -60,6 +60,9 @@ jobs:
       # Dependencies exactly as locked - nothing is upgraded here.
       - run: npm ci
 
+      - name: Production dependencies must not have known high or critical advisories
+        run: npm audit --omit=dev --audit-level=high
+
       - name: The production build script must be the plain one (no Windows shim)
         run: node -e "const s=require('./package.json').scripts; if (s.build !== 'next build') { console.error('scripts.build is', s.build); process.exit(1); }"
 
