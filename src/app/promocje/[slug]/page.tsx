@@ -454,7 +454,9 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
               admin CTR breakdown can tell the two positions apart. */}
           <section className="mt-12 rounded-xl2 border border-ink-100 bg-surface p-6 text-center shadow-card">
             <p className="text-sm text-ink-500">
-              Sprawdziłeś/aś już warunki? Przejdź bezpośrednio do wniosku na stronie {promotion.bank.name}.
+              {expired
+                ? "Ta oferta nie jest obecnie dostępna przez Bankmiplaci."
+                : `Sprawdziłeś/aś już warunki? Przejdź bezpośrednio do wniosku na stronie ${promotion.bank.name}.`}
             </p>
             {expired ? (
               <ButtonLink href="/promocje" className="mt-4">
