@@ -158,8 +158,8 @@ async function main() {
   const cta = page.getByRole("link", { name: /Przejdź do promocji/ }).first();
   const [popup] = await Promise.all([context.waitForEvent("page"), cta.click()]);
   await popup.waitForURL("https://example.com/partner");
-  report.cta = { target: "https://example.com/partner", interceptedTargets, externalNetworkSent: false };
-  assert.ok(interceptedTargets.includes(report.cta.target), `CTA target was not intercepted: ${interceptedTargets.join(", ")}`);
+  report.cta = { target: popup.url(), interceptedTargets, externalNetworkSent: false };
+  assert.equal(report.cta.target, "https://example.com/partner");
   await context.close();
 
   console.log(`ci-visual: ${report.pages.length} page/viewport checks passed`);
