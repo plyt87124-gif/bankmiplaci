@@ -113,7 +113,10 @@ async function cleanup() {
 }
 
 async function verify() {
-  const server = spawn(process.execPath, [require.resolve("next/dist/bin/next"), "start", "-p", String(PORT)], { stdio: "inherit", env: process.env });
+  const server = spawn(process.execPath, [require.resolve("next/dist/bin/next"), "start", "-p", String(PORT)], {
+    stdio: "inherit",
+    env: { ...process.env, INTERNAL_TRAFFIC_EMAILS: SESSION_EMAIL }
+  });
   try {
     for (let i = 0; i < 60; i++) {
       try { if ((await get("/jak-to-dziala")).status === 200) break; } catch {}
@@ -173,6 +176,25 @@ async function verify() {
     assert.ok(login.cookie?.startsWith("premia_session="), "login writes a session cookie");
     const sessionCookie = login.cookie.split(";")[0];
     assert.equal((await get("/konto?onboarding=1", { headers: { Cookie: sessionCookie } })).status, 200, "async cookies read the logged-in account");
+
+    // The configured owner/test account still reaches the isolated partner,
+    // but must never create a Click or PROMOTION_CLICK notification.
+    const internalPromotion = await db.promotion.findUniqueOrThrow({ where: { slug: "ci-open" }, select: { id: true } });
+    const internalNotificationCount = await db.adminNotification.count({
+      where: { type: "PROMOTION_CLICK", relatedPromotionId: internalPromotion.id }
+    });
+    const internalOut = await get("/out/ci-open?src=ci-internal", { headers: {
+      Cookie: sessionCookie,
+      "User-Agent": "Mozilla/5.0 CI internal browser",
+      "X-Forwarded-For": "192.0.2.10"
+    } });
+    assert.equal(internalOut.status, 302, "internal user still receives the redirect");
+    assert.equal(internalOut.location, "https://example.com/partner", "internal redirect keeps the isolated target");
+    assert.equal(await db.click.count({ where: { source: "ci-internal" } }), 0, "internal traffic creates no Click");
+    assert.equal(await db.adminNotification.count({
+      where: { type: "PROMOTION_CLICK", relatedPromotionId: internalPromotion.id }
+    }), internalNotificationCount, "internal traffic creates no click notification");
+
     const logout = await get("/api/account/logout", { method: "POST", headers: { Cookie: sessionCookie } });
     assert.equal(logout.status, 200, "logout succeeds");
     assert.ok(logout.cookie?.startsWith("premia_session=;"), "logout clears the cookie before sending the response");
@@ -184,6 +206,38 @@ async function verify() {
     // sign-up window: last day open, day after closed, not-promoted closed
     assert.equal((await get("/out/ci-open")).status, 302);
     assert.equal((await get("/out/ci-open")).location, "https://example.com/partner");
+
+    // A failed analytics write must roll the whole tracking transaction back
+    // and must never block the outbound redirect. The trigger exists only in
+    // this throw-away CI database and targets one synthetic source value.
+    await db.$executeRawUnsafe(`
+      CREATE FUNCTION ci_fail_click_insert() RETURNS trigger AS $$
+      BEGIN
+        IF NEW.source = 'ci-forced-failure' THEN
+          RAISE EXCEPTION 'CI forced click insert failure';
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql
+    `);
+    await db.$executeRawUnsafe(`
+      CREATE TRIGGER ci_fail_click_insert
+      BEFORE INSERT ON clicks
+      FOR EACH ROW EXECUTE FUNCTION ci_fail_click_insert()
+    `);
+    try {
+      const failedWriteOut = await get("/out/ci-open?src=ci-forced-failure", { headers: {
+        "User-Agent": "Mozilla/5.0 CI failed-write browser",
+        "X-Forwarded-For": "192.0.2.20"
+      } });
+      assert.equal(failedWriteOut.status, 302, "tracking failure does not block redirect");
+      assert.equal(failedWriteOut.location, "https://example.com/partner", "tracking failure keeps the isolated target");
+      assert.equal(await db.click.count({ where: { source: "ci-forced-failure" } }), 0, "failed Click insert is rolled back");
+    } finally {
+      await db.$executeRawUnsafe("DROP TRIGGER IF EXISTS ci_fail_click_insert ON clicks");
+      await db.$executeRawUnsafe("DROP FUNCTION IF EXISTS ci_fail_click_insert()");
+    }
+
     assert.equal((await get("/out/ci-lastday")).status, 302, "last day is still open (Polish calendar)");
     for (const slug of ["ci-pastdeadline", "ci-notpromoted", "ci-draft", "ci-archived"]) {
       for (const ua of ["CI browser", "Googlebot"]) {
