@@ -143,12 +143,22 @@ async function main() {
   }
 
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const observed = await isolatedPage(context);
-  await observed.page.goto(`${BASE}/promocje/ci-open`, { waitUntil: "networkidle" });
-  const cta = observed.page.getByRole("link", { name: /Przejdź do promocji/ }).first();
-  await cta.click();
-  await observed.page.waitForTimeout(1000);
-  report.cta = { target: observed.interceptedExternalRequests.at(-1), externalNetworkSent: false };
+  let interceptedTarget;
+  await context.route("**/*", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return route.continue();
+    if (url.hostname === "example.test" || url.hostname === "example.com") {
+      interceptedTarget = route.request().url();
+      return route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>stub</title>stub" });
+    }
+    return route.abort("blockedbyclient");
+  });
+  const page = await context.newPage();
+  await page.goto(`${BASE}/promocje/ci-open`, { waitUntil: "networkidle" });
+  const cta = page.getByRole("link", { name: /Przejdź do promocji/ }).first();
+  const [popup] = await Promise.all([context.waitForEvent("page"), cta.click()]);
+  await popup.waitForLoadState("domcontentloaded");
+  report.cta = { target: interceptedTarget, externalNetworkSent: false };
   assert.equal(report.cta.target, "https://example.com/partner");
   await context.close();
 
