@@ -1,15 +1,4 @@
-import {
-  getPageViewsTrend,
-  getClicksTrend,
-  getPageBreakdown,
-  getTopPromotionsByMetric,
-  getTrafficTotals,
-  getSourceBreakdown,
-  getChecklistStats,
-  getEligibilityFunnelStats,
-  getBankBreakdown,
-  getCampaignBreakdown
-} from "@/lib/services/analytics";
+import { getStatsPageData } from "@/lib/services/analytics";
 import { StatsCharts } from "./StatsCharts";
 
 const VALID_RANGES = [7, 30, 90];
@@ -18,7 +7,8 @@ export default async function StatsPage(props: { searchParams: Promise<{ days?: 
   const searchParams = await props.searchParams;
   const days = VALID_RANGES.includes(Number(searchParams.days)) ? Number(searchParams.days) : 30;
 
-  const [
+  // One query at a time — see getStatsPageData.
+  const {
     pageViewsTrend,
     clicksTrend,
     pageBreakdown,
@@ -30,19 +20,7 @@ export default async function StatsPage(props: { searchParams: Promise<{ days?: 
     checklistStats,
     eligibilityFunnel,
     campaignBreakdown
-  ] = await Promise.all([
-    getPageViewsTrend(days),
-    getClicksTrend(days),
-    getPageBreakdown(days),
-    getSourceBreakdown(days),
-    getBankBreakdown(days),
-    getTopPromotionsByMetric("impressions", 10),
-    getTopPromotionsByMetric("clicks", 10),
-    getTrafficTotals(days),
-    getChecklistStats(),
-    getEligibilityFunnelStats(),
-    getCampaignBreakdown(days)
-  ]);
+  } = await getStatsPageData(days);
 
   return (
     <div>
