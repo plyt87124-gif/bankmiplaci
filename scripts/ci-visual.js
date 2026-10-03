@@ -157,7 +157,7 @@ async function main() {
   await page.goto(`${BASE}/promocje/ci-open`, { waitUntil: "networkidle" });
   const cta = page.getByRole("link", { name: /Przejdź do promocji/ }).first();
   const [popup] = await Promise.all([context.waitForEvent("page"), cta.click()]);
-  await popup.waitForLoadState("domcontentloaded");
+  await popup.waitForURL("https://example.com/partner");
   report.cta = { target: "https://example.com/partner", interceptedTargets, externalNetworkSent: false };
   assert.ok(interceptedTargets.includes(report.cta.target), `CTA target was not intercepted: ${interceptedTargets.join(", ")}`);
   await context.close();
