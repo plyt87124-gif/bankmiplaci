@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { feeWaiverProblems } from "@/lib/feeValidation";
 
 export const conditionSchema = z.object({
   title: z.string().min(3, "Podaj tytuł warunku"),
@@ -41,6 +42,10 @@ export const feesSchema = z.object({
   cardFeeWaiverCondition: z.string().optional(),
   atmFeeCents: optionalFeeCents,
   otherFee: z.string().optional()
+}).superRefine((fees, ctx) => {
+  for (const problem of feeWaiverProblems(fees)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: [problem.field], message: problem.message });
+  }
 });
 
 export const promotionFormSchema = z

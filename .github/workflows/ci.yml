@@ -60,6 +60,9 @@ jobs:
       # Dependencies exactly as locked - nothing is upgraded here.
       - run: npm ci
 
+      - name: Production dependencies must not have known high or critical advisories
+        run: npm audit --omit=dev --audit-level=high
+
       - name: The production build script must be the plain one (no Windows shim)
         run: node -e "const s=require('./package.json').scripts; if (s.build !== 'next build') { console.error('scripts.build is', s.build); process.exit(1); }"
 
@@ -77,6 +80,9 @@ jobs:
 
       - run: npx tsc --noEmit
 
+      - name: ESLint (non-interactive)
+        run: npm run lint
+
       - run: npm test
 
       - name: Database tests - clearing fields writes NULL, import keeps deadlines, contentUpdatedAt only on real changes, zero cooldown + notifications, opening-date backfill, join and reminder-marker reset
@@ -90,6 +96,20 @@ jobs:
 
       - name: Production build (plain `npm run build`, Linux)
         run: npm run build
+
+      - name: Install Chromium for isolated visual checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Chromium mobile and desktop checks
+        run: node scripts/ci-visual.js
+
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-evidence-${{ github.sha }}
+          path: visual-artifacts
+          if-no-files-found: warn
 
       - name: HTTP smoke test of the built app
         run: node scripts/ci-smoke.js verify

@@ -216,8 +216,10 @@ function ChecklistCard({
   onConfirm: () => void;
   pending: boolean;
 }) {
-  const accountOpenedAt = tracking.accountOpenedAt ? new Date(tracking.accountOpenedAt) : null;
-  const groups = useMemo(() => buildGroups(tracking.steps, accountOpenedAt), [tracking.steps, tracking.accountOpenedAt]);
+  const groups = useMemo(
+    () => buildGroups(tracking.steps, tracking.accountOpenedAt ? new Date(tracking.accountOpenedAt) : null),
+    [tracking.steps, tracking.accountOpenedAt]
+  );
 
   // Steps this participant is actually required to do (a step for a sub-offer
   // they joined too late for is not counted, a step of unknown eligibility is

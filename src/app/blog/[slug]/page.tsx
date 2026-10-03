@@ -6,10 +6,11 @@ import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 
 interface PageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata(props: PageProps): Promise<Metadata> {
+  const params = await props.params;
   const article = await db.article.findUnique({ where: { slug: params.slug } });
   if (!article || !article.published) return { title: "Artykuł nie znaleziony" };
   return {
@@ -19,7 +20,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ArticlePage({ params }: PageProps) {
+export default async function ArticlePage(props0: PageProps) {
+  const params = await props0.params;
   const article = await db.article.findUnique({
     where: { slug: params.slug },
     include: { author: true }
@@ -27,7 +29,7 @@ export default async function ArticlePage({ params }: PageProps) {
   if (!article || !article.published) notFound();
 
   const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/blog/${article.slug}`;
-  const datePublished = article.publishedAt ?? article.createdAt;
+  const datePublished = article.publishedAt;
   // contentUpdatedAt is set explicitly only when the article's actual
   // content was revised — unlike `updatedAt`, which Prisma bumps on any
   // write at all (see Article in prisma/schema.prisma). No time-since-
@@ -40,7 +42,7 @@ export default async function ArticlePage({ params }: PageProps) {
     "@type": "Article",
     headline: article.title,
     description: article.excerpt,
-    datePublished: datePublished.toISOString(),
+    ...(datePublished ? { datePublished: datePublished.toISOString() } : {}),
     ...(dateModified ? { dateModified: dateModified.toISOString() } : {}),
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     url,
@@ -55,7 +57,7 @@ export default async function ArticlePage({ params }: PageProps) {
           credential, or review date that isn't backed by a DB field. */}
       <p className="mt-2 text-sm text-ink-500">
         {article.author.name}
-        {article.publishedAt && <> · {formatDate(article.publishedAt)}</>}
+        {datePublished ? <> · {formatDate(datePublished)}</> : <> · Data publikacji nieustalona</>}
         {dateModified && <> · zaktualizowano {formatDate(dateModified)}</>}
       </p>
       {/* `body` is authored by trusted admins in the panel, stored as markdown.

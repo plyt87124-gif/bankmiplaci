@@ -33,8 +33,8 @@ export function EarningsCounter() {
   // equal the new `to` and short-circuit the effect below, freezing the
   // display mid-count instead of snapping/animating to the right number.
   const displayedRef = useRef(0);
-  const frameRef = useRef<number>();
-  const celebrateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const frameRef = useRef<number | undefined>(undefined);
+  const celebrateTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     const from = displayedRef.current;

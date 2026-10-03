@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
  * Falls back to the bank's filtered promotion list if no promotion was
  * linked (or it's since gone inactive).
  */
-export async function GET(request: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ token: string }> }) {
+  const params = await props.params;
   const row = await db.userBankHistory.findUnique({
     where: { eligibilityEmailToken: params.token },
     include: { bank: true, eligibilityPromotion: { select: { slug: true, status: true, endDate: true } } }

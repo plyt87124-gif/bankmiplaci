@@ -39,7 +39,8 @@ function safeFallbackRedirect(request: NextRequest): NextResponse {
   return NextResponse.redirect(new URL("/promocje?niedostepna=1", request.url));
 }
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const promotion = await db.promotion.findUnique({
     where: { slug: params.slug },
     select: {

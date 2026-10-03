@@ -24,11 +24,12 @@ import { computeEligibility, isChecklistRestartLocked } from "@/lib/services/eli
 import { AlertTriangle, ShieldAlert, Eye, ArrowRight, BookOpen } from "lucide-react";
 
 interface PageProps {
-  params: { slug: string };
-  searchParams: { ref?: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ ref?: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata(props: PageProps): Promise<Metadata> {
+  const params = await props.params;
   const promotion = await getPromotionBySlug(params.slug);
   if (!promotion) return { title: "Promocja nie znaleziona" };
 
@@ -55,7 +56,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function PromotionDetailPage({ params, searchParams }: PageProps) {
+export default async function PromotionDetailPage(props: PageProps) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const promotion = await getPromotionBySlug(params.slug);
 
   if (!promotion) notFound();
@@ -146,7 +149,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
         <div className="mt-4 flex items-start gap-3 rounded-xl2 border border-gold-100 bg-gold-100/60 p-4">
           <Eye className="mt-0.5 h-5 w-5 shrink-0 text-gold-600" />
           <p className="text-sm text-ink-700">
-            To jest <strong>podgląd administratora</strong> — ta promocja ma status „Wersja robocza" i nie jest
+            To jest <strong>podgląd administratora</strong> — ta promocja ma status „Wersja robocza” i nie jest
             widoczna publicznie ani indeksowana przez wyszukiwarki. Zobaczysz ją tylko Ty, będąc zalogowanym/ą
             do panelu.
           </p>
@@ -187,8 +190,8 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
         </div>
       )}
 
-      <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_360px] lg:grid-rows-[auto_auto]">
-        <div className="lg:col-start-1 lg:row-start-1">
+      <div className="mt-6 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_auto]">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <div className="flex items-center gap-3">
             <p className="text-sm font-medium text-ink-500">{promotion.bank.name}</p>
           </div>
@@ -228,7 +231,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
             it appears here on mobile (single column) instead of at the very
             bottom under the comments; row-span keeps it sticking alongside
             the rest of the article on desktop's two-column layout. */}
-        <aside className="h-fit space-y-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+        <aside className="min-w-0 h-fit space-y-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:row-span-2">
           <div className="rounded-xl2 border border-ink-100 bg-surface p-6 shadow-card">
             <p className="text-xs text-ink-500">Do</p>
             <p className="font-display text-3xl font-semibold">{formatPLN(promotion.maxBonusCents)}</p>
@@ -284,7 +287,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
           )}
         </aside>
 
-        <div className="lg:col-start-1 lg:row-start-2">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-2">
           {/* Bonus breakdown */}
           {openBonusParts.length > 0 && (
             <section className="mt-12">
@@ -397,30 +400,37 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-ink-700">{row.label}</span>
                       <span className="font-mono text-sm font-medium">
-                        {row.cents == null ? (
+                        {row.cents == null || (row.cents === 0 && row.waiverCondition?.trim()) ? (
                           <span className="text-ink-500">Nieustalone</span>
-                        ) : row.waiverCondition ? (
+                        ) : row.waiverCondition?.trim() ? (
                           "0 zł*"
                         ) : (
                           formatPLN(row.cents)
                         )}
                       </span>
                     </div>
-                    {row.cents != null && row.waiverCondition && (
-                      <p className="mt-1 text-xs text-ink-500">
+                    {row.cents != null && row.cents > 0 && row.waiverCondition?.trim() && (
+                      <p className="mt-1 break-all text-xs text-ink-500">
                         * {row.waiverCondition} — w przeciwnym razie {formatPLN(row.cents)}/mies.
                       </p>
                     )}
-                    {row.cents == null && (
-                      <p className="mt-1 text-xs text-ink-500">
-                        Nie zweryfikowaliśmy jeszcze tej opłaty — sprawdź aktualną taryfę banku przed podjęciem decyzji.
-                      </p>
+                    {(row.cents == null || (row.cents === 0 && row.waiverCondition?.trim())) && (
+                      <div className="mt-1 break-words [overflow-wrap:anywhere] text-xs text-ink-500">
+                        <p>
+                          Nie zweryfikowaliśmy jeszcze tej opłaty — sprawdź aktualną taryfę banku przed podjęciem decyzji.
+                        </p>
+                        {row.waiverCondition?.trim() && (
+                          <p className="mt-1">
+                            Znany warunek zwolnienia: {row.waiverCondition}. Stawka poza warunkiem jest nieustalona.
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}
               </div>
               {promotion.fees.otherFee && (
-                <p className="mt-2 text-sm text-ink-500">* {promotion.fees.otherFee}</p>
+                <p className="mt-2 break-all text-sm text-ink-500">* {promotion.fees.otherFee}</p>
               )}
             </section>
           )}

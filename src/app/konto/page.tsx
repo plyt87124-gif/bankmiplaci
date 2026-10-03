@@ -13,7 +13,8 @@ import { earnedCentsFor } from "@/lib/checklistAvailability";
 
 const TRACKED_ACCOUNT_TYPES = ["PERSONAL", "BUSINESS"] as const;
 
-export default async function AccountPage({ searchParams }: { searchParams: { onboarding?: string } }) {
+export default async function AccountPage(props: { searchParams: Promise<{ onboarding?: string }> }) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/konto/logowanie?redirect=/konto");
 

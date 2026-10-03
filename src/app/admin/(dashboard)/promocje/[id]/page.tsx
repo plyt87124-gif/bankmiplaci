@@ -7,7 +7,8 @@ import type { PromotionFormValues } from "@/lib/validation/promotion";
 import Link from "next/link";
 import { PromotionStatus } from "@prisma/client";
 
-export default async function EditPromotionPage({ params }: { params: { id: string } }) {
+export default async function EditPromotionPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const promotion = await db.promotion.findUnique({
     where: { id: params.id },
     include: { conditions: true, bonusParts: true, fees: true }

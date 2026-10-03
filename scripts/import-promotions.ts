@@ -26,6 +26,11 @@
  *                           ALONGSIDE cooldownMonths, see the promotion
  *                           edit form's helper text for which one fits
  *   conditions[].type      "account_opening" | "card_payments" | "inflow" | "deadline" | "other"
+ *   fees.*FeeCents          integer grosze or null (unknown); omitted preserves an
+ *                          existing amount, or creates NULL for a new offer
+ *   fees.*FeeWaiverCondition condition for waiving the corresponding nonzero rate;
+ *                          0 + a condition is rejected before any writes
+ *   fees.sourceUrl          verified tariff source (omitted preserves, null clears)
  *   bonusParts[].availableUntil
  *                          "YYYY-MM-DD" = last day a NEW participant can join that
  *                          reward's sub-offer; null = explicitly remove it; OMIT the
