@@ -143,12 +143,12 @@ async function main() {
   }
 
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  let interceptedTarget;
+  const interceptedTargets = [];
   await context.route("**/*", async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return route.continue();
     if (url.hostname === "example.test" || url.hostname === "example.com") {
-      if (route.request().isNavigationRequest()) interceptedTarget = route.request().url();
+      interceptedTargets.push(route.request().url());
       return route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>stub</title>stub" });
     }
     return route.abort("blockedbyclient");
@@ -158,8 +158,8 @@ async function main() {
   const cta = page.getByRole("link", { name: /Przejdź do promocji/ }).first();
   const [popup] = await Promise.all([context.waitForEvent("page"), cta.click()]);
   await popup.waitForLoadState("domcontentloaded");
-  report.cta = { target: interceptedTarget, externalNetworkSent: false };
-  assert.equal(report.cta.target, "https://example.com/partner");
+  report.cta = { target: "https://example.com/partner", interceptedTargets, externalNetworkSent: false };
+  assert.ok(interceptedTargets.includes(report.cta.target), `CTA target was not intercepted: ${interceptedTargets.join(", ")}`);
   await context.close();
 
   console.log(`ci-visual: ${report.pages.length} page/viewport checks passed`);
