@@ -2,7 +2,8 @@
   "git": {
     "deploymentEnabled": {
       "fix/etap1-claude-code-poprawki": false,
-      "fix/etap1-codex-readiness": false
+      "fix/etap1-codex-readiness": false,
+      "fix/stats-sequential-queries": false
     }
   },
   "crons": [
