@@ -7,6 +7,7 @@ import { hashVisitor, clientIp } from "@/lib/visitorHash";
 import { isLikelyBot } from "@/lib/botDetection";
 import { advisoryLockKey } from "@/lib/dedup";
 import { touchUserActivity } from "@/lib/userActivity";
+import { isSignupOpen, isAffiliateLinkLive } from "@/lib/promotionAvailability";
 
 export const dynamic = "force-dynamic";
 
@@ -31,14 +32,51 @@ const CLICK_DEDUP_WINDOW_MS = 120_000;
  * the clicks table, not to track the visitor. `ipHash` (salted, no raw
  * IP) is used only for the short click-dedup window below.
  */
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+// Where we send someone instead of the partner when the promotion isn't
+// redirectable — never the draft/expired promotion itself (that would
+// leak its content to anyone probing a stale or guessed /out/ link).
+function safeFallbackRedirect(request: NextRequest): NextResponse {
+  return NextResponse.redirect(new URL("/promocje?niedostepna=1", request.url));
+}
+
+export async function GET(request: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const promotion = await db.promotion.findUnique({
     where: { slug: params.slug },
-    select: { id: true, name: true, affiliateUrl: true, status: true, bank: { select: { name: true } } }
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      affiliateUrl: true,
+      status: true,
+      endDate: true,
+      affiliateLinkEnabled: true,
+      bank: { select: { name: true } }
+    }
   });
 
   if (!promotion) {
     return NextResponse.redirect(new URL("/promocje", request.url));
+  }
+
+  // The only gate that decides whether ANYONE (including internal users,
+  // crawlers, and bots below) can reach the partner through this slug.
+  // Same rule as the listing, sitemap, CTA button and banners
+  // (src/lib/promotionAvailability.ts): ACTIVE AND the last day (Polish
+  // calendar) not yet over, so an offer whose cron hasn't flipped it to
+  // EXPIRED yet still can't be clicked through, and one on its last day
+  // still can. DRAFT/EXPIRED/ARCHIVED never redirect to the bank,
+  // regardless of who's asking — "ACTIVE" is also the switch for whether
+  // we currently promote the offer, so it is NOT restored just because
+  // the bank's own sign-up window is open.
+  if (!isSignupOpen(promotion)) {
+    return safeFallbackRedirect(request);
+  }
+  // The offer is current but the affiliate campaign is not confirmed live:
+  // send the visitor to the offer page (which says so), never to the
+  // partner, and log nothing - there was no partner click.
+  if (!isAffiliateLinkLive(promotion)) {
+    return NextResponse.redirect(new URL(`/promocje/${promotion.slug}`, request.url));
   }
 
   const { searchParams } = new URL(request.url);
@@ -55,6 +93,8 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   // Never skip the redirect itself for internal traffic or obvious bots —
   // only the tracking write and notification are skipped, so testing the
   // actual affiliate link (or a legitimate crawler fetching it) still works.
+  // (isRedirectable was already checked above, so this never sends a bot
+  // or internal user to the partner for an inactive promotion either.)
   if (isInternalUser(currentUser?.email) || isLikelyBot(userAgent)) {
     return NextResponse.redirect(promotion.affiliateUrl, { status: 302 });
   }

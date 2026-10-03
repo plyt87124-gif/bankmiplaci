@@ -9,11 +9,12 @@ import { ACCOUNT_TYPE_LABEL, formatDate } from "@/lib/format";
 import { PromotionChecklist } from "@/components/PromotionChecklist";
 import { EarningsProvider } from "@/components/EarningsContext";
 import { EarningsCounter } from "@/components/EarningsCounter";
-import { groupIndexFromOrder } from "@/lib/checklistSchedule";
+import { earnedCentsFor } from "@/lib/checklistAvailability";
 
 const TRACKED_ACCOUNT_TYPES = ["PERSONAL", "BUSINESS"] as const;
 
-export default async function AccountPage({ searchParams }: { searchParams: { onboarding?: string } }) {
+export default async function AccountPage(props: { searchParams: Promise<{ onboarding?: string }> }) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/konto/logowanie?redirect=/konto");
 
@@ -30,7 +31,7 @@ export default async function AccountPage({ searchParams }: { searchParams: { on
     // their already-earned rewards still count toward the lifetime total.
     db.userPromotionTracking.findMany({
       where: { userId: user.id, completedAt: { not: null } },
-      include: { promotion: { include: { checklistSteps: { select: { id: true, order: true, rewardCents: true } } } } }
+      include: { promotion: { include: { checklistSteps: { select: { id: true, order: true, rewardCents: true, availableUntil: true } } } } }
     }),
     db.checklistProgress.findMany({ where: { userId: user.id }, select: { stepId: true } })
   ]);
@@ -50,22 +51,13 @@ export default async function AccountPage({ searchParams }: { searchParams: { on
   const initialChecked = checkedProgress.map((p) => p.stepId);
   const checkedStepIds = new Set(initialChecked);
 
-  const completedEarnedCents = completedTrackingRows.reduce((sum, t) => {
-    const groups = new Map<number, { action: string[]; rewardCents: number | null }>();
-    for (const s of t.promotion.checklistSteps) {
-      const idx = groupIndexFromOrder(s.order);
-      const entry = groups.get(idx) ?? { action: [], rewardCents: null };
-      if (s.rewardCents !== null) entry.rewardCents = s.rewardCents;
-      else entry.action.push(s.id);
-      groups.set(idx, entry);
-    }
-    for (const g of groups.values()) {
-      if (g.action.length > 0 && g.action.every((id) => checkedStepIds.has(id))) {
-        sum += g.rewardCents ?? 0;
-      }
-    }
-    return sum;
-  }, 0);
+  // Same availability rules as the live ściąga (checklistAvailability.ts):
+  // a reward that depends on a sub-offer the user joined too late for, or
+  // whose eligibility can't be established, is not counted.
+  const completedEarnedCents = completedTrackingRows.reduce(
+    (sum, t) => sum + earnedCentsFor(t.promotion.checklistSteps, t.accountOpenedAt, checkedStepIds),
+    0
+  );
 
   return (
     <div className="container-page max-w-2xl py-14">

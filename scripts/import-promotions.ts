@@ -26,164 +26,44 @@
  *                           ALONGSIDE cooldownMonths, see the promotion
  *                           edit form's helper text for which one fits
  *   conditions[].type      "account_opening" | "card_payments" | "inflow" | "deadline" | "other"
+ *   fees.*FeeCents          integer grosze or null (unknown); omitted preserves an
+ *                          existing amount, or creates NULL for a new offer
+ *   fees.*FeeWaiverCondition condition for waiving the corresponding nonzero rate;
+ *                          0 + a condition is rejected before any writes
+ *   fees.sourceUrl          verified tariff source (omitted preserves, null clears)
+ *   bonusParts[].availableUntil
+ *                          "YYYY-MM-DD" = last day a NEW participant can join that
+ *                          reward's sub-offer; null = explicitly remove it; OMIT the
+ *                          key to keep whatever is stored (matched by label; an
+ *                          ambiguous match, or a stored deadline whose label is no
+ *                          longer in the file, aborts the whole import untouched)
+ *
+ * The whole run is one transaction: either everything in the file is applied
+ * or nothing is. Logic and tests: src/lib/services/promotionImport.ts.
  */
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import fs from "fs";
 import path from "path";
 import { recomputeRatings } from "../src/lib/services/ratings";
+import { importPromotions, ImportAbortError, type ImportEntry } from "../src/lib/services/promotionImport";
 
 const db = new PrismaClient();
 
-interface ImportBank {
-  name: string;
-  slug: string;
-  website?: string | null;
-  logoUrl?: string | null;
-}
-
-interface ImportCondition {
-  title: string;
-  description?: string | null;
-  type: string;
-  order: number;
-}
-
-interface ImportBonusPart {
-  label: string;
-  amountCents: number;
-  order: number;
-}
-
-interface ImportFees {
-  accountFeeCents: number;
-  cardFeeCents: number;
-  atmFeeCents: number;
-  otherFee?: string | null;
-}
-
-interface ImportPromotion {
-  slug: string;
-  name: string;
-  accountType: string;
-  maxBonusCents: number;
-  difficulty: string;
-  // Placeholder; overwritten by recomputeRatings() at the end of this
-  // script for any ACTIVE promotion unless ratingOverride is set.
-  rating: number;
-  ratingOverride?: number | null;
-  ratingReason?: string | null;
-  status: string;
-  startDate: string;
-  endDate: string;
-  affiliateUrl: string;
-  sourceUrl?: string | null;
-  lastVerifiedAt: string;
-  eligibleFor?: string | null;
-  notEligibleFor?: string | null;
-  cooldownMonths?: number | null;
-  cooldownCutoffDate?: string | null;
-  summary?: string | null;
-  conditions: ImportCondition[];
-  bonusParts: ImportBonusPart[];
-  fees: ImportFees;
-}
-
-interface ImportEntry {
-  _comment?: string;
-  bank: ImportBank;
-  promotion: ImportPromotion;
-}
-
 async function main() {
   const filePath = path.join(process.cwd(), "data", "new-promotions.json");
-  const raw = fs.readFileSync(filePath, "utf-8");
-  const entries: ImportEntry[] = JSON.parse(raw);
+  const entries: ImportEntry[] = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
-  let created = 0;
-  let updated = 0;
-
-  for (const entry of entries) {
-    if (!entry.bank?.slug || !entry.promotion?.slug) {
-      console.warn("Pominięto wpis bez bank.slug lub promotion.slug:", entry._comment ?? "(bez opisu)");
-      continue;
-    }
-
-    const bank = await db.bank.upsert({
-      where: { slug: entry.bank.slug },
-      update: {
-        name: entry.bank.name,
-        website: entry.bank.website ?? undefined,
-        logoUrl: entry.bank.logoUrl ?? undefined
-      },
-      create: {
-        name: entry.bank.name,
-        slug: entry.bank.slug,
-        website: entry.bank.website ?? undefined,
-        logoUrl: entry.bank.logoUrl ?? undefined
-      }
-    });
-
-    const p = entry.promotion;
-    const existing = await db.promotion.findUnique({ where: { slug: p.slug } });
-
-    const baseData: Prisma.PromotionUncheckedCreateInput = {
-      bankId: bank.id,
-      slug: p.slug,
-      name: p.name,
-      accountType: p.accountType as never,
-      maxBonusCents: p.maxBonusCents,
-      difficulty: p.difficulty as never,
-      rating: p.ratingOverride ?? p.rating,
-      ratingOverride: p.ratingOverride ?? undefined,
-      ratingReason: p.ratingReason ?? undefined,
-      status: p.status as never,
-      startDate: new Date(p.startDate),
-      endDate: new Date(p.endDate),
-      affiliateUrl: p.affiliateUrl,
-      sourceUrl: p.sourceUrl ?? undefined,
-      lastVerifiedAt: new Date(p.lastVerifiedAt),
-      eligibleFor: p.eligibleFor ?? undefined,
-      notEligibleFor: p.notEligibleFor ?? undefined,
-      cooldownMonths: p.cooldownMonths ?? undefined,
-      cooldownCutoffDate: p.cooldownCutoffDate ? new Date(p.cooldownCutoffDate) : undefined,
-      summary: p.summary ?? undefined
-    };
-
-    if (existing) {
-      await db.promotionCondition.deleteMany({ where: { promotionId: existing.id } });
-      await db.bonusPart.deleteMany({ where: { promotionId: existing.id } });
-      await db.promotion.update({
-        where: { id: existing.id },
-        data: {
-          ...baseData,
-          conditions: { create: p.conditions },
-          bonusParts: { create: p.bonusParts },
-          fees: { upsert: { create: p.fees, update: p.fees } }
-        }
-      });
-      updated += 1;
-    } else {
-      await db.promotion.create({
-        data: {
-          ...baseData,
-          conditions: { create: p.conditions },
-          bonusParts: { create: p.bonusParts },
-          fees: { create: p.fees }
-        }
-      });
-      created += 1;
-    }
-  }
+  const { created, updated, contentChanged } = await importPromotions(db, entries, (m) => console.warn(m));
 
   await recomputeRatings();
 
-  console.log(`Gotowe. Utworzono ${created}, zaktualizowano ${updated} promocji.`);
+  console.log(`Gotowe. Utworzono ${created}, zaktualizowano ${updated} promocji (treść realnie zmieniona: ${contentChanged}).`);
   console.log("Pamiętaj: nowe promocje mają status z pliku JSON — sprawdź je w /admin/promocje przed publikacją.");
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error(e instanceof ImportAbortError ? e.message : e);
     process.exit(1);
   })
   .finally(async () => {

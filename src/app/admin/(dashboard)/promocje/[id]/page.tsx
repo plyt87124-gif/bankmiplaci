@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PromotionForm } from "../PromotionForm";
 import { updatePromotion, setPromotionStatus, deletePromotion } from "../actions";
+import { promotionToFormDefaults } from "@/lib/promotionForm";
 import type { PromotionFormValues } from "@/lib/validation/promotion";
 import Link from "next/link";
 import { PromotionStatus } from "@prisma/client";
 
-export default async function EditPromotionPage({ params }: { params: { id: string } }) {
+export default async function EditPromotionPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const promotion = await db.promotion.findUnique({
     where: { id: params.id },
     include: { conditions: true, bonusParts: true, fees: true }
@@ -16,43 +18,7 @@ export default async function EditPromotionPage({ params }: { params: { id: stri
 
   const banks = await db.bank.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
 
-  const defaultValues: Partial<PromotionFormValues> = {
-    bankId: promotion.bankId,
-    name: promotion.name,
-    slug: promotion.slug,
-    accountType: promotion.accountType,
-    maxBonusCents: promotion.maxBonusCents,
-    difficulty: promotion.difficulty,
-    ratingOverride: promotion.ratingOverride != null ? Number(promotion.ratingOverride) : undefined,
-    ratingReason: promotion.ratingReason ?? undefined,
-    status: promotion.status,
-    startDate: promotion.startDate,
-    endDate: promotion.endDate,
-    affiliateUrl: promotion.affiliateUrl,
-    sourceUrl: promotion.sourceUrl ?? undefined,
-    lastVerifiedAt: promotion.lastVerifiedAt,
-    eligibleFor: promotion.eligibleFor ?? undefined,
-    notEligibleFor: promotion.notEligibleFor ?? undefined,
-    cooldownMonths: promotion.cooldownMonths ?? undefined,
-    cooldownCutoffDate: promotion.cooldownCutoffDate ?? undefined,
-    summary: promotion.summary ?? undefined,
-    description: promotion.description ?? undefined,
-    conditions: promotion.conditions.map((c) => ({
-      title: c.title,
-      description: c.description ?? undefined,
-      type: c.type as never,
-      order: c.order
-    })),
-    bonusParts: promotion.bonusParts.map((b) => ({ label: b.label, amountCents: b.amountCents, order: b.order })),
-    fees: promotion.fees
-      ? {
-          accountFeeCents: promotion.fees.accountFeeCents,
-          cardFeeCents: promotion.fees.cardFeeCents,
-          atmFeeCents: promotion.fees.atmFeeCents,
-          otherFee: promotion.fees.otherFee ?? undefined
-        }
-      : { accountFeeCents: 0, cardFeeCents: 0, atmFeeCents: 0 }
-  };
+  const defaultValues = promotionToFormDefaults(promotion);
 
   async function handleSubmit(values: PromotionFormValues) {
     "use server";

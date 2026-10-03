@@ -274,6 +274,15 @@ model Promotion {
 
   status PromotionStatus @default(DRAFT)
 
+  // Whether OUR partner link for this offer is live. Separate from `status`
+  // and the dates, which describe the bank's offer: an ACTIVE, still-open
+  // offer is shown (listing, page, sitemap) even while this is false, but
+  // /out/[slug] and every "Przejdź do promocji" button stay off until the
+  // affiliate campaign is confirmed (eBrokerPartner panel) and someone turns
+  // this on. Defaults to true so every existing and imported promotion
+  // behaves exactly as before.
+  affiliateLinkEnabled Boolean @default(true)
+
   startDate DateTime
   endDate   DateTime
 
@@ -311,6 +320,15 @@ model Promotion {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // Set explicitly by createPromotion/updatePromotion (real admin edits
+  // to this promotion's own fields) — deliberately separate from
+  // `updatedAt`, which Prisma bumps on ANY write, including
+  // recomputeRatings() nudging just `rating` because a DIFFERENT
+  // promotion's bonus changed and shifted this one's percentile score.
+  // sitemap.ts's lastModified for promotions reads this, not updatedAt,
+  // so a crawler isn't told to recrawl a page whose own content didn't
+  // actually change. Null falls back to createdAt (see sitemap.ts).
+  contentUpdatedAt DateTime?
 
   conditions     PromotionCondition[]
   bonusParts     BonusPart[]
@@ -339,6 +357,14 @@ model ChecklistStep {
   promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
 
   monthLabel  String // e.g. "Otwarcie konta", "Miesiąc 1 (po otwarciu konta)"
+  // Last day (00:00 UTC of the calendar date) on which a participant could
+  // still JOIN the offer this step belongs to (e.g. Erste's Kantor bonus,
+  // 30.09.2026). Compared with UserPromotionTracking.accountOpenedAt — the
+  // real-world date the account/offer was taken up — never with joinedAt
+  // (when they registered the ściąga on this site). Null = always available.
+  // See src/lib/checklistAvailability.ts for the three outcomes (available /
+  // unavailable / unknown date).
+  availableUntil DateTime?
   title       String
   // Set only on the step representing "collect the reward for this
   // group" — most steps (the actual actions) leave this null.
@@ -421,6 +447,14 @@ model BonusPart {
   label     String
   amountCents Int
   order     Int    @default(0)
+  // Last day (00:00 UTC of the calendar date, see src/lib/
+  // promotionAvailability.ts) a NEW participant can still join the part of
+  // the offer this reward belongs to — for rewards from a separate
+  // sub-promotion with its own deadline (e.g. Erste's Kantor bonus, which
+  // closed 30.09 while the account offer runs to 30.11). Null = same as
+  // the promotion's endDate. A part past this date stays in the data (people
+  // who already joined still follow it) but is not counted as available.
+  availableUntil DateTime?
 
   @@index([promotionId])
   @@map("bonus_parts")
@@ -431,10 +465,22 @@ model Fees {
   promotionId String  @unique
   promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
 
-  accountFeeCents Int @default(0)
-  cardFeeCents    Int @default(0)
-  atmFeeCents     Int @default(0)
-  otherFee        String? // free text for conditions like "0 zł przy wpływie 500 zł/mies."
+  // Nullable, no default: null means "not verified yet", never "free".
+  // A confirmed, unconditional fee of zero must be written explicitly as
+  // 0 — the admin form and every display path treat null and 0
+  // differently. Never backfill existing nulls with 0 (or vice versa)
+  // without having actually re-checked the bank's taryfa.
+  accountFeeCents Int?
+  // When set, this is the fee charged WHEN accountFeeWaiverCondition is
+  // NOT met (the "otherwise" rate) — e.g. 900 (9 zł) for mBank's eKonto
+  // do usług card. The waived rate is always 0 by definition; there is
+  // no separate field for it. Leave accountFeeWaiverCondition null for
+  // a plain unconditional fee (0 or otherwise).
+  accountFeeWaiverCondition String?
+  cardFeeCents    Int?
+  cardFeeWaiverCondition String?
+  atmFeeCents     Int?
+  otherFee        String? // free text for anything the structured fields above don't capture
   // Link to the bank's own Taryfa Opłat i Prowizji / Cennik document.
   sourceUrl       String?
 
@@ -558,6 +604,14 @@ model Article {
   author    AdminUser       @relation(fields: [authorId], references: [id])
   published Boolean         @default(false)
   publishedAt DateTime?
+  // Set explicitly whenever title/excerpt/body is genuinely revised after
+  // publishing — deliberately separate from `updatedAt`, which Prisma
+  // bumps on ANY write (linking a promotion, fixing a typo in an
+  // unrelated field, a future admin panel resave with no real content
+  // change). Null means "never substantively updated since publish";
+  // the detail page's dateModified comes from this field, never from
+  // updatedAt or a time-since-publish heuristic.
+  contentUpdatedAt DateTime?
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 

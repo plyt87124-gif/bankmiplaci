@@ -1,7 +1,9 @@
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
-import { PromotionStatus } from "@prisma/client";
+import { PromotionStatus, type PrismaClient } from "@prisma/client";
 import { sendEmail } from "@/lib/email";
+import { computeEligibility } from "@/lib/services/eligibility";
+import { signupCutoff } from "@/lib/promotionAvailability";
 import { eligibilityReminderEmailHtml } from "@/lib/emailTemplates";
 
 /**
@@ -18,86 +20,116 @@ import { eligibilityReminderEmailHtml } from "@/lib/emailTemplates";
  *      separate funnel steps (the latter via the existing Click table,
  *      matched on campaign = token).
  *
+ * "Elapsed" is decided by computeEligibility() - the same function as the
+ * promotion page banner and the checklist restart lock - per promotion, so a
+ * cooldownMonths of 0 means "no waiting after the known closure date" (never
+ * "no rule"), a closure date still in the future never qualifies, and the
+ * independent cooldownCutoffDate is checked too: the user is told about, and
+ * linked to, only a promotion they would really clear.
+ *
  * Runs daily via /api/cron/check-eligibility (see vercel.json) and via
  * `npm run check:eligibility` for manual/external-crontab use.
  */
-export async function checkEligibilityAndNotify(): Promise<number> {
-  const pending = await db.userBankHistory.findMany({
-    where: { wasClientUntil: { not: null }, eligibilityNotifiedAt: null },
+export interface EligibilityNotifyDeps {
+  client?: PrismaClient;
+  /** Replaceable so tests never send real e-mail. */
+  send?: typeof sendEmail;
+  now?: Date;
+  /** Limit the run to these users (tests, manual re-runs); omitted = everyone, as the daily cron runs it. */
+  userIds?: string[];
+}
+
+export async function checkEligibilityAndNotify({ client = db, send = sendEmail, now = new Date(), userIds }: EligibilityNotifyDeps = {}): Promise<number> {
+  const pending = await client.userBankHistory.findMany({
+    where: { wasClientUntil: { not: null }, eligibilityNotifiedAt: null, ...(userIds ? { userId: { in: userIds } } : {}) },
     include: { user: true, bank: true }
   });
 
   if (pending.length === 0) return 0;
 
   const bankIds = [...new Set(pending.map((p) => p.bankId))];
-  const activePromotions = await db.promotion.findMany({
-    where: { bankId: { in: bankIds }, status: PromotionStatus.ACTIVE, cooldownMonths: { not: null } },
-    select: { id: true, slug: true, name: true, rating: true, bankId: true, accountType: true, cooldownMonths: true }
+  const activePromotions = await client.promotion.findMany({
+    where: {
+      bankId: { in: bankIds },
+      status: PromotionStatus.ACTIVE,
+      // Same rule as the public listing: an offer whose last day has passed
+      // must not be recommended in an email just because its status has not
+      // been flipped to EXPIRED yet.
+      endDate: { gte: signupCutoff(now) },
+      // A monthly rule (0 included) is what makes "the cooldown has elapsed"
+      // an event in time; a cutoff-date-only promotion never resolves itself.
+      cooldownMonths: { not: null }
+    },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      rating: true,
+      bankId: true,
+      accountType: true,
+      cooldownMonths: true,
+      cooldownCutoffDate: true
+    }
   });
 
-  const minCooldownByKey = new Map<string, number>();
-  const bestPromotionByKey = new Map<string, (typeof activePromotions)[number]>();
+  const promotionsByKey = new Map<string, typeof activePromotions>();
   for (const promo of activePromotions) {
-    if (promo.cooldownMonths == null) continue;
     const key = `${promo.bankId}:${promo.accountType}`;
-
-    const currentMin = minCooldownByKey.get(key);
-    if (currentMin === undefined || promo.cooldownMonths < currentMin) {
-      minCooldownByKey.set(key, promo.cooldownMonths);
-    }
-
-    const currentBest = bestPromotionByKey.get(key);
-    if (!currentBest || Number(promo.rating) > Number(currentBest.rating)) {
-      bestPromotionByKey.set(key, promo);
-    }
+    promotionsByKey.set(key, [...(promotionsByKey.get(key) ?? []), promo]);
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   let notified = 0;
 
   for (const row of pending) {
-    const key = `${row.bankId}:${row.accountType}`;
-    const cooldownMonths = minCooldownByKey.get(key);
-    if (cooldownMonths === undefined || !row.wasClientUntil) continue;
+    if (!row.wasClientUntil) continue;
+    const eligible = (promotionsByKey.get(`${row.bankId}:${row.accountType}`) ?? [])
+      .map((promo) => ({
+        promo,
+        result: computeEligibility(promo.cooldownMonths, promo.cooldownCutoffDate, row.wasClientUntil, now)
+      }))
+      .filter((x) => x.result.status === "eligible");
+    if (eligible.length === 0) continue;
 
-    const eligibleFrom = new Date(row.wasClientUntil);
-    eligibleFrom.setMonth(eligibleFrom.getMonth() + cooldownMonths);
-    if (eligibleFrom.getTime() > Date.now()) continue;
-
-    const linkedPromotion = bestPromotionByKey.get(key) ?? null;
+    // The best-rated promotion this user actually clears; the cleared date is
+    // the earliest one among them.
+    const linkedPromotion = eligible.reduce((best, x) => (Number(x.promo.rating) > Number(best.promo.rating) ? x : best)).promo;
+    const eligibleFrom = eligible
+      .map((x) => x.result.eligibleFromDate ?? row.wasClientUntil!)
+      .reduce((min, d) => (d.getTime() < min.getTime() ? d : min));
     const token = randomUUID();
 
-    await db.$transaction([
-      db.adminNotification.create({
+    await client.$transaction([
+      client.adminNotification.create({
         data: {
           type: "ELIGIBILITY_CLEARED",
           title: "Użytkownikowi minął okres karencji",
           body: `${row.user.name || row.user.email} może teraz skorzystać z promocji banku ${row.bank.name} (konto: ${row.accountType}, karencja minęła ${eligibleFrom.toLocaleDateString("pl-PL")}).`,
           relatedUserId: row.userId,
           relatedBankId: row.bankId,
-          relatedPromotionId: linkedPromotion?.id
+          relatedPromotionId: linkedPromotion.id
         }
       }),
-      db.userBankHistory.update({
+      client.userBankHistory.update({
         where: { id: row.id },
         data: {
-          eligibilityNotifiedAt: new Date(),
+          eligibilityNotifiedAt: now,
           eligibilityClearedAt: eligibleFrom,
           eligibilityEmailToken: token,
-          eligibilityPromotionId: linkedPromotion?.id
+          eligibilityPromotionId: linkedPromotion.id
         }
       })
     ]);
     notified += 1;
 
     const linkUrl = `${siteUrl}/api/eligibility-link/${token}`;
-    await sendEmail({
+    await send({
       to: row.user.email,
       subject: `Możesz już skorzystać z promocji ${row.bank.name}`,
       html: eligibilityReminderEmailHtml({
         userName: row.user.name || row.user.email,
         bankName: row.bank.name,
-        promotionName: linkedPromotion?.name ?? null,
+        promotionName: linkedPromotion.name,
         linkUrl
       })
     });

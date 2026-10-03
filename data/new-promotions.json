@@ -36,7 +36,7 @@
         { "label": "Zwrot 3% z pierwszych 20 transakcji/mies. (maks. 100 zł/mies. × 12 mies.)", "amountCents": 120000, "order": 0 },
         { "label": "Zwrot 6% z kolejnych transakcji/mies. (do wspólnego limitu 200 zł/mies. × 12 mies.)", "amountCents": 120000, "order": 1 }
       ],
-      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Regulamin promocji nie zawiera Taryfy Opłat i Prowizji — sprawdź ją osobno na stronie banku przed publikacją." }
+      "fees": { "accountFeeCents": null, "cardFeeCents": null, "atmFeeCents": null, "otherFee": "Regulamin promocji nie zawiera Taryfy Opłat i Prowizji — sprawdź ją osobno na stronie banku przed publikacją." }
     }
   },
   {
@@ -73,7 +73,7 @@
         { "title": "Zasil konto i wydaj min. 100 zł", "description": "W ciągu 1 miesiąca od otwarcia rachunku. Nagroda 100 zł trafi na konto w ciągu 3 dni od osiągnięcia tej kwoty.", "type": "inflow", "order": 3 }
       ],
       "bonusParts": [],
-      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Po zakończeniu darmowego okresu próbnego nalicza się standardowa opłata za wybrany plan subskrypcji (Plus/Premium/Metal) — sprawdź aktualny cennik Revolut." }
+      "fees": { "accountFeeCents": null, "cardFeeCents": null, "atmFeeCents": null, "otherFee": "Po zakończeniu darmowego okresu próbnego nalicza się standardowa opłata za wybrany plan subskrypcji (Plus/Premium/Metal) — sprawdź aktualny cennik Revolut." }
     }
   },
   {
@@ -114,7 +114,7 @@
         { "label": "12 nagród miesięcznych (12 × 75 zł)", "amountCents": 90000, "order": 0 },
         { "label": "Nagroda dodatkowa", "amountCents": 10000, "order": 1 }
       ],
-      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Laureaci otrzymują bezterminowe zwolnienie z opłaty za kartę i część opłat za wypłaty gotówki za granicą — sprawdź pełną Taryfę Opłat i Prowizji." }
+      "fees": { "accountFeeCents": null, "cardFeeCents": null, "atmFeeCents": null, "otherFee": "Laureaci otrzymują bezterminowe zwolnienie z opłaty za kartę i część opłat za wypłaty gotówki za granicą — sprawdź pełną Taryfę Opłat i Prowizji." }
     }
   },
   {
@@ -159,7 +159,7 @@
         { "label": "Bonus II", "amountCents": 30000, "order": 3 },
         { "label": "Bonus III", "amountCents": 10000, "order": 4 }
       ],
-      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Opłaty za kartę zgodnie z Taryfą Prowizji i Opłat mBanku — regulamin promocji jej nie zawiera, sprawdź osobno." }
+      "fees": { "accountFeeCents": null, "cardFeeCents": null, "atmFeeCents": null, "otherFee": "Opłaty za kartę zgodnie z Taryfą Prowizji i Opłat mBanku — regulamin promocji jej nie zawiera, sprawdź osobno." }
     }
   },
   {
@@ -198,7 +198,7 @@
         { "label": "Przelewy do ZUS/US (do 12 mies.)", "amountCents": 60000, "order": 2 },
         { "label": "Leasing (jednorazowo)", "amountCents": 50000, "order": 3 }
       ],
-      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Przez pierwsze 12 miesięcy od otwarcia konta w ramach promocji: prowadzenie konta i wszystkie karty PLN — 0 zł, bez warunku. Po tym okresie standardowe zasady taryfy dla wariantu Solista Biznes: prowadzenie konta 0 zł, jeśli w poprzednim miesiącu był min. 1 przelew do ZUS lub wpływy min. 3000 zł (inaczej 15 zł/mies.); karta 0 zł pod tym samym warunkiem (inaczej 9 zł/mies.). Dane dla wariantu Solista Biznes — promocja dostępna też dla Sonata Biznes i Symfonia Biznes z innymi progami warunków i wyższymi opłatami standardowymi." }
+      "fees": { "accountFeeCents": null, "cardFeeCents": null, "atmFeeCents": null, "otherFee": "Przez pierwsze 12 miesięcy od otwarcia konta w ramach promocji: prowadzenie konta i wszystkie karty PLN — 0 zł, bez warunku. Po tym okresie standardowe zasady taryfy dla wariantu Solista Biznes: prowadzenie konta 0 zł, jeśli w poprzednim miesiącu był min. 1 przelew do ZUS lub wpływy min. 3000 zł (inaczej 15 zł/mies.); karta 0 zł pod tym samym warunkiem (inaczej 9 zł/mies.). Dane dla wariantu Solista Biznes — promocja dostępna też dla Sonata Biznes i Symfonia Biznes z innymi progami warunków i wyższymi opłatami standardowymi." }
     }
   },
   {
@@ -229,7 +229,7 @@
         { "title": "Nie zmieniaj typu konta ani nie wnioskuj o dodatkowe produkty", "description": "Zmiana rodzaju rachunku, wniosek o kredyt/limit w koncie lub zmiana taryfy podczas trwania promocji powoduje bezpowrotną utratę wszystkich warunków promocyjnych.", "type": "deadline", "order": 2 }
       ],
       "bonusParts": [],
-      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "W ramach tej promocji: prowadzenie konta i opłata za pierwszą wybraną kartę debetową — 0 zł bezterminowo, bez dodatkowych warunków poza samym otwarciem konta w promocji. Standardowa taryfa dla mBiznes Konto Standard poza promocją: prowadzenie 0 zł/19 zł (zależnie od przelewu do ZUS w miesiącu), karta 5 zł/mies. Uwaga: utrata warunków promocyjnych następuje przy zmianie typu konta, wniosku o kredyt/limit w koncie lub zmianie taryfy." }
+      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": null, "otherFee": "W ramach tej promocji: prowadzenie konta i opłata za pierwszą wybraną kartę debetową — 0 zł bezterminowo, bez dodatkowych warunków poza samym otwarciem konta w promocji. Standardowa taryfa dla mBiznes Konto Standard poza promocją: prowadzenie 0 zł/19 zł (zależnie od przelewu do ZUS w miesiącu), karta 5 zł/mies. Uwaga: utrata warunków promocyjnych następuje przy zmianie typu konta, wniosku o kredyt/limit w koncie lub zmianie taryfy." }
     }
   },
   {
@@ -265,7 +265,7 @@
         { "label": "Bonus na START", "amountCents": 50000, "order": 1 },
         { "label": "Bonus po roku", "amountCents": 50000, "order": 2 }
       ],
-      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Prowadzenie konta: 0 zł, bez warunków. Karta debetowa: 0 zł, jeśli w danym miesiącu wykonasz min. 4 transakcje bezgotówkowe (inaczej 8 zł/mies.)." }
+      "fees": { "accountFeeCents": 0, "cardFeeCents": null, "atmFeeCents": null, "otherFee": "Prowadzenie konta: 0 zł, bez warunków. Karta debetowa: 0 zł, jeśli w danym miesiącu wykonasz min. 4 transakcje bezgotówkowe (inaczej 8 zł/mies.)." }
     }
   },
   {
@@ -304,7 +304,7 @@
         { "label": "Bonus za terminal płatniczy (do 6 mies.)", "amountCents": 180000, "order": 2 },
         { "label": "Bonus za leasing (jednorazowo)", "amountCents": 80000, "order": 3 }
       ],
-      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Nie otrzymałem Cennika/Taryfy Opłat i Prowizji dla Millennium — te pola wymagają uzupełnienia po dostarczeniu dokumentu, zanim promocja zostanie opublikowana." }
+      "fees": { "accountFeeCents": null, "cardFeeCents": null, "atmFeeCents": null, "otherFee": "Nie otrzymałem Cennika/Taryfy Opłat i Prowizji dla Millennium — te pola wymagają uzupełnienia po dostarczeniu dokumentu, zanim promocja zostanie opublikowana." }
     }
   },
   {
@@ -338,7 +338,7 @@
         { "label": "Premia za wymianę walut (jednorazowo)", "amountCents": 100000, "order": 0 },
         { "label": "Premia za saldo w EUR (jednorazowo)", "amountCents": 200000, "order": 1 }
       ],
-      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Nie otrzymałem Taryfy Opłat i Prowizji dla Nest Banku (przesłany dokument to tabela oprocentowania, nie opłat) — te pola wymagają uzupełnienia po dostarczeniu właściwego cennika, zanim promocja zostanie opublikowana." }
+      "fees": { "accountFeeCents": null, "cardFeeCents": null, "atmFeeCents": null, "otherFee": "Nie otrzymałem Taryfy Opłat i Prowizji dla Nest Banku (przesłany dokument to tabela oprocentowania, nie opłat) — te pola wymagają uzupełnienia po dostarczeniu właściwego cennika, zanim promocja zostanie opublikowana." }
     }
   },
   {
@@ -378,7 +378,7 @@
         { "label": "Limit/kredyt w koncie", "amountCents": 60000, "order": 3 },
         { "label": "Leasing", "amountCents": 60000, "order": 4 }
       ],
-      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Prowadzenie konta: 0 zł, jeśli w danym miesiącu masz aktywne zgody na przetwarzanie danych oraz spełniasz jeden z warunków: wpływy min. 2000 zł, min. 1 przelew do ZUS, nowo założona firma (pierwsze 24 miesiące, dla umów od 1.08.2025), lub konto organizacji non-profit (inaczej 15 zł/mies.). Karta: 0 zł, jeśli bank rozliczy min. 500 zł transakcji bezgotówkowych kartą w miesiącu (inaczej 12 zł/mies.). Taryfa dotyczy umów zawartych do 19.08.2026 — sprawdź aktualność przed publikacją." }
+      "fees": { "accountFeeCents": null, "cardFeeCents": null, "atmFeeCents": null, "otherFee": "Prowadzenie konta: 0 zł, jeśli w danym miesiącu masz aktywne zgody na przetwarzanie danych oraz spełniasz jeden z warunków: wpływy min. 2000 zł, min. 1 przelew do ZUS, nowo założona firma (pierwsze 24 miesiące, dla umów od 1.08.2025), lub konto organizacji non-profit (inaczej 15 zł/mies.). Karta: 0 zł, jeśli bank rozliczy min. 500 zł transakcji bezgotówkowych kartą w miesiącu (inaczej 12 zł/mies.). Taryfa dotyczy umów zawartych do 19.08.2026 — sprawdź aktualność przed publikacją." }
     }
   },
   {
@@ -419,7 +419,7 @@
         { "label": "Ubezpieczenie PKO Firma", "amountCents": 10000, "order": 3 },
         { "label": "e-Księgowość (min. 2 faktury)", "amountCents": 30000, "order": 4 }
       ],
-      "fees": { "accountFeeCents": 0, "cardFeeCents": 0, "atmFeeCents": 0, "otherFee": "Dane dla PKO Konto Firmowe (podstawowe): prowadzenie konta 0 zł, jeśli wpływy w poprzednim miesiącu wyniosły min. 2000 zł (inaczej 12 zł/mies.); 0 zł też przez pierwsze 6 miesięcy dla firm działających poniżej 12 miesięcy. Karta debetowa: 0 zł, jeśli w cyklu rozliczeniowym wykonasz min. 5 transakcji bezgotówkowych (inaczej 10 zł/mies.). Promocja dostępna też dla PKO Konto Firmowe Premium (wyższy pakiet, więcej darmowych przelewów, dostęp do iPKO biznes) z innymi, wyższymi opłatami standardowymi." }
+      "fees": { "accountFeeCents": null, "cardFeeCents": null, "atmFeeCents": null, "otherFee": "Dane dla PKO Konto Firmowe (podstawowe): prowadzenie konta 0 zł, jeśli wpływy w poprzednim miesiącu wyniosły min. 2000 zł (inaczej 12 zł/mies.); 0 zł też przez pierwsze 6 miesięcy dla firm działających poniżej 12 miesięcy. Karta debetowa: 0 zł, jeśli w cyklu rozliczeniowym wykonasz min. 5 transakcji bezgotówkowych (inaczej 10 zł/mies.). Promocja dostępna też dla PKO Konto Firmowe Premium (wyższy pakiet, więcej darmowych przelewów, dostęp do iPKO biznes) z innymi, wyższymi opłatami standardowymi." }
     }
   }
 ]

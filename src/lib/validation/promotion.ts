@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { feeWaiverProblems } from "@/lib/feeValidation";
 
 export const conditionSchema = z.object({
   title: z.string().min(3, "Podaj tytuł warunku"),
@@ -10,14 +11,41 @@ export const conditionSchema = z.object({
 export const bonusPartSchema = z.object({
   label: z.string().min(2),
   amountCents: z.number().int().positive("Kwota musi być dodatnia"),
-  order: z.number().int().min(0).default(0)
+  order: z.number().int().min(0).default(0),
+  // Last day a new participant can join the sub-offer this reward belongs
+  // to, when it differs from the promotion's own endDate. Blank = same as
+  // the promotion. Must round-trip through the form: updatePromotion
+  // recreates every bonus part from the submitted values, so a form that
+  // dropped this field would silently erase it on the next save.
+  availableUntil: z.preprocess((v) => (v === "" || v === null || v === undefined ? undefined : v), z.coerce.date().optional())
 });
 
+// A fee amount left blank in the form (-> NaN from valueAsNumber, or ""
+// if ever submitted as a plain string) means "not verified yet", NOT
+// "confirmed 0 zł". It becomes an explicit `null` - never `undefined` and never
+// 0. The distinction matters on UPDATE: Prisma skips `undefined` keys, so an
+// administrator clearing a stored fee would silently keep the old amount;
+// `null` is written as NULL, and an entered 0 stays 0. See Fees in
+// prisma/schema.prisma for the null-means-unverified convention.
+const optionalFeeCents = z.preprocess(
+  (v) => (v === undefined || v === "" || v === null || (typeof v === "number" && Number.isNaN(v)) ? null : v),
+  z.number().int().min(0).nullable().optional()
+);
+
 export const feesSchema = z.object({
-  accountFeeCents: z.number().int().min(0).default(0),
-  cardFeeCents: z.number().int().min(0).default(0),
-  atmFeeCents: z.number().int().min(0).default(0),
+  accountFeeCents: optionalFeeCents,
+  // Free text describing the condition under which accountFeeCents is
+  // waived to 0 (e.g. "przy wpływie min. 500 zł/mies."). Leave unset for
+  // a plain, unconditional fee.
+  accountFeeWaiverCondition: z.string().optional(),
+  cardFeeCents: optionalFeeCents,
+  cardFeeWaiverCondition: z.string().optional(),
+  atmFeeCents: optionalFeeCents,
   otherFee: z.string().optional()
+}).superRefine((fees, ctx) => {
+  for (const problem of feeWaiverProblems(fees)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: [problem.field], message: problem.message });
+  }
 });
 
 export const promotionFormSchema = z
@@ -43,15 +71,24 @@ export const promotionFormSchema = z
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
     affiliateUrl: z.string().url("Podaj poprawny adres URL"),
-    sourceUrl: z.string().url().optional().or(z.literal("")),
+    // Whether our partner link is live for this offer (separate from status/dates).
+    affiliateLinkEnabled: z.boolean().default(true),
+    // Optional text/number/date fields the admin may deliberately clear. A blank
+    // input is an explicit `null` (written as NULL); an ABSENT key stays `undefined`
+    // (= "not sent", the stored value is kept). A typed 0 in cooldownMonths stays 0.
+    sourceUrl: z.preprocess(
+      (v) => (v === null || (typeof v === "string" && v.trim() === "") ? null : typeof v === "string" ? v.trim() : v),
+      z.string().url().nullable().optional()
+    ),
     lastVerifiedAt: z.coerce.date(),
     eligibleFor: z.string().optional(),
     notEligibleFor: z.string().optional(),
     cooldownMonths: z.preprocess(
-      (v) => (v === "" || v === null || Number.isNaN(v) ? undefined : v),
-      z.number().int().min(0).max(120).optional()
+      (v) => (v === "" || v === null || (typeof v === "number" && Number.isNaN(v)) ? null : v),
+      z.number().int().min(0).max(120).nullable().optional()
     ),
-    cooldownCutoffDate: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.coerce.date().optional()),
+    // (z.coerce.date() would turn null into 1970-01-01, but nullable() sees null first.)
+    cooldownCutoffDate: z.preprocess((v) => (v === "" || v === null ? null : v), z.coerce.date().nullable().optional()),
     summary: z.string().max(240).optional(),
     description: z.string().optional(),
     conditions: z.array(conditionSchema).default([]),

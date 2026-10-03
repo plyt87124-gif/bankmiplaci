@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { listActivePromotions } from "@/lib/services/promotions";
 import { PromotionCard } from "@/components/PromotionCard";
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     q?: string;
     bank?: string;
     accountType?: string;
@@ -22,10 +23,12 @@ interface PageProps {
     minBonus?: string;
     noFees?: string;
     sort?: string;
-  };
+    niedostepna?: string;
+  }>;
 }
 
-export default async function PromotionsPage({ searchParams }: PageProps) {
+export default async function PromotionsPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   const [promotions, banks] = await Promise.all([
     listActivePromotions({
       q: searchParams.q,
@@ -43,11 +46,20 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
     <div className="container-page py-12">
       <AttributionCapture />
       <nav aria-label="breadcrumb" className="text-xs text-ink-500">
-        <a href="/" className="hover:underline">
+        <Link href="/" className="hover:underline">
           Strona główna
-        </a>{" "}
+        </Link>{" "}
         / <span className="text-ink-700">Promocje</span>
       </nav>
+
+      {/* Shown when /out/[slug] redirected here instead of to the partner
+          because the promotion is no longer active (draft, expired,
+          archived, or past its end date) — see src/app/out/[slug]/route.ts. */}
+      {searchParams.niedostepna === "1" && (
+        <div className="mt-4 rounded-xl2 border border-coral-100 bg-coral-100/40 p-4 text-sm text-coral-600">
+          Ta promocja nie jest już dostępna — sprawdź aktualne promocje poniżej.
+        </div>
+      )}
 
       <h1 className="mt-3 text-3xl font-semibold">Wszystkie promocje bankowe</h1>
       <p className="mt-2 max-w-xl text-ink-500">

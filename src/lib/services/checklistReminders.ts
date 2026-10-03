@@ -1,3 +1,4 @@
+import { resolveGroups } from "@/lib/checklistAvailability";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { checklistDeadlineReminderEmailHtml } from "@/lib/emailTemplates";
@@ -64,7 +65,9 @@ export async function sendChecklistDeadlineReminders(): Promise<number> {
 
     for (const [groupIndex, steps] of byGroup) {
       if (groupIndex === 0) continue; // account-opening group has no monthly deadline
-      const actionSteps = steps.filter((s) => s.rewardCents === null);
+      // Only steps this participant can actually do (availability by their
+      // real account-opening date) are worth a reminder.
+      const actionSteps = resolveGroups(steps, accountOpenedAt)[0]?.requiredSteps ?? [];
       if (actionSteps.length === 0) continue;
       if (!isGroupUnlocked(accountOpenedAt, groupIndex)) continue;
       if (actionSteps.every((s) => checked.has(s.id))) continue; // already done

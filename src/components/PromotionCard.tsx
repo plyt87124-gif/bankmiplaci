@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { EffortMeter } from "@/components/ui/EffortMeter";
-import { formatPLN, formatDate, DIFFICULTY_LABEL, DIFFICULTY_EFFORT } from "@/lib/format";
+import { formatPLN, formatDate, isConfirmedFreeAccount, DIFFICULTY_LABEL, DIFFICULTY_EFFORT } from "@/lib/format";
 import type { Difficulty, AccountType } from "@prisma/client";
 
 export interface PromotionCardData {
@@ -16,7 +16,7 @@ export interface PromotionCardData {
   ratingReason?: string | null;
   endDate: Date;
   summary?: string | null;
-  fees?: { accountFeeCents: number } | null;
+  fees?: { accountFeeCents: number | null; accountFeeWaiverCondition?: string | null } | null;
   conditions?: { title: string }[];
   bank: { name: string; logoUrl?: string | null };
 }
@@ -29,7 +29,9 @@ const DIFFICULTY_TONE: Record<Difficulty, "teal" | "gold" | "coral"> = {
 };
 
 export function PromotionCard({ promotion }: { promotion: PromotionCardData }) {
-  const isFree = !promotion.fees || promotion.fees.accountFeeCents === 0;
+  // A missing fees row, or a fee that simply hasn't been verified yet,
+  // must never read as "free" — only a confirmed 0 zł earns the badge.
+  const isFree = isConfirmedFreeAccount(promotion.fees);
 
   return (
     <Link
@@ -59,7 +61,7 @@ export function PromotionCard({ promotion }: { promotion: PromotionCardData }) {
           length, so the "Do / kwota" row below starts at the same Y
           position across every card in a grid row — a 1-line title
           shouldn't leave the amount higher than next to a 2-line one. */}
-      <p className="mt-1 line-clamp-2 min-h-[3rem] font-display text-base font-semibold text-ink-900">
+      <p className="mt-1 line-clamp-2 min-h-[3rem] break-words [overflow-wrap:anywhere] font-display text-base font-semibold text-ink-900">
         {promotion.name}
       </p>
 

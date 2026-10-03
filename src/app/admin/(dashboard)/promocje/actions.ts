@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { promotionFormSchema, type PromotionFormValues } from "@/lib/validation/promotion";
 import { recomputeRatings } from "@/lib/services/ratings";
 import { PromotionStatus } from "@prisma/client";
+import { feesWriteData, updatePromotionRecord } from "@/lib/services/promotionWrite";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -37,7 +38,8 @@ export async function createPromotion(values: PromotionFormValues) {
       startDate: data.startDate,
       endDate: data.endDate,
       affiliateUrl: data.affiliateUrl,
-      sourceUrl: data.sourceUrl || undefined,
+      affiliateLinkEnabled: data.affiliateLinkEnabled,
+      sourceUrl: data.sourceUrl,
       lastVerifiedAt: data.lastVerifiedAt,
       eligibleFor: data.eligibleFor,
       notEligibleFor: data.notEligibleFor,
@@ -45,9 +47,14 @@ export async function createPromotion(values: PromotionFormValues) {
       cooldownCutoffDate: data.cooldownCutoffDate,
       summary: data.summary,
       description: data.description,
+      // See Promotion.contentUpdatedAt in prisma/schema.prisma — a real
+      // admin-authored edit, as opposed to recomputeRatings() below
+      // nudging `rating` and bumping `updatedAt` on every active
+      // promotion whenever any one of them changes.
+      contentUpdatedAt: new Date(),
       conditions: { create: data.conditions },
       bonusParts: { create: data.bonusParts },
-      fees: { create: data.fees }
+      fees: { create: feesWriteData(data.fees) }
     }
   });
 
@@ -62,41 +69,9 @@ export async function updatePromotion(id: string, values: PromotionFormValues) {
   await requireAdmin();
   const data = promotionFormSchema.parse(values);
 
-  await db.$transaction([
-    db.promotionCondition.deleteMany({ where: { promotionId: id } }),
-    db.bonusPart.deleteMany({ where: { promotionId: id } }),
-    db.promotion.update({
-      where: { id },
-      data: {
-        bankId: data.bankId,
-        name: data.name,
-        slug: data.slug,
-        accountType: data.accountType,
-        maxBonusCents: data.maxBonusCents,
-        difficulty: data.difficulty,
-        // Placeholder — recomputeRatings() below overwrites this for any
-        // ACTIVE promotion; skipped only when ratingOverride pins it.
-        rating: data.ratingOverride ?? 9.0,
-        ratingOverride: data.ratingOverride ?? null,
-        ratingReason: data.ratingReason,
-        status: data.status,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        affiliateUrl: data.affiliateUrl,
-        sourceUrl: data.sourceUrl || undefined,
-        lastVerifiedAt: data.lastVerifiedAt,
-        eligibleFor: data.eligibleFor,
-        notEligibleFor: data.notEligibleFor,
-        cooldownMonths: data.cooldownMonths,
-        cooldownCutoffDate: data.cooldownCutoffDate,
-        summary: data.summary,
-        description: data.description,
-        conditions: { create: data.conditions },
-        bonusParts: { create: data.bonusParts },
-        fees: { upsert: { create: data.fees, update: data.fees } }
-      }
-    })
-  ]);
+  // The write itself (clearing a fee writes NULL, contentUpdatedAt moves only on a
+  // real change) lives in the service so it is tested against a real database.
+  await updatePromotionRecord(db, id, data);
 
   await recomputeRatings();
 

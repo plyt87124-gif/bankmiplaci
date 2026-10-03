@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/userSession";
 import { touchUserActivity } from "@/lib/userActivity";
 
-export async function POST(request: NextRequest, { params }: { params: { commentId: string } }) {
+export async function POST(request: NextRequest, props: { params: Promise<{ commentId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Musisz być zalogowany." }, { status: 401 });
   touchUserActivity(user.id);

@@ -1,0 +1,115 @@
+# Linux CI for this branch: full migration history on an EMPTY throw-away
+# Postgres, type check, tests, the PLAIN production build (never the Windows
+# shim) and an HTTP smoke test of the built app. Uses no repository secrets and
+# never touches any real database - the only database is the service container
+# below, created for each run and discarded afterwards.
+name: ci
+
+on:
+  push:
+    branches: ["fix/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: premia_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/premia_ci?schema=public
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_NAME: Bankmiplaci CI
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ci-only-value-not-a-secret
+      CRON_SECRET: ci-only-value-not-a-secret
+      EMAIL_FROM: ci@example.test
+      SUPPORT_EMAIL: ci@example.test
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Same major as the Vercel project (Settings > Node.js Version: 24.x).
+          node-version: 24
+          cache: npm
+
+      # Dependencies exactly as locked - nothing is upgraded here.
+      - run: npm ci
+
+      - name: Production dependencies must not have known high or critical advisories
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: The production build script must be the plain one (no Windows shim)
+        run: node -e "const s=require('./package.json').scripts; if (s.build !== 'next build') { console.error('scripts.build is', s.build); process.exit(1); }"
+
+      - name: Apply the whole migration history to the empty test database
+        run: npx prisma migrate deploy
+
+      - name: Migrations must produce exactly the schema.prisma datamodel
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -c "create database premia_shadow"
+          npx prisma migrate diff \
+            --from-migrations prisma/migrations \
+            --to-schema-datamodel prisma/schema.prisma \
+            --shadow-database-url "postgresql://postgres:postgres@localhost:5432/premia_shadow" \
+            --exit-code
+
+      - run: npx tsc --noEmit
+
+      - name: ESLint (non-interactive)
+        run: npm run lint
+
+      - run: npm test
+
+      - name: Database tests - clearing fields writes NULL, import keeps deadlines, contentUpdatedAt only on real changes, zero cooldown + notifications, opening-date backfill, join and reminder-marker reset
+        run: npm run test:db
+
+      - name: Data-correction machinery (transaction, compare-and-set, plan binding, revert)
+        run: node scripts/data-corrections/selftest.js
+
+      - name: Seed smoke fixtures (before the build - /sitemap.xml is prerendered at build time)
+        run: node scripts/ci-smoke.js seed
+
+      - name: Production build (plain `npm run build`, Linux)
+        run: npm run build
+
+      - name: Install Chromium for isolated visual checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Chromium mobile and desktop checks
+        run: node scripts/ci-visual.js
+
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-evidence-${{ github.sha }}
+          path: visual-artifacts
+          if-no-files-found: warn
+
+      - name: HTTP smoke test of the built app
+        run: node scripts/ci-smoke.js verify

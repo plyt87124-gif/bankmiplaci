@@ -38,11 +38,15 @@ export function PromotionForm({
     resolver: zodResolver(promotionFormSchema),
     defaultValues: {
       status: "DRAFT",
+      affiliateLinkEnabled: true,
       accountType: "PERSONAL",
       difficulty: "EASY",
       conditions: [],
       bonusParts: [],
-      fees: { accountFeeCents: 0, cardFeeCents: 0, atmFeeCents: 0 },
+      // No fee defaults here on purpose — an admin adding a new promotion
+      // who leaves these blank means "not verified yet", not "free". See
+      // Fees in prisma/schema.prisma.
+      fees: {},
       ...defaultValues
     } as PromotionFormValues
   });
@@ -168,6 +172,16 @@ export function PromotionForm({
         <Field label="Link afiliacyjny (affiliate_url)" error={errors.affiliateUrl?.message}>
           <input {...register("affiliateUrl")} className="input" placeholder="https://partner.example.com/..." />
         </Field>
+        <label className="flex items-start gap-2 text-sm text-ink-700">
+          <input type="checkbox" {...register("affiliateLinkEnabled")} className="mt-1" />
+          <span>
+            Link partnerski aktywny
+            <span className="block text-xs text-ink-500">
+              Odznacz, jeśli oferta w banku trwa, ale kampania afiliacyjna nie jest potwierdzona: strona pokaże ofertę
+              bez przycisku „Przejdź do promocji”, a /out/… nie przekieruje do partnera.
+            </span>
+          </span>
+        </label>
         <Field label="Źródło warunków (URL regulaminu banku)" error={errors.sourceUrl?.message}>
           <input {...register("sourceUrl")} className="input" placeholder="https://bank.example.com/regulamin" />
         </Field>
@@ -202,7 +216,7 @@ export function PromotionForm({
           Wypełnij liczbę miesięcy, jeśli regulamin mówi „N miesięcy/lat od zamknięcia konta”. Wypełnij datę
           graniczną, jeśli regulamin mówi „od DD.MM.RRRR nie prowadziliśmy dla Ciebie konta” (jak np. w Erste).
           Możesz wypełnić oba naraz — użytkownik musi wtedy spełnić obie reguły, żeby zobaczyć „kwalifikujesz
-          się”. Zostaw puste, jeśli zasada jest bardziej złożona — opisz ją wtedy tylko w polach tekstowych
+          się”. Wpisz 0, jeśli po zamknięciu konta nie ma dodatkowego oczekiwania; puste pole oznacza brak reguły miesięcznej (wtedy strona niczego nie zakłada). Zostaw puste, jeśli zasada jest bardziej złożona — opisz ją wtedy tylko w polach tekstowych
           powyżej.
         </p>
       </section>
@@ -258,6 +272,15 @@ export function PromotionForm({
               className="input w-40"
               placeholder="Kwota w groszach"
             />
+            <label className="flex shrink-0 flex-col text-xs text-ink-500">
+              Zapisy do (opcjonalnie)
+              <input
+                type="date"
+                {...register(`bonusParts.${index}.availableUntil`)}
+                className="input mt-1 w-40"
+                title="Ostatni dzień, w którym nowy uczestnik może przystąpić do tej części oferty — puste = termin całej promocji"
+              />
+            </label>
             <button type="button" onClick={() => bonusParts.remove(index)} className="p-2 text-ink-300 hover:text-coral-600">
               <Trash2 className="h-4 w-4" />
             </button>
@@ -267,19 +290,45 @@ export function PromotionForm({
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Opłaty</h2>
+        <p className="text-xs text-ink-500">
+          Zostaw pole puste, jeśli opłaty nie zweryfikowano — puste pole nigdy nie jest prezentowane jako „0 zł”.
+          Wpisz 0, tylko jeśli masz potwierdzenie z taryfy banku, że opłata jest bezwarunkowo darmowa.
+        </p>
         <div className="grid grid-cols-3 gap-4">
-          <Field label="Prowadzenie konta (grosze)">
+          <Field label="Prowadzenie konta (grosze, puste = nieustalone)" error={errors.fees?.accountFeeCents?.message}>
             <input type="number" {...register("fees.accountFeeCents", { valueAsNumber: true })} className="input" />
           </Field>
-          <Field label="Karta (grosze)">
+          <Field label="Karta (grosze, puste = nieustalone)" error={errors.fees?.cardFeeCents?.message}>
             <input type="number" {...register("fees.cardFeeCents", { valueAsNumber: true })} className="input" />
           </Field>
-          <Field label="Bankomat (grosze)">
+          <Field label="Bankomat (grosze, puste = nieustalone)" error={errors.fees?.atmFeeCents?.message}>
             <input type="number" {...register("fees.atmFeeCents", { valueAsNumber: true })} className="input" />
           </Field>
         </div>
-        <Field label="Inne opłaty / warunki zwolnienia z opłat">
-          <textarea {...register("fees.otherFee")} className="input" rows={2} placeholder="0 zł przy wpływie min. 500 zł/mies." />
+        <Field label="Warunek zwolnienia z opłaty za konto (opcjonalnie)">
+          <input
+            {...register("fees.accountFeeWaiverCondition")}
+            className="input"
+            placeholder="np. przy wpływie min. 500 zł w poprzednim miesiącu"
+          />
+          <p className="mt-1 text-xs text-ink-500">
+            Jeśli wypełnisz, pole „Prowadzenie konta” powyżej to opłata, gdy warunek NIE jest spełniony — opłata po
+            spełnieniu warunku jest zawsze 0 zł.
+          </p>
+        </Field>
+        <Field label="Warunek zwolnienia z opłaty za kartę (opcjonalnie)">
+          <input
+            {...register("fees.cardFeeWaiverCondition")}
+            className="input"
+            placeholder="np. przy rozliczonych transakcjach kartą na min. 350 zł w poprzednim miesiącu"
+          />
+          <p className="mt-1 text-xs text-ink-500">
+            Jeśli wypełnisz, pole „Karta” powyżej to opłata, gdy warunek NIE jest spełniony — opłata po spełnieniu
+            warunku jest zawsze 0 zł.
+          </p>
+        </Field>
+        <Field label="Inne opłaty / uwagi">
+          <textarea {...register("fees.otherFee")} className="input" rows={2} placeholder="np. opłata za przelew zagraniczny 15 zł" />
         </Field>
       </section>
 

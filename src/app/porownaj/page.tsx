@@ -4,7 +4,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { Building2 } from "lucide-react";
 import { listActivePromotions } from "@/lib/services/promotions";
-import { formatPLN, formatDate, DIFFICULTY_LABEL } from "@/lib/format";
+import { formatPLN, formatDate, formatFeeCompact, DIFFICULTY_LABEL } from "@/lib/format";
 import { EmptyState } from "@/components/States";
 import { CompareFilters } from "./CompareFilters";
 import { AttributionCapture } from "@/components/AttributionCapture";
@@ -19,11 +19,12 @@ export const metadata: Metadata = {
 const ACCOUNT_TYPE_LABEL: Record<string, string> = { PERSONAL: "Osobiste", BUSINESS: "Firmowe" };
 const COUNT_VALUES = ["4", "8", "12", "all"] as const;
 
-export default async function ComparePage({
-  searchParams
-}: {
-  searchParams: { typ?: string; liczba?: string };
-}) {
+export default async function ComparePage(
+  props: {
+    searchParams: Promise<{ typ?: string; liczba?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const accountType = searchParams.typ === "PERSONAL" || searchParams.typ === "BUSINESS" ? searchParams.typ : undefined;
   const promotions = await listActivePromotions({ sort: "top-rated", accountType });
 
@@ -53,11 +54,11 @@ export default async function ComparePage({
     { label: "Ocena", render: (p) => <span className="font-mono">{Number(p.rating).toFixed(1)}/10</span> },
     {
       label: "Koszt konta",
-      render: (p) => (p.fees && p.fees.accountFeeCents > 0 ? formatPLN(p.fees.accountFeeCents) : "0 zł*")
+      render: (p) => formatFeeCompact(p.fees?.accountFeeCents, p.fees?.accountFeeWaiverCondition)
     },
     {
       label: "Koszt karty",
-      render: (p) => (p.fees && p.fees.cardFeeCents > 0 ? formatPLN(p.fees.cardFeeCents) : "0 zł*")
+      render: (p) => formatFeeCompact(p.fees?.cardFeeCents, p.fees?.cardFeeWaiverCondition)
     },
     { label: "Koniec promocji", render: (p) => formatDate(p.endDate) }
   ];

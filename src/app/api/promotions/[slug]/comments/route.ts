@@ -30,7 +30,8 @@ function serialize(c: {
   };
 }
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const promotion = await db.promotion.findUnique({ where: { slug: params.slug }, select: { id: true } });
   if (!promotion) return NextResponse.json({ comments: [] });
 
@@ -75,7 +76,8 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   });
 }
 
-export async function POST(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function POST(request: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Musisz być zalogowany, aby komentować." }, { status: 401 });
   touchUserActivity(user.id);

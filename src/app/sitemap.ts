@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
 import { PromotionStatus } from "@prisma/client";
+import { signupCutoff } from "@/lib/promotionAvailability";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -14,14 +15,18 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 // unrelated code deploy happened to be. Revalidating hourly keeps it fresh
 // without hitting the DB on every crawler request.
 export const revalidate = 3600;
+// Expiry needs no manual record edit: the query below filters on
+// signupCutoff() (Polish calendar day), re-evaluated on each hourly
+// regeneration, so a promotion drops out of the sitemap at most ~1h after
+// its last day ends even if the daily expire cron has not run yet.
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [promotions, articles] = await Promise.all([
     db.promotion.findMany({
-      where: { status: PromotionStatus.ACTIVE, endDate: { gte: new Date() } },
-      select: { slug: true, updatedAt: true }
+      where: { status: PromotionStatus.ACTIVE, endDate: { gte: signupCutoff() } },
+      select: { slug: true, contentUpdatedAt: true }
     }),
-    db.article.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } })
+    db.article.findMany({ where: { published: true }, select: { slug: true, contentUpdatedAt: true } })
   ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -31,19 +36,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/quiz`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${siteUrl}/faq`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${siteUrl}/jak-zarabiamy`, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${siteUrl}/jak-to-dziala`, changeFrequency: "monthly", priority: 0.4 },
     { url: `${siteUrl}/blog`, changeFrequency: "weekly", priority: 0.5 }
   ];
 
+  // lastModified comes ONLY from contentUpdatedAt (set on a genuine content
+  // change). Older rows have none, and that does not prove their last edit
+  // was createdAt — nor can it be recovered from `updatedAt`, which the
+  // ranking recompute bumps. When the real date is unknown the <lastmod>
+  // element is omitted instead of publishing an unconfirmed one.
   const promotionRoutes: MetadataRoute.Sitemap = promotions.map((p) => ({
     url: `${siteUrl}/promocje/${p.slug}`,
-    lastModified: p.updatedAt,
+    ...(p.contentUpdatedAt ? { lastModified: p.contentUpdatedAt } : {}),
     changeFrequency: "weekly",
     priority: 0.8
   }));
 
   const articleRoutes: MetadataRoute.Sitemap = articles.map((a) => ({
     url: `${siteUrl}/blog/${a.slug}`,
-    lastModified: a.updatedAt,
+    ...(a.contentUpdatedAt ? { lastModified: a.contentUpdatedAt } : {}),
     changeFrequency: "monthly",
     priority: 0.4
   }));
