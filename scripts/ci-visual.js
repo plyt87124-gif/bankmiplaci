@@ -148,7 +148,7 @@ async function main() {
     const url = new URL(route.request().url());
     if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return route.continue();
     if (url.hostname === "example.test" || url.hostname === "example.com") {
-      interceptedTarget = route.request().url();
+      if (route.request().isNavigationRequest()) interceptedTarget = route.request().url();
       return route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>stub</title>stub" });
     }
     return route.abort("blockedbyclient");
