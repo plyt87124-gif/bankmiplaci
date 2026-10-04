@@ -3,7 +3,8 @@
     "deploymentEnabled": {
       "fix/etap1-claude-code-poprawki": false,
       "fix/etap1-codex-readiness": false,
-      "fix/stats-sequential-queries": false
+      "fix/stats-sequential-queries": false,
+      "feat/worker-modules-for-review": false
     }
   },
   "crons": [
