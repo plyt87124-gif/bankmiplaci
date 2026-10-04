@@ -16,7 +16,6 @@ export const promoSchema = z.object({
     title: z.string(),
     value: z.string(),
     note: z.string(),
-    illustration: z.string(),
     check: z.string(),
   }),
   payout: z.object({
@@ -41,7 +40,6 @@ export const promoSchema = z.object({
     code: z.string(),
     consent: z.string(),
     consentNote: z.string(),
-    illustration: z.string(),
   }),
   eligibility: z.object({
     title: z.string(),
@@ -73,7 +71,6 @@ export const ALIOR_2026_10: Promo = {
     title: "OBRĄCZKA PŁATNICZA",
     value: "Nagroda rzeczowa o wartości 500 zł",
     note: "Tylko przy wniosku online • kod odbioru SMS-em, ważny 14 dni",
-    illustration: "Ilustracja poglądowa",
     check: "SPRAWDŹMY.",
   },
   payout: {
@@ -106,7 +103,6 @@ export const ALIOR_2026_10: Promo = {
     code: "PREMIA2026",
     consent: "Wymagane zgody marketingowe",
     consentNote: "e-mail, SMS, telefon • nie cofaj ich do wypłaty nagród",
-    illustration: "Ilustracja",
   },
   eligibility: {
     title: "OFERTA DLA NOWYCH KLIENTÓW",

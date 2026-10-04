@@ -1,7 +1,7 @@
 import { AbsoluteFill } from "remotion";
 import { B, CX, cardShadow, ease, easeInOut, mix, mono, pop, sans, serif } from "../theme";
 import { at, local, WORD } from "../timeline";
-import { Card, CheckIcon, IllustrationTag } from "../ui";
+import { Card, CheckIcon } from "../ui";
 import type { SceneProps } from "./types";
 
 // Scena 4: ilustracja wniosku online (bez danych osobowych — pola to szare paski).
@@ -87,7 +87,6 @@ export const FormScene: React.FC<SceneProps> = ({ t, p }) => {
         <Card style={{ width: FW, height: ROW.end, position: "relative", padding: 0 }}>
           {/* tytuł */}
           <div style={{ position: "absolute", left: 44, top: 38, fontFamily: serif, fontWeight: 800, fontSize: 56, color: B.ink }}>{p.form.title}</div>
-          <IllustrationTag text={p.form.illustration} style={{ right: 32, top: 50 }} />
           {/* dane osobowe — tylko szkielety, bez treści */}
           <div style={{ position: "absolute", left: 44, top: ROW.skel + 14, display: "flex", flexDirection: "column", gap: 18 }}>
             <Skeleton w={420} />

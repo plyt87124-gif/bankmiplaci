@@ -2,7 +2,7 @@ import { AbsoluteFill } from "remotion";
 import { PX_PER_UNIT, RingCanvas, type RingPose } from "../Ring3D";
 import { B, CX, H, W, ease, easeInOut, mix, pop, sans } from "../theme";
 import { at, WORD } from "../timeline";
-import { CheckIcon, ContactlessIcon, IllustrationTag, Pill } from "../ui";
+import { CheckIcon, ContactlessIcon, Pill } from "../ui";
 import type { SceneProps } from "./types";
 
 // Scena 1: DO 800 ZŁ od pierwszej klatki → obrączka 3D wlatuje z obrotem → zbliżenie do terminala
@@ -149,7 +149,6 @@ export const HookScene: React.FC<SceneProps> = ({ t, p }) => {
   const labIn = ease(t, [fRing + 14, fRing + 26]);
   const valIn = ease(t, [fRing + 20, fRing + 32]);
   const noteIn = ease(t, [fRing + 28, fRing + 40]);
-  const tagIn = ease(t, [fRing + 22, fRing + 34]) * (1 - termOut * 0);
 
   // 4) SPRAWDŹMY.
   const stamp = pop(t - fCheck, 30, 9, 220);
@@ -242,9 +241,6 @@ export const HookScene: React.FC<SceneProps> = ({ t, p }) => {
 
       {/* obrączka 3D */}
       {t >= fRing && <RingCanvas width={W} height={H} pose={pose} glow={glow} />}
-
-      {/* znacznik ilustracji */}
-      <IllustrationTag text={p.ring.illustration} style={{ left: 110, top: 470, opacity: tagIn }} />
 
       {/* etykiety obrączki */}
       <div style={{ position: "absolute", left: CX - 415, width: 830, top: 1120, display: "flex", flexDirection: "column", alignItems: "center" }}>

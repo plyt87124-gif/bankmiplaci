@@ -61,26 +61,6 @@ export const Pill: React.FC<{ children: React.ReactNode; tone?: "teal" | "ink" |
   );
 };
 
-/** mały znacznik "Ilustracja" — każda wizualizacja rachunku/produktu jest poglądowa */
-export const IllustrationTag: React.FC<{ text: string; style?: React.CSSProperties }> = ({ text, style }) => (
-  <div
-    style={{
-      position: "absolute",
-      fontFamily: sans,
-      fontWeight: 600,
-      fontSize: 22,
-      color: B.ink500,
-      background: "rgba(255,255,255,0.85)",
-      border: `1.5px solid ${B.ink100}`,
-      borderRadius: 999,
-      padding: "6px 16px",
-      ...style,
-    }}
-  >
-    {text}
-  </div>
-);
-
 export const Mono: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
   <span style={{ fontFamily: mono, fontWeight: 700, ...style }}>{children}</span>
 );
