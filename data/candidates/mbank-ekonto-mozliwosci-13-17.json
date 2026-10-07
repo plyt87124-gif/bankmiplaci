@@ -1,0 +1,135 @@
+{
+  "_comment": "mBank — „Zgarnij premię, bo masz możliwości! – IV edycja” (eKonto możliwości 13–17, 16.09–16.12.2026). Warunki z noty prawnej na stronie oferty; PDF pod linkiem regulaminu to nadal III edycja (11.06–15.09.2026) — pełną treść IV edycji sprawdź ręcznie. Kampania eBroker 13093.",
+  "bankSlug": "mbank",
+  "ebrokerOid": "13093",
+  "promotion": {
+    "slug": "mbank-ekonto-mozliwosci-13-17-zgarnij-premie-iv",
+    "name": "eKonto możliwości 13–17 lat: do 300 zł premii i bonusów",
+    "accountType": "YOUNG",
+    "maxBonusCents": 30000,
+    "difficulty": "EASY",
+    "rating": 7.0,
+    "status": "DRAFT",
+    "startDate": "2026-09-16",
+    "endDate": "2026-12-16",
+    "affiliateLinkEnabled": true,
+    "sourceUrl": "https://www.mbank.pl/pdf/promocje/konta/regulamin-promocji-zgarnij-premie-bo-masz-mozliwosci-iii-edycja.pdf",
+    "additionalSourceUrls": [
+      "https://www.mbank.pl/indywidualny/dla-mlodych/i-mozesz-wiecej/"
+    ],
+    "lastVerifiedAt": "2026-10-07",
+    "eligibleFor": "Osoby fizyczne w wieku 13–17 lat, które są nowymi klientami mBanku i na dzień przystąpienia nie mają innych produktów ani usług banku (definicja nowego klienta w regulaminie promocji). Rodzic lub opiekun prawny musi zgodzić się na wniosek, umowę i udział w promocji.",
+    "notEligibleFor": "Osoby, które mają już produkty mBanku lub nie są nowymi klientami. Z promocji można skorzystać tylko raz.",
+    "cooldownMonths": null,
+    "cooldownCutoffDate": null,
+    "summary": "Do 300 zł dla 13–17-latków: 2 × 50 zł premii za wpływy 300 zł, saldo 50 zł na Moje cele i 8 transakcji miesięcznie oraz 200 zł bonusu. Wniosek do 16.12.2026.",
+    "conditions": [
+      {
+        "title": "Otwórz eKonto możliwości 13–17 z kartą w okresie 16.09–16.12.2026",
+        "description": "Promocyjny wniosek o eKonto możliwości wraz z wnioskiem o kartę, zaznaczenie otwarcia rachunku Moje cele i akceptacja oświadczeń oraz regulaminu. Rodzic lub opiekun prawny musi wyrazić zgodę na wnioski, umowę i udział w promocji.",
+        "type": "account_opening",
+        "order": 0
+      },
+      {
+        "title": "Premia I (50 zł): wpływ 300 zł w 7 dni, saldo 50 zł na Moje cele i 8 transakcji",
+        "description": "Jednorazowy wpływ min. 300 zł w ciągu 7 dni kalendarzowych od otwarcia, łączne saldo min. 50 zł na Moje cele w ostatnim dniu pierwszego pełnego miesiąca oraz min. 8 transakcji kartą do jego końca (nieanulowane do 10. dnia następnego miesiąca). Wypłata do końca drugiego pełnego miesiąca po otwarciu.",
+        "type": "card_payments",
+        "order": 1
+      },
+      {
+        "title": "Premia II (50 zł): te same warunki w drugim pełnym miesiącu",
+        "description": "W drugim pełnym miesiącu: jednorazowy wpływ min. 300 zł, saldo min. 50 zł na Moje cele w ostatnim dniu miesiąca i min. 8 transakcji kartą. Wypłata do końca trzeciego pełnego miesiąca po otwarciu.",
+        "type": "inflow",
+        "order": 2
+      },
+      {
+        "title": "Bonus 200 zł za spełnienie warunków premii I i II",
+        "description": "Wypłata do końca trzeciego pełnego miesiąca kalendarzowego po otwarciu rachunku. Premie i bonus są zwolnione z podatku (sprzedaż premiowa).",
+        "type": "deadline",
+        "order": 3
+      }
+    ],
+    "bonusParts": [
+      {
+        "label": "Premia I — 50 zł",
+        "amountCents": 5000,
+        "order": 0
+      },
+      {
+        "label": "Premia II — 50 zł",
+        "amountCents": 5000,
+        "order": 1
+      },
+      {
+        "label": "Bonus za spełnienie warunków premii I i II — 200 zł",
+        "amountCents": 20000,
+        "order": 2
+      }
+    ],
+    "fees": {
+      "accountFeeCents": 0,
+      "cardFeeCents": 0,
+      "otherFee": "Według noty prawnej strony oferty: 0 zł za otwarcie i prowadzenie konta, 0 zł za kartę, 0 zł za wypłaty kartą w bankomatach w Polsce i za granicą (dla klientów powyżej 18 lat prowizja za wypłaty poniżej 100 zł wynosi 2,50 zł).",
+      "sourceUrl": "https://www.mbank.pl/pomoc/oplaty/interaktywna/ind/"
+    }
+  },
+  "checklistSteps": [
+    {
+      "order": 0,
+      "monthLabel": "Otwarcie konta",
+      "title": "Poproś rodzica lub opiekuna prawnego o zgodę na wniosek i umowę (wymagana w promocji)"
+    },
+    {
+      "order": 1,
+      "monthLabel": "Otwarcie konta",
+      "title": "Złóż promocyjny wniosek o eKonto możliwości 13–17 z kartą (16.09–16.12.2026) i zaznacz otwarcie rachunku Moje cele"
+    },
+    {
+      "order": 2,
+      "monthLabel": "Otwarcie konta",
+      "title": "Zaakceptuj oświadczenia i regulamin promocji; zawrzyj umowę o eKonto możliwości"
+    },
+    {
+      "order": 3,
+      "monthLabel": "Otwarcie konta",
+      "title": "W ciągu 7 dni od otwarcia zrób jednorazowy wpływ min. 300 zł"
+    },
+    {
+      "order": 10,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Miej łączne saldo min. 50 zł na Moje cele w ostatnim dniu kalendarzowym miesiąca"
+    },
+    {
+      "order": 11,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zrób min. 8 transakcji kartą do końca pierwszego pełnego miesiąca"
+    },
+    {
+      "order": 12,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Odbierz premię I: 50 zł (do końca 2. pełnego miesiąca po otwarciu)",
+      "rewardCents": 5000
+    },
+    {
+      "order": 20,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zrób jednorazowy wpływ min. 300 zł"
+    },
+    {
+      "order": 21,
+      "monthLabel": "Miesiąc 2",
+      "title": "Miej łączne saldo min. 50 zł na Moje cele w ostatnim dniu kalendarzowym miesiąca"
+    },
+    {
+      "order": 22,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zrób min. 8 transakcji kartą do końca drugiego pełnego miesiąca"
+    },
+    {
+      "order": 24,
+      "monthLabel": "Miesiąc 2",
+      "title": "Odbierz nagrody: II: 50 zł (do końca 3. pełnego miesiąca po otwarciu) + za spełnienie warunków premii I i II: 200 zł",
+      "rewardCents": 25000
+    }
+  ]
+}

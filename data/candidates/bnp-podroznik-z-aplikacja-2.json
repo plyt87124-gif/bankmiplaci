@@ -1,0 +1,359 @@
+{
+  "_comment": "BNP Paribas — Podróżnik z aplikacją, edycja 2 (Konto Otwarte na Ciebie + Karta Otwarta na Świat). Źródło: regulamin sprzedaży premiowej (14.09–13.11.2026 lub do wyczerpania 10 000 przystąpień) i dokument dotyczący opłat. Kampania eBroker 13874.",
+  "bankSlug": "bnp",
+  "ebrokerOid": "13874",
+  "promotion": {
+    "slug": "bnp-paribas-podroznik-z-aplikacja-edycja-2-do-1100-zl",
+    "name": "Podróżnik z aplikacją 2: do 1100 zł z Kontem Otwartym na Ciebie",
+    "accountType": "PERSONAL",
+    "maxBonusCents": 110000,
+    "difficulty": "HARD",
+    "rating": 7.0,
+    "status": "DRAFT",
+    "startDate": "2026-09-14",
+    "endDate": "2026-11-13",
+    "affiliateLinkEnabled": true,
+    "sourceUrl": "https://lp.bnpparibas.pl/ekstrasumy/utils/docs/Regulamin_promocji_PODROZNIK_Z_APLIKACJA_edycja_2.pdf",
+    "additionalSourceUrls": [
+      "https://lp.bnpparibas.pl/ekstrasumy/jesien/",
+      "https://lp.bnpparibas.pl/ekstrasumy/utils/docs/Dokument_dotyczacy_oplat_-_Konto_Otwarte_na_Ciebie.pdf"
+    ],
+    "lastVerifiedAt": "2026-10-07",
+    "eligibleFor": "Pełnoletnie osoby fizyczne (konsumenci), które w ciągu 24 miesięcy przed wnioskiem nie miały w BNP Paribas rachunku oszczędnościowo-rozliczeniowego i nie mają z bankiem umowy ramowej o konto osobiste. Konto zakładasz w aplikacji mobilnej GOmobile.",
+    "notEligibleFor": "Osoby, które w ostatnich 24 miesiącach miały w BNP Paribas rachunek oszczędnościowo-rozliczeniowy, oraz osoby z aktywnym kontem osobistym w tym banku. Udział możliwy tylko raz. Promocja nie łączy się z innymi promocjami na konto osobiste (liczy się pierwsza), ale łączy się z promocjami na oprocentowanie lokat, Konta Pełnego Marzeń i kredytów. Pula to 10 000 przystąpień; oferta może skończyć się przed 13.11.2026.",
+    "cooldownMonths": 24,
+    "cooldownCutoffDate": null,
+    "summary": "Do 1100 zł: 12 × 75 zł za miesięczną aktywność (10 płatności kartą, wpływy 1500 zł, logowanie) i 200 zł za środki na koncie oszczędnościowym po 12 miesiącach. Pula 10 000 przystąpień.",
+    "conditions": [
+      {
+        "title": "Załóż Konto Otwarte na Ciebie z Kartą Otwartą na Świat w aplikacji GOmobile",
+        "description": "Umowę ramową (konto osobiste, karta, bankowość elektroniczna) zawierasz w aplikacji mobilnej w okresie 14.09–13.11.2026, o ile nie wyczerpano puli 10 000 przystąpień. Weryfikacja tożsamości odbywa się w aplikacji.",
+        "type": "account_opening",
+        "order": 0
+      },
+      {
+        "title": "Wyraź zgody marketingowe i zaakceptuj regulamin",
+        "description": "We wniosku wyrażasz zgodę na informacje handlowe drogą elektroniczną (SMS, PUSH, e-mail) i telefoniczną oraz nie wnosisz sprzeciwu RODO. Przystąpienie potwierdzasz kodem SMS w serwisie Autenti przy umowie ramowej. Zgody musisz mieć na koniec każdego miesiąca z nagrodą.",
+        "type": "other",
+        "order": 1
+      },
+      {
+        "title": "Co miesiąc przez 12 miesięcy: 10 płatności kartą i wpływy min. 1500 zł",
+        "description": "W każdym z 12 kolejnych miesięcy po miesiącu zawarcia umowy: min. 10 transakcji bezgotówkowych kartą (internet, portfele cyfrowe, bramki płatnicze; BLIK z GOmobile się nie liczy) oraz wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP, kredytów, korekt i nagród banku).",
+        "type": "card_payments",
+        "order": 2
+      },
+      {
+        "title": "Co miesiąc: zaloguj się do aplikacji GOmobile",
+        "description": "Co najmniej jedno logowanie do aplikacji mobilnej w każdym miesiącu, za który chcesz nagrodę 75 zł. Musisz być posiadaczem konta w dniu wypłaty.",
+        "type": "other",
+        "order": 3
+      },
+      {
+        "title": "Nagroda dodatkowa 200 zł: 500 zł na Koncie Lokacyjnym lub Koncie Pełnym Marzeń",
+        "description": "Na koniec 12. miesiąca po miesiącu zawarcia umowy masz Konto Lokacyjne albo Konto Pełne Marzeń z dostępnymi środkami min. 500 zł.",
+        "type": "deadline",
+        "order": 4
+      },
+      {
+        "title": "Wypłata nagród do 15. dnia następnego miesiąca",
+        "description": "Każdą nagrodę bank wypłaca na konto osobiste do 15. dnia miesiąca następującego po miesiącu spełnienia warunków. Nagrody są zwolnione z podatku (sprzedaż premiowa). Łączna wartość nagród nie przekroczy 1100 zł.",
+        "type": "deadline",
+        "order": 5
+      }
+    ],
+    "bonusParts": [
+      {
+        "label": "12 nagród miesięcznych po 75 zł (za każdy z 12 miesięcy aktywności)",
+        "amountCents": 90000,
+        "order": 0
+      },
+      {
+        "label": "Nagroda dodatkowa — 200 zł (środki min. 500 zł na koncie oszczędnościowym po 12 miesiącach)",
+        "amountCents": 20000,
+        "order": 1
+      }
+    ],
+    "fees": {
+      "accountFeeCents": 0,
+      "cardFeeCents": 1200,
+      "cardFeeWaiverCondition": "uczestnicy sprzedaży premiowej mają bezterminowe zwolnienie z opłaty miesięcznej za Kartę Otwartą na Świat",
+      "otherFee": "Według dokumentu dotyczącego opłat (Konto Otwarte na Ciebie): prowadzenie rachunku 0 zł; uczestnikom promocji bank przyznaje też bezterminowe zwolnienie z opłat za wypłaty gotówki z bankomatów poza EOG i w kasach innych banków.",
+      "sourceUrl": "https://lp.bnpparibas.pl/ekstrasumy/utils/docs/Dokument_dotyczacy_oplat_-_Konto_Otwarte_na_Ciebie.pdf"
+    }
+  },
+  "checklistSteps": [
+    {
+      "order": 0,
+      "monthLabel": "Otwarcie konta",
+      "title": "Pobierz aplikację GOmobile i złóż wniosek o Konto Otwarte na Ciebie z Kartą Otwartą na Świat (weryfikacja tożsamości w aplikacji)"
+    },
+    {
+      "order": 1,
+      "monthLabel": "Otwarcie konta",
+      "title": "Wyraź zgody marketingowe (elektroniczne i telefoniczne) i nie składaj sprzeciwu RODO"
+    },
+    {
+      "order": 2,
+      "monthLabel": "Otwarcie konta",
+      "title": "Zaakceptuj regulamin i przystąp do sprzedaży premiowej kodem SMS z Autenti przy podpisie umowy"
+    },
+    {
+      "order": 10,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 11,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 12,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 13,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Odbierz nagrodę: 75 zł (do 15. dnia następnego miesiąca)",
+      "rewardCents": 7500
+    },
+    {
+      "order": 20,
+      "monthLabel": "Miesiąc 2",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 21,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 22,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 23,
+      "monthLabel": "Miesiąc 2",
+      "title": "Odbierz nagrodę: 75 zł (do 15. dnia następnego miesiąca)",
+      "rewardCents": 7500
+    },
+    {
+      "order": 30,
+      "monthLabel": "Miesiąc 3",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 31,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 32,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 33,
+      "monthLabel": "Miesiąc 3",
+      "title": "Odbierz nagrodę: 75 zł (do 15. dnia następnego miesiąca)",
+      "rewardCents": 7500
+    },
+    {
+      "order": 40,
+      "monthLabel": "Miesiąc 4",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 41,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 42,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 43,
+      "monthLabel": "Miesiąc 4",
+      "title": "Odbierz nagrodę: 75 zł (do 15. dnia następnego miesiąca)",
+      "rewardCents": 7500
+    },
+    {
+      "order": 50,
+      "monthLabel": "Miesiąc 5",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 51,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 52,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 53,
+      "monthLabel": "Miesiąc 5",
+      "title": "Odbierz nagrodę: 75 zł (do 15. dnia następnego miesiąca)",
+      "rewardCents": 7500
+    },
+    {
+      "order": 60,
+      "monthLabel": "Miesiąc 6",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 61,
+      "monthLabel": "Miesiąc 6",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 62,
+      "monthLabel": "Miesiąc 6",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 63,
+      "monthLabel": "Miesiąc 6",
+      "title": "Odbierz nagrodę: 75 zł (do 15. dnia następnego miesiąca)",
+      "rewardCents": 7500
+    },
+    {
+      "order": 70,
+      "monthLabel": "Miesiąc 7",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 71,
+      "monthLabel": "Miesiąc 7",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 72,
+      "monthLabel": "Miesiąc 7",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 73,
+      "monthLabel": "Miesiąc 7",
+      "title": "Odbierz nagrodę: 75 zł (do 15. dnia następnego miesiąca)",
+      "rewardCents": 7500
+    },
+    {
+      "order": 80,
+      "monthLabel": "Miesiąc 8",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 81,
+      "monthLabel": "Miesiąc 8",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 82,
+      "monthLabel": "Miesiąc 8",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 83,
+      "monthLabel": "Miesiąc 8",
+      "title": "Odbierz nagrodę: 75 zł (do 15. dnia następnego miesiąca)",
+      "rewardCents": 7500
+    },
+    {
+      "order": 90,
+      "monthLabel": "Miesiąc 9",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 91,
+      "monthLabel": "Miesiąc 9",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 92,
+      "monthLabel": "Miesiąc 9",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 93,
+      "monthLabel": "Miesiąc 9",
+      "title": "Odbierz nagrodę: 75 zł (do 15. dnia następnego miesiąca)",
+      "rewardCents": 7500
+    },
+    {
+      "order": 100,
+      "monthLabel": "Miesiąc 10",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 101,
+      "monthLabel": "Miesiąc 10",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 102,
+      "monthLabel": "Miesiąc 10",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 103,
+      "monthLabel": "Miesiąc 10",
+      "title": "Odbierz nagrodę: 75 zł (do 15. dnia następnego miesiąca)",
+      "rewardCents": 7500
+    },
+    {
+      "order": 110,
+      "monthLabel": "Miesiąc 11",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 111,
+      "monthLabel": "Miesiąc 11",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 112,
+      "monthLabel": "Miesiąc 11",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 113,
+      "monthLabel": "Miesiąc 11",
+      "title": "Odbierz nagrodę: 75 zł (do 15. dnia następnego miesiąca)",
+      "rewardCents": 7500
+    },
+    {
+      "order": 120,
+      "monthLabel": "Miesiąc 12",
+      "title": "Wykonaj min. 10 transakcji bezgotówkowych kartą (bez BLIK-a)"
+    },
+    {
+      "order": 121,
+      "monthLabel": "Miesiąc 12",
+      "title": "Zapewnij wpływy na konto min. 1500 zł (bez przelewów z własnych rachunków w BNP)"
+    },
+    {
+      "order": 122,
+      "monthLabel": "Miesiąc 12",
+      "title": "Zaloguj się co najmniej raz do aplikacji GOmobile i utrzymaj zgody marketingowe"
+    },
+    {
+      "order": 124,
+      "monthLabel": "Miesiąc 12",
+      "title": "Na koniec miesiąca miej Konto Lokacyjne lub Konto Pełne Marzeń z min. 500 zł"
+    },
+    {
+      "order": 125,
+      "monthLabel": "Miesiąc 12",
+      "title": "Odbierz nagrody: 75 zł (do 15. dnia następnego miesiąca) + dodatkową: 200 zł",
+      "rewardCents": 27500
+    }
+  ]
+}

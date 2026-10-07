@@ -1,0 +1,296 @@
+{
+  "_comment": "Nest Bank — „Zyskaj do 1060 zł za wynagrodzenie i aktywność” (Nest Konto, przystąpienie 1.10.2026–31.03.2027). Źródło: regulamin promocji + dokument dotyczący opłat + strona oferty. Ściąga zakłada wpływ wynagrodzenia w każdym miesiącu od pierwszego pełnego. Kampania eBroker 12455.",
+  "bankSlug": "nest",
+  "ebrokerOid": "12455",
+  "promotion": {
+    "slug": "nest-konto-zyskaj-do-1060-zl-za-wynagrodzenie",
+    "name": "Nest Konto: do 1060 zł za wynagrodzenie i aktywność",
+    "accountType": "PERSONAL",
+    "maxBonusCents": 106000,
+    "difficulty": "MEDIUM",
+    "rating": 7.0,
+    "status": "DRAFT",
+    "startDate": "2026-10-01",
+    "endDate": "2027-03-31",
+    "affiliateLinkEnabled": true,
+    "sourceUrl": "https://nestbank.pl/assets/gen/regulamin-promocji-zyskaj-do-1060-zl-za-wynagrodzenie-i-aktywnosc.pdf",
+    "additionalSourceUrls": [
+      "https://nestbank.pl/assets/gen/57-57-01-dokument_dotyczacy_oplat_nest_konto.pdf"
+    ],
+    "lastVerifiedAt": "2026-10-07",
+    "eligibleFor": "Pełnoletnie osoby mieszkające w Polsce, z pełną zdolnością prawną, które od 1.01.2026 do dnia złożenia wniosku nie były posiadaczem ani współposiadaczem konta osobistego w Nest Banku.",
+    "notEligibleFor": "Osoby, które od 1.01.2026 miały w banku konto osobiste. Wykluczenie z promocji grozi za używanie konta do działalności gospodarczej, odstąpienie od umowy lub jej wypowiedzenie. Bank może zakończyć okres przystąpienia wcześniej, zapowiadając to 7 dni wcześniej.",
+    "cooldownMonths": null,
+    "cooldownCutoffDate": "2026-01-01",
+    "summary": "Do 1060 zł: 200 zł premii powitalnej za pierwsze wynagrodzenie, 10 × 50 zł premii miesięcznej i 12 × do 30 zł (2%) zwrotu za zakupy. Konto, karta i przelewy 0 zł na stałe.",
+    "conditions": [
+      {
+        "title": "Złóż wniosek o Nest Konto w okresie 1.10.2026–31.03.2027",
+        "description": "Na stronie banku lub stronie promocyjnej (z zaznaczoną chęcią udziału w promocji), w aplikacji przed zalogowaniem lub po zalogowaniu. Umowę ramową zawierasz w ciągu 14 dni od wniosku.",
+        "type": "account_opening",
+        "order": 0
+      },
+      {
+        "title": "Zgoda marketingowa na SMS/MMS oraz bankowość internetową i aplikację",
+        "description": "Potrzebna najpóźniej w dniu otwarcia konta i musisz ją mieć przez cały miesiąc, za który chcesz premię lub zwrot. Choćby jeden dzień odwołanej zgody w miesiącu oznacza utratę nagrody za ten miesiąc.",
+        "type": "other",
+        "order": 1
+      },
+      {
+        "title": "Wpływ wynagrodzenia: 1500 zł (do 26 lat) lub 3000 zł (od 26 lat)",
+        "description": "Premia powitalna 200 zł za pierwszy wpływ wynagrodzenia najpóźniej do końca drugiego pełnego miesiąca po miesiącu otwarcia konta (inaczej tracisz premię za wynagrodzenie). Potem 50 zł za każdy miesiąc z wpływem wynagrodzenia, maksymalnie przez 10 miesięcy; łącznie do 700 zł.",
+        "type": "inflow",
+        "order": 2
+      },
+      {
+        "title": "Zwrot 2% za zakupy kartą i BLIKIEM: do 30 zł miesięcznie przez 12 miesięcy",
+        "description": "Za płatności za towary i usługi kartą lub BLIKIEM (bez przelewów BLIK na telefon, wypłat, zasileń portfeli i hazardu) w miesiącu z wpływem wynagrodzenia. Pierwszy miesiąc zwrotu najpóźniej do końca drugiego pełnego miesiąca po otwarciu konta; razem do 360 zł.",
+        "type": "card_payments",
+        "order": 3
+      },
+      {
+        "title": "Wypłata do końca następnego miesiąca",
+        "description": "Premie i zwroty wpływają na Nest Konto najpóźniej do ostatniego dnia miesiąca następującego po miesiącu spełnienia warunków. Łącznie max 1060 zł. Nagrody są zwolnione z podatku (sprzedaż premiowa).",
+        "type": "deadline",
+        "order": 4
+      }
+    ],
+    "bonusParts": [
+      {
+        "label": "Premia powitalna za pierwszy wpływ wynagrodzenia — 200 zł",
+        "amountCents": 20000,
+        "order": 0
+      },
+      {
+        "label": "Premia miesięczna za wynagrodzenie — 10 × 50 zł (500 zł)",
+        "amountCents": 50000,
+        "order": 1
+      },
+      {
+        "label": "Zwrot 2% za zakupy — 12 × do 30 zł (360 zł)",
+        "amountCents": 36000,
+        "order": 2
+      }
+    ],
+    "fees": {
+      "accountFeeCents": 0,
+      "cardFeeCents": 0,
+      "otherFee": "Według dokumentu dotyczącego opłat (Nest Konto): prowadzenie rachunku 0 zł, pierwsza karta plastikowa w ramach umowy ramowej 0 zł, przelewy ELIXIR przez bankowość internetową i aplikację 0 zł. Prowizja za przewalutowanie 4,9% przy transakcjach w obcej walucie.",
+      "sourceUrl": "https://nestbank.pl/assets/gen/57-57-01-dokument_dotyczacy_oplat_nest_konto.pdf"
+    }
+  },
+  "checklistSteps": [
+    {
+      "order": 0,
+      "monthLabel": "Otwarcie konta",
+      "title": "Złóż wniosek o Nest Konto (1.10.2026–31.03.2027): na stronie, na stronie promocyjnej lub w aplikacji — zaznacz udział w promocji"
+    },
+    {
+      "order": 1,
+      "monthLabel": "Otwarcie konta",
+      "title": "Wyraź zgodę marketingową co najmniej na SMS/MMS oraz bankowość internetową i aplikację (najpóźniej w dniu otwarcia)"
+    },
+    {
+      "order": 2,
+      "monthLabel": "Otwarcie konta",
+      "title": "Zawrzyj umowę ramową w ciągu 14 dni od wniosku"
+    },
+    {
+      "order": 3,
+      "monthLabel": "Otwarcie konta",
+      "title": "Sprawdź kwotę wynagrodzenia: 1500 zł (do 26 lat) albo 3000 zł (od 26 lat) — wpływ musi być oznaczony jako wynagrodzenie"
+    },
+    {
+      "order": 10,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 11,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 13,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Odbierz nagrody: powitalną: 200 zł (za pierwszy wpływ wynagrodzenia; najpóźniej do końca 2. pełnego miesiąca) + 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 23000
+    },
+    {
+      "order": 20,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 21,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 23,
+      "monthLabel": "Miesiąc 2",
+      "title": "Odbierz nagrody: miesięczną: 50 zł (do 10 miesięcy) + 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 8000
+    },
+    {
+      "order": 30,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 31,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 33,
+      "monthLabel": "Miesiąc 3",
+      "title": "Odbierz nagrody: miesięczną: 50 zł (do 10 miesięcy) + 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 8000
+    },
+    {
+      "order": 40,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 41,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 43,
+      "monthLabel": "Miesiąc 4",
+      "title": "Odbierz nagrody: miesięczną: 50 zł (do 10 miesięcy) + 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 8000
+    },
+    {
+      "order": 50,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 51,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 53,
+      "monthLabel": "Miesiąc 5",
+      "title": "Odbierz nagrody: miesięczną: 50 zł (do 10 miesięcy) + 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 8000
+    },
+    {
+      "order": 60,
+      "monthLabel": "Miesiąc 6",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 61,
+      "monthLabel": "Miesiąc 6",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 63,
+      "monthLabel": "Miesiąc 6",
+      "title": "Odbierz nagrody: miesięczną: 50 zł (do 10 miesięcy) + 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 8000
+    },
+    {
+      "order": 70,
+      "monthLabel": "Miesiąc 7",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 71,
+      "monthLabel": "Miesiąc 7",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 73,
+      "monthLabel": "Miesiąc 7",
+      "title": "Odbierz nagrody: miesięczną: 50 zł (do 10 miesięcy) + 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 8000
+    },
+    {
+      "order": 80,
+      "monthLabel": "Miesiąc 8",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 81,
+      "monthLabel": "Miesiąc 8",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 83,
+      "monthLabel": "Miesiąc 8",
+      "title": "Odbierz nagrody: miesięczną: 50 zł (do 10 miesięcy) + 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 8000
+    },
+    {
+      "order": 90,
+      "monthLabel": "Miesiąc 9",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 91,
+      "monthLabel": "Miesiąc 9",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 93,
+      "monthLabel": "Miesiąc 9",
+      "title": "Odbierz nagrody: miesięczną: 50 zł (do 10 miesięcy) + 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 8000
+    },
+    {
+      "order": 100,
+      "monthLabel": "Miesiąc 10",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 101,
+      "monthLabel": "Miesiąc 10",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 103,
+      "monthLabel": "Miesiąc 10",
+      "title": "Odbierz nagrody: miesięczną: 50 zł (do 10 miesięcy) + 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 8000
+    },
+    {
+      "order": 110,
+      "monthLabel": "Miesiąc 11",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 111,
+      "monthLabel": "Miesiąc 11",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 113,
+      "monthLabel": "Miesiąc 11",
+      "title": "Odbierz nagrody: miesięczną: 50 zł (do 10 miesięcy) + 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 8000
+    },
+    {
+      "order": 120,
+      "monthLabel": "Miesiąc 12",
+      "title": "Zapewnij wpływ wynagrodzenia na Nest Konto (min. 1500 zł do 26 lat, 3000 zł od 26 lat)"
+    },
+    {
+      "order": 121,
+      "monthLabel": "Miesiąc 12",
+      "title": "Zrób min. 1 płatność kartą lub BLIKIEM (zwrot 2%) i utrzymaj zgodę marketingową przez cały miesiąc"
+    },
+    {
+      "order": 123,
+      "monthLabel": "Miesiąc 12",
+      "title": "Odbierz zwrot 2% za zakupy: do 30 zł (do końca następnego miesiąca)",
+      "rewardCents": 3000
+    }
+  ]
+}

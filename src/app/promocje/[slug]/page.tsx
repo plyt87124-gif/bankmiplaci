@@ -21,6 +21,8 @@ import { JoinChecklistButton } from "@/components/JoinChecklistButton";
 import { getCurrentUser } from "@/lib/userSession";
 import { db } from "@/lib/db";
 import { computeEligibility, isChecklistRestartLocked } from "@/lib/services/eligibility";
+import { describeAdditionalSource, describeFeesSource } from "@/lib/sourceLinks";
+import { formatCooldownWindow } from "@/lib/cooldownText";
 import { AlertTriangle, ShieldAlert, Eye, ArrowRight, BookOpen } from "lucide-react";
 
 interface PageProps {
@@ -364,12 +366,21 @@ export default async function PromotionDetailPage(props: PageProps) {
           {/* Eligibility — simplified to just the cutoff date itself
               (Promotion.cooldownCutoffDate), not the full eligibleFor/
               notEligibleFor prose. */}
-          {promotion.cooldownCutoffDate && (
+          {(promotion.cooldownCutoffDate || promotion.cooldownMonths) && (
             <section className="mt-12 rounded-xl2 border border-teal-100 bg-teal-100/40 p-4">
               <p className="text-sm font-semibold text-teal-700">Kiedy możesz otworzyć konto?</p>
               <p className="mt-1 text-sm text-ink-700">
-                Możesz skorzystać z tej promocji, jeśli nie miałeś/aś konta w {promotion.bank.name} od{" "}
-                {formatDate(promotion.cooldownCutoffDate)}.
+                {promotion.cooldownCutoffDate ? (
+                  <>
+                    Możesz skorzystać z tej promocji, jeśli nie miałeś/aś konta w {promotion.bank.name} od{" "}
+                    {formatDate(promotion.cooldownCutoffDate)}.
+                  </>
+                ) : (
+                  <>
+                    Możesz skorzystać z tej promocji, jeśli {formatCooldownWindow(promotion.cooldownMonths!)} przed
+                    złożeniem wniosku nie miałeś/aś konta w {promotion.bank.name}.
+                  </>
+                )}
               </p>
             </section>
           )}
@@ -457,7 +468,7 @@ export default async function PromotionDetailPage(props: PageProps) {
                       <span key={url}>
                         {i > 0 && ", "}
                         <a href={url} target="_blank" rel="noopener noreferrer nofollow" className="underline">
-                          regulamin {i + 2}
+                          {describeAdditionalSource(url, i)}
                         </a>
                       </span>
                     ))}
@@ -465,7 +476,7 @@ export default async function PromotionDetailPage(props: PageProps) {
                 )}
                 {promotion.fees?.sourceUrl && (
                   <p className="mt-1">
-                    Taryfa opłat i prowizji:{" "}
+                    {describeFeesSource(promotion.fees.sourceUrl)}:{" "}
                     <a href={promotion.fees.sourceUrl} target="_blank" rel="noopener noreferrer nofollow" className="underline">
                       pełny dokument na stronie banku
                     </a>

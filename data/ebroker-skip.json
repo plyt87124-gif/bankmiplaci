@@ -1,0 +1,19 @@
+{
+  "_comment": "oid kampanii eBroker -> powód, dla którego nie ma własnej promocji. Kampania zostaje obserwowana (zmiana opisu da powiadomienie), ale nie trafia do kolejki „do dodania”. Wpisy z „DECYZJA:” czekają na decyzję właściciela.",
+  "13786": "Konto bez premii (UniCredit: 0 zł za konto, brak bonusu za otwarcie) — stan 2026-10-07",
+  "13728": "Konto firmowe Erste bez premii w opisie kampanii — stan 2026-10-07",
+  "10459": "BNP Konto Otwarte na Ciebie: konto bazowe bez własnej premii (premie są w kampanii 13874) — stan 2026-10-07",
+  "13702": "Duplikat kanału kampanii 10459 (CPS + CPA) — konto bazowe bez własnej premii",
+  "11575": "BNP Konto z Kartą Otwartą na Świat: konto bazowe bez własnej premii (opłata 12 zł za kartę) — stan 2026-10-07",
+  "13718": "Duplikat kampanii 11575 (Karta Otwarta na eŚwiat) — konto bazowe bez własnej premii",
+  "13295": "DECYZJA: VeloKonto — w opisie tylko program poleceń (100 zł za osobę), brak premii za otwarcie",
+  "13297": "DECYZJA: VeloKonto dla młodych — jak 13295, brak premii za otwarcie w opisie",
+  "13303": "DECYZJA: VeloKonto Firma — w opisie 0 zł za konto, brak premii; niesprawdzone",
+  "13862": "DECYZJA: VeloKonto Gold — promocja oprocentowania lokat (5%, oferta do 04.11.2026), nie premia za konto",
+  "13864": "DECYZJA: VeloKonto Private Wealth — oprocentowanie lokat 4,9%, oferta do 16.09.2026 (już skończona)",
+  "7871": "mBank konto firmowe z pakietem płatności: bez premii w opisie (premia 500 zł jest w kampanii 13227)",
+  "13676": "mBank eKonto standard (eKonto do usług): ten sam regulamin „Cała naprzód – edycja II” co istniejąca promocja z kampanii 13870",
+  "11335": "Duplikat kanału kampanii 10857 (Pekao Konto Przekorzystne)",
+  "12423": "Duplikat kanału kampanii 10857 (Pekao Konto Przekorzystne)",
+  "10943": "Duplikat kanału kampanii 11393 (Pekao Konto Biznes z Żubrem)"
+}

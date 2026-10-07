@@ -1,0 +1,196 @@
+{
+  "_comment": "Alior Bank — sprzedaż premiowa „Młodzi zyskują” (Alior Konto 18–25, kod BONUS500). DRAFT do ręcznej weryfikacji. Fakty wyłącznie z oficjalnego regulaminu (obowiązuje 16.02–31.12.2026) i Dokumentu dotyczącego opłat (Alior Konto, rachunki od 15.01.2026). Kampania eBrokerPartner: target 13780. affiliateUrl skopiowany z panelu eBrokerPartner (kampania 13780, zakładka Linki promujące, po zaznaczeniu oświadczenia przez właściciela 2026-10-06); affiliateLinkEnabled=false do czasu ręcznej weryfikacji.",
+  "bankSlug": "alior",
+  "ebrokerOid": "13780",
+  "promotion": {
+    "slug": "alior-konto-18-25-mlodzi-zyskuja",
+    "name": "Młodzi zyskują: do 500 zł z Alior Kontem (18–25 lat)",
+    "accountType": "PERSONAL",
+    "maxBonusCents": 50000,
+    "difficulty": "EASY",
+    "rating": 9.0,
+    "ratingReason": "Niskie progi (3 płatności w portfelu cyfrowym, potem 10 płatności, wpływ 500 zł i logowanie przez 3 miesiące) i konto za 0 zł, ale oferta tylko dla osób do 26. roku życia i maksymalnie 500 zł.",
+    "status": "DRAFT",
+    "startDate": "2026-02-16",
+    "endDate": "2026-12-31",
+    "affiliateUrl": "https://bankmiplaci.ebrokerpartner.pl/short/5p3g2",
+    "affiliateLinkEnabled": false,
+    "sourceUrl": "https://www.aliorbank.pl/dam/jcr:9320aad2-99e5-4e7d-964b-888dc2a2bea7/regulamin-sprzedazy-premiowej-mlodzi-zyskuja.pdf",
+    "additionalSourceUrls": [
+      "https://www.aliorbank.pl/klienci-indywidualni/konta-osobiste/alior-konto-18-25-lat.html",
+      "https://www.aliorbank.pl/dam/jcr:1a36b445-3db8-459c-9f0f-f47ae17ce31d/ddo-ror-alior-konto.pdf",
+      "https://www.aliorbank.pl/dam/jcr:2c557a27-9d52-4c66-8fb5-f2652658e43e/toip-konta-osobiste.pdf"
+    ],
+    "lastVerifiedAt": "2026-10-06",
+    "eligibleFor": "Pełnoletnie osoby, które w dniu zawarcia umowy o konto i umowy o kartę nie ukończyły 26 lat i w ciągu ostatnich 3 lat przed złożeniem wniosku nie miały w Alior Banku rachunku oszczędnościowo-rozliczeniowego (konta osobistego).",
+    "notEligibleFor": "Osoby, które ukończyły 26 lat, oraz osoby, które w ostatnich 3 latach miały w Alior Banku rachunek oszczędnościowo-rozliczeniowy. Promocja dotyczy wyłącznie Alior Konta w wariancie indywidualnym (jedyny posiadacz). Konto oszczędnościowe, firmowe, walutowe czy w kantorze nie wyklucza z udziału. Nie łączy się z promocją „Należy Ci się z Alior Kontem”, łączy się z promocją „Konto Oszczędnościowe na Start”. Do sprzedaży premiowej można zarejestrować się tylko raz.",
+    "cooldownMonths": 36,
+    "cooldownCutoffDate": null,
+    "summary": "Do 500 zł z kodem BONUS500, jeśli masz mniej niż 26 lat: 200 zł za aktywację karty w portfelu cyfrowym w 10 dni i do 3 × 100 zł za aktywność w kolejnych trzech miesiącach. Prowadzenie konta 0 zł.",
+    "conditions": [
+      {
+        "title": "Złóż wniosek o Alior Konto z kartą w wariancie indywidualnym",
+        "description": "Wniosek o umowę o konto wraz z umową o kartę debetową składasz na stronie Alior Banku, w Alior Online albo w aplikacji Alior Mobile w okresie 16.02–31.12.2026 r. Konto musi mieć jednego posiadacza. W dniu zawarcia umów nie możesz mieć ukończonych 26 lat, a w ostatnich 3 latach nie możesz mieć w Alior Banku rachunku oszczędnościowo-rozliczeniowego.",
+        "type": "account_opening",
+        "order": 0
+      },
+      {
+        "title": "Wpisz kod promocji BONUS500 we wniosku",
+        "description": "Kod wpisujesz podczas składania wniosku o konto i kartę. Bez niego nie zostaniesz zarejestrowany(a) do sprzedaży premiowej. Do sprzedaży można zarejestrować się tylko raz.",
+        "type": "other",
+        "order": 1
+      },
+      {
+        "title": "Wyraź wymagane zgody marketingowe i nie wycofuj ich do wypłaty nagrody",
+        "description": "We wniosku wyrażasz zgodę na przetwarzanie danych w celu marketingu bezpośredniego oraz na informacje marketingowe wiadomościami elektronicznymi (e-mail, SMS/MMS, bankowość elektroniczna, serwisy internetowe) i połączeniami głosowymi. Zgód nie możesz wycofać do dnia przekazania nagrody. Nie możesz też wypowiedzieć umów ani od nich odstąpić do tego dnia.",
+        "type": "other",
+        "order": 2
+      },
+      {
+        "title": "Nagroda I stopnia (200 zł): w 10 dni dodaj kartę do portfela cyfrowego i zapłać nią 3 razy",
+        "description": "W ciągu 10 dni od zawarcia umowy o konto i kartę dodajesz kartę do portfela cyfrowego i wykonujesz 3 transakcje przy użyciu portfela cyfrowego na dowolną kwotę. Nagrodę bank przekazuje na Alior Konto do końca pełnego miesiąca kalendarzowego następującego po miesiącu zawarcia umów. Możesz dostać tylko jedną nagrodę I stopnia.",
+        "type": "card_payments",
+        "order": 3
+      },
+      {
+        "title": "Nagroda II stopnia (100 zł miesięcznie): 10 transakcji kartą dodaną do portfela cyfrowego",
+        "description": "W każdym z trzech pełnych miesięcy kalendarzowych po miesiącu zawarcia umów wykonujesz 10 transakcji kartą dodaną do portfela cyfrowego, wydaną do rachunku, na dowolną kwotę. Z promocji wyłączone są transakcje w punktach z kodem MCC 7995 (kasyna, zakłady bukmacherskie) oraz 8999 przy płatności zagranicznej.",
+        "type": "card_payments",
+        "order": 4
+      },
+      {
+        "title": "Nagroda II stopnia: jednorazowy wpływ min. 500 zł z innego banku",
+        "description": "W tym samym miesiącu zapewniasz jednorazowy wpływ co najmniej 500 zł z rachunku w innym banku albo z rachunku dla Klientów Biznesowych prowadzonego w Alior Banku. Przelewów z rachunków w Kantorze Walutowym Alior Banku bank nie traktuje jako wpływów.",
+        "type": "inflow",
+        "order": 5
+      },
+      {
+        "title": "Nagroda II stopnia: zaloguj się do Alior Mobile co najmniej raz w miesiącu",
+        "description": "W tym samym miesiącu logujesz się do aplikacji mobilnej Alior Mobile co najmniej jeden raz.",
+        "type": "other",
+        "order": 6
+      },
+      {
+        "title": "Nagrody II stopnia: po jednej za każdy z trzech pełnych miesięcy po otwarciu konta",
+        "description": "Możesz dostać maksymalnie trzy nagrody II stopnia, po jednej za każdy kolejny pełny miesiąc kalendarzowy, zaczynając od pierwszego pełnego miesiąca po miesiącu zawarcia umów. Nagrodę za dany miesiąc bank przekazuje do końca miesiąca następującego po miesiącu, w którym spełniłeś(aś) warunki.",
+        "type": "deadline",
+        "order": 7
+      }
+    ],
+    "bonusParts": [
+      {
+        "label": "Nagroda I stopnia — 200 zł (10 dni po zawarciu umów: karta w portfelu cyfrowym i 3 transakcje)",
+        "amountCents": 20000,
+        "order": 0
+      },
+      {
+        "label": "Nagrody II stopnia — 3 × 100 zł (po jednej za każdy z trzech pełnych miesięcy po otwarciu konta)",
+        "amountCents": 30000,
+        "order": 1
+      }
+    ],
+    "fees": {
+      "accountFeeCents": 0,
+      "cardFeeCents": 700,
+      "cardFeeWaiverCondition": "co najmniej 5 transakcji bezgotówkowych kartą i/lub BLIK w danym miesiącu; opłata nie jest pobierana w miesiącu wydania karty ani od osób, które nie ukończyły 18 lat",
+      "otherFee": "Dokument dotyczący opłat (rachunki od 15.01.2026): prowadzenie rachunku 0 zł miesięcznie. Tabela opłat i prowizji (TOiP) w przypisach wskazuje dodatkowo zwolnienie z opłaty za prowadzenie rachunku i opłaty podstawowej za kartę do 26. urodzin posiadacza — do ręcznego potwierdzenia, bo DDO i TOiP różnią się w opisie warunków.",
+      "sourceUrl": "https://www.aliorbank.pl/dam/jcr:1a36b445-3db8-459c-9f0f-f47ae17ce31d/ddo-ror-alior-konto.pdf"
+    }
+  },
+  "checklistSteps": [
+    {
+      "order": 0,
+      "monthLabel": "Otwarcie konta",
+      "title": "Złóż wniosek o Alior Konto z kartą (indywidualne) na stronie banku, w Alior Online lub w Alior Mobile"
+    },
+    {
+      "order": 1,
+      "monthLabel": "Otwarcie konta",
+      "title": "Wpisz kod promocji BONUS500 we wniosku"
+    },
+    {
+      "order": 2,
+      "monthLabel": "Otwarcie konta",
+      "title": "Wyraź wymagane zgody marketingowe (nie wycofuj ich do wypłaty nagrody)"
+    },
+    {
+      "order": 3,
+      "monthLabel": "Otwarcie konta",
+      "title": "W ciągu 10 dni od zawarcia umów dodaj kartę do portfela cyfrowego"
+    },
+    {
+      "order": 4,
+      "monthLabel": "Otwarcie konta",
+      "title": "Zapłać 3 razy przy użyciu portfela cyfrowego (dowolna kwota)"
+    },
+    {
+      "order": 5,
+      "monthLabel": "Otwarcie konta",
+      "title": "Odbierz nagrodę: 200 zł (do końca miesiąca następującego po miesiącu zawarcia umów)",
+      "rewardCents": 20000
+    },
+    {
+      "order": 10,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Wykonaj min. 10 transakcji kartą dodaną do portfela cyfrowego (dowolna kwota)"
+    },
+    {
+      "order": 11,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zapewnij jednorazowy wpływ min. 500 zł z innego banku"
+    },
+    {
+      "order": 12,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zaloguj się co najmniej raz do Alior Mobile"
+    },
+    {
+      "order": 13,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Odbierz nagrodę: 100 zł (do końca następnego miesiąca)",
+      "rewardCents": 10000
+    },
+    {
+      "order": 20,
+      "monthLabel": "Miesiąc 2",
+      "title": "Wykonaj min. 10 transakcji kartą dodaną do portfela cyfrowego (dowolna kwota)"
+    },
+    {
+      "order": 21,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zapewnij jednorazowy wpływ min. 500 zł z innego banku"
+    },
+    {
+      "order": 22,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zaloguj się co najmniej raz do Alior Mobile"
+    },
+    {
+      "order": 23,
+      "monthLabel": "Miesiąc 2",
+      "title": "Odbierz nagrodę: 100 zł (do końca następnego miesiąca)",
+      "rewardCents": 10000
+    },
+    {
+      "order": 30,
+      "monthLabel": "Miesiąc 3",
+      "title": "Wykonaj min. 10 transakcji kartą dodaną do portfela cyfrowego (dowolna kwota)"
+    },
+    {
+      "order": 31,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zapewnij jednorazowy wpływ min. 500 zł z innego banku"
+    },
+    {
+      "order": 32,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zaloguj się co najmniej raz do Alior Mobile"
+    },
+    {
+      "order": 33,
+      "monthLabel": "Miesiąc 3",
+      "title": "Odbierz nagrodę: 100 zł (do końca następnego miesiąca)",
+      "rewardCents": 10000
+    }
+  ]
+}

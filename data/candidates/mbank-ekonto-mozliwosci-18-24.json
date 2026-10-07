@@ -1,0 +1,234 @@
+{
+  "_comment": "mBank — eKonto możliwości (18–24 lata): promocje „Cała naprzód – zyskuj z kontem w mBanku – edycja II” (przystąpienie 1.09–30.11.2026) i „Bonus dla mobilnych – edycja III” (+10 zł). Źródło: regulaminy PDF + strona oferty. Kampania eBroker 13442. Ten sam regulamin obejmuje eKonto do usług (to jest już osobna promocja z bonami do Biedronki).",
+  "bankSlug": "mbank",
+  "ebrokerOid": "13442",
+  "promotion": {
+    "slug": "mbank-ekonto-mozliwosci-18-24-cala-naprzod-2",
+    "name": "eKonto możliwości (18–24 lata): do 910 zł i 5,3% na oszczędnościach",
+    "accountType": "YOUNG",
+    "maxBonusCents": 91000,
+    "difficulty": "MEDIUM",
+    "rating": 7.0,
+    "status": "DRAFT",
+    "startDate": "2026-09-01",
+    "endDate": "2026-11-30",
+    "affiliateLinkEnabled": true,
+    "sourceUrl": "https://www.mbank.pl/pdf/promocje/konta/regulamin-promocji-cala-naprzod-zyskuj-z-kontem-w-mbanku-edycja-ii.pdf",
+    "additionalSourceUrls": [
+      "https://www.mbank.pl/pdf/promocje/konta/regulamin-promocji-bonus-dla-mobilnych-edycja-iii.pdf"
+    ],
+    "lastVerifiedAt": "2026-10-07",
+    "eligibleFor": "Pełnoletnie osoby fizyczne w wieku 18–24 lat, które od 1.01.2023 nie były i nie są posiadaczem ani współposiadaczem rachunku oszczędnościowo-rozliczeniowego lub oszczędnościowego w mBanku. Konto indywidualne (nie wspólne) z kartą otwierasz online lub w aplikacji. Dodatkowe 10 zł (Bonus dla mobilnych): nie możesz mieć innych produktów mBanku, a konto otwierasz w aplikacji przez selfie, e-dowód lub mObywatela.",
+    "notEligibleFor": "Osoby, które od 1.01.2023 miały rachunek w mBanku (dla Bonusu dla mobilnych od 1.01.2022 i inne produkty). Konto wspólne. Z promocji można skorzystać tylko raz i tylko na pierwszym otwartym rachunku; zmiana rachunku na wspólny lub inny rodzaj kończy udział.",
+    "cooldownMonths": null,
+    "cooldownCutoffDate": "2023-01-01",
+    "summary": "Do 910 zł: 100 zł premii I, 400 zł premii II, 100 zł + 300 zł bonusów i 10 zł za zapis w aplikacji; 5,3% na koncie Moje cele przez 180 dni.",
+    "conditions": [
+      {
+        "title": "Otwórz eKonto możliwości (18–24 lata) z kartą i rachunkiem Moje cele",
+        "description": "Wniosek składasz od 1.09 do 30.11.2026 (umowa najpóźniej do 7.12.2026). Rachunek jednoosobowy, z kartą, z zaznaczoną opcją otwarcia rachunku do regularnego oszczędzania Moje cele. Najszybciej w aplikacji mobilnej mBanku.",
+        "type": "account_opening",
+        "order": 0
+      },
+      {
+        "title": "Zapisz się do promocji „Bonus dla mobilnych” przed wnioskiem",
+        "description": "Wniosek zapisujący do promocji składasz na stronie promocji tego samego dnia przed otwarciem rachunku (dane muszą być identyczne). Rachunek otwierasz przez selfie, e-dowód lub mObywatela. Bonus 10 zł wymaga transakcji kartą na min. 350 zł do końca pierwszego pełnego miesiąca.",
+        "type": "other",
+        "order": 1
+      },
+      {
+        "title": "Premia I (100 zł): wpływ min. 1000 zł w 7 dni, transakcje 350 zł, saldo Moje cele",
+        "description": "Jednorazowy wpływ min. 1000 zł w ciągu 7 dni od otwarcia (nie z innego Twojego rachunku w mBanku), transakcje kartą na min. 350 zł do końca pierwszego pełnego miesiąca (bez BLIK) oraz łączne saldo min. 100 zł na Moje cele w ostatnim dniu roboczym tego miesiąca.",
+        "type": "card_payments",
+        "order": 2
+      },
+      {
+        "title": "Premia II (400 zł): 5 miesięcy po 1000 zł wpływu, 350 zł transakcji i +100 zł na celach",
+        "description": "W każdym z miesięcy od drugiego do szóstego pełnego miesiąca po otwarciu: jednorazowy wpływ min. 1000 zł, transakcje kartą na min. 350 zł i wzrost łącznego salda Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca.",
+        "type": "inflow",
+        "order": 3
+      },
+      {
+        "title": "Bonus I (100 zł): konto otwarte przez selfie, e-dowód lub mObywatela",
+        "description": "Przysługuje po spełnieniu wszystkich warunków premii I i II.",
+        "type": "other",
+        "order": 4
+      },
+      {
+        "title": "Bonus II (300 zł): wynagrodzenie min. 1000 zł w co najmniej 4 z 6 miesięcy",
+        "description": "Wpływ z tytułu wynagrodzenia od pracodawcy, stypendium, renty, emerytury lub świadczenia ZUS/KRUS (także z własnej firmy w mBanku) z tytułem przelewu jednoznacznie wskazującym wynagrodzenie. Nie liczą się 800+, alimenty ani wpływy z rachunków osobistych.",
+        "type": "inflow",
+        "order": 5
+      },
+      {
+        "title": "Promocyjne oprocentowanie na koncie Moje cele przez 180 dni",
+        "description": "5,3% w skali roku do 100 000 zł, naliczane w miesiącach, w których wpływy na cele przewyższają obciążenia o min. 100 zł. Powyżej limitu 0,1%. Po 180 dniach według tabeli stóp.",
+        "type": "other",
+        "order": 6
+      },
+      {
+        "title": "Terminy wypłat: do końca lutego–lipca 2027 zależnie od miesiąca otwarcia",
+        "description": "Premia I (oraz bonus III) wypłacana do 31.12.2026 dla rachunków otwartych w październiku, do 31.01.2027 dla listopada i do 28.02.2027 dla otwartych do 7.12.2026. Premia II oraz bonusy I i II: do 31.05.2027 / 30.06.2027 / 31.07.2027. Musisz być posiadaczem rachunku i karty do dnia wypłaty. Nagrody są zwolnione z podatku.",
+        "type": "deadline",
+        "order": 7
+      }
+    ],
+    "bonusParts": [
+      {
+        "label": "Premia I — 100 zł (wpływ w 7 dni, transakcje 350 zł, saldo Moje cele)",
+        "amountCents": 10000,
+        "order": 0
+      },
+      {
+        "label": "Premia II — 400 zł (warunki w 5 kolejnych miesiącach)",
+        "amountCents": 40000,
+        "order": 1
+      },
+      {
+        "label": "Bonus I — 100 zł (otwarcie przez selfie, e-dowód lub mObywatela)",
+        "amountCents": 10000,
+        "order": 2
+      },
+      {
+        "label": "Bonus II — 300 zł (wynagrodzenie w min. 4 z 6 miesięcy)",
+        "amountCents": 30000,
+        "order": 3
+      },
+      {
+        "label": "Bonus dla mobilnych — 10 zł (zapis do promocji i transakcje 350 zł)",
+        "amountCents": 1000,
+        "order": 4
+      }
+    ],
+    "fees": {
+      "accountFeeCents": 0,
+      "cardFeeCents": 0,
+      "otherFee": "Według strony oferty: 0 zł za otwarcie i prowadzenie konta oraz kartę Visa Me. Karta Visa Podróże 0 zł przy transakcjach kartą na min. 350 zł w miesiącu. Wypłaty z bankomatów w Polsce 0 zł od 100 zł.",
+      "sourceUrl": "https://www.mbank.pl/pomoc/oplaty/interaktywna/ind/"
+    }
+  },
+  "checklistSteps": [
+    {
+      "order": 0,
+      "monthLabel": "Otwarcie konta",
+      "title": "Zapisz się do promocji „Bonus dla mobilnych” na stronie promocji (przed wnioskiem o konto)"
+    },
+    {
+      "order": 1,
+      "monthLabel": "Otwarcie konta",
+      "title": "Tego samego dnia otwórz eKonto możliwości (18–24 lata) z kartą w aplikacji mBank przez selfie, e-dowód lub mObywatela i zaznacz otwarcie rachunku Moje cele"
+    },
+    {
+      "order": 2,
+      "monthLabel": "Otwarcie konta",
+      "title": "Zaakceptuj regulaminy i oświadczenia; umowę zawrzyj najpóźniej do 7.12.2026 (do 9.12.2026 dla „Bonusu dla mobilnych”)"
+    },
+    {
+      "order": 3,
+      "monthLabel": "Otwarcie konta",
+      "title": "W ciągu 7 dni od otwarcia zrób jednorazowy wpływ min. 1000 zł (bez przelewu z innego Twojego rachunku w mBanku)"
+    },
+    {
+      "order": 10,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł do końca pierwszego pełnego miesiąca (bez BLIK)"
+    },
+    {
+      "order": 11,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Miej łączne saldo min. 100 zł na rachunku Moje cele w ostatnim dniu roboczym tego miesiąca"
+    },
+    {
+      "order": 12,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Wpływ wynagrodzenia min. 1000 zł z jednoznacznym tytułem (do bonusu II potrzebny w min. 4 z 6 miesięcy)"
+    },
+    {
+      "order": 14,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Odbierz nagrody: I: 100 zł (wypłata do końca 2. miesiąca po otwarciu) + „Bonus dla mobilnych”: 10 zł (do końca 2. pełnego miesiąca po otwarciu)",
+      "rewardCents": 11000
+    },
+    {
+      "order": 20,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zrób jednorazowy wpływ min. 1000 zł (najlepiej wynagrodzenie z jednoznacznym tytułem)"
+    },
+    {
+      "order": 21,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł (bez BLIK)"
+    },
+    {
+      "order": 22,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zwiększ łączne saldo na Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca"
+    },
+    {
+      "order": 30,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zrób jednorazowy wpływ min. 1000 zł (najlepiej wynagrodzenie z jednoznacznym tytułem)"
+    },
+    {
+      "order": 31,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł (bez BLIK)"
+    },
+    {
+      "order": 32,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zwiększ łączne saldo na Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca"
+    },
+    {
+      "order": 40,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zrób jednorazowy wpływ min. 1000 zł (najlepiej wynagrodzenie z jednoznacznym tytułem)"
+    },
+    {
+      "order": 41,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł (bez BLIK)"
+    },
+    {
+      "order": 42,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zwiększ łączne saldo na Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca"
+    },
+    {
+      "order": 50,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zrób jednorazowy wpływ min. 1000 zł (najlepiej wynagrodzenie z jednoznacznym tytułem)"
+    },
+    {
+      "order": 51,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł (bez BLIK)"
+    },
+    {
+      "order": 52,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zwiększ łączne saldo na Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca"
+    },
+    {
+      "order": 60,
+      "monthLabel": "Miesiąc 6",
+      "title": "Zrób jednorazowy wpływ min. 1000 zł (najlepiej wynagrodzenie z jednoznacznym tytułem)"
+    },
+    {
+      "order": 61,
+      "monthLabel": "Miesiąc 6",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł (bez BLIK)"
+    },
+    {
+      "order": 62,
+      "monthLabel": "Miesiąc 6",
+      "title": "Zwiększ łączne saldo na Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca"
+    },
+    {
+      "order": 65,
+      "monthLabel": "Miesiąc 6",
+      "title": "Odbierz nagrody: II: 400 zł (po 5 miesiącach spełnionych warunków) + I: 100 zł (za otwarcie przez selfie, e-dowód lub mObywatela) + II: 300 zł (wpływ wynagrodzenia w min. 4 z 6 miesięcy)",
+      "rewardCents": 80000
+    }
+  ]
+}

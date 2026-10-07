@@ -155,10 +155,28 @@ export async function getEffortShowcase(): Promise<EffortShowcaseItem[]> {
  * itself immune to a missed run because it filters on end_date directly.
  */
 export async function expirePastPromotions(): Promise<number> {
-  const result = await db.promotion.updateMany({
-    where: { status: PromotionStatus.ACTIVE, endDate: { lt: signupCutoff() } },
-    data: { status: PromotionStatus.EXPIRED }
+  const where = { status: PromotionStatus.ACTIVE, endDate: { lt: signupCutoff() } };
+  const expiring = await db.promotion.findMany({
+    where,
+    select: { id: true, name: true, endDate: true, bank: { select: { name: true } } }
   });
+  const result = await db.promotion.updateMany({ where, data: { status: PromotionStatus.EXPIRED } });
+  // One notification per promotion (dedupKey makes a re-run harmless).
+  for (const p of expiring) {
+    await db.adminNotification
+      .create({
+        data: {
+          type: "PROMOTION_EXPIRED",
+          title: `Promocja wygasła: ${p.bank.name}`,
+          body: `„${p.name}” skończyła się ${p.endDate.toISOString().slice(0, 10)} i została oznaczona jako wygasła. Jeśli bank ją przedłużył, zmień datę końca.`,
+          relatedPromotionId: p.id,
+          dedupKey: `promo-expired:${p.id}:${p.endDate.toISOString().slice(0, 10)}`
+        }
+      })
+      .catch((e: { code?: string }) => {
+        if (e.code !== "P2002") throw e;
+      });
+  }
   // Promotions leaving the active set shift everyone else's relative score.
   if (result.count > 0) await recomputeRatings();
   return result.count;

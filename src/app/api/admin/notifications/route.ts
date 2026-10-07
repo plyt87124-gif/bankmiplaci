@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { PROMO_WATCH_TYPES } from "@/lib/adminNotificationTypes";
+
+// "PROMO_WATCH" is a bell that groups every offer-monitoring notification type.
+const typeFilter = (t: string | undefined) => (t === "PROMO_WATCH" ? { in: PROMO_WATCH_TYPES } : (t as never));
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -10,7 +14,7 @@ export async function GET(request: NextRequest) {
   const type = request.nextUrl.searchParams.get("type") ?? undefined;
 
   const notifications = await db.adminNotification.findMany({
-    where: { type: type as never, read: false },
+    where: { type: typeFilter(type), read: false },
     orderBy: { createdAt: "desc" },
     take: 20
   });
@@ -29,7 +33,7 @@ export async function POST(request: NextRequest) {
   if (id) {
     await db.adminNotification.update({ where: { id }, data: { read: true } });
   } else if (markAllType) {
-    await db.adminNotification.updateMany({ where: { type: markAllType as never, read: false }, data: { read: true } });
+    await db.adminNotification.updateMany({ where: { type: typeFilter(markAllType), read: false }, data: { read: true } });
   }
 
   return NextResponse.json({ ok: true });
