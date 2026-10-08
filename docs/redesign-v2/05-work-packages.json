@@ -1,0 +1,355 @@
+[
+ {
+  "id": "WP-01",
+  "title": "Fundament designu (tokeny, fonty, ui/*, motion.css, layout)",
+  "ownsFiles": [
+   "tailwind.config.ts",
+   "src/app/globals.css",
+   "src/styles/motion.css",
+   "src/app/layout.tsx",
+   "src/app/not-found.tsx",
+   "src/app/error.tsx",
+   "src/app/global-error.tsx",
+   "src/components/ui/**",
+   "src/components/ThemeToggle.tsx",
+   "src/lib/format.ts",
+   "src/lib/cn.ts (jeśli istnieje)"
+  ],
+  "dependsOn": [],
+  "description": "Pierwszy pakiet, od którego zależy reszta (WP-02 i WP-03 są niezależne i mogą ruszyć równolegle). (1) Tokeny kolorów jasny/ciemny wg designSpec §2 w globals.css (zmienne RGB), wystawione w tailwind.config.ts: action, on-action, action-hover, line, line-strong, sunken, ink-400, focus-ring, gold-500, success(-100), info(-100), logo-tile, aliasy warn/warn-100; stare nazwy (ink-solid z nową wartością LEGACY, teal-*, gold-*, coral-*) zostają jako aliasy, żeby niezmigrowane pliki i admin się kompilowały. Zdefiniować brakujące ink-400. (2) Fonty w layout.tsx: Source Serif 4 (variable, opsz) + Inter (variable), subsets latin+latin-ext, usunąć Fraunces i Plex Mono, `--font-display/--font-body/--font-amount`, klasa .num, skala fontSize wg §3, `text-wrap` w h1/h2/p, usunąć `scroll-smooth`. (3) Motyw: skrypt w <head> – trzy stany localStorage `theme` = light|dark|system (w try/catch, brak = jasny), klasa `motion-ok` gdy brak reduced-motion; `<meta name=\"color-scheme\" content=\"light dark\">` i viewport.themeColor (249 247 242 / 17 19 23); ThemeToggle trójstanowy 44×44. (4) layout.tsx: skip-link, `<main id=\"tresc\" tabIndex={-1}>`, usunąć `openGraph.url` i `robots` z metadata, ustawić metadataBase, nie zmieniać kolejności providerów ani przekazywania `user` (getCurrentUser zostaje do WP-17). (5) src/styles/motion.css: tokeny ruchu, blok reduced-motion (też scroll-behavior), reguły [data-reveal] pod .motion-ok z failsafe i print, keyframes check-in, ring-pulse, dialog-in, fade-in, skeleton-pulse, earnings-pop 1.04, reward-pop 1.03; usunąć stare earnings-firework i animate-ping z globals.css. (6) ui/*: Button (primary/cta/secondary/ghost/danger × sm/md/lg, h-14 dla lg, loading, disabled bez opacity), Badge (warianty §5), EffortMeter (4 segmenty 1:1, etykieta, aria), BankLogo (płytka, rozmiary, monogram fallback z onError), Input/Select/Label/FormMessage (role=alert/status), Skeleton, Money/Amount (nbsp, 0,5em zł), Breadcrumbs (UI; JSON-LD dodaje strona), Segment (radiogroup). (7) format.ts: dodać `formatRating`, `pluralizePl`, `formatDatePL`, `daysUntil` (Europe/Warsaw); NIE zmieniać wyjścia istniejących funkcji (testy). (8) not-found.tsx, error.tsx, global-error.tsx po polsku. (9) `.input`/`.select` w @layer components, `accent-color`. Kryteria: npm test + tsc + eslint zielone, strona kompiluje się z niezmigrowanymi plikami, Storybook nie jest wymagany – wystarczy tymczasowa strona `/dev/ui` NIE commitowana lub zrzuty w opisie PR. Tag po merge: v2-m1-foundation."
+ },
+ {
+  "id": "WP-02",
+  "title": "SEO techniczne: biblioteka, JSON-LD, sitemap, robots",
+  "ownsFiles": [
+   "src/lib/seo/**",
+   "src/components/JsonLd.tsx",
+   "src/app/sitemap.ts",
+   "src/app/robots.ts",
+   "src/lib/promotionAvailability.ts",
+   "tests/seo-*.test.ts",
+   "tests/jsonld*.test.ts",
+   "tests/promotionAvailability*.test.ts"
+  ],
+  "dependsOn": [],
+  "description": "Biblioteka bez zależności wizualnych (równolegle z WP-01). `siteUrl.ts` (absolutny URL, fallback + jednorazowe ostrzeżenie), `metadata.ts` (`buildMetadata`, `makeDescription`, `promotionTitle`, builder tytułów hubów/home/listy z miesiącem i rokiem w Europe/Warsaw, `noindexForSearchParams`), `jsonld.ts` (organizationLd, websiteLd, breadcrumbLd, promotionLd jako @graph, articleLd, faqLd, itemListLd – wg contentAndSeoPlan §C; feesAndCommissionsSpecification tylko ze zweryfikowanych pól; brak AggregateRating/Review), `JsonLd.tsx` (escapowanie `<`, U+2028/9; test z `</script>`). sitemap.ts: lastModified (contentUpdatedAt ?? lastVerifiedAt, max dla list), nowe trasy (huby, banki, kończące się; archiwum gdy istnieje), zakończone ≤90 dni z niskim priorytetem. robots.ts bez zmian merytorycznych. promotionAvailability.ts: `robotsForStatus` z `endDate` wg polityki §D (≤90 dni index, >90 noindex; DRAFT/ARCHIVED noindex) + aktualizacja istniejących testów oraz nowe. tests/seo-titles.test.ts: unikalność tytułów dla fixture ofert (Alior ×2, PKO ×2, mBank ×4), długość ≤60 przed szablonem, description ≤160. Integracja w stronach należy do pakietów właścicieli stron (importują bibliotekę). Nie wprowadza zmian wizualnych."
+ },
+ {
+  "id": "WP-03",
+  "title": "Serwis ofert, schemat Prisma i sortowanie „Polecane” z prowizją (admin + serwis)",
+  "ownsFiles": [
+   "prisma/schema.prisma",
+   "prisma/migrations/**",
+   "src/lib/services/promotions.ts",
+   "src/lib/services/promotionCards.ts",
+   "src/lib/services/promotionWrite.ts",
+   "src/lib/recommended.ts",
+   "src/lib/promotionForm.ts",
+   "src/lib/validation/promotion.ts",
+   "src/app/admin/(dashboard)/promocje/**",
+   "src/app/api/promotions/active/route.ts",
+   "tests/recommended*.test.ts",
+   "tests/promotions-service*.test.ts",
+   "tests/commission-privacy.test.ts"
+  ],
+  "dependsOn": [],
+  "description": "Stan wyjściowy (commit eb604b3): `Promotion.affiliateCommissionCents` istnieje, `sortRecommended` (src/lib/recommended.ts) łączy ocenę z prowizją, `stripPrivateFields` usuwa prowizję z publicznych danych, admin ma pole „Prowizja partnerska (w groszach)”. Zadania: (1) ZWERYFIKOWAĆ i utwardzić niezmienniki testami: ocena nie zależy od prowizji, prowizja nie wycieka (HTML, props, /api/promotions/active), oferty bez prowizji/linku nadal się sortują wg oceny. (2) Dodać addytywną migrację (kolumny nullable/z bezpiecznym defaultem, bez zmiany istniejących danych): `Promotion.requiresReferralLink Boolean?`, `Promotion.benefitType` (enum BONUS|CASHBACK|FEE_WAIVER|OTHER, nullable), `Promotion.verificationMethod` (enum MANUAL|AUTOMATIC, nullable), `User.termsAcceptedAt DateTime?` + `User.termsVersion String?`; pola do formularza admina z opisami (zero zgadywania wartości; null = brak twierdzenia). (3) Admin: etykieta pola prowizji „Prowizja partnerska – wpływa na kolejność „Polecane”, NIE wpływa na ocenę” oraz podpowiedź jawności; ostrzeżenie (nie blokada) przy `ratingReason` zawierającym najwyższ*/najniższ*/„w tej turze”/„w tym zestawieniu”; ostrzeżenie przy `summary` >160 zn.; ustawianie `contentUpdatedAt` przy realnych zmianach treści; `revalidatePath` dla '/', '/promocje', '/porownaj' i tag `promotions` (przygotowanie do WP-17, nieszkodliwe dziś). (4) Nowy lekki serwis `promotionCards.ts`: `listPromotionCards(filters)` z jawnym `select` (slug, name, summary, maxBonusCents, difficulty, accountType, rating, ratingReason, endDate, lastVerifiedAt, benefitType, fees{accountFeeCents, accountFeeWaiverCondition…}, pierwszy condition.title, bank{name,slug,logoUrl}) + `affiliateCommissionCents` używane TYLKO do sortowania w serwisie i usuwane przed zwrotem; typ `PromotionCardData` (eksportowany kontrakt dla WP-08/09/12/16); `getBankCards(bankSlug)`; `getEndingSoon(days)`; `countActive`. Opcjonalnie `relationLoadStrategy: join` (tylko jeśli Prisma ≥5.20 i testy zielone). (5) `/api/promotions/active`: zwracać `PromotionCardData` bez `affiliateUrl`, nagłówki `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`. Migracje stosować lokalnie; wdrożenie na produkcyjną bazę Neon wyłącznie świadomą decyzją właściciela (opisać w PR, nie uruchamiać automatycznie). Nie dotykać skryptów eBroker/campaign/reminder."
+ },
+ {
+  "id": "WP-04",
+  "title": "Komponenty zaufania: AffiliateDisclosure, AffiliateCtaLink, wskaźnik świeżości",
+  "ownsFiles": [
+   "src/components/AffiliateDisclosure.tsx",
+   "src/components/AffiliateCtaLink.tsx (potwierdzić ścieżkę grepem)",
+   "src/components/trust/**",
+   "src/lib/disclosureCopy.ts",
+   "src/lib/freshness.ts",
+   "tests/disclosure*.test.tsx",
+   "tests/freshness.test.ts"
+  ],
+  "dependsOn": [
+   "WP-01"
+  ],
+  "description": "`disclosureCopy.ts` – jedyne źródło tekstów wg trustAndDisclosurePlan §2 (strip dla recommended/innych sortów, compact, tag, footer, stały disclaimer „nie jesteśmy bankiem ani doradcą”, nota zakresu rynku, nota o komentarzach). `<AffiliateDisclosure variant=\"strip|compact|footer|tag\" sort=… />` (serwerowy, bez JS, kontrast ≥ ink-500, ≥13 px). `AffiliateCtaLink` – zachować DOKŁADNIE dotychczasowe zachowanie (href /out/…, rel `sponsored nofollow noopener noreferrer`, src do śledzenia CTR, pointer/keyboard), tylko wyrenderować jako Button cta; nie dodawać animacji opóźniającej nawigację. `freshness.ts`: `freshnessState(lastVerifiedAt, now)` → fresh(≤14)/aging(15–45)/stale(>45)/unknown + etykiety PL; `<VerifiedLine>` (ikona ShieldCheck + tekst, bez animacji); `<DeadlineBadge endDate>` (neutral/warn ≤14/danger ≤3/„Zakończona”). Testy jednostkowe progów i tekstów (daty wstrzykiwane, strefa Europe/Warsaw)."
+ },
+ {
+  "id": "WP-05",
+  "title": "Motion: hooki i komponenty (useInView, Reveal, CountUp, EarningsCounter)",
+  "ownsFiles": [
+   "src/hooks/useInView.ts",
+   "src/hooks/useReducedMotion.ts",
+   "src/components/motion/**",
+   "src/components/EarningsCounter.tsx",
+   "tests/motion*.test.tsx"
+  ],
+  "dependsOn": [
+   "WP-01"
+  ],
+  "description": "CSS i keyframes są w motion.css (WP-01); ten pakiet dostarcza TSX. `useInView` (IO, threshold .15, rootMargin '0px 0px -8% 0px', raz; brak IO → true; ~25 linii), `Reveal` (renderuje dzieci w SSR HTML, `data-reveal`, `data-in`, `--reveal-i`; wyłącznie sekcje poniżej fold; props `index`), `CountUp` (SSR = wartość końcowa, `aria-label` z końcową, animowany tekst `aria-hidden`; w useEffect: reduced-motion lub element już widoczny przy montażu → nic; inaczej od 0 po wejściu w widok, rAF 700–800 ms easeOutCubic, zapis `ref.textContent` przez `formatPLN`/`Intl`, bez setState na klatkę; na końcu dokładna wartość), `useReducedMotion`. `EarningsCounter`: duration 2400→800 ms, easeOutCubic zostaje, respektuje reduced-motion (natychmiast wartość końcowa), usunąć iskry (PARTICLE_ANGLES, `.animate-earnings-firework`, spany), pop max 1,04 bez przestrzału; zachować wszystkie stany celebrate/pop i logikę. Testy: SSR zawiera wartość końcową, brak `opacity:0` bez klasy motion-ok (snapshot klas), reduced-motion."
+ },
+ {
+  "id": "WP-06",
+  "title": "Nagłówek, stopka, nawigacja",
+  "ownsFiles": [
+   "src/components/Header.tsx",
+   "src/components/Footer.tsx",
+   "src/components/MobileNav.tsx",
+   "src/lib/navigation.ts",
+   "tests/navigation*.test.tsx"
+  ],
+  "dependsOn": [
+   "WP-01",
+   "WP-04",
+   "WP-05",
+   "WP-07"
+  ],
+  "description": "Header wg designSpec §5: sticky h-16, border/cień po scrollu (sentinel + IO), wordmark serif, nawigacja Promocje · Porównaj · Quiz · Poradniki · Jak to działa z `aria-current` (`usePathname`), od lg desktop (poniżej hamburger 44×44 z `aria-controls`, Esc zamyka i zwraca fokus, menu przez grid-rows, `<nav aria-label>` na obu), `whitespace-nowrap`, ThemeToggle, „Zaloguj się”/„Moje konto” i EarningsCounter oparte o istniejący kontekst sesji z WP-07 (`useSession`), BEZ zmiany logiki otwierania modalu. Usunąć link „Najłatwiejsze promocje” z presetem parametrów i CTA „Znajdź promocję” (duplikat). Footer wg §5: 4 kolumny, AffiliateDisclosure footer, wiersz „Dane zaktualizowano”, wiersz Wydawca (dane z regulaminu – stałe z jednego miejsca, np. src/lib/publisher.ts w tym pakiecie), usunąć zdanie o braku partnerstwa z bankami; linki do nowych stron (huby, banki, metodologia, o-nas) renderować warunkowo na podstawie listy tras z `navigation.ts` (flaga per trasa, żeby brak strony nie dawał 404 w nawigacji do czasu WP-16). Test: nawigacja zawiera wszystkie linki, brak martwych tras."
+ },
+ {
+  "id": "WP-07",
+  "title": "Sesja, modal logowania i formularze konta (dostępność, zgoda na regulamin)",
+  "ownsFiles": [
+   "src/components/AuthModalProvider.tsx",
+   "src/components/SessionProvider.tsx",
+   "src/app/api/account/me/route.ts",
+   "src/app/api/account/register/route.ts",
+   "src/app/konto/logowanie/**",
+   "src/app/konto/rejestracja/**",
+   "src/app/konto/reset-hasla/**",
+   "tests/auth-modal*.test.tsx",
+   "tests/register*.test.ts"
+  ],
+  "dependsOn": [
+   "WP-01",
+   "WP-03"
+  ],
+  "description": "(1) Kontekst sesji `SessionProvider/useSession`: wartość początkowa z propsa (layout nadal przekazuje `user` z getCurrentUser), odświeżanie przez `/api/account/me` (nowy endpoint, tylko dane niewrażliwe) – przygotowanie do WP-17 bez zmiany zachowania dziś. (2) AuthModal: natywny `<dialog>` + `showModal()` (focus trap, inert, Esc), przywracanie fokusu na element otwierający, blokada scrolla body, `aria-labelledby`, zamykanie tła tylko przy mousedown+mouseup na backdropie, przycisk X 44×44, fokus na pierwsze pole po przełączeniu logowanie/rejestracja, animacja wejścia z motion.css (zamknięcie natychmiast). (3) Formularze: `autoComplete` (username/current-password/new-password/email/given-name), `FormMessage` role=alert/status, `aria-invalid` + `aria-describedby`, widoczne etykiety, `.input` h-12; wszystkie przyciski przez `<Button>`. (4) Rejestracja: wymagany niezaznaczony checkbox akceptacji Regulaminu i Polityki (linki) + walidacja serwerowa + zapis `termsAcceptedAt/termsVersion` (pola z WP-03; migracja musi być zastosowana); istniejący przepływ rejestracji/logowania/resetu hasła działa bez regresji. Testy: otwarcie/zamknięcie/focus-trap, rejestracja bez zgody odrzucona."
+ },
+ {
+  "id": "WP-08",
+  "title": "Strona główna",
+  "ownsFiles": [
+   "src/app/page.tsx",
+   "src/components/home/**",
+   "tests/home*.test.tsx"
+  ],
+  "dependsOn": [
+   "WP-01",
+   "WP-02",
+   "WP-03",
+   "WP-04",
+   "WP-05",
+   "WP-09"
+  ],
+  "description": "Układ i treści wg layoutSpec (hero z segmentem i wierszem faktów, Polecane promocje z AffiliateDisclosure strip, Kończą się wkrótce (ukryte gdy puste), Ile wysiłku, Quiz jako pasek, Dlaczego możesz nam ufać, skrót FAQ + linki do hubów). Dane z JEDNEGO zapytania `listPromotionCards` (wynik zasila obie grupy, top 3, licznik i showcase) zamiast ~11 zapytań. Reveal tylko dla bloków poniżej hero; CountUp tylko dla licznika promocji. Metadane z biblioteki SEO (title.absolute z rokiem), JSON-LD Organization + WebSite + FAQPage skrótu. Wszystkie liczebniki przez `pluralizePl`; „w bazie” usunięte; kropka statyczna; `export const revalidate = 600` (dziś nieszkodliwe). Karty: PromotionCard z WP-09 (bez własnych wariantów). Nie dotykać logiki segmentu poza stanem UI (opcjonalnie wspólny komponent Segment z WP-01)."
+ },
+ {
+  "id": "WP-09",
+  "title": "Lista ofert, karta, filtry",
+  "ownsFiles": [
+   "src/app/promocje/page.tsx",
+   "src/app/promocje/loading.tsx",
+   "src/components/PromotionCard.tsx",
+   "src/components/Filters.tsx",
+   "src/components/filters/**",
+   "src/components/NoResultsState.tsx",
+   "src/components/promocje/**",
+   "tests/promotion-card*.test.tsx",
+   "tests/filters*.test.tsx"
+  ],
+  "dependsOn": [
+   "WP-01",
+   "WP-02",
+   "WP-03",
+   "WP-04",
+   "WP-05"
+  ],
+  "description": "PromotionCard wg designSpec §5 (stretched-link, BankLogo sm, jedna linia weryfikacji, „Premia do”, Badge terminu, opłata lub „Brak danych”, stopka z oceną i linkiem „Jak liczymy?”, hover tylko ramka, wygasła/roboczy, maxBonusCents=0 → „Bez premii gotówkowej”, wsparcie `priority` dla pierwszych kart przez prop `index`). Kontrakt props = `PromotionCardData` z WP-03 (zachować kompatybilność wstecz, gdzie to możliwe, bo kartę używa home/huby/oferta). Filters: segment, wyszukiwarka `q`, sortowanie (radiogroup/select ze wszystkimi wartościami SortKey i opisem aktywnego sortu przez AffiliateDisclosure tag/strip), bottom-sheet mobile (dialog), chipy aktywnych filtrów + „Wyczyść”, kontrolowane wartości, `router.replace({scroll:false})`, `isPending` → aria-busy + opacity, licznik role=status. page.tsx: whitelist `accountType`/`difficulty`, `generateMetadata({searchParams})` (noindex dla parametrów, canonical czysta ścieżka), H1 z miesiącem/rokiem, lead + data aktualizacji, AffiliateDisclosure strip, take 24 + „Pokaż więcej” jako link, stan pusty, nota zakresu, blok redakcyjny 200–400 słów + FAQ z FAQPage JSON-LD, Breadcrumbs + BreadcrumbList, loading.tsx (6 szkieletów o geometrii karty). Selecty z etykietami, checkbox „Tylko bez opłaty” 20 px accent. Wszystkie filtry i URL-e działają jak dziś."
+ },
+ {
+  "id": "WP-10",
+  "title": "Strona promocji (/promocje/[slug])",
+  "ownsFiles": [
+   "src/app/promocje/[slug]/**",
+   "src/components/promocja/**",
+   "src/components/ShareButton.tsx",
+   "tests/promotion-page*.test.tsx"
+  ],
+  "dependsOn": [
+   "WP-01",
+   "WP-02",
+   "WP-03",
+   "WP-04",
+   "WP-05"
+  ],
+  "description": "Układ wg layoutSpec: breadcrumbs, nagłówek (BankLogo lg, H1 = nazwa oferty, Badge typu konta i weryfikacji, lead = summary), pasek „W skrócie”, EligibilityBanner (osadzenie; komponent należy do WP-11), warunki jako ponumerowana lista statyczna z linkiem do ściągi, NOWA sekcja „Dla kogo jest promocja?” (eligibleFor/notEligibleFor), składniki premii (details), opłaty (kompaktowa tabela + wspólny przypis, „Inne opłaty:”, break-words), źródło i weryfikacja + „Zgłoś błąd w tej ofercie”, FAQ oferty z pól bazy, powiązany poradnik, inne promocje banku, komentarze, aside sticky z kwotą/terminem/Button cta + AffiliateDisclosure compact + „Zapisz w ściądze (wymaga konta)”, mobilny sticky pasek CTA (IO na głównym CTA, safe-area, ukryty dla expired/affiliateOff), karta ściągi pod sekcją warunków, stan oferty po terminie (baner, wyłączone CTA, „Aktualne promocje banku”). Metadane: `promotionTitle`, `makeDescription`, buildMetadata (og:url, siteName, locale), robots wg `robotsForStatus` (WP-02), JSON-LD @graph (promotionLd + breadcrumb + FAQ), `JsonLd` zamiast dangerouslySetInnerHTML. `React.cache` na getPromotionBySlug/getCurrentUser, `Promise.all` dla niezależnych zapytań, `generateStaticParams` + `revalidate = 600` (tylko przygotowanie; dane użytkownika nadal po stronie serwera do WP-17). NIE zmieniać propsów PromotionChecklist/ConditionsChecklist/EligibilityBanner/JoinChecklistButton/PromotionComments (interfejs zamrożony przez WP-11). Kopia: „Premia do”, „Ważna do”, „Opłata za konto/kartę”, „Brak danych”, bez gwiazdek; maxBonusCents=0 i benefitType w tytule/H1 (bez „do 0 zł premii”)."
+ },
+ {
+  "id": "WP-11",
+  "title": "Ściąga, EligibilityBanner, komentarze, Moje konto",
+  "ownsFiles": [
+   "src/components/PromotionChecklist.tsx",
+   "src/components/ConditionsChecklist.tsx",
+   "src/components/EligibilityBanner.tsx",
+   "src/components/JoinChecklistButton.tsx",
+   "src/components/PromotionComments.tsx",
+   "src/app/konto/page.tsx",
+   "src/lib/emailTemplates.ts",
+   "tests/checklist*.test.tsx",
+   "tests/eligibility*.test.tsx"
+  ],
+  "dependsOn": [
+   "WP-01",
+   "WP-04",
+   "WP-05"
+  ],
+  "description": "TYLKO prezentacja i dostępność; logika (optymistyczne aktualizacje, revert przy błędzie, month-gating, karencja, zapis w DB, anti-abuse) NIETKNIĘTA, a publiczne propsy komponentów zamrożone (WP-10 je osadza). Ściąga: natywny checkbox 24 px, nagłówki miesięcy h3, `aria-disabled` + ikona Lock + czytelny tekst „Odblokuje się dd.mm.rrrr” zamiast opacity-50/disabled, pasek postępu role=progressbar (scaleX), check-in, RewardRow z ring-pulse, przyciski miesiąca min-h-11, błędy zapisu w role=status, copy „Zaznaczaj/Cofnij zaznaczenie”, etykiety z htmlFor (data zamknięcia, formularz historii w Moim koncie), `OpenedAtPrompt` z widoczną etykietą. EligibilityBanner: 4 stany (design §5), tekst ink-900, link logowania dla niezalogowanych, usunąć odwołanie do nieistniejącej sekcji (po WP-10 istnieje). ConditionsChecklist → statyczna numerowana lista (lub komponent wyświetlający), jeśli WP-10 tego potrzebuje, zachować eksport. JoinChecklistButton: „Zapisz w ściądze (wymaga konta)”, etykieta pola daty, stan „Dodano do ściągi” + link (redirect opcjonalny), błędy role=alert. Komentarze: label sr-only, lista ul/li, lajk z aria-label/aria-pressed i 44 px, sortowanie aria-pressed, nota o nieweryfikowanych opiniach, `text-ink-300` → ink-400/500, badge Admin na tokenach (kontrast). Moje konto: stan pusty bez ściągi (CTA do /promocje), `lg:w-screen` sprawdzić i usunąć poziomy scroll. emailTemplates.ts: tylko poprawka słownictwa „zaznaczonych”. Dołączyć testy RTL klawiatury dla kroku i zablokowanego miesiąca."
+ },
+ {
+  "id": "WP-12",
+  "title": "Porównanie i quiz",
+  "ownsFiles": [
+   "src/app/porownaj/**",
+   "src/app/quiz/**",
+   "src/lib/quiz.ts",
+   "tests/compare*.test.tsx",
+   "tests/quiz*.test.ts"
+  ],
+  "dependsOn": [
+   "WP-01",
+   "WP-02",
+   "WP-03",
+   "WP-04"
+  ],
+  "description": "/porownaj: tabela wg designSpec §5 (caption, scope, sticky thead i kolumna, region fokusowalny, kolumna etykiet 104 px na mobile, snap, wiersze w kolejności decyzji, najlepsza wartość = pogrubienie + Check + sr-only, wiersz akcji z `Szczegóły` i cta + compact), wybór do 4 ofert (domyślnie top 4), segment, strip, legenda i nota zakresu, brak `target=_blank`, BankLogo xs/md, noindex dla parametrów, breadcrumbs + JSON-LD, fleksja przez pluralizePl, `loading.tsx`, brak poziomego scrolla przy 320 px. /quiz: przerobić na komponent serwerowy z `<QuizClient>` (dane przez props z `listPromotionCards`, bez `affiliateUrl`), kreator po jednym pytaniu z postępem, Wstecz, stany ładowania/błędu, wynik #1–#3 z uzasadnieniem i linkiem „Porównaj te 3”, bez emoji; odpowiedzi canCardPay/canInflow realnie wchodzą do punktacji (czysta funkcja w src/lib/quiz.ts + testy) – jeśli dane (conditions) nie pozwalają, pytania usunąć; liczby „5 pytań/3 promocje” ze stałych; metadane z biblioteki SEO."
+ },
+ {
+  "id": "WP-13",
+  "title": "Strony zaufania i treści: jak-to-dziala, faq, jak-zarabiamy, metodologia, o-nas, kontakt",
+  "ownsFiles": [
+   "src/app/jak-to-dziala/**",
+   "src/app/faq/**",
+   "src/components/FaqAccordion.tsx",
+   "src/app/jak-zarabiamy/**",
+   "src/app/metodologia/**",
+   "src/app/o-nas/**",
+   "src/app/kontakt/**",
+   "src/app/api/contact/route.ts",
+   "tests/content-pages*.test.tsx"
+  ],
+  "dependsOn": [
+   "WP-01",
+   "WP-02",
+   "WP-04",
+   "WP-05"
+  ],
+  "description": "Nowe układy i teksty wg contentAndSeoPlan. FAQ: natywne details (cała treść w DOM), poprawka „Premii”→„Bankmiplaci”, nowe pytania, poprawiona odpowiedź o linku partnerskim, FAQPage JSON-LD przez JsonLd. /jak-zarabiamy: otwarcie „Zarabiamy z prowizji…”, sekcje „Co to zmienia w kolejności Polecane” (#polecane, opis czynników zgodny z recommended.ts), „Jak liczymy ocenę (bez prowizji)” (#ocena zostaje jako kotwica zgodności), „Czego nie robimy”, poprawka sekcji „Czy wpływa to na Ciebie?”, usunięcie kwotowego przykładu. /metodologia (NOWA): składniki oceny wg faktycznego kodu ratings.ts (przeczytać kod przed pisaniem; bez zmyślonych wag), przykład z realnej oferty, źródła/czego nie używamy, częstotliwość weryfikacji, korekty, zdanie o skali. /o-nas (NOWA): wydawca z danych publicznych w regulaminie, zasady redakcyjne, polityka korekt. /jak-to-dziala: title/H1 wg planu, liczby kroków ze stałych, słowniczek (karencja, KYC). /kontakt: klauzula RODO, mailto, `Button`, autocomplete, role=status/alert; w route.ts escapowanie HTML w e-mailu i brak logowania treści (drobne, bez zmiany API). Typografia: kolumna 44 rem, 17/28, lepki spis treści od lg. Metadane przez bibliotekę SEO. Włączyć flagi tras w navigation.ts nie tutaj – zgłosić w PR (WP-06)."
+ },
+ {
+  "id": "WP-14",
+  "title": "Strony prawne i wspólny LegalPage",
+  "ownsFiles": [
+   "src/app/regulamin/**",
+   "src/app/polityka-prywatnosci/**",
+   "src/app/cookies/**",
+   "src/components/LegalPage.tsx",
+   "tests/legal*.test.tsx"
+  ],
+  "dependsOn": [
+   "WP-01",
+   "WP-02"
+  ],
+  "description": "Układ: kolumna 44 rem, 16/27, lepki spis treści od lg, linki podkreślone, kotwice z scroll-margin. Treść WYŁĄCZNIE wg trustAndDisclosurePlan §7 jako propozycje oznaczone w PR „do przeglądu prawnika”: dopisanie localStorage/sessionStorage do tabeli cookies, konkretny opis przetwarzania w polityce prywatności (zdarzenia, pola, cel, podstawa, retencja jako placeholder do decyzji właściciela, odbiorcy do potwierdzenia), rozdziały Regulaminu „Konto użytkownika” i „Komentarze”, informacja o linkach partnerskich. Nie zmieniać faktów prawnych ani danych firmy; wartości do potwierdzenia zostawić jako wyraźnie oznaczone `[DO POTWIERDZENIA]` w kodzie i w PR (nie publikować jako gotowe). `text-ink-300` → ink-500."
+ },
+ {
+  "id": "WP-15",
+  "title": "Blog: lista, kategorie, artykuł, renderer markdown",
+  "ownsFiles": [
+   "src/app/blog/**",
+   "src/components/blog/**",
+   "src/components/ArticleBody.tsx (jeśli istnieje)",
+   "tests/blog*.test.tsx"
+  ],
+  "dependsOn": [
+   "WP-01",
+   "WP-02",
+   "WP-04",
+   "WP-05"
+  ],
+  "description": "Lista: `select` bez `body`, take 20 + paginacja `?strona=`, kategorie z enumu ArticleCategory (`/blog/kategoria/[kategoria]` z opisami), title/H1/description wg planu. Artykuł: typografia 17/28 do 68ch (usunąć article-body-sm), linki podkreślone; renderer markdown: linki wewnętrzne bez `target`, partnerskie (/out/, ebrokerpartner.pl) `rel=\"sponsored nofollow noopener\"`, pozostałe zewnętrzne `noopener noreferrer` + `_blank`; autor, data publikacji i aktualizacji; Breadcrumbs + BreadcrumbList; Article JSON-LD z image/publisher @id/author url; openGraph type=article (published/modified/authors); na dole powiązana oferta (Article.promotionId) i 3 artykuły z tej samej kategorii; AffiliateDisclosure compact przy linkach do banków w treści (jednorazowa nota nad artykułem, gdy zawiera linki partnerskie); `JsonLd` zamiast dangerouslySetInnerHTML. `generateStaticParams` + `revalidate = 600`. Redakcja nowych tekstów poza pakietem."
+ },
+ {
+  "id": "WP-16",
+  "title": "Nowe strony SEO: huby kont, banki, kończące się, archiwum",
+  "ownsFiles": [
+   "src/app/konta-osobiste-z-premia/**",
+   "src/app/konta-firmowe-z-premia/**",
+   "src/app/banki/**",
+   "src/app/promocje/konczace-sie/**",
+   "src/app/promocje/archiwum/**",
+   "src/app/najlatwiejsze-promocje-bankowe/**",
+   "src/app/promocje-bez-oplat/**",
+   "src/components/seo-pages/**",
+   "tests/seo-pages*.test.tsx"
+  ],
+  "dependsOn": [
+   "WP-01",
+   "WP-02",
+   "WP-03",
+   "WP-04",
+   "WP-05",
+   "WP-09"
+  ],
+  "description": "Faza 1: huby osobiste/firmowe, /banki + /banki/[slug], /promocje/konczace-sie (progi 7/14/30, „zostało N dni”, pusta lista = komunikat). Faza 2: archiwum, najłatwiejsze, bez opłat. Każda strona: własny title/H1/description z biblioteki SEO, canonical, tekst 150–500 słów (szkic dostarcza pakiet, zatwierdza właściciel – bez kwot na sztywno), lista z `listPromotionCards` + PromotionCard, AffiliateDisclosure strip, FAQ (FAQPage), BreadcrumbList + ItemList, wpis w sitemap (przez WP-02), `revalidate = 600`. /banki/[slug]: aktywne promocje, „Zakończone promocje banku”, `Bank.description` tylko fakty; strona stała po wygaśnięciu ofert (404 tylko dla nieistniejącego banku). Po merge włączyć flagi tras w navigation.ts (zgłoszenie do WP-06)."
+ },
+ {
+  "id": "WP-17",
+  "title": "Wydajność (faza 2): sesja poza layoutem, ISR, obrazy",
+  "ownsFiles": [
+   "next.config.js",
+   "src/app/layout.tsx (tylko usunięcie getCurrentUser / initialUser; po merge WP-01..WP-16)",
+   "src/app/api/promotions/[slug]/me/route.ts",
+   "src/components/promocja/UserPromotionIsland.tsx",
+   "src/lib/userSession.ts"
+  ],
+  "dependsOn": [
+   "WP-06",
+   "WP-07",
+   "WP-08",
+   "WP-09",
+   "WP-10",
+   "WP-11",
+   "WP-12",
+   "WP-15",
+   "WP-16"
+  ],
+  "description": "Uruchamiać dopiero po merge wcześniejszych pakietów; przejmuje na czas pakietu wskazane fragmenty layout.tsx i [slug]/page.tsx. (1) Usunąć `await getCurrentUser()` z RootLayout: Header/AuthModal biorą użytkownika z SessionProvider przez `/api/account/me` (opcjonalnie nie-httpOnly flaga `premia_logged_in=1`, by uniknąć migania). (2) Dane użytkownika na stronie oferty (karencja, historia banku, tracking, liczba kroków) przenieść do klienckiej wyspy `UserPromotionIsland` + `/api/promotions/[slug]/me`; HTML anonimowy dla wszystkich. (3) Zweryfikować `next build`: home, oferty, huby, blog, strony tekstowe i prawne jako ISR (●), /promocje i /porownaj dynamiczne (searchParams) z cache zapytań (`unstable_cache`, tag `promotions`, `banks`); `revalidateTag` w akcjach admina (WP-03 przygotował). (4) next.config.js: `images.remotePatterns` zawężone do realnie używanych hostów logo (sprawdzić hosty w DB tylko do odczytu), `minimumCacheTTL`, `deviceSizes/imageSizes`, `poweredByHeader:false`. (5) Pomiar First Load JS przed/po; modal i Header podzielone (dynamic import AuthModal). Testy ręczne: logowanie, modal, ściąga, brak migania, CTA /out. Wycofanie: pojedynczy commit, łatwy revert."
+ },
+ {
+  "id": "WP-18",
+  "title": "Bramki jakości: testy tokenów/kontrastu, a11y, lint, dokumentacja",
+  "ownsFiles": [
+   "tests/ui-tokens.test.ts",
+   "tests/contrast.test.ts",
+   "scripts/a11y-audit.mjs",
+   "tests/a11y/**",
+   ".eslintrc.json",
+   "eslint.config.mjs",
+   "docs/redesign-v2.md"
+  ],
+  "dependsOn": [
+   "WP-06",
+   "WP-07",
+   "WP-08",
+   "WP-09",
+   "WP-10",
+   "WP-11",
+   "WP-12",
+   "WP-13",
+   "WP-14",
+   "WP-15",
+   "WP-16"
+  ],
+  "description": "Uruchamia się na końcu każdej fali. (1) `ui-tokens.test.ts`: skan src (z wyłączeniem src/app/admin) pod kątem zakazanych wzorców: `h-13`, `ink-200`, `text-ink-300` na tekście, `text-\\[(10|11)px\\]`, `bg-ink-solid`, `bg-teal-(600|700) … text-white`, `border-ink-100` na kartach/kontrolkach (lista wyjątków jawnie), `animate-ping`, `break-all` poza URL-ami, `toFixed(1)` przy ocenie; każde użyte `bg-/text-/border-` ma definicję w configu. (2) `contrast.test.ts`: parsuje globals.css i liczy pary z designSpec §2 (progi 4,5:1 tekst, 3:1 UI) w obu motywach. (3) `a11y-audit.mjs`: Playwright + axe-core (już w node_modules) na 13+ stronach × 360/1280 px × jasny/ciemny, bez critical/serious; test zoom 200%/400% (320 px) bez poziomego scrolla; flagi: brak focus-trap, brak labeli, brak autocomplete. (4) ESLint: reguły jsx-a11y (label-has-associated-control, itd. – w ramach istniejącego eslint-config-next, bez nowych zależności jeśli zbędne). (5) test e2e/RTL obecności AffiliateDisclosure (strip nad listami, compact pod każdym /out/). (6) `docs/redesign-v2.md`: spis tagów/commitów (v1-pre-redesign vs v2-m*), mapa „wybierz elementy z v1/v2” (paleta, fonty, komponenty niezależne), checklista migracji tokenów, instrukcja uruchomienia bramek. Nie zmienia kodu produkcyjnego innych pakietów – zgłasza regresje."
+ }
+]
