@@ -139,6 +139,20 @@ export function PromotionForm({
             />
           )}
         </Field>
+        <Field label="Prowizja partnerska (w groszach)" error={errors.affiliateCommissionCents?.message}>
+          <p className="mb-2 text-sm text-ink-500">
+            Ile bank płaci nam za jedno spełnienie warunków (np. 12000 = 120 zł; z panelu eBrokerPartner). Pole
+            wewnętrzne: wpływa wyłącznie na kolejność „Polecane”, nigdy na „ocenę serwisu”, i nie jest nigdzie
+            wyświetlane publicznie. Puste = nieznana.
+          </p>
+          <input
+            type="number"
+            min={0}
+            step={100}
+            {...register("affiliateCommissionCents", { valueAsNumber: true })}
+            className="input"
+          />
+        </Field>
         <Field label="Uzasadnienie oceny" error={errors.ratingReason?.message}>
           <input {...register("ratingReason")} className="input" placeholder="Wysoka premia i niewiele wymaganych czynności." />
         </Field>

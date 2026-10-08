@@ -80,6 +80,17 @@ export default function HowWeEarnPage() {
           </p>
         </section>
 
+        <section id="polecane">
+          <h2 className="text-xl font-semibold">Co oznacza kolejność „Polecane”?</h2>
+          <p className="mt-2 text-ink-700">
+            Domyślna kolejność ofert na liście i na stronie głównej („Polecane”) jest ustalana na podstawie naszej oceny
+            promocji oraz wynagrodzenia, jakie otrzymujemy od banku za polecenie. Oferty, za które bank płaci nam
+            więcej, mogą więc pojawiać się wyżej. Nie zmienia to warunków promocji ani ich kosztu dla Ciebie. Jeśli
+            wolisz kolejność niezależną od naszego wynagrodzenia, wybierz sortowanie „Najlepsza ocena”, „Najwyższa
+            premia” lub „Najłatwiejsze”.
+          </p>
+        </section>
+
         <section>
           <h2 className="text-xl font-semibold">Czy obecność promocji w bazie oznacza rekomendację?</h2>
           <p className="mt-2 text-ink-700">

@@ -59,6 +59,7 @@ export function promotionFormScalars(data: PromotionFormValues) {
     endDate: data.endDate,
     affiliateUrl: data.affiliateUrl,
     affiliateLinkEnabled: data.affiliateLinkEnabled,
+    affiliateCommissionCents: data.affiliateCommissionCents ?? null,
     sourceUrl: data.sourceUrl,
     lastVerifiedAt: data.lastVerifiedAt,
     eligibleFor: data.eligibleFor,

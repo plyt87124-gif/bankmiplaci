@@ -326,6 +326,13 @@ model Promotion {
   // behaves exactly as before.
   affiliateLinkEnabled Boolean @default(true)
 
+  // What the bank pays us for one qualifying sign-up, in grosze (from the
+  // eBrokerPartner panel). ADMIN-ONLY: never selected into public pages or
+  // public API responses (see stripPrivateFields in services/promotions.ts).
+  // It feeds only the "Polecane" ordering (src/lib/recommended.ts), never the
+  // public "ocena serwisu", and that use is disclosed on /jak-zarabiamy.
+  affiliateCommissionCents Int?
+
   startDate DateTime
   endDate   DateTime
 

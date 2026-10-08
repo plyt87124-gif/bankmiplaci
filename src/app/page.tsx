@@ -12,8 +12,8 @@ export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function HomePage() {
   const [personalPromotions, businessPromotions, activeCount, effortShowcase] = await Promise.all([
-    listActivePromotions({ sort: "top-rated", accountType: "PERSONAL" }),
-    listActivePromotions({ sort: "top-rated", accountType: "BUSINESS" }),
+    listActivePromotions({ sort: "recommended", accountType: "PERSONAL" }),
+    listActivePromotions({ sort: "recommended", accountType: "BUSINESS" }),
     countActivePromotions(),
     getEffortShowcase()
   ]);

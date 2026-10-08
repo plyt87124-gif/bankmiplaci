@@ -2,8 +2,9 @@ import { db } from "@/lib/db";
 import { Prisma, PromotionStatus, Difficulty } from "@prisma/client";
 import { recomputeRatings } from "./ratings";
 import { signupCutoff } from "@/lib/promotionAvailability";
+import { sortRecommended } from "@/lib/recommended";
 
-export type SortKey = "top-rated" | "highest-bonus" | "easiest" | "newest" | "ending-soon";
+export type SortKey = "recommended" | "top-rated" | "highest-bonus" | "easiest" | "newest" | "ending-soon";
 
 export interface PromotionFilters {
   q?: string;
@@ -40,9 +41,23 @@ function sortToOrderBy(sort?: SortKey): Prisma.PromotionOrderByWithRelationInput
     case "ending-soon":
       return [{ endDate: "asc" }];
     case "top-rated":
+    case "recommended": // re-ordered in code after the query, see listActivePromotions
     default:
       return [{ rating: "desc" }, { maxBonusCents: "desc" }];
   }
+}
+
+/**
+ * Fields that must never reach a public page, API response or client
+ * component. The partner commission is business-internal: it only feeds the
+ * "Polecane" ordering. Every public read path goes through this.
+ */
+export function stripPrivateFields<T extends { affiliateCommissionCents?: number | null }>(
+  row: T
+): Omit<T, "affiliateCommissionCents"> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { affiliateCommissionCents, ...rest } = row;
+  return rest;
 }
 
 export async function listActivePromotions(filters: PromotionFilters = {}) {
@@ -71,11 +86,27 @@ export async function listActivePromotions(filters: PromotionFilters = {}) {
       : {})
   };
 
-  return db.promotion.findMany({
+  const rows = await db.promotion.findMany({
     where,
     include: { bank: true, fees: true, conditions: { orderBy: { order: "asc" }, take: 1 } },
     orderBy: sortToOrderBy(filters.sort)
   });
+
+  // "Polecane" (the default listing order) blends the rating with the partner
+  // commission; the commission itself is removed from what callers receive.
+  const ordered =
+    filters.sort === "recommended" || filters.sort === undefined
+      ? sortRecommended(
+          rows.map((row) => ({
+            row,
+            accountType: row.accountType as string,
+            rating: Number(row.rating),
+            maxBonusCents: row.maxBonusCents,
+            commissionCents: row.affiliateCommissionCents
+          }))
+        ).map((x) => x.row)
+      : rows;
+  return ordered.map(stripPrivateFields);
 }
 
 export async function getPromotionBySlug(slug: string) {
@@ -94,7 +125,7 @@ export async function getPromotionBySlug(slug: string) {
   // A DRAFT promotion is only reachable through the admin preview link,
   // never indexable/listed publicly. Callers on the public site should
   // treat this the same as "not found" unless previewing.
-  return promotion;
+  return stripPrivateFields(promotion);
 }
 
 export async function countActivePromotions(): Promise<number> {

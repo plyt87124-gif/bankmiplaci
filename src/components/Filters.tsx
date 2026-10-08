@@ -8,6 +8,7 @@ import { DIFFICULTY_LABEL, ACCOUNT_TYPE_LABEL } from "@/lib/format";
 const DIFFICULTIES: Difficulty[] = ["VERY_EASY", "EASY", "MEDIUM", "HARD"];
 const ACCOUNT_TYPES: AccountType[] = ["PERSONAL", "BUSINESS"];
 const SORTS: { value: string; label: string }[] = [
+  { value: "recommended", label: "Polecane" },
   { value: "top-rated", label: "Najlepsza ocena" },
   { value: "highest-bonus", label: "Najwyższa premia" },
   { value: "easiest", label: "Najłatwiejsze" },
@@ -46,7 +47,7 @@ export function Filters({ banks }: { banks: { slug: string; name: string }[] }) 
         <p className="text-sm font-semibold text-ink-900">Sortuj</p>
         <select
           className="mt-2 w-full rounded-lg border border-ink-100 bg-surface px-3 py-2 text-sm text-ink-900"
-          defaultValue={searchParams.get("sort") ?? "top-rated"}
+          defaultValue={searchParams.get("sort") ?? "recommended"}
           onChange={(e) => update("sort", e.target.value)}
         >
           {SORTS.map((s) => (
@@ -55,6 +56,15 @@ export function Filters({ banks }: { banks: { slug: string; name: string }[] }) 
             </option>
           ))}
         </select>
+        {/* Disclosure required wherever the "Polecane" order is offered:
+            it can reflect the partner commission (see /jak-zarabiamy#polecane). */}
+        <p className="mt-2 text-xs text-ink-500">
+          „Polecane” uwzględnia m.in. wynagrodzenie partnerskie od banków.{" "}
+          <a href="/jak-zarabiamy#polecane" className="underline underline-offset-2 hover:text-ink-900">
+            Jak to działa
+          </a>
+          . Sortowanie „Najlepsza ocena” jest od niego niezależne.
+        </p>
       </div>
 
       <div>
