@@ -1,18 +1,32 @@
 import type { Metadata } from "next";
-import { LegalPage } from "@/components/LegalPage";
+import { LegalPage, type LegalSection } from "@/components/LegalPage";
 
 export const metadata: Metadata = { title: "Polityka prywatności", alternates: { canonical: "/polityka-prywatnosci" } };
 
+const sections: LegalSection[] = [
+  { id: "administrator", label: "1. Administrator danych" },
+  { id: "jakie-dane", label: "2. Jakie dane przetwarzamy" },
+  { id: "dane-techniczne", label: "3. Dane techniczne i analityczne" },
+  { id: "cele-i-podstawy", label: "4. Cele i podstawy prawne przetwarzania danych" },
+  { id: "linki-partnerow", label: "5. Linki do banków i innych partnerów" },
+  { id: "odbiorcy", label: "6. Odbiorcy danych" },
+  { id: "okres-przechowywania", label: "7. Okres przechowywania danych" },
+  { id: "prawa-uzytkownika", label: "8. Prawa użytkownika" },
+  { id: "dobrowolnosc", label: "9. Dobrowolność podania danych" },
+  { id: "bezpieczenstwo", label: "10. Bezpieczeństwo danych" },
+  { id: "zmiany", label: "11. Zmiany Polityki prywatności" },
+];
+
 export default function PolitykaPrywatnosci() {
   return (
-    <LegalPage title="Polityka prywatności">
+    <LegalPage title="Polityka prywatności" sections={sections}>
       <p>Data obowiązywania: 31.08.2026</p>
       <p>
         Niniejsza Polityka prywatności określa zasady przetwarzania danych w związku z korzystaniem z serwisu
         internetowego Bankmiplaci, dostępnego pod adresem bankmiplaci.pl, zwanego dalej „Serwisem”.
       </p>
 
-      <h2>1. Administrator danych</h2>
+      <h2 id="administrator">1. Administrator danych</h2>
       <p>
         Administratorem danych osobowych przetwarzanych w związku z funkcjonowaniem Serwisu jest:
         <br />
@@ -36,7 +50,7 @@ export default function PolitykaPrywatnosci() {
         pośrednictwem formularza kontaktowego dostępnego w Serwisie, jeżeli taki formularz został udostępniony.
       </p>
 
-      <h2>2. Jakie dane przetwarzamy</h2>
+      <h2 id="jakie-dane">2. Jakie dane przetwarzamy</h2>
       <p>Serwis został zaprojektowany w taki sposób, aby korzystanie z jego podstawowych funkcji nie wymagało zakładania konta użytkownika.</p>
       <p>Serwis nie wymaga podawania przez użytkownika w celu samego przeglądania jego zawartości w szczególności:</p>
       <ul>
@@ -78,7 +92,7 @@ export default function PolitykaPrywatnosci() {
         promocji, porównywarka) są dostępne bez zakładania konta, zgodnie z opisem powyżej.
       </p>
 
-      <h2>3. Dane techniczne i analityczne</h2>
+      <h2 id="dane-techniczne">3. Dane techniczne i analityczne</h2>
       <p>Podczas korzystania z Serwisu mogą być przetwarzane informacje techniczne związane z urządzeniem użytkownika oraz sposobem korzystania z Serwisu.</p>
       <p>W zależności od zastosowanej konfiguracji technicznej mogą być rejestrowane w szczególności:</p>
       <ul>
@@ -94,7 +108,7 @@ export default function PolitykaPrywatnosci() {
       <p>Jeżeli Serwis wykorzystuje tymczasowy lub losowy identyfikator sesji, jego celem jest rozróżnianie zdarzeń w ramach danej sesji, a nie ustalanie tożsamości użytkownika.</p>
       <p>Administrator nie zamierza wykorzystywać danych analitycznych do identyfikowania użytkowników z imienia i nazwiska.</p>
 
-      <h2>4. Cele i podstawy prawne przetwarzania danych</h2>
+      <h2 id="cele-i-podstawy">4. Cele i podstawy prawne przetwarzania danych</h2>
       <p>Dane mogą być przetwarzane w szczególności w następujących celach:</p>
       <p><strong>a) Zapewnienie prawidłowego działania Serwisu</strong></p>
       <p>Dane techniczne mogą być przetwarzane w celu zapewnienia prawidłowego działania, bezpieczeństwa oraz stabilności Serwisu.</p>
@@ -123,7 +137,7 @@ export default function PolitykaPrywatnosci() {
         polegający na moderacji treści publikowanych w Serwisie.
       </p>
 
-      <h2>5. Linki do banków i innych partnerów</h2>
+      <h2 id="linki-partnerow">5. Linki do banków i innych partnerów</h2>
       <p>Serwis zawiera linki prowadzące do stron internetowych banków oraz innych partnerów.</p>
       <p>
         Niektóre z tych linków mogą być linkami partnerskimi. Oznacza to, że Administrator może otrzymać
@@ -135,7 +149,7 @@ export default function PolitykaPrywatnosci() {
       <p>Administrator nie kontroluje sposobu przetwarzania danych przez zewnętrzne podmioty.</p>
       <p>Użytkownik powinien zapoznać się z polityką prywatności danego banku lub partnera przed skorzystaniem z jego usług.</p>
 
-      <h2>6. Odbiorcy danych</h2>
+      <h2 id="odbiorcy">6. Odbiorcy danych</h2>
       <p>W zależności od sposobu działania Serwisu dane mogą być przekazywane podmiotom świadczącym na rzecz Administratora usługi związane z:</p>
       <ul>
         <li>hostingiem,</li>
@@ -148,13 +162,13 @@ export default function PolitykaPrywatnosci() {
       <p>W przypadku kliknięcia linku partnerskiego użytkownik może zostać przekierowany do banku lub innego partnera.</p>
       <p>Dane mogą być również przetwarzane przez dostawców narzędzi wykorzystywanych przez Administratora, zgodnie z ich zakresem działania i obowiązującymi przepisami.</p>
 
-      <h2>7. Okres przechowywania danych</h2>
+      <h2 id="okres-przechowywania">7. Okres przechowywania danych</h2>
       <p>Dane osobowe są przechowywane przez okres niezbędny do realizacji celu, dla którego zostały zebrane, a następnie przez okres wymagany przepisami prawa lub do czasu ustania podstawy prawnej ich przetwarzania.</p>
       <p>Dane dotyczące korespondencji mogą być przechowywane przez okres niezbędny do obsługi zgłoszenia, a następnie przez okres uzasadniony charakterem sprawy.</p>
       <p>Dane konta użytkownika są przechowywane przez czas istnienia konta w Serwisie. Użytkownik może w każdej chwili zażądać usunięcia konta i powiązanych z nim danych, kontaktując się z Administratorem na adres wskazany w pkt 1 — z zastrzeżeniem danych, których dalsze przechowywanie jest wymagane przepisami prawa.</p>
       <p>Okres przechowywania danych analitycznych i cookies zależy od wykorzystywanego narzędzia oraz jego konfiguracji.</p>
 
-      <h2>8. Prawa użytkownika</h2>
+      <h2 id="prawa-uzytkownika">8. Prawa użytkownika</h2>
       <p>W zakresie przewidzianym przez RODO użytkownikowi przysługują w szczególności prawa do:</p>
       <ul>
         <li>dostępu do swoich danych osobowych,</li>
@@ -175,17 +189,17 @@ export default function PolitykaPrywatnosci() {
         osobowych.
       </p>
 
-      <h2>9. Dobrowolność podania danych</h2>
+      <h2 id="dobrowolnosc">9. Dobrowolność podania danych</h2>
       <p>Korzystanie z podstawowych funkcji Serwisu nie wymaga podawania danych osobowych.</p>
       <p>Podanie danych jest dobrowolne, jednak może być niezbędne do udzielenia odpowiedzi na wiadomość użytkownika, jeżeli użytkownik zdecyduje się skontaktować z Administratorem.</p>
 
-      <h2>10. Bezpieczeństwo danych</h2>
+      <h2 id="bezpieczenstwo">10. Bezpieczeństwo danych</h2>
       <p>
         Administrator stosuje odpowiednie środki techniczne i organizacyjne mające na celu ochronę danych przed
         ich przypadkowym lub bezprawnym zniszczeniem, utratą, zmianą, nieuprawnionym ujawnieniem lub dostępem.
       </p>
 
-      <h2>11. Zmiany Polityki prywatności</h2>
+      <h2 id="zmiany">11. Zmiany Polityki prywatności</h2>
       <p>Administrator może aktualizować niniejszą Politykę prywatności w szczególności w przypadku:</p>
       <ul>
         <li>zmiany przepisów prawa,</li>

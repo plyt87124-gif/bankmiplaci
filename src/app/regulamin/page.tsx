@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
-import { LegalPage } from "@/components/LegalPage";
+import { LegalPage, type LegalSection } from "@/components/LegalPage";
 
 export const metadata: Metadata = { title: "Regulamin", alternates: { canonical: "/regulamin" } };
 
+const sections: LegalSection[] = [
+  { id: "postanowienia-ogolne", label: "1. Postanowienia ogólne" },
+  { id: "charakter-serwisu", label: "2. Charakter Serwisu" },
+  { id: "zasady-korzystania", label: "3. Zasady korzystania z Serwisu" },
+  { id: "odpowiedzialnosc", label: "4. Odpowiedzialność" },
+  { id: "reklamacje", label: "5. Reklamacje i zgłaszanie nieprawidłowości" },
+  { id: "postanowienia-koncowe", label: "6. Postanowienia końcowe" },
+];
+
 export default function Regulamin() {
   return (
-    <LegalPage title="Regulamin serwisu">
+    <LegalPage title="Regulamin serwisu" sections={sections}>
       <p>Data wejścia w życie: 31.08.2026</p>
 
-      <h2>1. Postanowienia ogólne</h2>
+      <h2 id="postanowienia-ogolne">1. Postanowienia ogólne</h2>
       <ol>
         <li>Niniejszy Regulamin określa zasady korzystania z serwisu internetowego Bankmiplaci, dostępnego pod adresem bankmiplaci.pl, zwanego dalej „Serwisem”.</li>
         <li>
@@ -37,7 +46,7 @@ export default function Regulamin() {
         <li>Korzystanie z Serwisu oznacza akceptację niniejszego Regulaminu w zakresie, w jakim przepisy prawa pozwalają na takie jego stosowanie.</li>
       </ol>
 
-      <h2>2. Charakter Serwisu</h2>
+      <h2 id="charakter-serwisu">2. Charakter Serwisu</h2>
       <ol>
         <li>
           Serwis jest internetową porównywarką i platformą informacyjną prezentującą informacje dotyczące w
@@ -82,7 +91,7 @@ export default function Regulamin() {
         </li>
       </ol>
 
-      <h2>3. Zasady korzystania z Serwisu</h2>
+      <h2 id="zasady-korzystania">3. Zasady korzystania z Serwisu</h2>
       <ol>
         <li>Użytkownik może korzystać z Serwisu w sposób zgodny z obowiązującym prawem, niniejszym Regulaminem oraz dobrymi obyczajami.</li>
         <li>Korzystanie z podstawowych funkcji Serwisu jest co do zasady bezpłatne, chyba że przy konkretnej funkcji wyraźnie wskazano inaczej.</li>
@@ -107,7 +116,7 @@ export default function Regulamin() {
         <li>Operator może zmieniać strukturę Serwisu, jego funkcjonalności, sposób prezentowania ofert oraz zakres dostępnych treści.</li>
       </ol>
 
-      <h2>4. Odpowiedzialność</h2>
+      <h2 id="odpowiedzialnosc">4. Odpowiedzialność</h2>
       <ol>
         <li>Operator dokłada należytej staranności, aby informacje prezentowane w Serwisie były aktualne, rzetelne i możliwie kompletne.</li>
         <li>
@@ -141,7 +150,7 @@ export default function Regulamin() {
         <li>Żadne postanowienie Regulaminu nie wyłącza ani nie ogranicza odpowiedzialności Operatora w zakresie, w którym takie wyłączenie lub ograniczenie jest niedopuszczalne na podstawie obowiązujących przepisów prawa.</li>
       </ol>
 
-      <h2>5. Reklamacje i zgłaszanie nieprawidłowości</h2>
+      <h2 id="reklamacje">5. Reklamacje i zgłaszanie nieprawidłowości</h2>
       <ol>
         <li>Użytkownik może zgłosić Operatorowi nieprawidłowość dotyczącą funkcjonowania Serwisu lub prezentowanych w nim informacji.</li>
         <li>
@@ -172,7 +181,7 @@ export default function Regulamin() {
         <li>Zgłoszenie nie powinno zawierać danych logowania, numerów kart, haseł ani innych poufnych danych finansowych.</li>
       </ol>
 
-      <h2>6. Postanowienia końcowe</h2>
+      <h2 id="postanowienia-koncowe">6. Postanowienia końcowe</h2>
       <ol>
         <li>Regulamin obowiązuje od dnia 31.08.2026.</li>
         <li>

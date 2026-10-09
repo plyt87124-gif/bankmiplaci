@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
-import { LegalPage } from "@/components/LegalPage";
+import { LegalPage, type LegalSection } from "@/components/LegalPage";
 
 export const metadata: Metadata = { title: "Polityka cookies", alternates: { canonical: "/cookies" } };
 
+const sections: LegalSection[] = [
+  { id: "czym-sa-cookies", label: "1. Czym są pliki cookies?" },
+  { id: "cookies-niezbedne", label: "2. Cookies niezbędne" },
+  { id: "cookies-analityczne", label: "3. Cookies analityczne" },
+  { id: "cookies-afiliacyjne", label: "4. Cookies afiliacyjne i technologie stosowane przez partnerów" },
+  { id: "zarzadzanie-zgoda", label: "5. Zarządzanie zgodą na cookies" },
+  { id: "lista-cookies", label: "6. Lista wykorzystywanych cookies" },
+  { id: "strony-zewnetrzne", label: "7. Zewnętrzne strony internetowe" },
+  { id: "zmiany", label: "8. Zmiany Polityki cookies" },
+];
+
 export default function Cookies() {
   return (
-    <LegalPage title="Polityka cookies">
+    <LegalPage title="Polityka cookies" sections={sections}>
       <p>Data obowiązywania: 31.08.2026</p>
       <p>Niniejsza Polityka cookies określa zasady wykorzystywania plików cookies oraz podobnych technologii w serwisie internetowym Bankmiplaci, dostępnym pod adresem bankmiplaci.pl.</p>
       <p>
@@ -24,11 +35,11 @@ export default function Cookies() {
         E-mail: <a href="mailto:pomoc@bankmiplaci.pl">pomoc@bankmiplaci.pl</a>
       </p>
 
-      <h2>1. Czym są pliki cookies?</h2>
+      <h2 id="czym-sa-cookies">1. Czym są pliki cookies?</h2>
       <p>Cookies to niewielkie pliki tekstowe zapisywane na urządzeniu użytkownika podczas korzystania ze strony internetowej.</p>
       <p>Mogą służyć między innymi do zapewnienia prawidłowego działania strony, zapamiętywania ustawień, zapewnienia bezpieczeństwa oraz prowadzenia statystyk.</p>
 
-      <h2>2. Cookies niezbędne</h2>
+      <h2 id="cookies-niezbedne">2. Cookies niezbędne</h2>
       <p>Serwis wykorzystuje cookies niezbędne do prawidłowego działania jego podstawowych funkcji. Aktualnie są to wyłącznie dwa własne (first-party) cookies sesyjne uwierzytelniania — szczegóły w tabeli w sekcji 6. Mogą one służyć między innymi do:</p>
       <ul>
         <li>zapewnienia prawidłowego działania Serwisu,</li>
@@ -38,7 +49,7 @@ export default function Cookies() {
         <li>obsługi mechanizmu zarządzania zgodami.</li>
       </ul>
 
-      <h2>3. Cookies analityczne</h2>
+      <h2 id="cookies-analityczne">3. Cookies analityczne</h2>
       <p>
         Serwis obecnie nie wykorzystuje żadnego zewnętrznego narzędzia analitycznego — w kodzie Serwisu nie jest
         zaimplementowana integracja z żadnym takim narzędziem. Statystyki wyświetleń i kliknięć w linki partnerskie
@@ -47,7 +58,7 @@ export default function Cookies() {
       </p>
       <p>Ta sekcja zostanie uzupełniona o nazwę narzędzia, dostawcę, cel, okres przechowywania i zakres przetwarzanych informacji, jeżeli takie narzędzie zostanie w przyszłości wdrożone.</p>
 
-      <h2>4. Cookies afiliacyjne i technologie stosowane przez partnerów</h2>
+      <h2 id="cookies-afiliacyjne">4. Cookies afiliacyjne i technologie stosowane przez partnerów</h2>
       <p>
         Serwis nie zapisuje własnych plików cookie w celu śledzenia przekierowań afiliacyjnych — przypisanie
         kliknięcia do promocji odbywa się po stronie serwera Bankmiplaci (zapis w bazie danych, nie w cookie
@@ -56,7 +67,7 @@ export default function Cookies() {
       <p>Po kliknięciu w link partnerski użytkownik zostaje przekierowany na stronę banku lub innego partnera. Od tego momentu zastosowanie mają technologie i zasady dotyczące cookies stosowane przez ten podmiot — Bankmiplaci nie ma na nie wpływu.</p>
       <p>Zakres oraz okres działania takich technologii zależą od konkretnego banku, partnera lub systemu afiliacyjnego, do którego użytkownik zostanie przekierowany.</p>
 
-      <h2>5. Zarządzanie zgodą na cookies</h2>
+      <h2 id="zarzadzanie-zgoda">5. Zarządzanie zgodą na cookies</h2>
       <p>
         Wszystkie cookies wykorzystywane obecnie przez Serwis (patrz sekcja 6) są cookies niezbędnymi do
         świadczenia usługi, o którą użytkownik aktywnie prosi (utrzymanie zalogowania na koncie użytkownika lub w
@@ -73,9 +84,9 @@ export default function Cookies() {
       <p>Użytkownik może również zarządzać cookies za pomocą ustawień swojej przeglądarki internetowej — w tym usunąć plik cookie premia_session, co spowoduje wylogowanie z konta.</p>
       <p>Wyłączenie cookies niezbędnych (patrz sekcja 6) uniemożliwi korzystanie z funkcji wymagających zalogowania (np. dodawanie komentarzy, zapisywanie dat karencji w „Moje konto”, panel administracyjny).</p>
 
-      <h2>6. Lista wykorzystywanych cookies</h2>
+      <h2 id="lista-cookies">6. Lista wykorzystywanych cookies</h2>
       <p>Poniższa lista odzwierciedla rzeczywistą konfigurację Serwisu na dzień 31.08.2026:</p>
-      <div className="overflow-x-auto">
+      <div className="mt-3 overflow-x-auto" role="region" aria-label="Lista wykorzystywanych cookies" tabIndex={0}>
         <table>
           <thead>
             <tr>
@@ -106,12 +117,12 @@ export default function Cookies() {
       </div>
       <p>Lista powinna zostać zaktualizowana w przypadku dodania lub usunięcia wykorzystywanych technologii — w szczególności przy wdrożeniu narzędzia analitycznego lub systemu afiliacyjnego zapisującego własne cookies.</p>
 
-      <h2>7. Zewnętrzne strony internetowe</h2>
+      <h2 id="strony-zewnetrzne">7. Zewnętrzne strony internetowe</h2>
       <p>Serwis może zawierać odnośniki do stron internetowych banków oraz innych partnerów.</p>
       <p>Po przejściu na stronę zewnętrzną zasady stosowania cookies i podobnych technologii określa administrator danej strony.</p>
       <p>Administrator Bankmiplaci nie odpowiada za cookies ani inne technologie wykorzystywane przez zewnętrzne strony internetowe.</p>
 
-      <h2>8. Zmiany Polityki cookies</h2>
+      <h2 id="zmiany">8. Zmiany Polityki cookies</h2>
       <p>Polityka cookies może być aktualizowana w przypadku:</p>
       <ul>
         <li>zmiany wykorzystywanych narzędzi,</li>
