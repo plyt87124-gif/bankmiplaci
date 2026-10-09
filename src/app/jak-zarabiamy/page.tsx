@@ -1,105 +1,176 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { RATING_COMMISSION_RULE } from "@/lib/disclosureCopy";
+import { COMMISSION_WEIGHT } from "@/lib/recommended";
+import { staticPageMetadata } from "@/lib/seo";
+import { Callout, TextPage, type TocEntry } from "../jak-to-dziala/TextPage";
 
-export const metadata: Metadata = {
-  title: "Jak zarabiamy",
-  description: "Wyjaśniamy, czym jest marketing afiliacyjny, jak zarabia Bankmiplaci i jak wybieramy promocje.",
-  alternates: { canonical: "/jak-zarabiamy" }
-};
+export const metadata: Metadata = staticPageMetadata("jakZarabiamy");
+
+const TOC: TocEntry[] = [
+  { id: "afiliacja", label: "Czym jest afiliacja" },
+  { id: "wplyw", label: "Czy to wpływa na Ciebie" },
+  { id: "polecane", label: "Co to zmienia w kolejności „Polecane”" },
+  { id: "ocena", label: "Jak liczymy ocenę (bez prowizji)" },
+  { id: "czego-nie-robimy", label: "Czego nie robimy" },
+  { id: "wybor", label: "Jak wybieramy promocje" },
+  { id: "rekomendacja", label: "Czy oferta w serwisie to rekomendacja" }
+];
+
+const pl2 = new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+
+/**
+ * The numbers below are taken from src/lib/recommended.ts, not typed here:
+ *   score = (rating / 10) * (1 - W + W * commissionShare)
+ * with W = COMMISSION_WEIGHT. commissionShare is 1 for the best-paying offer
+ * of an account type, c / max for the others, 0 when the commission is zero
+ * and 0.5 (neutral) when it is unknown. tests/content-pages.test.tsx checks
+ * these figures against recommendedScores(), so the page cannot drift from
+ * the code unnoticed.
+ */
+const FACTOR_BEST = 1;
+const FACTOR_FLOOR = 1 - COMMISSION_WEIGHT;
+const FACTOR_UNKNOWN = 1 - COMMISSION_WEIGHT + COMMISSION_WEIGHT * 0.5;
 
 export default function HowWeEarnPage() {
   return (
-    <div className="container-page max-w-2xl py-14">
-      <h1 className="text-3xl font-semibold">Jak zarabiamy</h1>
-      <p className="mt-4 text-ink-500">
-        Bankmiplaci jest darmowe dla użytkowników. Zarabiamy dzięki marketingowi afiliacyjnemu — chcemy, żeby było to
-        dla Ciebie w pełni jasne.
+    <TextPage
+      path="/jak-zarabiamy"
+      breadcrumbLabel="Jak zarabiamy"
+      title="Jak zarabiamy – afiliacja i niezależność oceny"
+      lead={
+        <>
+          <p>Zarabiamy z prowizji od banków za polecenie.</p>
+          <p className="mt-3">
+            Bankmiplaci jest bezpłatne dla użytkowników. Poniżej piszemy, jak to działa, co zmienia w tym, co widzisz
+            na stronie, a czego nie zmienia.
+          </p>
+        </>
+      }
+      toc={TOC}
+    >
+      <h2 id="afiliacja" className="!mt-0">
+        Czym jest afiliacja
+      </h2>
+      <p>
+        Gdy przechodzisz do banku przez link oznaczony jako partnerski (przycisk „Przejdź do promocji”, pod którym
+        zawsze piszemy „Link partnerski”), a potem otwierasz konto i spełniasz warunki promocji, bank – bezpośrednio albo
+        przez sieć partnerską – może wypłacić nam wynagrodzenie za polecenie. To częsty model finansowania
+        porównywarek. Wynagrodzenie nie pochodzi od Ciebie.
       </p>
 
-      <div className="mt-10 space-y-8">
-        <section>
-          <h2 className="text-xl font-semibold">Czym jest afiliacja?</h2>
-          <p className="mt-2 text-ink-700">
-            Gdy przechodzisz do banku przez link oznaczony jako promocyjny na naszej stronie, a następnie otworzysz
-            konto i spełnisz warunki promocji, bank może wypłacić nam wynagrodzenie za polecenie. To standardowy
-            model finansowania porównywarek finansowych na całym świecie.
-          </p>
-        </section>
+      <h2 id="wplyw">Czy to wpływa na Ciebie</h2>
+      <p>
+        Na warunki i koszt promocji – nie: ustala je bank. Co do zasady nie zależą one od tego, czy korzystasz z naszego
+        linku. Wyjątkiem są promocje dostępne wyłącznie przez link lub kod; jeśli o tym wiemy, piszemy to w warunkach
+        oferty. Ostateczne warunki zawsze określa regulamin banku.
+      </p>
+      <p>
+        Na domyślną kolejność ofert – tak: opisujemy to w następnej sekcji. Ocena serwisu jest natomiast liczona bez
+        uwzględniania prowizji.
+      </p>
 
-        <section>
-          <h2 className="text-xl font-semibold">Czy wpływa to na Ciebie?</h2>
-          <p className="mt-2 text-ink-700">
-            Nie. Wysokość premii, warunki promocji i ewentualne opłaty konta są takie same niezależnie od tego, czy
-            skorzystasz z naszego linku, czy otworzysz konto bezpośrednio na stronie banku. Nasze wynagrodzenie
-            pochodzi od banku, nigdy od Ciebie.
-          </p>
-        </section>
+      <h2 id="polecane">Co to zmienia w kolejności „Polecane”</h2>
+      <p>
+        „Polecane” to domyślna kolejność ofert na stronie głównej i na liście promocji. To nie jest ranking jakości, tylko
+        połączenie dwóch rzeczy. Pozycję oferty wyznacza iloczyn dwóch liczb:
+      </p>
+      <ol>
+        <li>
+          <strong>Ocena serwisu</strong> (od 0 do 10, liczona bez prowizji – zob. niżej). To punkt wyjścia: gdyby nie
+          było drugiego czynnika, kolejność byłaby po prostu kolejnością ocen.
+        </li>
+        <li>
+          <strong>Współczynnik wynagrodzenia partnerskiego</strong> – liczba od {pl2.format(FACTOR_FLOOR)} do{" "}
+          {pl2.format(FACTOR_BEST)}, która zależy od tego, ile bank płaci nam za otwarcie konta w porównaniu z innymi
+          ofertami tego samego typu konta.
+        </li>
+      </ol>
+      <p>Współczynnik działa tak:</p>
+      <ul>
+        <li>
+          Oferta o najwyższym znanym wynagrodzeniu w swojej grupie dostaje {pl2.format(FACTOR_BEST)} – jej ocena nie jest
+          pomniejszana. Grupy to typy kont: konta osobiste porównujemy tylko z osobistymi, firmowe z firmowymi itd.
+        </li>
+        <li>
+          Oferta o niższym wynagrodzeniu dostaje wartość proporcjonalnie niższą, nie mniejszą jednak niż{" "}
+          {pl2.format(FACTOR_FLOOR)}.
+        </li>
+        <li>
+          Oferta, dla której nie mamy danych o wynagrodzeniu, dostaje wartość pośrednią – {pl2.format(FACTOR_UNKNOWN)}.
+          Brak informacji ani jej nie pomaga, ani nie szkodzi.
+        </li>
+        <li>Oferta, za którą bank nie płaci nam nic, dostaje najniższą wartość – {pl2.format(FACTOR_FLOOR)}.</li>
+      </ul>
+      <p>Przy takim samym wyniku wyżej jest oferta z wyższą oceną, a potem z wyższą premią.</p>
+      <Callout title="To ma realny wpływ na kolejność">
+        <p>
+          Oceny aktualnych ofert są zwykle do siebie zbliżone, więc różnica we współczynniku wynagrodzenia może
+          postawić ofertę o nieco niższej ocenie wyżej niż ofertę o nieco wyższej. Dlatego „Polecane” nie znaczy
+          „najlepsze” – to kolejność, w której uwzględniamy także to, ile możemy zarobić.
+        </p>
+      </Callout>
+      <p>
+        Oferta, na której nie zarabiamy, nadal jest na liście – zmienia się tylko jej miejsce w „Polecane”. Kwot
+        wynagrodzenia nie publikujemy.
+      </p>
+      <h3>Sortowania niezależne od wynagrodzenia</h3>
+      <p>
+        Jeśli wolisz kolejność, w której wynagrodzenie nie gra roli, wybierz inne sortowanie nad listą ofert. Żadne z nich
+        z niego nie korzysta:
+      </p>
+      <ul>
+        <li>
+          <strong>Najlepsza ocena</strong> – według oceny serwisu, a przy remisie według wysokości premii,
+        </li>
+        <li>
+          <strong>Najwyższa premia</strong> – według kwoty premii,
+        </li>
+        <li>
+          <strong>Najłatwiejsze</strong> – według trudności, a potem oceny,
+        </li>
+        <li>
+          <strong>Najnowsze</strong> – według daty rozpoczęcia promocji,
+        </li>
+        <li>
+          <strong>Kończące się wkrótce</strong> – według terminu zapisów.
+        </li>
+      </ul>
 
-        <section>
-          <h2 className="text-xl font-semibold">Jak wybieramy promocje?</h2>
-          <p className="mt-2 text-ink-700">
-            Do bazy trafiają wyłącznie promocje, których warunki zostały zweryfikowane na podstawie oficjalnego
-            regulaminu banku. Każda ma widoczną datę ostatniej weryfikacji i link do źródła.
-          </p>
-        </section>
+      <h2 id="ocena">Jak liczymy ocenę (bez prowizji)</h2>
+      <p>
+        Ocena serwisu (np. 9,4/10) to nasz wewnętrzny wskaźnik do szybkiego porównania ofert. Nie jest niezależną ani
+        obiektywną oceną banku ani jego produktów, a tym bardziej poradą finansową. Liczymy ją automatycznie z pięciu
+        składników: wysokości premii, trudności zdobycia, czasu trwania promocji, średniej premii na miesiąc i
+        karencji – zawsze na tle innych aktualnych ofert tego samego typu konta.
+      </p>
+      <p>
+        <strong>{RATING_COMMISSION_RULE}</strong> Wagi składników, skalę oceny i – gdy to możliwe – przykład wyliczenia
+        na prawdziwej ofercie opisujemy w <Link href="/metodologia">metodologii</Link>.
+      </p>
 
-        <section id="ocena">
-          <h2 className="text-xl font-semibold">Jak liczymy ocenę promocji?</h2>
-          <p className="mt-2 text-ink-700">
-            Ocena (np. 9,4/10) to nasz <strong>wewnętrzny, subiektywny wskaźnik</strong> do szybkiego porównania
-            ofert — nie jest to niezależna ani obiektywna ocena banku ani jego produktów. Liczymy ją automatycznie
-            zawsze w porównaniu do innych aktualnie aktywnych promocji tego samego typu konta (konto osobiste
-            i firmowe oceniamy osobno — 5000 zł premii firmowej i 900 zł premii osobistej to nieporównywalne kwoty),
-            biorąc pod uwagę pięć rzeczy:
-          </p>
-          <ul className="mt-3 list-disc space-y-2 pl-5 text-ink-700">
-            <li><strong>Wysokość premii</strong> — im więcej, tym lepiej (waga ok. 30%).</li>
-            <li>
-              <strong>Trudność zdobycia</strong> — ile płatności kartą, jakie warunki, jaki próg zasilenia konta
-              trzeba zapewnić (waga ok. 30%).
-            </li>
-            <li>
-              <strong>Czas trwania promocji</strong> — przez ile miesięcy trzeba pozostać aktywnym, żeby dostać
-              całą premię; krócej znaczy lepiej (waga ok. 20%).
-            </li>
-            <li>
-              <strong>Średnia premia na miesiąc</strong> — nie tylko łączna kwota, ale ile realnie wychodzi na
-              miesiąc włożonego wysiłku (waga ok. 15%).
-            </li>
-            <li>
-              <strong>Okres karencji</strong> — jak długo trzeba czekać, zanim znów można skorzystać z promocji
-              tego banku; krócej znaczy lepiej. Ta informacja nie zawsze jest znana z regulaminu, więc dla części
-              promocji nie wpływa na wynik (waga ok. 5%).
-            </li>
-          </ul>
-          <p className="mt-3 text-ink-700">
-            Ocena przelicza się automatycznie za każdym razem, gdy w bazie pojawia się, znika lub zmienia się
-            jakaś promocja — więc zawsze odzwierciedla aktualną konkurencję między ofertami, a nie dane sprzed
-            tygodni. W rzadkich przypadkach administrator może ręcznie nadpisać wynik, jeśli uzna, że algorytm nie
-            uwzględnił czegoś istotnego — powód takiej oceny zawsze znajdziesz w krótkim uzasadnieniu widocznym
-            przy każdej promocji.
-          </p>
-        </section>
+      <h2 id="czego-nie-robimy">Czego nie robimy</h2>
+      <ul>
+        <li>Nie przyjmujemy płatności za wyższą ocenę serwisu ani za zmianę opisu oferty.</li>
+        <li>Nie ukrywamy ofert dlatego, że nie zarabiamy na nich.</li>
+        <li>Nie zmieniamy warunków, kwot ani opłat pod wpływem banku – dane pochodzą z regulaminu banku.</li>
+        <li>Nie ukrywamy linków partnerskich: oznaczamy je wszędzie tam, gdzie prowadzą do banku.</li>
+        <li>Nie pobieramy opłat od użytkowników za korzystanie z porównywarki.</li>
+        <li>Nie udajemy banku ani doradcy – nie doradzamy, tylko porównujemy.</li>
+      </ul>
 
-        <section id="polecane">
-          <h2 className="text-xl font-semibold">Co oznacza kolejność „Polecane”?</h2>
-          <p className="mt-2 text-ink-700">
-            Domyślna kolejność ofert na liście i na stronie głównej („Polecane”) jest ustalana na podstawie naszej oceny
-            promocji oraz wynagrodzenia, jakie otrzymujemy od banku za polecenie. Oferty, za które bank płaci nam
-            więcej, mogą więc pojawiać się wyżej. Nie zmienia to warunków promocji ani ich kosztu dla Ciebie. Jeśli
-            wolisz kolejność niezależną od naszego wynagrodzenia, wybierz sortowanie „Najlepsza ocena”, „Najwyższa
-            premia” lub „Najłatwiejsze”.
-          </p>
-        </section>
+      <h2 id="wybor">Jak wybieramy promocje</h2>
+      <p>
+        Do serwisu trafiają promocje, których warunki sprawdziliśmy w regulaminie banku. Przy ofercie podajemy datę
+        ostatniej weryfikacji i, gdy go mamy, link do źródła. Nie porównujemy całego rynku – pokazujemy te promocje,
+        które przeanalizowaliśmy.
+      </p>
 
-        <section>
-          <h2 className="text-xl font-semibold">Czy obecność promocji w bazie oznacza rekomendację?</h2>
-          <p className="mt-2 text-ink-700">
-            Nie. Prezentujemy dostępne promocje wraz z ich warunkami, kosztami i wymaganym wysiłkiem, aby ułatwić Ci
-            porównanie ofert. Decyzję o skorzystaniu z danej promocji zawsze podejmujesz samodzielnie, na podstawie
-            regulaminu opublikowanego przez bank.
-          </p>
-        </section>
-      </div>
-    </div>
+      <h2 id="rekomendacja">Czy oferta w serwisie to rekomendacja</h2>
+      <p>
+        Nie. Prezentujemy dostępne promocje wraz z warunkami, kosztami i wymaganym wysiłkiem, żeby ułatwić Ci
+        porównanie. Decyzję o skorzystaniu z promocji podejmujesz samodzielnie, na podstawie regulaminu banku.
+      </p>
+    </TextPage>
   );
 }

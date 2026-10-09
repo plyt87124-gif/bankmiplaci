@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { resolveMx } from "dns/promises";
 import { z } from "zod";
 import { sendEmail } from "@/lib/email";
+import { buildContactEmailHtml, contactEmailSubject } from "@/app/kontakt/contactEmail";
 
 const contactSchema = z.object({
   email: z.string().email(),
@@ -46,18 +47,14 @@ export async function POST(request: NextRequest) {
   if (supportEmail) {
     await sendEmail({
       to: supportEmail,
-      subject: `Nowa wiadomość z formularza kontaktowego — ${parsed.data.email}`,
+      subject: contactEmailSubject(parsed.data.email),
       replyTo: parsed.data.email,
-      html: `
-        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-          <h1 style="font-size: 18px;">Nowa wiadomość z formularza kontaktowego</h1>
-          <p><strong>Od:</strong> ${parsed.data.email}</p>
-          <p style="white-space: pre-wrap;">${parsed.data.message}</p>
-        </div>
-      `
+      // The visitor's text is escaped: it must never become live markup in the operator's mail client.
+      html: buildContactEmailHtml(parsed.data)
     });
   } else {
-    console.error("[contact] Brak SUPPORT_EMAIL w zmiennych środowiskowych — wiadomość nie została nigdzie wysłana:", parsed.data);
+    // Deliberately no address and no message text in the log: that is personal data.
+    console.error("[contact] Brak SUPPORT_EMAIL w zmiennych środowiskowych — wiadomość z formularza nie została nigdzie wysłana.");
   }
 
   return NextResponse.json({ ok: true });

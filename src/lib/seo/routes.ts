@@ -46,8 +46,8 @@ export const SITE_ROUTES: readonly SiteRoute[] = [
   { path: "/blog", live: true, lastMod: "articles" },
 
   // Trust pages (WP-13).
-  { path: "/metodologia", live: false, lastMod: "none" },
-  { path: "/o-nas", live: false, lastMod: "none" },
+  { path: "/metodologia", live: true, lastMod: "none" },
+  { path: "/o-nas", live: true, lastMod: "none" },
 
   // Phase 1 hubs (WP-16).
   { path: "/konta-osobiste-z-premia", live: false, lastMod: "openPersonalPromotions" },
