@@ -68,9 +68,12 @@ test("indexing is independent of the deadline; noindex pages keep follow", () =>
   for (const status of ["DRAFT", "EXPIRED", "ARCHIVED"]) {
     assert.deepEqual(robotsForStatus(status), { index: false, follow: true }, status);
   }
-  // robotsForStatus takes no date at all: a past-deadline ACTIVE page is not
-  // dropped from the index by this function (sign-up is blocked elsewhere).
-  assert.equal(robotsForStatus.length, 1);
+  // A just-expired ACTIVE page is not dropped from the index either (sign-up
+  // is blocked elsewhere); the 90-day window is covered in
+  // promotionAvailability-seo.test.ts. Without a date ACTIVE keeps the
+  // pre-redesign behaviour.
+  assert.deepEqual(robotsForStatus("ACTIVE", d("2026-09-30T00:00:00Z"), d("2026-10-02T09:00:00Z")), { index: true, follow: true });
+  assert.deepEqual(robotsForStatus("ACTIVE"), { index: true, follow: true });
 });
 
 test("the partner link is a separate switch: offer open + flag off = shown, but no redirect", () => {
