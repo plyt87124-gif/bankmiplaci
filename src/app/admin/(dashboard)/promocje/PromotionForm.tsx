@@ -4,6 +4,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { promotionFormSchema, type PromotionFormValues } from "@/lib/validation/promotion";
 import { useState } from "react";
+import { ratingReasonWarning, summaryLengthWarning } from "@/lib/promotionForm";
 import { Plus, Trash2 } from "lucide-react";
 
 interface Bank {
@@ -33,6 +34,7 @@ export function PromotionForm({
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors, isSubmitting }
   } = useForm<PromotionFormValues>({
     resolver: zodResolver(promotionFormSchema),
@@ -50,6 +52,9 @@ export function PromotionForm({
       ...defaultValues
     } as PromotionFormValues
   });
+
+  const summaryWarning = summaryLengthWarning(watch("summary"));
+  const ratingReasonWarn = ratingReasonWarning(watch("ratingReason"));
 
   const conditions = useFieldArray({ control, name: "conditions" });
   const bonusParts = useFieldArray({ control, name: "bonusParts" });
@@ -85,6 +90,7 @@ export function PromotionForm({
         </Field>
         <Field label="Krótki opis (widoczny w wyszukiwarce i na karcie)" error={errors.summary?.message}>
           <textarea {...register("summary")} className="input" rows={2} />
+          {summaryWarning && <Warning>{summaryWarning}</Warning>}
         </Field>
         <Field label="Typ konta" error={errors.accountType?.message}>
           <select {...register("accountType")} className="input">
@@ -139,11 +145,15 @@ export function PromotionForm({
             />
           )}
         </Field>
-        <Field label="Prowizja partnerska (w groszach)" error={errors.affiliateCommissionCents?.message}>
+        <Field
+          label="Prowizja partnerska — wpływa na kolejność „Polecane”, NIE wpływa na ocenę serwisu"
+          error={errors.affiliateCommissionCents?.message}
+        >
           <p className="mb-2 text-sm text-ink-500">
-            Ile bank płaci nam za jedno spełnienie warunków (np. 12000 = 120 zł; z panelu eBrokerPartner). Pole
-            wewnętrzne: wpływa wyłącznie na kolejność „Polecane”, nigdy na „ocenę serwisu”, i nie jest nigdzie
-            wyświetlane publicznie. Puste = nieznana.
+            Ile bank płaci nam za jedno spełnienie warunków w groszach (np. 12000 = 120 zł; z panelu eBrokerPartner).
+            Pole wewnętrzne: kwota nie jest nigdzie wyświetlana publicznie, ale sam fakt, że prowizja wpływa na
+            kolejność „Polecane”, jest jawnie opisany na stronie /jak-zarabiamy. „Ocena serwisu” nigdy jej nie
+            uwzględnia. Puste = nieznana (oferta bez prowizji jest ułożona według oceny).
           </p>
           <input
             type="number"
@@ -155,6 +165,7 @@ export function PromotionForm({
         </Field>
         <Field label="Uzasadnienie oceny" error={errors.ratingReason?.message}>
           <input {...register("ratingReason")} className="input" placeholder="Wysoka premia i niewiele wymaganych czynności." />
+          {ratingReasonWarn && <Warning>{ratingReasonWarn}</Warning>}
         </Field>
       </section>
 
@@ -355,6 +366,15 @@ export function PromotionForm({
         {isSubmitting ? "Zapisywanie..." : submitLabel}
       </button>
     </form>
+  );
+}
+
+function Warning({ children }: { children: React.ReactNode }) {
+  return (
+    <p role="note" className="mt-1.5 rounded-md border border-ink-100 bg-gold-100 px-3 py-2 text-xs text-ink-900">
+      <span className="font-semibold">Uwaga: </span>
+      {children}
+    </p>
   );
 }
 

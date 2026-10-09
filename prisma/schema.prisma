@@ -61,6 +61,12 @@ model User {
   // never shown as "last login" anywhere.
   lastActiveAt DateTime?
 
+  // Consent to the terms (regulamin) and the version accepted. Both stay NULL
+  // for accounts created before this was recorded: NULL means "no recorded
+  // acceptance", never "accepted".
+  termsAcceptedAt DateTime?
+  termsVersion    String?
+
   comments     Comment[]
   commentLikes CommentLike[]
   clicks       Click[]

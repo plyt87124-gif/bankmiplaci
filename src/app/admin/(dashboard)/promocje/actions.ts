@@ -16,6 +16,18 @@ async function requireAdmin() {
   return session;
 }
 
+/**
+ * Every public page that lists or compares offers. Called after any admin
+ * write that can change what they show (content, status, deletion), so a
+ * cached page never keeps serving the previous state.
+ */
+function revalidatePublicListings() {
+  revalidatePath("/");
+  revalidatePath("/promocje");
+  revalidatePath("/porownaj");
+  revalidatePath("/admin/promocje");
+}
+
 export async function createPromotion(values: PromotionFormValues) {
   await requireAdmin();
   const data = promotionFormSchema.parse(values);
@@ -61,8 +73,7 @@ export async function createPromotion(values: PromotionFormValues) {
 
   await recomputeRatings();
 
-  revalidatePath("/promocje");
-  revalidatePath("/admin/promocje");
+  revalidatePublicListings();
   redirect(`/admin/promocje/${promotion.id}`);
 }
 
@@ -76,9 +87,8 @@ export async function updatePromotion(id: string, values: PromotionFormValues) {
 
   await recomputeRatings();
 
-  revalidatePath("/promocje");
+  revalidatePublicListings();
   revalidatePath(`/promocje/${data.slug}`);
-  revalidatePath("/admin/promocje");
 }
 
 export async function setPromotionStatus(id: string, status: PromotionStatus) {
@@ -86,8 +96,7 @@ export async function setPromotionStatus(id: string, status: PromotionStatus) {
   await db.promotion.update({ where: { id }, data: { status } });
   // Publishing/retiring a promotion changes who it's competing against.
   await recomputeRatings();
-  revalidatePath("/promocje");
-  revalidatePath("/admin/promocje");
+  revalidatePublicListings();
 }
 
 export async function deletePromotion(id: string) {
@@ -95,6 +104,5 @@ export async function deletePromotion(id: string) {
   await db.promotion.delete({ where: { id } });
   // Removing a promotion can shift its former peers' relative scores.
   await recomputeRatings();
-  revalidatePath("/promocje");
-  revalidatePath("/admin/promocje");
+  revalidatePublicListings();
 }

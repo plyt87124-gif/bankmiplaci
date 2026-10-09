@@ -23,14 +23,14 @@ export interface PromotionFilters {
  * anything whose end_date has already passed, even if a scheduled job
  * hasn't flipped its status yet (belt-and-braces against a missed cron).
  */
-function activeWhere(): Prisma.PromotionWhereInput {
+export function activeWhere(): Prisma.PromotionWhereInput {
   return {
     status: PromotionStatus.ACTIVE,
     endDate: { gte: signupCutoff() }
   };
 }
 
-function sortToOrderBy(sort?: SortKey): Prisma.PromotionOrderByWithRelationInput[] {
+export function sortToOrderBy(sort?: SortKey): Prisma.PromotionOrderByWithRelationInput[] {
   switch (sort) {
     case "highest-bonus":
       return [{ maxBonusCents: "desc" }];
@@ -55,13 +55,18 @@ function sortToOrderBy(sort?: SortKey): Prisma.PromotionOrderByWithRelationInput
 export function stripPrivateFields<T extends { affiliateCommissionCents?: number | null }>(
   row: T
 ): Omit<T, "affiliateCommissionCents"> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { affiliateCommissionCents, ...rest } = row;
+  void affiliateCommissionCents; // intentionally dropped
   return rest;
 }
 
-export async function listActivePromotions(filters: PromotionFilters = {}) {
-  const where: Prisma.PromotionWhereInput = {
+/**
+ * The public-listing WHERE shared by every read path that honours
+ * PromotionFilters (full rows here, slim cards in promotionCards.ts), so the
+ * two can never disagree about which offers a filter matches.
+ */
+export function buildActiveWhere(filters: PromotionFilters = {}): Prisma.PromotionWhereInput {
+  return {
     ...activeWhere(),
     ...(filters.bankSlug ? { bank: { slug: filters.bankSlug } } : {}),
     ...(filters.accountType ? { accountType: filters.accountType as never } : {}),
@@ -85,6 +90,10 @@ export async function listActivePromotions(filters: PromotionFilters = {}) {
         }
       : {})
   };
+}
+
+export async function listActivePromotions(filters: PromotionFilters = {}) {
+  const where = buildActiveWhere(filters);
 
   const rows = await db.promotion.findMany({
     where,
