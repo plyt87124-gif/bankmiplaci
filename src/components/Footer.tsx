@@ -1,60 +1,113 @@
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
+import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
+import { db } from "@/lib/db";
+import { formatDatePL } from "@/lib/format";
+import { getFooterColumns } from "@/lib/navigation";
+import { PUBLISHER, publisherAddress } from "@/lib/publisher";
+import { isoDatePL, toValidDate, warsawYear } from "@/lib/seo/dates";
+import { activeWhere } from "@/lib/services/promotions";
 
-const columns = [
-  {
-    title: "Serwis",
-    links: [
-      { href: "/promocje", label: "Wszystkie promocje" },
-      { href: "/blog", label: "Centrum wiedzy" },
-      { href: "/faq", label: "FAQ" },
-      { href: "/kontakt", label: "Kontakt" }
-    ]
+/** How long the "Dane zaktualizowano" date may lag behind the database. */
+const DATA_UPDATED_REVALIDATE_SECONDS = 600;
+
+/**
+ * Newest `lastVerifiedAt` among the offers visible on the site (ISO string, or
+ * null when there is no offer). One tiny aggregate, cached for 10 minutes, so
+ * the footer never costs a query per page view. Returns a string because the
+ * data cache stores JSON.
+ */
+const readLatestVerification = unstable_cache(
+  async (): Promise<string | null> => {
+    const { _max } = await db.promotion.aggregate({ where: activeWhere(), _max: { lastVerifiedAt: true } });
+    return _max.lastVerifiedAt ? _max.lastVerifiedAt.toISOString() : null;
   },
-  {
-    title: "Zaufanie",
-    links: [
-      { href: "/jak-zarabiamy", label: "Jak zarabiamy" },
-      { href: "/regulamin", label: "Regulamin" },
-      { href: "/polityka-prywatnosci", label: "Polityka prywatności" },
-      { href: "/cookies", label: "Cookies" }
-    ]
-  }
-];
+  ["footer-latest-verification"],
+  { revalidate: DATA_UPDATED_REVALIDATE_SECONDS }
+);
 
-export function Footer() {
+/** The footer must never take the page down: a failed lookup just omits the line. */
+async function getDataUpdatedAt(): Promise<string | null> {
+  try {
+    return await readLatestVerification();
+  } catch {
+    return null;
+  }
+}
+
+const footerLinkClasses =
+  "inline-flex min-h-11 items-center py-1 text-small text-ink-700 hover:text-ink-900 hover:underline hover:underline-offset-[3px] md:min-h-8";
+
+/**
+ * The presentational footer: everything it shows comes from its props and from
+ * src/lib/navigation.ts, src/lib/publisher.ts and the disclosure copy, so it
+ * renders without a database (tests, Storybook-like checks).
+ */
+export function FooterView({ dataUpdatedAt, now }: { dataUpdatedAt?: Date | string | null; now?: Date }) {
+  const columns = getFooterColumns();
+  const updated = toValidDate(dataUpdatedAt);
+  const updatedIso = updated ? isoDatePL(updated) : null;
+  const year = warsawYear(now ?? new Date());
+
   return (
-    <footer className="border-t border-ink-100 bg-surface">
-      <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
-        <div>
-          <p className="font-display text-lg font-semibold text-ink-900">Bankmiplaci</p>
-          <p className="mt-3 max-w-sm text-sm text-ink-500">
-            Porównujemy aktualne promocje bankowe w Polsce i pokazujemy uczciwie, ile możesz otrzymać oraz co
-            musisz zrobić, aby zdobyć premię.
-          </p>
+    <footer className="border-t border-line bg-sunken">
+      <div className="container-page py-12 lg:py-14">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
+          <div>
+            <p className="font-display text-[22px] font-semibold leading-none text-ink-900">Bankmiplaci</p>
+            <p className="mt-3 max-w-sm text-small text-ink-500">
+              Porównujemy aktualne promocje bankowe w Polsce i pokazujemy uczciwie, ile możesz otrzymać oraz co musisz
+              zrobić, aby zdobyć premię.
+            </p>
+          </div>
+
+          <nav aria-label="Stopka" className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
+            {columns.map((column) => (
+              <div key={column.title}>
+                <h2 className="font-body text-small font-semibold tracking-normal text-ink-900">{column.title}</h2>
+                <ul className="mt-2">
+                  {column.links.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className={footerLinkClasses}>
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
         </div>
 
-        {columns.map((col) => (
-          <div key={col.title}>
-            <p className="text-sm font-semibold text-ink-900">{col.title}</p>
-            <ul className="mt-4 space-y-2.5">
-              {col.links.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-ink-500 hover:text-ink-900">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+        <div className="mt-10 space-y-3 border-t border-line pt-8">
+          <AffiliateDisclosure variant="footer" />
 
-      <div className="border-t border-ink-100 py-6">
-        <div className="container-page flex flex-col gap-2 text-xs text-ink-300 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Bankmiplaci. Wszystkie prawa zastrzeżone.</p>
-          <p>Bankmiplaci nie jest oficjalnym partnerem żadnego z wymienionych banków, chyba że wskazano inaczej.</p>
+          {updated && updatedIso ? (
+            <p className="text-small text-ink-500" data-footer="updated">
+              Dane zaktualizowano: <time dateTime={updatedIso}>{formatDatePL(updated, "short")}</time>
+            </p>
+          ) : null}
+
+          <p className="max-w-[68ch] text-small text-ink-500" data-footer="publisher">
+            Wydawca: {PUBLISHER.name} ({PUBLISHER.legalForm}), {publisherAddress()}, NIP&nbsp;{PUBLISHER.nip}, REGON&nbsp;
+            {PUBLISHER.regon},{" "}
+            <a href={`mailto:${PUBLISHER.email}`} className="link-inline">
+              {PUBLISHER.email}
+            </a>
+            .
+          </p>
+
+          <p className="text-small text-ink-500" data-footer="copyright">
+            © {year} Bankmiplaci. Wszystkie prawa zastrzeżone.
+          </p>
         </div>
       </div>
     </footer>
   );
+}
+
+/** Site footer (server component): FooterView plus the "Dane zaktualizowano" date from the database. */
+export async function Footer() {
+  const dataUpdatedAt = await getDataUpdatedAt();
+  return <FooterView dataUpdatedAt={dataUpdatedAt} />;
 }

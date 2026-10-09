@@ -1,113 +1,136 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Menu, X, ArrowRight, User } from "lucide-react";
-import { ButtonLink } from "@/components/ui/Button";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { User } from "lucide-react";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { MobileNav, type MobileNavAccount } from "@/components/MobileNav";
 import { useAuthModal } from "@/components/AuthModalProvider";
+import { useSession } from "@/components/SessionProvider";
+import { cn } from "@/lib/cn";
+import { getMainNav, navAriaCurrent } from "@/lib/navigation";
 
-const NAV = [
-  { href: "/porownaj", label: "Porównaj konta" },
-  { href: "/promocje?difficulty=VERY_EASY,EASY&sort=easiest", label: "Najłatwiejsze promocje" },
-  { href: "/faq", label: "FAQ" }
-];
-
-interface HeaderUser {
-  id: string;
-  email: string;
-  name: string | null;
+interface HeaderProps {
+  /**
+   * @deprecated Ignored. The header reads the signed-in user from
+   * `useSession()`; the root layout may keep passing it until it is cleaned up.
+   */
+  user?: unknown;
 }
 
-export function Header({ user }: { user: HeaderUser | null }) {
-  const [open, setOpen] = useState(false);
+/**
+ * Site header (docs/redesign-v2/01-design-spec.md, section 5).
+ *
+ *  - Sticky, 56 px (mobile) / 64 px. The bottom border is transparent at the
+ *    top of the page and becomes `line` once the page has scrolled: a 1 px
+ *    sentinel at the very top is watched by an IntersectionObserver (no scroll
+ *    listener), the border change takes 200 ms. No blur, the logo never shrinks.
+ *  - From lg: wordmark, `Promocje - Porownaj - Quiz - Poradniki - Jak to dziala`
+ *    (the current page has `aria-current` and an underline), then the account
+ *    entry and the theme switch. Below lg: wordmark, theme switch and the
+ *    hamburger (MobileNav).
+ *  - The signed-in user comes from the session context (`useSession`), so the
+ *    header follows a sign-in/out without a page reload. The sign-in dialog is
+ *    still opened with `openAuth({ mode: "login" })`.
+ *  - Links come from src/lib/navigation.ts: pages that are not live yet do not
+ *    appear. There is deliberately no "Znajdz promocje" button: it duplicated
+ *    "Promocje".
+ *  - The lifetime earnings counter is not mounted here: its number only exists
+ *    inside the checklist on /konto (EarningsProvider), where it stays.
+ */
+export function Header(props: HeaderProps) {
+  void props;
+  const { user, status } = useSession();
   const { openAuth } = useAuthModal();
+  const pathname = usePathname();
+  const links = getMainNav();
+
+  const [scrolled, setScrolled] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver((entries) => {
+      const latest = entries[entries.length - 1];
+      if (latest) setScrolled(!latest.isIntersecting);
+    });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  const account: MobileNavAccount = status === "loading" ? "loading" : user ? "user" : "guest";
+  const login = () => openAuth({ mode: "login" });
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ink-100 bg-paper/90 backdrop-blur">
-      <div className="container-page flex h-16 items-center justify-between">
-        <Link href="/" className="font-display text-xl font-semibold tracking-tight text-ink-900">
-          Bankmiplaci
-        </Link>
-
-        <nav className="hidden items-center gap-8 md:flex">
-          {NAV.map((item) => (
-            <Link key={item.href} href={item.href} className="text-sm font-medium text-ink-700 hover:text-ink-900">
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden items-center gap-4 md:flex">
-          {user ? (
-            <Link href="/konto" className="flex items-center gap-1.5 text-sm font-medium text-ink-700 hover:text-ink-900">
-              <User className="h-4 w-4" />
-              {user.name || "Moje konto"}
-            </Link>
-          ) : (
-            <button
-              onClick={() => openAuth({ mode: "login" })}
-              className="flex items-center gap-1.5 text-sm font-medium text-ink-700 hover:text-ink-900"
+    <>
+      {/* Page-top marker for the scroll border; out of flow, so it takes no space. */}
+      <div ref={sentinelRef} aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-px w-px" />
+      <header
+        data-scrolled={scrolled ? "true" : "false"}
+        className={cn(
+          "sticky top-0 z-40 border-b bg-paper/95 transition-[border-color] duration-base ease-out",
+          scrolled ? "border-line" : "border-transparent"
+        )}
+      >
+        <div className="container-page flex h-14 items-center gap-4 sm:h-16">
+          <div className="flex min-w-0 items-center gap-6 xl:gap-10">
+            <Link
+              href="/"
+              aria-current={pathname === "/" ? "page" : undefined}
+              className="-mx-1 inline-flex min-h-11 items-center rounded-field px-1 font-display text-[22px] font-semibold leading-none tracking-tight text-ink-900"
             >
-              <User className="h-4 w-4" />
-              Zaloguj się
-            </button>
-          )}
-          <ThemeToggle />
-          <ButtonLink href="/promocje" size="sm">
-            Znajdź promocję <ArrowRight className="h-4 w-4" />
-          </ButtonLink>
-        </div>
+              Bankmiplaci
+            </Link>
 
-        <ThemeToggle className="md:hidden" />
-        <button
-          className="rounded-md p-2 text-ink-700 md:hidden"
-          aria-label={open ? "Zamknij menu" : "Otwórz menu"}
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
-      </div>
+            <nav aria-label="Menu główne" className="hidden items-center gap-1 lg:flex">
+              {links.map((link) => {
+                const current = navAriaCurrent(pathname, link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    aria-current={current}
+                    className={cn(
+                      "relative inline-flex min-h-11 items-center whitespace-nowrap px-3 text-ui font-medium transition-colors duration-150 ease-out",
+                      current ? "text-ink-900" : "text-ink-700 hover:text-ink-900"
+                    )}
+                  >
+                    {link.label}
+                    {current ? (
+                      <span aria-hidden="true" className="absolute inset-x-3 bottom-1.5 h-0.5 rounded-full bg-action" />
+                    ) : null}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
 
-      {open && (
-        <div className="border-t border-ink-100 bg-paper md:hidden">
-          <nav className="container-page flex flex-col gap-1 py-3">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className="rounded-lg px-2 py-3 text-base font-medium text-ink-700 hover:bg-ink-100"
-              >
-                {item.label}
-              </Link>
-            ))}
-            {user ? (
-              <Link
-                href="/konto"
-                onClick={() => setOpen(false)}
-                className="rounded-lg px-2 py-3 text-base font-medium text-ink-700 hover:bg-ink-100"
-              >
-                {user.name || "Moje konto"}
-              </Link>
-            ) : (
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  openAuth({ mode: "login" });
-                }}
-                className="rounded-lg px-2 py-3 text-left text-base font-medium text-ink-700 hover:bg-ink-100"
-              >
-                Zaloguj się
-              </button>
-            )}
-            <ButtonLink href="/promocje" className="mt-2 w-full" onClick={() => setOpen(false)}>
-              Znajdź promocję
-            </ButtonLink>
-          </nav>
+          <div className="ml-auto flex items-center gap-1">
+            <div className="hidden lg:block">
+              {status === "loading" ? (
+                // Same footprint as the real entry, so nothing shifts when the session arrives.
+                <span aria-hidden="true" className="inline-block h-11 w-32" />
+              ) : user ? (
+                <ButtonLink href="/konto" variant="ghost">
+                  <User size={20} aria-hidden="true" />
+                  Moje konto
+                </ButtonLink>
+              ) : (
+                <Button variant="ghost" onClick={login}>
+                  <User size={20} aria-hidden="true" />
+                  Zaloguj się
+                </Button>
+              )}
+            </div>
+
+            <ThemeToggle />
+            <MobileNav links={links} pathname={pathname} account={account} onLogin={login} />
+          </div>
         </div>
-      )}
-    </header>
+      </header>
+    </>
   );
 }
