@@ -1,0 +1,233 @@
+/*
+ * Bankmiplaci v2 - ALL motion in one file (easy to review, easy to delete).
+ * Spec: docs/redesign-v2/01-design-spec.md section 6.
+ *
+ * Rules this file follows:
+ *  - Only transform and opacity animate (plus grid-template-rows for
+ *    collapsing, and background/border colour transitions).
+ *  - No entrance effect can hide content without JS: everything that starts
+ *    from opacity:0 is scoped to `.motion-ok`, a class the <head> script in
+ *    layout.tsx adds ONLY when prefers-reduced-motion is not "reduce".
+ *    No JS, or reduced motion = content is simply visible from the first paint.
+ *  - No bounce / spring / overshoot, no sparks, no infinite loops except the
+ *    loading skeleton. A CTA link never waits for an animation.
+ *
+ * Plain CSS on purpose (no Tailwind @layer): it is imported after globals.css.
+ */
+
+:root {
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-accordion: 250ms;
+  --dur-reveal: 400ms;
+}
+
+/* ------------------------------------------------------------------ */
+/* Keyframes                                                          */
+/* ------------------------------------------------------------------ */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal panel: fade + 8 px rise + scale .98 -> 1. */
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Checklist tick, only after the user actually ticks a box. */
+@keyframes check-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Unlocked reward: a ring that fades out while growing 3 %. Needs a
+   positioned element (add `relative`); the ring is the ::after layer. */
+@keyframes ring-pulse {
+  0% { opacity: 0.85; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.03); }
+}
+
+@keyframes skeleton-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Lifetime earnings badge: max 1.04, never below 1 (no overshoot). */
+@keyframes earnings-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+@keyframes reward-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+/* Thin progress bar shown while a filter change is loading. */
+@keyframes pending-bar {
+  from { transform: scaleX(0.1); }
+  to { transform: scaleX(0.9); }
+}
+
+/* Safety net for [data-reveal]: if the observer never runs, show it anyway. */
+@keyframes reveal-failsafe {
+  to { opacity: 1; transform: none; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Animation classes                                                  */
+/* ------------------------------------------------------------------ */
+
+.animate-fade-in { animation: fade-in 160ms var(--ease-out) both; }
+
+.animate-dialog-in { animation: dialog-in 200ms var(--ease-out) both; }
+dialog.animate-dialog-in::backdrop { animation: fade-in 160ms var(--ease-out) both; }
+
+.animate-check-in { animation: check-in 160ms var(--ease-out) both; }
+
+.animate-ring-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid rgb(var(--color-gold-500));
+  pointer-events: none;
+  opacity: 0;
+  animation: ring-pulse 600ms var(--ease-out) 1 both;
+}
+
+.animate-earnings-pop { animation: earnings-pop 400ms var(--ease-out); }
+.animate-reward-pop { animation: reward-pop 400ms var(--ease-out); }
+
+/* LEGACY: EarningsCounter.tsx (WP-05) still renders spark <span>s with this
+   class until it is migrated. Sparks are removed from the design, so hide them. */
+.animate-earnings-firework { display: none; }
+
+/* ------------------------------------------------------------------ */
+/* Loading: skeleton, pending state                                   */
+/* ------------------------------------------------------------------ */
+
+:where(.skeleton) {
+  background-color: rgb(var(--color-ink-100));
+  border-radius: 6px;
+}
+/* Appear only after 200 ms (fast loads never flash), fade 150 ms, then pulse. */
+.motion-ok .skeleton {
+  opacity: 0;
+  animation:
+    skeleton-in 150ms var(--ease-out) 200ms forwards,
+    skeleton-pulse 1600ms var(--ease-in-out) 350ms infinite;
+}
+
+/* Result grid while a filter/sort transition is pending (aria-busy="true"):
+   dims to .6 after a 150 ms grace period, fades back in 160 ms. */
+.pending-fade { transition: opacity 160ms var(--ease-out); }
+.pending-fade[aria-busy="true"] { opacity: 0.6; transition-delay: 150ms; }
+.pending-bar {
+  transform-origin: left center;
+  animation: pending-bar 800ms var(--ease-out) forwards;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reveal on scroll (sections BELOW the fold only - never hero/LCP)    */
+/* ------------------------------------------------------------------ */
+
+.motion-ok [data-reveal] {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: reveal-failsafe 0s 2.5s forwards;
+}
+.motion-ok [data-reveal][data-in] {
+  opacity: 1;
+  transform: none;
+  animation: none;
+  /* stagger: --reveal-i is (index % 6), so the delay never exceeds 200 ms */
+  transition:
+    opacity var(--dur-reveal) var(--ease-out) calc(var(--reveal-i, 0) * 40ms),
+    transform var(--dur-reveal) var(--ease-out) calc(var(--reveal-i, 0) * 40ms);
+}
+
+/* ------------------------------------------------------------------ */
+/* Collapsing: grid-rows (accordion, mobile menu) and sticky CTA bar  */
+/* ------------------------------------------------------------------ */
+
+/* <div class="collapse" data-open="true|false"><div>...always in the DOM...</div></div>
+   Pair with `inert` on the inner element while closed. Mobile menu: set
+   style="--collapse-dur: var(--dur-base)" for 200 ms instead of 250 ms. */
+.collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--collapse-dur, var(--dur-accordion)) var(--ease-out);
+}
+.collapse[data-open="true"] { grid-template-rows: 1fr; }
+.collapse > * { min-height: 0; overflow: hidden; }
+
+/* Chevron on <summary> / disclosure buttons: rotates 180 deg when open. */
+.acc-chevron { transition: transform var(--dur-base) var(--ease-out); }
+details[open] > summary .acc-chevron,
+[aria-expanded="true"] > .acc-chevron { transform: rotate(180deg); }
+
+/* Native <details class="accordion"> height animation where the browser
+   supports ::details-content + interpolate-size; elsewhere it opens instantly. */
+@supports selector(::details-content) {
+  .motion-ok details.accordion::details-content {
+    block-size: 0;
+    overflow-y: clip;
+    transition:
+      block-size var(--dur-accordion) var(--ease-out),
+      content-visibility var(--dur-accordion) allow-discrete;
+  }
+  .motion-ok details.accordion[open]::details-content { block-size: auto; }
+  .motion-ok { interpolate-size: allow-keywords; }
+}
+
+/* Sticky bottom CTA bar on mobile: slides up once the main CTA has left the viewport. */
+.slide-up-bar {
+  transform: translateY(100%);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.slide-up-bar[data-visible="true"] { transform: none; }
+
+/* ------------------------------------------------------------------ */
+/* Print: never print hidden content                                  */
+/* ------------------------------------------------------------------ */
+
+@media print {
+  [data-reveal],
+  .motion-ok [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion: the emergency switch (also covers JS-less cases)   */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton { animation: none !important; opacity: 1 !important; }
+  .pending-bar { animation: none !important; transform: scaleX(0.9); }
+  [data-reveal] { opacity: 1 !important; transform: none !important; animation: none !important; }
+}
