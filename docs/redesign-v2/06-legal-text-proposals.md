@@ -4,7 +4,7 @@ Status: PROPOZYCJE. Żadne z poniższych brzmień NIE jest opublikowane na stron
 
 Konwencje:
 - `[DO POTWIERDZENIA]` oznacza wartość lub fakt, którego nie da się ustalić z kodu albo który wymaga decyzji właściciela lub prawnika. Nie wolno publikować brzmienia z takim znacznikiem.
-- Opisy techniczne poniżej wynikają z kodu repozytorium na dzień 2026-10-09 (modele `PageView`, `Click`, komponent `AttributionCapture`, `theme.ts`). Zmiana kodu wymaga aktualizacji tekstu.
+- Opisy techniczne poniżej wynikają z kodu repozytorium na dzień 2026-10-09 (modele `PageView`, `Impression`, `Click`, komponenty `AttributionCapture`, `PromotionImpression`, `AffiliateCtaLink`, plik `attributionHref.ts`, `theme.ts`, `visitorHash.ts`). Każde twierdzenie faktyczne sprawdzono wyszukiwaniem w kodzie; to, czego z kodu nie da się ustalić, ma znacznik `[DO POTWIERDZENIA]`. Zmiana kodu wymaga aktualizacji tekstu.
 - Numeracja punktów jest robocza; wstawienie nowych rozdziałów przesunie numerację w odsyłaczach wewnętrznych (np. „patrz sekcja 6” w Cookies).
 
 ---
@@ -16,9 +16,14 @@ Konwencje:
 | Klucz | Miejsce | Cel | Zawartość | Czas |
 |---|---|---|---|---|
 | `theme` | `localStorage` | zapamiętanie wybranego motywu (jasny, ciemny, systemowy) | jedna z wartości `light`, `dark`, `system` | do usunięcia przez użytkownika (brak wygasania) |
-| `bmp_attribution` | `sessionStorage` | zapamiętanie źródła wejścia (parametry `utm_*` i sklasyfikowane źródło ruchu: bezpośrednie, wyszukiwarka, social, domena) do momentu ewentualnego kliknięcia „Przejdź do promocji” | parametry `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term` (o ile były w adresie), `trafficSource`, znacznik czasu | do zamknięcia karty; dodatkowo odczyt ignoruje wpis starszy niż 24 godziny |
+| `bmp_attribution` | `sessionStorage` | zapamiętanie źródła wejścia (parametry `utm_*` i sklasyfikowane źródło ruchu: bezpośrednie, wyszukiwarka, social, domena) do późniejszego powiązania z wyświetleniem oferty i kliknięciem „Przejdź do promocji” | parametry `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term` (o ile były w adresie), `trafficSource`, znacznik czasu | do zamknięcia karty; dodatkowo odczyt ignoruje wpis starszy niż 24 godziny |
 
-`bmp_attribution` nie jest wysyłany na serwer automatycznie. Jest dołączany do zdarzenia kliknięcia w link „Przejdź do promocji” (zapis w tabeli `Click`).
+`bmp_attribution` nie jest wysyłany na serwer automatycznie (nie jest cookie ani nagłówkiem). Zapis powstaje przy pierwszym wejściu w danej karcie (pierwsze źródło), a nadpisuje go dopiero nowe wejście z adresu zawierającego `utm_*`. Zawartość jest odczytywana przez kod strony w dwóch miejscach:
+
+1. **Wyświetlenie oferty** (`PromotionImpression`, strona szczegółów promocji): `trafficSource` i `utm_*` są wysyłane w treści żądania `POST /api/track/impression` i zapisywane w tabeli `Impression`.
+2. **Link „Przejdź do promocji”** (`AffiliateCtaLink` i `attributionHref.ts`): `utm_*` oraz `traffic_source` są doklejane jako parametry adresu `/out/…` i po kliknięciu zapisywane w tabeli `Click`. Parametry te są widoczne w adresie w przeglądarce użytkownika.
+
+W obu przypadkach wpis starszy niż 24 godziny jest pomijany. [DO POTWIERDZENIA: czy przekierowanie do partnera przekazuje te parametry dalej; z kodu `/out/[slug]` wynika tylko, że odczytuje je z adresu żądania do zapisu `Click`.]
 
 ### 1.2 Proponowane brzmienie: nowa sekcja w „Cookies” (po sekcji 2 lub jako 2a)
 
@@ -27,7 +32,7 @@ Konwencje:
 > Oprócz plików cookies Serwis korzysta z pamięci przeglądarki użytkownika (Web Storage). Dane te nie są automatycznie wysyłane do serwera przy każdym żądaniu, jak ma to miejsce w przypadku cookies.
 >
 > 1. Klucz `theme` (localStorage): zapamiętuje wybrany przez użytkownika motyw wyglądu strony (jasny, ciemny albo zgodny z ustawieniem urządzenia). Ma charakter funkcjonalny i jest zapisywany wyłącznie po wybraniu motywu przez użytkownika. Wpis można usunąć w ustawieniach przeglądarki. [DO POTWIERDZENIA: czy zapis następuje wyłącznie po aktywnym wyborze, czy także przy pierwszym wejściu. Z kodu: zapis przy zmianie preferencji.]
-> 2. Klucz `bmp_attribution` (sessionStorage): zapamiętuje, z jakiego źródła użytkownik wszedł do Serwisu (wartości parametrów `utm_*` z adresu strony oraz ogólna kategoria źródła: wejście bezpośrednie, wyszukiwarka, media społecznościowe albo nazwa domeny odsyłającej). Wpis jest usuwany po zamknięciu karty przeglądarki. Jeżeli użytkownik kliknie w link „Przejdź do promocji”, zawartość wpisu jest dołączana do zapisu tego kliknięcia po stronie Serwisu (patrz Polityka prywatności). Wpis nie zawiera danych identyfikujących użytkownika.
+> 2. Klucz `bmp_attribution` (sessionStorage): zapamiętuje, z jakiego źródła użytkownik wszedł do Serwisu (wartości parametrów `utm_*` z adresu strony oraz ogólna kategoria źródła: wejście bezpośrednie, wyszukiwarka, media społecznościowe albo nazwa domeny odsyłającej). Wpis jest usuwany po zamknięciu karty przeglądarki. Zawartość wpisu jest przesyłana do Serwisu w dwóch sytuacjach: przy wyświetleniu strony szczegółów promocji (zapis wyświetlenia oferty) oraz po kliknięciu w link „Przejdź do promocji” (zapis kliknięcia); patrz Polityka prywatności. Sam wpis nie zawiera danych identyfikujących użytkownika, ale zapisane w Serwisie zdarzenia mogą być powiązane z kontem zalogowanego użytkownika.
 >
 > [DO POTWIERDZENIA PRZEZ PRAWNIKA: czy zapis `bmp_attribution` stanowi „niezbędny” dostęp do urządzenia (art. 173 Prawa telekomunikacyjnego) i może funkcjonować bez zgody. Plan 04 §7 wskazuje opcję bezpieczną: usunięcie zapisu do sessionStorage i przekazywanie atrybucji wyłącznie w parametrach żądania lub po stronie serwera. Jeżeli prawnik uzna zgodę za wymaganą, bez banera zgody ten mechanizm należy wyłączyć, a opis powyżej nie jest publikowany.]
 
@@ -38,7 +43,7 @@ Zmiana tytułu sekcji na „Lista wykorzystywanych cookies i pamięci przegląda
 | Nazwa | Dostawca | Cel | Rodzaj | Okres przechowywania |
 |---|---|---|---|---|
 | `theme` (localStorage) | Bankmiplaci (własny) | Zapamiętanie wybranego motywu wyglądu | Funkcjonalny | Do usunięcia przez użytkownika |
-| `bmp_attribution` (sessionStorage) | Bankmiplaci (własny) | Zapamiętanie źródła wejścia do powiązania z kliknięciem „Przejdź do promocji” | [DO POTWIERDZENIA: kwalifikacja: niezbędny / funkcjonalny / analityczny] | Do zamknięcia karty (maks. 24 godziny) |
+| `bmp_attribution` (sessionStorage) | Bankmiplaci (własny) | Zapamiętanie źródła wejścia do powiązania z wyświetleniem oferty i kliknięciem „Przejdź do promocji” | [DO POTWIERDZENIA: kwalifikacja: niezbędny / funkcjonalny / analityczny] | Do zamknięcia karty (maks. 24 godziny) |
 
 ### 1.4 Proponowane zdanie o przyszłych narzędziach (sekcja 5 lub 3)
 
@@ -56,24 +61,26 @@ Obecna sekcja 3 jest sformułowana warunkowo („mogą być rejestrowane”, „
 
 ### 2.1 Stan faktyczny (z kodu)
 
-- **Wyświetlenie strony** (`PageView`): ścieżka, data i czas, losowy identyfikator sesji, skrót SHA-256 adresu IP (z solą), źródło wejścia (kategoria z nagłówka odsyłającego), identyfikator użytkownika, jeśli jest zalogowany.
-- **Kliknięcie „Przejdź do promocji”** (`Click`): promocja, data i czas, identyfikator sesji, skrót SHA-256 z IP i User-Agent (z solą), przycisk źródłowy, ewentualny znacznik kampanii e-mail, kategoria źródła ruchu i parametry `utm_*` z `bmp_attribution`, identyfikator użytkownika, jeśli jest zalogowany.
-- **Wyświetlenia promocji**: [DO POTWIERDZENIA: osobny zapis zdarzeń wyświetlenia oferty. Plan 04 wymienia „wyświetlenia”; należy sprawdzić, czy istnieje oddzielny model, czy wystarczy `PageView` dla ścieżki oferty.]
-- Powiązanie zdarzeń z kontem następuje po zalogowaniu. Administrator Serwisu widzi aktywność w podziale na użytkowników. [DO POTWIERDZENIA: zakres widoku administratora w panelu, zob. `/admin`.]
-- Uwaga techniczna dla właściciela: sól do skrótu jest stałą w kodzie, więc skrót IP należy traktować jako dane osobowe (pseudonimizacja, nie anonimizacja). Zalecenie: rotowana sól albo skracanie adresu IP przed haszowaniem. To zmiana kodu, nie tekstu.
+- **Wyświetlenie strony** (`PageView`, `POST /api/track/pageview`, wywoływane przez `PageViewTracker` przy każdej zmianie ścieżki): ścieżka, data i czas, `sessionId` (nowy losowy UUID generowany przy każdym żądaniu, więc nie łączy odsłon w jedną sesję), skrót SHA-256 z adresu IP i User-Agent, źródło wejścia (kategoria klasyfikowana w przeglądarce na podstawie `document.referrer` i wysyłana do serwera przez stronę), identyfikator użytkownika, jeśli jest zalogowany. Parametry `utm_*` nie są tu zapisywane.
+- **Wyświetlenie oferty** (`Impression`, `POST /api/track/impression`, wywoływane przez `PromotionImpression` na stronie szczegółów promocji): promocja, data i czas, `sessionId` (nowy losowy UUID przy każdym zapisie), pole `source` (`referral` albo `direct`, wg obecności `document.referrer`), `trafficSource` oraz `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term` z `bmp_attribution` (o ile istnieje i nie jest starszy niż 24 godziny), identyfikator użytkownika, jeśli jest zalogowany. Tabela `Impression` nie ma pola ze skrótem adresu IP. Każde zapisane wyświetlenie oferty tworzy dodatkowo powiadomienie administratora (`AdminNotification`, typ `PROMOTION_VIEW`), które dla zalogowanego użytkownika zawiera jego nazwę lub adres e-mail. [DO POTWIERDZENIA: czy ujawnić to w Polityce prywatności jako dostęp administratora do aktywności kont; okres przechowywania powiadomień.]
+- **Kliknięcie „Przejdź do promocji”** (`Click`, trasa `/out/[slug]`): promocja, data i czas, `sessionId` (nowy losowy UUID), skrót SHA-256 z adresu IP i User-Agent, przycisk źródłowy (`src`), ewentualny znacznik kampanii e-mail (`cmp`), `traffic_source` i `utm_*` odczytane z adresu żądania (doklejone z `bmp_attribution`), identyfikator użytkownika, jeśli jest zalogowany. Kliknięcia powtórzone przez ten sam skrót w krótkim oknie czasowym są pomijane (deduplikacja), a kliknięcia wykrytych robotów i użytkowników wewnętrznych (`isLikelyBot`, `isInternalUser`) nie są zapisywane.
+- Zdarzenia użytkowników wewnętrznych (`isInternalUser`) nie są zapisywane także dla `PageView` i `Impression`.
+- Powiązanie zdarzeń z kontem: jeśli użytkownik jest zalogowany (ciasteczko sesji, `src/lib/userSession.ts`), `userId` jest zapisywany w `PageView`, `Impression` i `Click`. Zgodnie z komentarzami w schemacie Administrator Serwisu ma widok aktywności per użytkownik („co ten użytkownik oglądał / kliknął”). Po usunięciu konta `userId` w tych zdarzeniach jest zerowany (`onDelete: SetNull`), a samo zdarzenie zostaje. [DO POTWIERDZENIA: pełny zakres widoku administratora w panelu `/admin`.]
+- Uwaga techniczna dla właściciela: do skrótu dodawany jest stały ciąg („pepper”) zapisany w kodzie źródłowym (`src/lib/visitorHash.ts`), razem z adresem IP i User-Agent. To nie jest sekret przechowywany poza kodem ani losowa sól per rekord, a komentarz w kodzie wprost stwierdza, że celem jest deduplikacja, nie bezpieczeństwo kryptograficzne. Skrót należy traktować jako dane osobowe (pseudonimizacja, nie anonimizacja). Zalecenie: rotowany sekret ze zmiennej środowiskowej albo skracanie adresu IP przed haszowaniem. To zmiana kodu, nie tekstu.
 
 ### 2.2 Proponowane brzmienie sekcji „Dane techniczne i zdarzenia w Serwisie”
 
 > Podczas korzystania z Serwisu zapisujemy po stronie serwera następujące zdarzenia:
 >
-> 1. **Wyświetlenie strony.** Zapisujemy: ścieżkę odwiedzonej strony, datę i godzinę, losowy identyfikator sesji, skrót kryptograficzny (SHA-256, z użyciem tajnego składnika) adresu IP, ogólną kategorię źródła wejścia (wejście bezpośrednie, wyszukiwarka, media społecznościowe albo nazwę domeny odsyłającej) oraz, jeśli użytkownik jest zalogowany, identyfikator jego konta.
-> 2. **Kliknięcie w „Przejdź do promocji”.** Zapisujemy: promocję, datę i godzinę, identyfikator sesji, skrót SHA-256 obliczony z adresu IP i danych przeglądarki (User-Agent), informację, który przycisk został użyty, kategorię źródła wejścia i parametry kampanii `utm_*` (jeśli występowały w adresie strony), a dla zalogowanych identyfikator konta.
+> 1. **Wyświetlenie strony.** Zapisujemy: ścieżkę odwiedzonej strony, datę i godzinę, losowy identyfikator sesji, skrót kryptograficzny (SHA-256) obliczony z adresu IP i danych przeglądarki (User-Agent) z dodaniem stałego ciągu znaków, ogólną kategorię źródła wejścia (wejście bezpośrednie, wyszukiwarka, media społecznościowe albo nazwę domeny odsyłającej) oraz, jeśli użytkownik jest zalogowany, identyfikator jego konta.
+> 2. **Wyświetlenie strony szczegółów promocji.** Zapisujemy: promocję, datę i godzinę, losowy identyfikator, informację, czy użytkownik przyszedł z innej strony, kategorię źródła wejścia i parametry kampanii `utm_*` (jeśli występowały w adresie, którym użytkownik wszedł do Serwisu w danej karcie przeglądarki), a dla zalogowanych identyfikator konta.
+> 3. **Kliknięcie w „Przejdź do promocji”.** Zapisujemy: promocję, datę i godzinę, losowy identyfikator, skrót SHA-256 obliczony z adresu IP i danych przeglądarki (User-Agent), informację, który przycisk został użyty, kategorię źródła wejścia i parametry kampanii `utm_*` (jak wyżej), a dla zalogowanych identyfikator konta. Parametry te są dołączane do adresu przekierowania w Serwisie (`/out/…`).
 >
-> Nie zapisujemy pełnego adresu IP w tych zdarzeniach. Skrót adresu IP jest jednak powiązany z konkretnym urządzeniem lub łączem, dlatego traktujemy go jako dane osobowe i przetwarzamy zgodnie z RODO.
+> Nie zapisujemy pełnego adresu IP w tych zdarzeniach. Skrót adresu IP (przy wyświetleniach stron i kliknięciach) jest jednak powiązany z konkretnym urządzeniem lub łączem, dlatego traktujemy go jako dane osobowe i przetwarzamy zgodnie z RODO.
 >
-> Dla zalogowanych użytkowników zdarzenia są powiązane z kontem. Administrator Serwisu ma dostęp do podglądu aktywności w podziale na konta. [DO POTWIERDZENIA: czy to zdanie ma pozostać w tej formie.]
+> Dla zalogowanych użytkowników zdarzenia są powiązane z kontem. Administrator Serwisu ma dostęp do podglądu aktywności w podziale na konta. Po usunięciu konta powiązanie z kontem jest usuwane, a zdarzenie pozostaje w postaci niepowiązanej z osobą. [DO POTWIERDZENIA: czy to zdanie ma pozostać w tej formie.]
 >
-> Serwis nie korzysta z zewnętrznych narzędzi analitycznych ani reklamowych. Nie tworzymy profili reklamowych i nie podejmujemy decyzji w sposób zautomatyzowany wywołującej skutki prawne wobec użytkownika.
+> Serwis nie korzysta z zewnętrznych narzędzi analitycznych ani reklamowych [DO POTWIERDZENIA: w kodzie źródłowym nie sprawdzano wszystkich skryptów; zweryfikować także konfigurację hostingu]. Nie tworzymy profili reklamowych i nie podejmujemy decyzji w sposób zautomatyzowany wywołującej skutki prawne wobec użytkownika.
 
 ### 2.3 Proponowane brzmienie: cel i podstawa prawna
 
@@ -87,7 +94,7 @@ Obecna sekcja 3 jest sformułowana warunkowo („mogą być rejestrowane”, „
 
 > Zdarzenia opisane w sekcji [numer] przechowujemy [DO POTWIERDZENIA PRZEZ WŁAŚCICIELA: okres, propozycja robocza 13 albo 25 miesięcy], po czym są usuwane lub trwale anonimizowane. Dane konta przechowujemy do czasu usunięcia konta, a następnie przez okres niezbędny do dochodzenia lub obrony przed roszczeniami [DO POTWIERDZENIA: okres].
 
-Uwaga: obecnie w repozytorium nie ma zadania cyklicznie usuwającego zdarzenia. Opublikowanie konkretnego okresu wymaga najpierw zadania backendowego (cron kasujący), poza zakresem redesignu. Do tego czasu tekst nie może obiecywać usuwania.
+Uwaga: obecnie w repozytorium nie ma zadania cyklicznie usuwającego zdarzenia (zadania cron w `src/app/api/cron` dotyczą sprawdzania kwalifikowalności, przypomnień ściągi, katalogu eBroker, wygaszania promocji i przeliczania ocen). Opublikowanie konkretnego okresu wymaga najpierw zadania backendowego (cron kasujący), poza zakresem redesignu. Do tego czasu tekst nie może obiecywać usuwania.
 
 ### 2.5 Odbiorcy z nazwy i transfery poza EOG
 
@@ -100,7 +107,7 @@ Uwaga: obecnie w repozytorium nie ma zadania cyklicznie usuwającego zdarzenia. 
 >
 > Transfer danych poza Europejski Obszar Gospodarczy: [DO POTWIERDZENIA: czy dochodzi do transferu; podstawa, np. decyzja Komisji Europejskiej o odpowiednim stopniu ochrony (EU-US Data Privacy Framework) dla podmiotu certyfikowanego albo standardowe klauzule umowne; link do kopii zabezpieczeń].
 
-Nazwy podmiotów pochodzą z konfiguracji projektu (biblioteka `resend` w zależnościach, baza Neon wg dokumentacji projektu, hosting Vercel wg planu 04). Żadna z tych informacji nie została tu potwierdzona umowami powierzenia.
+Nazwy podmiotów: biblioteka `resend` jest w `package.json`; baza Neon i hosting Vercel wynikają z dokumentacji projektu i planu 04, nie z kodu, więc wymagają potwierdzenia. Żadna z tych informacji nie została tu potwierdzona umowami powierzenia.
 
 ---
 
@@ -111,12 +118,12 @@ Proponowane miejsce: po obecnym rozdziale 3 „Zasady korzystania z Serwisu”, 
 ### 3.1 Rozdział „Konto użytkownika”
 
 > 1. Korzystanie z podstawowych funkcji Serwisu (przeglądanie promocji, porównywanie) nie wymaga założenia konta.
-> 2. Konto jest potrzebne do funkcji takich jak dodawanie komentarzy, zapisywanie dat karencji w „Moje konto” i śledzenie postępów w „Ściądze”. [DO POTWIERDZENIA: aktualna lista funkcji wymagających konta.]
+> 2. Konto jest potrzebne do funkcji takich jak dodawanie komentarzy (API komentarzy zwraca błąd 401 dla niezalogowanych) oraz śledzenie postępów w „Ściądze” (trasy `/api/checklist/*`). [DO POTWIERDZENIA: aktualna lista funkcji wymagających konta.]
 > 3. Założenie konta jest dobrowolne i nieodpłatne. Wymaga podania adresu e-mail, nazwy użytkownika i hasła oraz zaakceptowania Regulaminu i potwierdzenia zapoznania się z Polityką prywatności.
-> 4. Umowa o świadczenie usługi prowadzenia konta zawierana jest na czas nieoznaczony. Użytkownik może ją wypowiedzieć w każdym czasie, usuwając konto w ustawieniach konta lub wysyłając wiadomość na adres pomoc@bankmiplaci.pl. [DO POTWIERDZENIA: czy w Serwisie istnieje funkcja samodzielnego usunięcia konta; jeśli nie, zapis o usuwaniu przez e-mail i termin realizacji: DO POTWIERDZENIA.]
+> 4. Umowa o świadczenie usługi prowadzenia konta zawierana jest na czas nieoznaczony. Użytkownik może ją wypowiedzieć w każdym czasie, usuwając konto w ustawieniach konta lub wysyłając wiadomość na adres pomoc@bankmiplaci.pl. [DO POTWIERDZENIA: w kodzie nie znaleziono funkcji samodzielnego usunięcia konta przez użytkownika (`/api/account` ma trasy register, login, logout, me, forgot-password, reset-password); konto usuwa administrator (`deleteUserAccount` w panelu). Zapis o usunięciu w ustawieniach konta nie może być opublikowany, dopóki taka funkcja nie powstanie; termin realizacji żądania e-mailowego: DO POTWIERDZENIA.]
 > 5. Użytkownik zobowiązuje się podawać prawdziwe dane, chronić hasło i nie udostępniać konta osobom trzecim.
 > 6. Operator może zablokować lub usunąć konto w przypadku rażącego lub powtarzającego się naruszenia Regulaminu, po uprzednim wezwaniu do zaprzestania naruszeń, chyba że naruszenie jest tak poważne, że wezwanie byłoby bezcelowe. [DO POTWIERDZENIA PRZEZ PRAWNIKA: tryb i terminy.]
-> 7. Po usunięciu konta dane są usuwane lub anonimizowane zgodnie z Polityką prywatności. Komentarze: [DO POTWIERDZENIA: usuwane razem z kontem czy anonimizowane].
+> 7. Po usunięciu konta dane są usuwane lub anonimizowane zgodnie z Polityką prywatności. Komentarze: z kodu wynika, że są usuwane razem z kontem (`Comment.user` z `onDelete: Cascade`). [DO POTWIERDZENIA: czy takie jest zamierzone zachowanie.]
 > 8. Użytkownicy, którzy założyli konto przed wprowadzeniem tego rozdziału, są informowani o zmianie Regulaminu w sposób opisany w rozdziale o zmianach Regulaminu. [DO POTWIERDZENIA PRZEZ PRAWNIKA: sposób poinformowania istniejących użytkowników i moment wejścia zmian w życie.]
 
 ### 3.2 Rozdział „Komentarze”
@@ -124,10 +131,10 @@ Proponowane miejsce: po obecnym rozdziale 3 „Zasady korzystania z Serwisu”, 
 > 1. Zalogowany użytkownik może dodawać komentarze do promocji. Komentarze wyrażają opinie ich autorów, a nie Operatora, i nie stanowią rekomendacji ani porady.
 > 2. Zabronione jest zamieszczanie treści: bezprawnych, naruszających dobra osobiste lub prawa autorskie, wulgarnych, nawołujących do nienawiści, wprowadzających w błąd, zawierających dane osobowe osób trzecich albo dane umożliwiające dostęp do rachunku (numery rachunków, kart, hasła), a także spamu.
 > 3. Zabronione jest zamieszczanie linków afiliacyjnych, poleceń lub kodów polecających (w tym własnych) oraz treści reklamowych. Operator usuwa takie komentarze. [DO POTWIERDZENIA: czy zakaz obejmuje także zwykłe linki zewnętrzne.]
-> 4. Operator moderuje komentarze: [DO POTWIERDZENIA: moderacja przed publikacją albo po publikacji; stan faktyczny w kodzie do sprawdzenia]. Operator może usunąć lub ukryć komentarz naruszający Regulamin bez uprzedzenia.
+> 4. Operator moderuje komentarze: [DO POTWIERDZENIA: z kodu wynika moderacja po publikacji: komentarz pojawia się od razu, a administrator może go usunąć lub przypiąć w panelu (`/admin/komentarze`); model `Comment` nie ma statusu akceptacji]. Operator może usunąć lub ukryć komentarz naruszający Regulamin bez uprzedzenia.
 > 5. Treść bezprawną można zgłosić na adres pomoc@bankmiplaci.pl, podając adres strony z komentarzem, jego treść i uzasadnienie. Operator rozpatruje zgłoszenie [DO POTWIERDZENIA: termin, propozycja 7 dni] i informuje zgłaszającego o decyzji. Zgłoszenie nie wyłącza prawa do dochodzenia roszczeń przed sądem.
 > 6. Autor udziela Operatorowi nieodpłatnej, niewyłącznej licencji na publikację komentarza w Serwisie na czas jego obecności w Serwisie. [DO POTWIERDZENIA PRZEZ PRAWNIKA: zakres licencji.]
-> 7. Autor może usunąć swój komentarz [DO POTWIERDZENIA: czy funkcja istnieje] albo zażądać jego usunięcia pocztą e-mail.
+> 7. Autor może zażądać usunięcia swojego komentarza pocztą e-mail. [DO POTWIERDZENIA: w kodzie nie znaleziono funkcji samodzielnego usunięcia ani edycji komentarza przez autora (są dodawanie i polubienie); nie obiecywać jej w tekście.]
 
 Uwaga: rozdział dotyczy usługi hostingu treści w rozumieniu rozporządzenia 2022/2065 (DSA). [DO POTWIERDZENIA PRZEZ PRAWNIKA: obowiązki w zakresie punktu kontaktowego, mechanizmu zgłaszania i uzasadnień decyzji moderacyjnych dla mikroprzedsiębiorcy.]
 
@@ -135,11 +142,11 @@ Uwaga: rozdział dotyczy usługi hostingu treści w rozumieniu rozporządzenia 2
 
 Regulamin już zawiera w rozdziale 2 informacje o modelu afiliacyjnym. Proponowane doprecyzowanie, spójne z planem 04:
 
-> 1. Serwis zarabia na prowizjach, które otrzymuje od banków i innych partnerów, gdy użytkownik przechodzi na ich stronę przez link partnerski i wykona określone działanie (np. otworzy konto). Linki partnerskie są oznaczone [DO POTWIERDZENIA: forma oznaczenia w interfejsie, w kodzie atrybut `rel="sponsored"` i etykieta przy przycisku] i nie zwiększają ceny produktu dla użytkownika.
-> 2. Wysokość prowizji nie wpływa na ocenę serwisu ani na zakres informacji o promocji. Sortowanie „Polecane” uwzględnia m.in. wynagrodzenie partnerskie. Sortowania „Najlepsza ocena”, „Najwyższa premia” i pozostałe go nie uwzględniają. Szczegóły opisuje strona „Jak zarabiamy”.
+> 1. Serwis zarabia na prowizjach, które otrzymuje od banków i innych partnerów, gdy użytkownik przechodzi na ich stronę przez link partnerski i wykona określone działanie (np. otworzy konto). Linki partnerskie są oznaczone [DO POTWIERDZENIA: forma oznaczenia w interfejsie, w kodzie atrybut `rel="sponsored nofollow noopener noreferrer"` (`AFFILIATE_LINK_REL`) oraz oznaczenie przy przycisku (`AffiliateDisclosure`)] i nie zwiększają ceny produktu dla użytkownika.
+> 2. Wysokość prowizji nie wpływa na ocenę serwisu ani na zakres informacji o promocji. Sortowanie „Polecane” uwzględnia m.in. wynagrodzenie partnerskie. Sortowania „Najlepsza ocena”, „Najwyższa premia” i pozostałe go nie uwzględniają. [DO POTWIERDZENIA: z kodu potwierdzono tylko, że prowizja wchodzi do kolejności „Polecane” (`src/lib/recommended.ts`, waga 0,4); pozostałych sortowań nie przeglądano pod tym kątem.] Szczegóły opisuje strona „Jak zarabiamy”.
 > 3. Serwis nie obejmuje całego rynku. Prezentuje wyłącznie promocje przeanalizowane przez Operatora.
 
-Uwaga: zdanie o sortowaniu „Polecane” opisuje stan zgodny z commitem `eb604b3` i planem 04. Jeżeli algorytm się zmieni, tekst należy zaktualizować. Obecny Regulamin nie wymienia sortowania i nie powinien mu przeczyć. Zdanie o „ocenie” jest zgodne z założeniem projektu (ocena liczona bez prowizji).
+Uwaga: zdanie o sortowaniu „Polecane” opisuje stan zgodny z commitem `eb604b3`, `src/lib/recommended.ts` i planem 04. Jeżeli algorytm się zmieni, tekst należy zaktualizować. Obecny Regulamin nie wymienia sortowania i nie powinien mu przeczyć. Zdanie o „ocenie” jest zgodne z założeniem projektu (ocena liczona bez prowizji).
 
 ---
 

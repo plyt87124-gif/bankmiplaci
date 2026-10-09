@@ -33,3 +33,25 @@ test("LegalPage bez sections nie renderuje spisu treści", () => {
   const html = renderToStaticMarkup(<LegalPage title="T"><p>x</p></LegalPage>);
   assert.ok(!html.includes("Spis treści"));
 });
+
+for (const [name, Page] of Object.entries(pages)) {
+  test(`${name}: okruszki i BreadcrumbList JSON-LD`, () => {
+    const html = renderToStaticMarkup(createElement(Page));
+    assert.ok(html.includes('aria-label="Ścieżka nawigacji"'));
+    assert.ok(html.includes('aria-current="page"'));
+    const m = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/);
+    assert.ok(m, "brak JSON-LD");
+    const ld = JSON.parse(m[1]!.replace(/\u003c/g, "<").replace(/\u003e/g, ">").replace(/\u0026/g, "&"));
+    assert.equal(ld["@type"], "BreadcrumbList");
+    assert.equal(ld.itemListElement.length, 2);
+    assert.ok(String(ld.itemListElement[1].item).endsWith(`/${name}`));
+  });
+}
+
+test("LegalPage: jawne path ma pierwszeństwo, nieznany tytuł bez path nie daje JSON-LD", () => {
+  const withPath = renderToStaticMarkup(<LegalPage title="X" path="/x"><p>a</p></LegalPage>);
+  assert.ok(/\/x"/.test(withPath) && withPath.includes("ld+json"));
+  const without = renderToStaticMarkup(<LegalPage title="Nieznana"><p>a</p></LegalPage>);
+  assert.ok(!without.includes("ld+json"));
+  assert.ok(without.includes("Ścieżka nawigacji"));
+});

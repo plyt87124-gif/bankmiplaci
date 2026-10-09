@@ -1,4 +1,18 @@
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { JsonLd } from "@/components/JsonLd";
+import { breadcrumbLd } from "@/lib/seo/jsonld";
+
 export type LegalSection = { id: string; label: string };
+
+/**
+ * Ścieżki znanych stron prawnych (zapasowo, gdy strona nie przekaże `path`).
+ * Klucz to dokładny tytuł przekazywany do LegalPage.
+ */
+const KNOWN_PATHS: Record<string, string> = {
+  "Regulamin serwisu": "/regulamin",
+  "Polityka prywatności": "/polityka-prywatnosci",
+  "Polityka cookies": "/cookies"
+};
 
 /**
  * Wspólny układ stron prawnych (regulamin, polityka prywatności, cookies).
@@ -6,6 +20,8 @@ export type LegalSection = { id: string; label: string };
  * - kolumna czytania 44 rem, tekst 16/27, linki podkreślone (offset 3 px),
  * - spis treści: od lg lepki z boku, poniżej lg zwijany blok nad treścią,
  * - kotwice: każdy nagłówek z `id` ma scroll-margin (zob. także globals.css),
+ * - okruszki (Start / tytuł) + BreadcrumbList JSON-LD z tych samych pozycji,
+ * - ostatni akapit z datą ("Data ostatniej aktualizacji") wyciszony jak pierwszy,
  * - treść prawna (children) przychodzi bez zmian ze stron; tu tylko oprawa.
  *
  * `sections` musi odpowiadać `id` nagłówków h2 w treści (pilnuje tego test).
@@ -14,6 +30,7 @@ const bodyStyles = [
   "text-base leading-[1.6875rem] text-ink-700",
   // Pierwszy akapit to data obowiązywania / wejścia w życie - wyciszona.
   "[&>p:first-child]:text-sm [&>p:first-child]:text-ink-500",
+  "[&>p:last-child]:text-sm [&>p:last-child]:text-ink-500",
   "[&_h2]:mt-10 [&_h2]:scroll-mt-20 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:leading-snug [&_h2]:text-ink-900",
   "[&_h3]:mt-6 [&_h3]:scroll-mt-20 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-ink-900",
   "[&_p]:mt-3",
@@ -47,18 +64,30 @@ function TocList({ sections }: { sections: LegalSection[] }) {
 
 export function LegalPage({
   title,
+  path,
   sections,
   children
 }: {
   title: string;
+  /** Ścieżka strony (np. "/regulamin"); bez niej używana jest lista znanych stron. */
+  path?: string;
   sections?: LegalSection[];
   children: React.ReactNode;
 }) {
   const hasToc = !!sections && sections.length > 1;
+  const pagePath = path ?? KNOWN_PATHS[title];
+  const ld = pagePath
+    ? breadcrumbLd([
+        { name: "Start", path: "/" },
+        { name: title, path: pagePath }
+      ])
+    : null;
   return (
     <div className="container-page py-10 sm:py-14">
       <div className={hasToc ? "lg:grid lg:grid-cols-[minmax(0,44rem)_15rem] lg:justify-center lg:gap-14" : "mx-auto max-w-[44rem]"}>
         <div className="min-w-0">
+          <JsonLd data={ld} />
+          <Breadcrumbs items={[{ label: "Start", href: "/" }, { label: title }]} className="mb-4" />
           <h1 className="font-display text-3xl font-semibold leading-tight text-ink-900 sm:text-4xl">{title}</h1>
 
           {hasToc && (
