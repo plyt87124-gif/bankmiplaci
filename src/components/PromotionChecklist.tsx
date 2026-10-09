@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { CheckSquare, Square, CheckCircle2, Lock, Building2 } from "lucide-react";
-import { formatPLN, formatDate } from "@/lib/format";
+import { AlertCircle, ArrowRight, CheckCircle2, Gift, ListChecks, Lock } from "lucide-react";
+import { formatPLN, formatDate, pluralizePl } from "@/lib/format";
+import { cn } from "@/lib/cn";
 import { isGroupUnlocked, monthGroupLabel, unlockDateForGroup } from "@/lib/checklistSchedule";
 import { resolveGroups, isRewardEarned, earnedCentsFor, type ResolvedGroup } from "@/lib/checklistAvailability";
 import { useEarningsContext } from "@/components/EarningsContext";
+import { BankLogo } from "@/components/ui/BankLogo";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { FormMessage } from "@/components/ui/FormMessage";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 
 interface Step {
   id: string;
@@ -54,14 +59,22 @@ function trackingEarnedCents(tracking: Tracking, checked: Set<string>): number {
   return earnedCentsFor(tracking.steps, tracking.accountOpenedAt, checked);
 }
 
+/** "2 z 5 kroków" - the total is in the genitive after "z". */
+function stepsOf(done: number, total: number): string {
+  return `${done} z ${total} ${pluralizePl(total, "kroku", "kroków", "kroków")}`;
+}
+
 export function PromotionChecklist({
   trackings,
   initialChecked,
-  completedEarnedCents
+  completedEarnedCents,
+  emptyState = true
 }: {
   trackings: Tracking[];
   initialChecked: string[];
   completedEarnedCents: number;
+  /** Show the "no ściąga yet" panel (with a link to /promocje) when there is nothing to show. */
+  emptyState?: boolean;
 }) {
   const router = useRouter();
   const [checked, setChecked] = useState<Set<string>>(() => new Set(initialChecked));
@@ -69,7 +82,13 @@ export function PromotionChecklist({
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [closedAtDrafts, setClosedAtDrafts] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // Presentation only: tells the message block whether it is good or bad news.
+  const [messageKind, setMessageKind] = useState<"success" | "error">("success");
+  // Presentation only: the step whose last save was rejected (shown in its month).
+  const [failedStepId, setFailedStepId] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const headingId = useId();
 
   const visible = trackings.filter((t) => !doneIds.has(t.id));
   const activeEarnedCents = trackings.reduce((sum, t) => sum + trackingEarnedCents(t, checked), 0);
@@ -84,7 +103,15 @@ export function PromotionChecklist({
     setTotal(totalEarnedCents);
   }, [totalEarnedCents, setTotal]);
 
+  // A finished ściąga disappears, together with the button that had the focus:
+  // put the focus on the section heading instead of dropping it on <body>.
+  const finishedCount = doneIds.size;
+  useEffect(() => {
+    if (finishedCount > 0) headingRef.current?.focus();
+  }, [finishedCount]);
+
   async function toggleStep(stepId: string, next: boolean) {
+    setFailedStepId(null);
     setChecked((prev) => {
       const s = new Set(prev);
       if (next) s.add(stepId);
@@ -104,6 +131,7 @@ export function PromotionChecklist({
         else s.add(stepId);
         return s;
       });
+      setFailedStepId(stepId);
     }
   }
 
@@ -129,10 +157,12 @@ export function PromotionChecklist({
     setConfirmingId(null);
 
     if (!res.ok) {
+      setMessageKind("error");
       setSuccessMessage(data?.error ?? "Coś poszło nie tak.");
       return;
     }
 
+    setMessageKind("success");
     setSuccessMessage(
       `Uzupełniliśmy Twoją datę zamknięcia konta (${t.bankName}, ${t.accountTypeLabel}) w Twoich okresach karencji poniżej. Gdy okres karencji minie, powiadomimy Cię o możliwości skorzystania z kolejnej promocji w tym banku.`
     );
@@ -140,60 +170,93 @@ export function PromotionChecklist({
     router.refresh();
   }
 
-  return (
-    <>
-      {(visible.length > 0 || successMessage) && (
-        // The parent page (konto/page.tsx) caps at max-w-2xl for readable
-        // header/form text, but that leaves the ściąga itself narrow on
-        // wide screens. This breaks it out to ~70% of the viewport width
-        // (capped so it doesn't get absurd on ultra-wide monitors) from
-        // the lg breakpoint up — full-width as before below that, so
-        // mobile is untouched.
-        <section className="mt-8 lg:relative lg:left-1/2 lg:right-1/2 lg:-mx-[50vw] lg:w-screen">
-          <div className="lg:mx-auto lg:w-[70vw] lg:max-w-[1400px]">
-            <h2 className="text-xl font-semibold">Twoje ściągi z promocji</h2>
-            <p className="mt-1 text-sm text-ink-500">
-              Odznaczaj kroki w miarę spełniania warunków promocji, którą aktywnie śledzisz.
-            </p>
-
-            {successMessage && (
-              <div className="mt-4 flex items-start gap-3 rounded-xl2 border border-teal-100 bg-teal-100/40 p-4">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-teal-600" />
-                <p className="text-sm text-teal-700">{successMessage}</p>
-              </div>
-            )}
-
-            {/* Each card is now full-width, not squeezed into a 2-column
-                grid — its month columns need real horizontal room to sit
-                side by side instead of just wrapping one-per-row. */}
-            <div className="mt-4 space-y-4">
-              {visible.map((t) => (
-                <ChecklistCard
-                  key={t.id}
-                  tracking={t}
-                  checked={checked}
-                  onToggleStep={toggleStep}
-                  onToggleMonth={toggleMonth}
-                  confirming={confirmingId === t.id}
-                  onRequestConfirm={() => requestConfirm(t)}
-                  onCancelConfirm={() => setConfirmingId(null)}
-                  closedAt={closedAtDrafts[t.id] ?? new Date().toISOString().slice(0, 10)}
-                  onClosedAtChange={(v) => setClosedAtDrafts((prev) => ({ ...prev, [t.id]: v }))}
-                  onConfirm={() => complete(t)}
-                  pending={pending === t.id}
-                />
-              ))}
+  if (visible.length === 0 && !successMessage) {
+    if (!emptyState) return null;
+    return (
+      <section aria-labelledby={headingId} className="mt-10">
+        <h2 id={headingId}>Twoje ściągi z promocji</h2>
+        <div className="mt-4 rounded-card border border-line bg-surface p-6 sm:p-8" data-testid="checklist-empty">
+          <div className="flex items-start gap-4">
+            <ListChecks size={24} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-500" />
+            <div className="max-w-xl">
+              <p className="text-h4 text-ink-900">Nie masz jeszcze aktywnej ściągi</p>
+              <p className="mt-2 text-ui text-ink-700">
+                Ściąga rozbija promocję na kroki i miesiące, pokazuje, co już zrobiłeś/aś, i odblokowuje kolejne
+                miesiące dopiero wtedy, gdy faktycznie nadejdą. Wybierz promocję, otwórz konto w banku i zapisz
+                promocję w ściądze.
+              </p>
+              <ButtonLink href="/promocje" className="mt-5">
+                Zobacz promocje
+              </ButtonLink>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section aria-labelledby={headingId} className="mt-10">
+      <h2 id={headingId} ref={headingRef} tabIndex={-1} className="outline-none">
+        Twoje ściągi z promocji
+      </h2>
+      <p className="mt-2 max-w-2xl text-ui text-ink-700">
+        Zaznaczaj kroki w miarę spełniania warunków promocji, którą aktywnie śledzisz. Zaznaczenie możesz w każdej
+        chwili cofnąć.
+      </p>
+
+      {/* Always in the DOM so that a message appearing later is announced. */}
+      <div role="status" className="empty:hidden">
+        {successMessage && (
+          <div
+            className={cn(
+              "mt-4 flex items-start gap-3 rounded-card border border-line p-4",
+              messageKind === "error" ? "bg-coral-100" : "bg-success-100"
+            )}
+          >
+            {messageKind === "error" ? (
+              <AlertCircle size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-coral-600" />
+            ) : (
+              <CheckCircle2 size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-success" />
+            )}
+            <p className="text-ui text-ink-900">{successMessage}</p>
+          </div>
+        )}
+      </div>
+
+      {visible.length === 0 && (
+        <ButtonLink href="/promocje" variant="secondary" className="mt-4">
+          Zobacz aktualne promocje
+        </ButtonLink>
       )}
-    </>
+
+      <div className="mt-6 space-y-6">
+        {visible.map((t) => (
+          <ChecklistCard
+            key={t.id}
+            tracking={t}
+            checked={checked}
+            failedStepId={failedStepId}
+            onToggleStep={toggleStep}
+            onToggleMonth={toggleMonth}
+            confirming={confirmingId === t.id}
+            onRequestConfirm={() => requestConfirm(t)}
+            onCancelConfirm={() => setConfirmingId(null)}
+            closedAt={closedAtDrafts[t.id] ?? new Date().toISOString().slice(0, 10)}
+            onClosedAtChange={(v) => setClosedAtDrafts((prev) => ({ ...prev, [t.id]: v }))}
+            onConfirm={() => complete(t)}
+            pending={pending === t.id}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 
 function ChecklistCard({
   tracking,
   checked,
+  failedStepId,
   onToggleStep,
   onToggleMonth,
   confirming,
@@ -206,6 +269,7 @@ function ChecklistCard({
 }: {
   tracking: Tracking;
   checked: Set<string>;
+  failedStepId: string | null;
   onToggleStep: (stepId: string, next: boolean) => void;
   onToggleMonth: (actionSteps: Step[], allChecked: boolean) => void;
   confirming: boolean;
@@ -216,6 +280,13 @@ function ChecklistCard({
   onConfirm: () => void;
   pending: boolean;
 }) {
+  const baseId = useId();
+  const titleId = `${baseId}-title`;
+  const progressLabelId = `${baseId}-progress`;
+  const closedAtId = `${baseId}-closed-at`;
+  const closedAtHintId = `${baseId}-closed-at-hint`;
+  const confirmTitleId = `${baseId}-confirm`;
+
   const groups = useMemo(
     () => buildGroups(tracking.steps, tracking.accountOpenedAt ? new Date(tracking.accountOpenedAt) : null),
     [tracking.steps, tracking.accountOpenedAt]
@@ -227,141 +298,248 @@ function ChecklistCard({
   const requiredSteps = groups.flatMap((g) => g.requiredSteps);
   const checkedActionCount = requiredSteps.filter((s) => checked.has(s.id)).length;
   const earnedCents = groups.reduce((sum, g) => sum + (isRewardEarned(g, checked) ? g.rewardStep!.rewardCents ?? 0 : 0), 0);
+  const progress = requiredSteps.length > 0 ? checkedActionCount / requiredSteps.length : 0;
+  const anyLocked = groups.some((g) => !g.unlocked);
+
+  // The check-in animation plays only for a box the user has just ticked.
+  const [justTickedId, setJustTickedId] = useState<string | null>(null);
+
+  // Keep the keyboard user oriented when the confirmation panel opens/closes.
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dateRef = useRef<HTMLInputElement>(null);
+  const wasConfirming = useRef(false);
+  useEffect(() => {
+    if (confirming) dateRef.current?.focus();
+    else if (wasConfirming.current) triggerRef.current?.focus();
+    wasConfirming.current = confirming;
+  }, [confirming]);
 
   return (
-    <div className="rounded-xl2 border border-ink-100 bg-surface p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          {tracking.bankLogoUrl ? (
-            <div className="relative h-9 w-24 shrink-0">
-              <Image src={tracking.bankLogoUrl} alt={tracking.bankName} fill sizes="96px" className="object-contain object-left" />
-            </div>
-          ) : (
-            <Building2 className="h-6 w-6 shrink-0 text-ink-400" />
-          )}
-          <div>
-            <p className="font-medium text-ink-900">
+    <article aria-labelledby={titleId} className="rounded-card border border-line bg-surface p-5 sm:p-6">
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <BankLogo name={tracking.bankName} logoUrl={tracking.bankLogoUrl} size="md" />
+          <div className="min-w-0">
+            <p id={titleId} className="text-h4 text-ink-900">
               {tracking.bankName} — {tracking.promotionName}
             </p>
-            <p className="text-xs text-ink-500">
-              {checkedActionCount}/{requiredSteps.length} kroków · zdobyte dotąd: {formatPLN(earnedCents)}
+            <p className="mt-0.5 text-small text-ink-700">
+              Zdobyte dotąd: <span className="num font-semibold text-ink-900">{formatPLN(earnedCents)}</span>
             </p>
           </div>
         </div>
-        <Link href={`/promocje/${tracking.promotionSlug}`} className="text-xs font-medium text-teal-700 hover:underline">
-          Zobacz promocję →
+        <Link
+          href={`/promocje/${tracking.promotionSlug}`}
+          className="link-inline inline-flex min-h-11 items-center gap-1 text-small font-medium"
+        >
+          Zobacz promocję
+          <ArrowRight size={16} aria-hidden="true" />
         </Link>
-      </div>
+      </header>
+
+      {requiredSteps.length > 0 && (
+        <div className="mt-5">
+          <div className="flex items-baseline justify-between gap-3 text-small">
+            <span id={progressLabelId} className="font-semibold text-ink-900">
+              Postęp
+            </span>
+            <span className="num text-ink-700">{stepsOf(checkedActionCount, requiredSteps.length)}</span>
+          </div>
+          <div
+            role="progressbar"
+            aria-labelledby={progressLabelId}
+            aria-valuemin={0}
+            aria-valuemax={requiredSteps.length}
+            aria-valuenow={checkedActionCount}
+            aria-valuetext={stepsOf(checkedActionCount, requiredSteps.length)}
+            className="mt-2 h-1 overflow-hidden rounded-full bg-ink-100"
+          >
+            <div
+              className="h-full w-full origin-left rounded-full bg-teal-500 transition-transform duration-reveal ease-out"
+              style={{ transform: `scaleX(${progress})` }}
+            />
+          </div>
+        </div>
+      )}
 
       {!tracking.accountOpenedAt && <OpenedAtPrompt trackingId={tracking.id} />}
 
-      {/* Month groups run left-to-right, top-to-bottom — no horizontal
-          scrollbar, they wrap onto further rows instead so the whole
-          timeline is visible at once (the page itself still scrolls). */}
-      <div className="mt-4 flex flex-wrap gap-4">
+      {/* Month groups: 1 column on phones, 2 from md, 3 from lg - no horizontal scroll at any width. */}
+      <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {groups.map((g) => {
           const monthAllChecked = g.bulkSteps.length > 0 && g.bulkSteps.every((s) => checked.has(s.id));
           const rewardEarned = isRewardEarned(g, checked);
+          const monthDone = g.requiredSteps.filter((s) => checked.has(s.id)).length;
+          const headingId = `${baseId}-m${g.groupIndex}`;
+          const lockId = `${baseId}-m${g.groupIndex}-lock`;
+          const failedHere = failedStepId !== null && g.visibleSteps.some((s) => s.id === failedStepId);
           return (
-            <div key={g.groupIndex} className={`w-64 ${!g.unlocked ? "opacity-50" : ""}`}>
-              <div className="flex items-center justify-between">
-                <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-500">
-                  {!g.unlocked && <Lock className="h-3 w-3" />}
+            <div
+              key={g.groupIndex}
+              role="group"
+              aria-labelledby={headingId}
+              data-unlocked={g.unlocked ? "true" : "false"}
+              className={cn(
+                "flex flex-col rounded-card border border-line p-4",
+                g.unlocked ? "bg-surface" : "bg-sunken"
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <h3 id={headingId} className="text-h4">
                   {g.label}
-                </p>
-                {g.unlocked ? (
-                  <button
-                    onClick={() => onToggleMonth(g.bulkSteps, monthAllChecked)}
-                    className="text-xs font-medium text-teal-700 hover:underline"
-                  >
-                    {monthAllChecked ? "Odznacz cały miesiąc" : "Zaznacz cały miesiąc"}
-                  </button>
-                ) : (
-                  g.unlockDate && (
-                    <span className="text-xs text-ink-300">odblokuje się {formatDate(g.unlockDate)}</span>
-                  )
+                </h3>
+                {g.requiredSteps.length > 0 && (
+                  <span className="num shrink-0 pt-0.5 text-small text-ink-700">
+                    <span className="sr-only">Zaznaczone: </span>
+                    {monthDone}/{g.requiredSteps.length}
+                  </span>
                 )}
               </div>
-              <ul className="mt-2 space-y-1.5">
+
+              {!g.unlocked && (
+                <p id={lockId} className="mt-1.5 flex items-start gap-1.5 text-small text-ink-700">
+                  <Lock size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+                  <span suppressHydrationWarning>
+                    {g.unlockDate
+                      ? `Odblokuje się ${formatDate(g.unlockDate)}`
+                      : "Odblokuje się po podaniu daty otwarcia konta"}
+                  </span>
+                </p>
+              )}
+
+              {g.unlocked && g.bulkSteps.length > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={() => onToggleMonth(g.bulkSteps, monthAllChecked)}
+                  className="mt-3 self-start px-4"
+                >
+                  {monthAllChecked ? "Cofnij zaznaczenie" : "Zaznacz cały miesiąc"}
+                </Button>
+              )}
+
+              <ul className="-mx-2 mt-2 space-y-0.5">
                 {g.visibleSteps.map((s) => {
                   const isChecked = checked.has(s.id);
                   const unknown = g.unknownSteps.includes(s);
+                  const inputId = `${baseId}-s-${s.id}`;
+                  const noteId = `${inputId}-note`;
+                  const describedBy = [!g.unlocked ? lockId : null, unknown ? noteId : null].filter(Boolean).join(" ");
                   return (
                     <li key={s.id}>
-                      <button
-                        onClick={() => g.unlocked && onToggleStep(s.id, !isChecked)}
-                        disabled={!g.unlocked}
-                        className="flex w-full items-start gap-2.5 rounded-lg border border-ink-100 p-2.5 text-left hover:border-teal-500 disabled:cursor-not-allowed disabled:hover:border-ink-100"
-                      >
-                        {isChecked ? (
-                          <CheckSquare className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
-                        ) : (
-                          <Square className="mt-0.5 h-4 w-4 shrink-0 text-ink-300" />
+                      <label
+                        htmlFor={inputId}
+                        className={cn(
+                          "flex min-h-[3.25rem] items-start gap-3 rounded-field px-2 py-3",
+                          g.unlocked ? "cursor-pointer hover:bg-sunken" : "cursor-not-allowed"
                         )}
-                        <span className="text-sm text-ink-700">
-                          {s.title}
-                          {unknown && (
-                            <span className="mt-1 block text-[11px] text-ink-500">
-                              Opcjonalny: nie mamy daty otwarcia konta, więc nie wiemy, czy ten bonus Ci przysługuje.
-                              Odhacz, tylko jeśli faktycznie z niego korzystasz.
-                            </span>
+                      >
+                        <input
+                          id={inputId}
+                          type="checkbox"
+                          checked={isChecked}
+                          aria-disabled={!g.unlocked || undefined}
+                          aria-describedby={describedBy || undefined}
+                          onChange={() => {
+                            if (!g.unlocked) return;
+                            setJustTickedId(isChecked ? null : s.id);
+                            onToggleStep(s.id, !isChecked);
+                          }}
+                          className={cn(
+                            "checkbox",
+                            "aria-disabled:cursor-not-allowed aria-disabled:border-line-strong aria-disabled:bg-ink-100",
+                            "aria-disabled:checked:border-ink-500 aria-disabled:checked:bg-ink-500",
+                            isChecked && justTickedId === s.id && "animate-check-in"
                           )}
+                        />
+                        <span
+                          className={cn(
+                            "text-[17px] leading-6",
+                            isChecked ? "text-ink-500" : g.unlocked ? "text-ink-900" : "text-ink-700"
+                          )}
+                        >
+                          {s.title}
                         </span>
-                      </button>
+                      </label>
+                      {unknown && (
+                        <p id={noteId} className="px-2 pb-2 pl-[2.75rem] text-caption text-ink-500">
+                          Opcjonalny: nie mamy daty otwarcia konta, więc nie wiemy, czy ten bonus Ci przysługuje.
+                          Zaznacz, tylko jeśli faktycznie z niego korzystasz.
+                        </p>
+                      )}
                     </li>
                   );
                 })}
               </ul>
+
+              {/* Save errors of this month; the region stays in the DOM so the message is announced. */}
+              <div role="status" className="empty:hidden">
+                {failedHere && (
+                  <p className="mt-2 flex items-start gap-1.5 text-caption font-medium text-coral-600">
+                    <AlertCircle size={16} aria-hidden="true" className="mt-px shrink-0" />
+                    <span>
+                      Nie udało się zapisać zmiany, więc cofnęliśmy zaznaczenie. Sprawdź połączenie i spróbuj
+                      ponownie.
+                    </span>
+                  </p>
+                )}
+              </div>
+
               {g.rewardStep && <RewardRow title={g.rewardStep.title} unlocked={rewardEarned} />}
             </div>
           );
         })}
       </div>
 
-      <div className="mt-5 border-t border-ink-100 pt-4">
+      {anyLocked && (
+        <p className="mt-4 text-caption text-ink-500">
+          Kolejne miesiące odblokowują się z upływem czasu, licząc od daty otwarcia konta - kroków z przyszłości nie
+          da się zaznaczyć wcześniej.
+        </p>
+      )}
+
+      <div className="mt-6 border-t border-line pt-5">
         {!confirming ? (
-          <button
-            onClick={onRequestConfirm}
-            className="w-full rounded-full bg-ink-solid py-2.5 text-sm font-medium text-white hover:bg-teal-700"
-          >
+          <Button ref={triggerRef} onClick={onRequestConfirm} fullWidth>
             Spełniłem/am warunki — zamknąłem/am konto
-          </button>
+          </Button>
         ) : (
-          <div className="rounded-xl2 border border-gold-600 bg-gold-100/40 p-3">
-            <p className="text-sm font-medium text-ink-900">
+          <div
+            role="group"
+            aria-labelledby={confirmTitleId}
+            className="rounded-card border border-gold-500 bg-gold-100 p-4"
+          >
+            <p id={confirmTitleId} className="text-ui font-semibold text-ink-900">
               Na pewno? Poniższa data zostanie zapisana jako data zamknięcia Twojego konta {tracking.bankName} (
-              {tracking.accountTypeLabel}) w okresach karencji poniżej. Nie musisz mieć odznaczonych wszystkich
+              {tracking.accountTypeLabel}) w okresach karencji poniżej. Nie musisz mieć zaznaczonych wszystkich
               kroków — jeśli części premii nie udało Ci się zdobyć, to normalne.
             </p>
-            <div className="mt-3">
-              <label className="text-xs font-medium text-ink-700">Data zamknięcia konta</label>
-              <input
+            <div className="mt-4 max-w-xs">
+              <Label htmlFor={closedAtId}>Data zamknięcia konta</Label>
+              <Input
+                ref={dateRef}
+                id={closedAtId}
                 type="date"
                 value={closedAt}
                 onChange={(e) => onClosedAtChange(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-ink-100 bg-surface px-2.5 py-2 text-sm text-ink-900 outline-none focus:border-teal-500"
+                aria-describedby={closedAtHintId}
               />
-              <p className="mt-1 text-[11px] text-ink-500">
-                Jeśli obowiązuje Cię okres wypowiedzenia, wpisz przewidywaną/faktyczną datę zamknięcia konta — nie
-                musi to być dzisiejsza data.
-              </p>
             </div>
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={onConfirm}
-                disabled={pending}
-                className="rounded-full bg-ink-solid px-4 py-2 text-xs font-medium text-white hover:bg-teal-700 disabled:opacity-60"
-              >
+            <p id={closedAtHintId} className="mt-1.5 max-w-prose text-caption text-ink-700">
+              Jeśli obowiązuje Cię okres wypowiedzenia, wpisz przewidywaną/faktyczną datę zamknięcia konta — nie musi
+              to być dzisiejsza data.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button onClick={onConfirm} loading={pending}>
                 {pending ? "Zapisywanie..." : "Tak, potwierdzam"}
-              </button>
-              <button onClick={onCancelConfirm} className="rounded-full border border-ink-100 px-4 py-2 text-xs font-medium text-ink-700">
+              </Button>
+              <Button variant="secondary" onClick={onCancelConfirm} disabled={pending}>
                 Anuluj
-              </button>
+              </Button>
             </div>
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -379,6 +557,10 @@ function OpenedAtPrompt({ trackingId }: { trackingId: string }) {
   const [value, setValue] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const baseId = useId();
+  const inputId = `${baseId}-date`;
+  const hintId = `${baseId}-hint`;
+  const errorId = `${baseId}-error`;
 
   async function save() {
     setSaving(true);
@@ -398,31 +580,31 @@ function OpenedAtPrompt({ trackingId }: { trackingId: string }) {
   }
 
   return (
-    <div className="mt-4 rounded-xl2 border border-gold-600 bg-gold-100/40 p-3" data-testid="opened-at-prompt">
-      <p className="text-sm font-medium text-ink-900">Podaj datę otwarcia konta</p>
-      <p className="mt-1 text-xs text-ink-500">
+    <div className="mt-5 rounded-card border border-gold-500 bg-gold-100 p-4" data-testid="opened-at-prompt">
+      <p className="text-ui font-semibold text-ink-900">Podaj datę otwarcia konta</p>
+      <p id={hintId} className="mt-1 max-w-2xl text-small text-ink-700">
         Tę ściągę założyłeś/aś, zanim pytaliśmy o datę otwarcia konta. Bez niej nie wiemy, które miesiące są już
         dostępne ani czy przysługują Ci bonusy z własnym terminem zapisu. Wpisz rzeczywistą datę, kiedy otworzyłeś/aś
-        konto — Twoje odhaczenia zostaną zachowane. Datę można zapisać tylko raz.
+        konto — Twoje zaznaczenia zostaną zachowane. Datę można zapisać tylko raz.
       </p>
-      <div className="mt-3 flex flex-wrap items-end gap-2">
-        <input
-          type="date"
-          value={value}
-          max={warsawToday()}
-          onChange={(e) => setValue(e.target.value)}
-          aria-label="Data otwarcia konta"
-          className="rounded-lg border border-ink-100 bg-surface px-2.5 py-2 text-sm text-ink-900 outline-none focus:border-teal-500"
-        />
-        <button
-          onClick={save}
-          disabled={saving || !value}
-          className="rounded-full bg-ink-solid px-4 py-2 text-xs font-medium text-white hover:bg-teal-700 disabled:opacity-60"
-        >
+      <div className="mt-4 flex flex-wrap items-end gap-3">
+        <div className="w-full max-w-xs">
+          <Label htmlFor={inputId}>Data otwarcia konta</Label>
+          <Input
+            id={inputId}
+            type="date"
+            value={value}
+            max={warsawToday()}
+            onChange={(e) => setValue(e.target.value)}
+            invalid={Boolean(error)}
+            aria-describedby={error ? `${hintId} ${errorId}` : hintId}
+          />
+        </div>
+        <Button onClick={save} loading={saving} disabled={!value}>
           {saving ? "Zapisywanie..." : "Zapisz datę"}
-        </button>
+        </Button>
       </div>
-      {error && <p className="mt-2 text-xs text-coral-600">{error}</p>}
+      <FormMessage id={errorId}>{error}</FormMessage>
     </div>
   );
 }
@@ -440,16 +622,34 @@ function RewardRow({ title, unlocked }: { title: string; unlocked: boolean }) {
     prevUnlocked.current = unlocked;
   }, [unlocked]);
 
+  const label = title.replace(/^Odbierz( nagrodę)?:\s*/i, "");
+
   return (
     <div
-      className={`mt-2 flex items-center gap-2.5 rounded-lg border p-2.5 ${
-        unlocked ? "border-gold-600 bg-gold-100/40" : "border-dashed border-ink-100"
-      } ${pop ? "animate-reward-pop" : ""}`}
+      data-reward={unlocked ? "unlocked" : "locked"}
+      className={cn(
+        "relative mt-3 flex items-start gap-3 rounded-field border p-3",
+        unlocked ? "border-gold-500 bg-gold-100" : "border-dashed border-line-strong",
+        pop && "animate-ring-pulse"
+      )}
     >
-      <span className={`text-sm ${unlocked ? "font-medium text-gold-600" : "text-ink-300"}`}>
-        {title.replace(/^Odbierz nagrodę:\s*/i, "")}
-      </span>
-      {!unlocked && <span className="text-[11px] text-ink-300">— odblokuje się po ukończeniu kroków tego miesiąca</span>}
+      <Gift size={20} aria-hidden="true" className={cn("mt-0.5 shrink-0", unlocked ? "text-gold-600" : "text-ink-400")} />
+      <div className="min-w-0">
+        <p className={cn("text-caption font-semibold", unlocked ? "text-gold-600" : "text-ink-700")}>
+          {unlocked ? "Nagroda zdobyta" : "Nagroda za ten miesiąc"}
+        </p>
+        <p
+          className={cn(
+            "num break-words text-h4",
+            unlocked ? "font-display text-gold-600" : "text-ink-700"
+          )}
+        >
+          {label}
+        </p>
+        {!unlocked && (
+          <p className="mt-0.5 text-caption text-ink-500">Odblokuje się po zaznaczeniu wszystkich kroków tego miesiąca.</p>
+        )}
+      </div>
     </div>
   );
 }

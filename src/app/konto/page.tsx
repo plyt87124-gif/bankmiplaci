@@ -1,15 +1,18 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { X } from "lucide-react";
 import { getCurrentUser } from "@/lib/userSession";
 import { db } from "@/lib/db";
 import { upsertBankHistory, deleteBankHistoryEntry } from "./actions";
 import { LogoutButton } from "./LogoutButton";
-import { ACCOUNT_TYPE_LABEL, formatDate } from "@/lib/format";
+import { ACCOUNT_TYPE_LABEL, formatDatePL } from "@/lib/format";
 import { PromotionChecklist } from "@/components/PromotionChecklist";
 import { EarningsProvider } from "@/components/EarningsContext";
 import { EarningsCounter } from "@/components/EarningsCounter";
 import { earnedCentsFor } from "@/lib/checklistAvailability";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 
 const TRACKED_ACCOUNT_TYPES = ["PERSONAL", "BUSINESS"] as const;
 
@@ -60,99 +63,118 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
   );
 
   return (
-    <div className="container-page max-w-2xl py-14">
+    // Wide container: the ściąga lays its months out in up to 3 columns. Text
+    // blocks keep their own readable max width.
+    <div className="container-page py-10 sm:py-14">
       <EarningsProvider>
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           {/* Lifetime earnings badge sits next to the user's own info, not
               next to the logout button — the live number is computed
               inside PromotionChecklist and pushed up here via
               EarningsProvider. */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold">
-                {isOnboarding ? "Witaj! Jeszcze jedna rzecz" : "Moje konto"}
-              </h1>
-              <p className="mt-1 text-sm text-ink-500">{user.email}</p>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-4">
+            <div className="min-w-0">
+              <h1>{isOnboarding ? "Witaj! Jeszcze jedna rzecz" : "Moje konto"}</h1>
+              <p className="mt-1 break-words text-small text-ink-500">{user.email}</p>
             </div>
             <EarningsCounter />
           </div>
           {!isOnboarding && <LogoutButton />}
         </div>
 
-        <PromotionChecklist trackings={trackings} initialChecked={initialChecked} completedEarnedCents={completedEarnedCents} />
+        <PromotionChecklist
+          trackings={trackings}
+          initialChecked={initialChecked}
+          completedEarnedCents={completedEarnedCents}
+          emptyState={!isOnboarding}
+        />
       </EarningsProvider>
 
-      <section className="mt-8">
-        <p className="text-sm text-ink-500">
+      <section aria-labelledby="historia-bankowa" className="mt-12 max-w-3xl">
+        <h2 id="historia-bankowa">Twoja historia bankowa</h2>
+        <p className="mt-2 max-w-2xl text-ui text-ink-700">
           Dla banków, w których byłeś/aś klientem, podaj typ konta i datę jego zamknięcia — pokażemy Ci wtedy,
-          czy minął okres karencji dla promocji tego samego typu konta.{" "}
-          <span className="text-ink-300">(Jeśli obowiązywał okres wypowiedzenia, wpisz datę faktycznego zamknięcia.)</span>
+          czy minął okres karencji dla promocji tego samego typu konta.
         </p>
 
-        <form action={upsertBankHistory} className="mt-5 flex flex-wrap items-end gap-3 rounded-xl2 border border-ink-100 bg-surface p-4">
-          <div className="flex-1 min-w-[10rem]">
-            <label className="text-xs font-medium text-ink-500">Bank</label>
-            <select name="bankId" required className="mt-1 w-full rounded-lg border border-ink-100 bg-surface px-2.5 py-2 text-sm text-ink-900">
-              {banks.map((bank) => (
-                <option key={bank.id} value={bank.id}>{bank.name}</option>
-              ))}
-            </select>
+        <form
+          action={upsertBankHistory}
+          className="mt-5 grid gap-4 rounded-card border border-line bg-surface p-4 sm:grid-cols-2 sm:p-5"
+        >
+          <Field label="Bank" required className="sm:col-span-2">
+            {(control) => (
+              <Select name="bankId" {...control}>
+                {banks.map((bank) => (
+                  <option key={bank.id} value={bank.id}>
+                    {bank.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label="Typ konta">
+            {(control) => (
+              <Select name="accountType" {...control}>
+                {TRACKED_ACCOUNT_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {ACCOUNT_TYPE_LABEL[t]}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field
+            label="Data zamknięcia"
+            required
+            hint="Jeśli obowiązywał okres wypowiedzenia, wpisz datę faktycznego zamknięcia."
+          >
+            {(control) => <Input type="date" name="wasClientUntil" {...control} />}
+          </Field>
+          <div className="sm:col-span-2">
+            <Button type="submit">Dodaj do historii</Button>
           </div>
-          <div>
-            <label className="text-xs font-medium text-ink-500">Typ konta</label>
-            <select name="accountType" className="mt-1 rounded-lg border border-ink-100 bg-surface px-2.5 py-2 text-sm text-ink-900">
-              {TRACKED_ACCOUNT_TYPES.map((t) => (
-                <option key={t} value={t}>{ACCOUNT_TYPE_LABEL[t]}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-ink-500">Data zamknięcia</label>
-            <input type="date" name="wasClientUntil" required className="mt-1 rounded-lg border border-ink-100 bg-surface px-2.5 py-2 text-sm text-ink-900" />
-          </div>
-          <button className="rounded-full bg-ink-solid px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">
-            Dodaj
-          </button>
         </form>
 
         {history.length > 0 && (
-          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {history.map((e) => (
-              <div
-                key={e.id}
-                className="flex items-center justify-between gap-2 rounded-xl2 border border-ink-100 bg-surface p-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-ink-900">{bankName.get(e.bankId)}</p>
-                  <p className="text-xs text-ink-500">
-                    {ACCOUNT_TYPE_LABEL[e.accountType]} · do {e.wasClientUntil && formatDate(e.wasClientUntil)}
-                  </p>
-                </div>
-                <form action={deleteBankHistoryEntry.bind(null, e.id)}>
-                  <button type="submit" aria-label="Usuń" className="shrink-0 rounded-full p-1.5 text-ink-300 hover:bg-coral-100 hover:text-coral-600">
-                    <X className="h-4 w-4" />
-                  </button>
-                </form>
-              </div>
-            ))}
-          </div>
+          <ul role="list" className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {history.map((e) => {
+              const entryBank = bankName.get(e.bankId) ?? "Nieznany bank";
+              return (
+                <li
+                  key={e.id}
+                  className="flex items-center justify-between gap-2 rounded-card border border-line bg-surface py-2 pl-4 pr-2"
+                >
+                  <div className="min-w-0">
+                    <p className="break-words text-ui font-semibold text-ink-900">{entryBank}</p>
+                    <p className="text-small text-ink-500">
+                      {ACCOUNT_TYPE_LABEL[e.accountType]} · do {e.wasClientUntil ? formatDatePL(e.wasClientUntil) : "Brak danych"}
+                    </p>
+                  </div>
+                  <form action={deleteBankHistoryEntry.bind(null, e.id)}>
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      aria-label={`Usuń wpis: ${entryBank}, ${ACCOUNT_TYPE_LABEL[e.accountType]}`}
+                      className="h-11 w-11 shrink-0 px-0 text-ink-500 hover:bg-coral-100 hover:text-coral-600"
+                    >
+                      <X size={20} aria-hidden="true" />
+                    </Button>
+                  </form>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
 
       {isOnboarding && (
-        <div className="mt-8 flex flex-col gap-2 sm:flex-row">
-          <Link
-            href="/"
-            className="flex-1 rounded-full border border-ink-100 py-2.5 text-center text-sm font-medium text-ink-700 hover:bg-ink-100"
-          >
+        <div className="mt-10 flex max-w-3xl flex-col gap-3 sm:flex-row">
+          <ButtonLink href="/" variant="secondary" className="flex-1">
             Nie byłem/am klientem żadnego banku
-          </Link>
-          <Link
-            href="/"
-            className="flex-1 rounded-full bg-ink-solid py-2.5 text-center text-sm font-medium text-white hover:bg-teal-700"
-          >
+          </ButtonLink>
+          <ButtonLink href="/" className="flex-1">
             Gotowe
-          </Link>
+          </ButtonLink>
         </div>
       )}
     </div>

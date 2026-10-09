@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MessageCircle, Heart, Pin } from "lucide-react";
-import { formatDate } from "@/lib/format";
+import { useEffect, useId, useState } from "react";
+import { Heart, MessageCircle, Pin, ShieldCheck } from "lucide-react";
+import { formatDate, pluralizePl } from "@/lib/format";
+import { cn } from "@/lib/cn";
 import { useAuthModal } from "@/components/AuthModalProvider";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { FormMessage } from "@/components/ui/FormMessage";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/Input";
+import { TrustNote } from "@/components/trust/TrustNote";
 
 interface CommentItem {
   id: string;
@@ -19,6 +26,11 @@ interface CommentItem {
 
 type SortMode = "newest" | "top";
 
+const SORT_OPTIONS: { value: SortMode; label: string }[] = [
+  { value: "newest", label: "Najnowsze" },
+  { value: "top", label: "Najlepiej oceniane" }
+];
+
 export function PromotionComments({
   promotionSlug,
   currentUser
@@ -33,7 +45,11 @@ export function PromotionComments({
   const [error, setError] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyBody, setReplyBody] = useState("");
+  const [replyError, setReplyError] = useState<string | null>(null);
   const { openAuth } = useAuthModal();
+  const baseId = useId();
+  const formId = `${baseId}-body`;
+  const errorId = `${baseId}-error`;
 
   useEffect(() => {
     setComments(null);
@@ -68,13 +84,17 @@ export function PromotionComments({
 
   async function onReply(parentId: string) {
     if (!replyBody.trim()) return;
+    setReplyError(null);
     const res = await fetch(`/api/promotions/${promotionSlug}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ body: replyBody, parentId })
     });
     const data = await res.json().catch(() => null);
-    if (!res.ok) return;
+    if (!res.ok) {
+      setReplyError(data?.error ?? "Nie udało się dodać odpowiedzi.");
+      return;
+    }
 
     setComments((prev) =>
       (prev ?? []).map((c) => (c.id === parentId ? { ...c, replies: [...(c.replies ?? []), data.comment] } : c))
@@ -104,104 +124,141 @@ export function PromotionComments({
   const total = (comments ?? []).reduce((sum, c) => sum + 1 + (c.replies?.length ?? 0), 0);
 
   return (
-    <section className="mt-12">
+    <section className="mt-12" aria-labelledby={`${baseId}-heading`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-xl font-semibold">
-          <MessageCircle className="h-5 w-5 text-ink-500" /> Komentarze {comments ? `(${total})` : ""}
+        <h2 id={`${baseId}-heading`} className="flex items-center gap-2">
+          <MessageCircle size={24} aria-hidden="true" className="shrink-0 text-ink-500" />
+          <span>Komentarze{comments ? ` (${total})` : ""}</span>
         </h2>
         {comments && comments.length > 0 && (
-          <div className="flex gap-1 rounded-full border border-ink-100 p-1 text-xs">
-            <button
-              onClick={() => setSort("newest")}
-              className={`rounded-full px-3 py-1 font-medium ${sort === "newest" ? "bg-ink-solid text-white" : "text-ink-700"}`}
-            >
-              Najnowsze
-            </button>
-            <button
-              onClick={() => setSort("top")}
-              className={`rounded-full px-3 py-1 font-medium ${sort === "top" ? "bg-ink-solid text-white" : "text-ink-700"}`}
-            >
-              Najlepiej oceniane
-            </button>
+          <div role="group" aria-label="Sortowanie komentarzy" className="inline-flex gap-1 rounded-full border border-line-strong p-1">
+            {SORT_OPTIONS.map((option) => {
+              const active = sort === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setSort(option.value)}
+                  className={cn(
+                    "min-h-9 rounded-full px-4 text-small font-semibold transition-colors duration-150 ease-out",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                    active ? "bg-action text-on-action" : "text-ink-700 hover:bg-ink-100"
+                  )}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
 
       {currentUser ? (
-        <form onSubmit={onSubmit} className="mt-4 space-y-2">
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={3}
-            placeholder="Zapytaj o szczegóły promocji albo podziel się doświadczeniem..."
-            className="w-full rounded-xl2 border border-ink-100 bg-surface px-3 py-2.5 text-sm outline-none focus:border-teal-500"
-          />
-          {error && <p className="text-sm text-coral-600">{error}</p>}
-          <button
-            disabled={submitting || !body.trim()}
-            className="rounded-full bg-ink-solid px-5 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
-          >
+        <form onSubmit={onSubmit} className="mt-4 space-y-3">
+          <div>
+            <Label htmlFor={formId} srOnly>
+              Twój komentarz
+            </Label>
+            <Textarea
+              id={formId}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={3}
+              placeholder="Zapytaj o szczegóły promocji albo podziel się doświadczeniem..."
+              invalid={Boolean(error)}
+              aria-describedby={error ? errorId : undefined}
+            />
+            <FormMessage id={errorId}>{error}</FormMessage>
+          </div>
+          <Button type="submit" loading={submitting} disabled={!body.trim()}>
             {submitting ? "Wysyłanie..." : "Dodaj komentarz"}
-          </button>
+          </Button>
         </form>
       ) : (
-        <p className="mt-4 rounded-xl2 border border-dashed border-ink-100 bg-surface p-4 text-sm text-ink-500">
-          <button onClick={() => openAuth({ mode: "login" })} className="font-medium text-teal-700 underline">
-            Zaloguj się
-          </button>{" "}
-          albo{" "}
-          <button onClick={() => openAuth({ mode: "register" })} className="font-medium text-teal-700 underline">
-            załóż darmowe konto
-          </button>
-          , żeby skomentować lub dopytać o szczegóły tej promocji.
-        </p>
+        <div className="mt-4 rounded-card border border-dashed border-line-strong bg-surface p-4 sm:p-5">
+          <p className="text-ui text-ink-700">
+            Komentować mogą zalogowani użytkownicy. Zaloguj się albo załóż darmowe konto, żeby skomentować lub
+            dopytać o szczegóły tej promocji.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <Button variant="secondary" onClick={() => openAuth({ mode: "login" })}>
+              Zaloguj się
+            </Button>
+            <Button variant="ghost" onClick={() => openAuth({ mode: "register" })}>
+              Załóż darmowe konto
+            </Button>
+          </div>
+        </div>
       )}
 
-      <div className="mt-6 space-y-4">
-        {comments === null && <p className="text-sm text-ink-500">Wczytywanie komentarzy...</p>}
-        {comments?.length === 0 && <p className="text-sm text-ink-500">Nikt jeszcze nie skomentował tej promocji.</p>}
-        {comments?.map((c) => (
-          <div key={c.id}>
-            <CommentCard
-              comment={c}
-              canReply
-              isReplying={replyTo === c.id}
-              onToggleReply={() => setReplyTo(replyTo === c.id ? null : c.id)}
-              onLike={() => onLike(c.id)}
-              canLike={Boolean(currentUser)}
-            />
-            {replyTo === c.id && currentUser && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  onReply(c.id);
-                }}
-                className="ml-8 mt-2 flex gap-2"
-              >
-                <textarea
-                  value={replyBody}
-                  onChange={(e) => setReplyBody(e.target.value)}
-                  rows={2}
-                  placeholder={`Odpowiedz ${c.authorName}...`}
-                  className="flex-1 rounded-xl2 border border-ink-100 bg-surface px-3 py-2 text-sm outline-none focus:border-teal-500"
+      <TrustNote kind="comments" className="mt-3" />
+
+      <div className="mt-6" aria-busy={comments === null}>
+        {comments === null && (
+          <p role="status" className="text-ui text-ink-500">
+            Wczytywanie komentarzy...
+          </p>
+        )}
+        {comments?.length === 0 && <p className="text-ui text-ink-700">Nikt jeszcze nie skomentował tej promocji.</p>}
+        {comments && comments.length > 0 && (
+          <ul role="list" className="space-y-4">
+            {comments.map((c) => (
+              <li key={c.id}>
+                <CommentCard
+                  comment={c}
+                  canReply
+                  isReplying={replyTo === c.id}
+                  onToggleReply={() => {
+                    setReplyError(null);
+                    setReplyTo(replyTo === c.id ? null : c.id);
+                  }}
+                  onLike={() => onLike(c.id)}
+                  canLike={Boolean(currentUser)}
                 />
-                <button
-                  disabled={!replyBody.trim()}
-                  className="self-start rounded-full bg-ink-solid px-4 py-2 text-xs font-medium text-white hover:bg-teal-700 disabled:opacity-50"
-                >
-                  Wyślij
-                </button>
-              </form>
-            )}
-            {c.replies && c.replies.length > 0 && (
-              <div className="ml-8 mt-2 space-y-2 border-l-2 border-ink-100 pl-4">
-                {c.replies.map((r) => (
-                  <CommentCard key={r.id} comment={r} canReply={false} onLike={() => onLike(r.id, c.id)} canLike={Boolean(currentUser)} />
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+                {replyTo === c.id && currentUser && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      onReply(c.id);
+                    }}
+                    className="ml-4 mt-3 sm:ml-8"
+                  >
+                    <Label htmlFor={`${baseId}-reply-${c.id}`} srOnly>
+                      {`Odpowiedź dla: ${c.authorName}`}
+                    </Label>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                      <Textarea
+                        id={`${baseId}-reply-${c.id}`}
+                        value={replyBody}
+                        onChange={(e) => setReplyBody(e.target.value)}
+                        rows={2}
+                        placeholder={`Odpowiedz ${c.authorName}...`}
+                        invalid={Boolean(replyError)}
+                        aria-describedby={replyError ? `${baseId}-reply-error` : undefined}
+                        className="min-h-[5rem] flex-1"
+                        autoFocus
+                      />
+                      <Button type="submit" disabled={!replyBody.trim()} className="self-start">
+                        Wyślij
+                      </Button>
+                    </div>
+                    <FormMessage id={`${baseId}-reply-error`}>{replyError}</FormMessage>
+                  </form>
+                )}
+                {c.replies && c.replies.length > 0 && (
+                  <ul role="list" className="ml-4 mt-3 space-y-3 border-l-2 border-line-strong pl-4 sm:ml-8">
+                    {c.replies.map((r) => (
+                      <li key={r.id}>
+                        <CommentCard comment={r} canReply={false} onLike={() => onLike(r.id, c.id)} canLike={Boolean(currentUser)} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );
@@ -222,43 +279,71 @@ function CommentCard({
   onLike: () => void;
   canLike: boolean;
 }) {
+  const likesText = `${comment.likeCount} ${pluralizePl(comment.likeCount, "polubienie", "polubienia", "polubień")}`;
   return (
-    <div
-      className={`rounded-xl2 border p-4 ${
+    <article
+      className={cn(
+        "rounded-card border p-4",
         comment.isPinned
-          ? "border-gold-600 bg-gold-100/40"
+          ? "border-gold-500 bg-gold-100/40"
           : comment.isAdmin
-            ? "border-teal-500 bg-teal-100/40"
-            : "border-ink-100 bg-surface"
-      }`}
+            ? "border-teal-600 bg-teal-100/40"
+            : "border-line bg-surface"
+      )}
     >
-      <div className="flex items-center justify-between">
-        <p className={`flex items-center gap-1.5 text-sm font-medium ${comment.isAdmin ? "text-teal-700" : "text-ink-900"}`}>
-          {comment.isPinned && <Pin className="h-3.5 w-3.5 text-gold-600" />}
-          {comment.authorName}
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <p className="flex flex-wrap items-center gap-2 text-ui font-semibold text-ink-900">
+          <span className="break-words">{comment.authorName}</span>
           {comment.isAdmin && (
-            <span className="rounded-full bg-teal-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+            <Badge variant="verified" icon={ShieldCheck}>
               Admin
-            </span>
+            </Badge>
+          )}
+          {comment.isPinned && (
+            <Badge variant="neutral" icon={Pin}>
+              Przypięty
+            </Badge>
           )}
         </p>
-        <p className="text-xs text-ink-300">{formatDate(comment.createdAt)}</p>
-      </div>
-      <p className="mt-2 whitespace-pre-wrap text-sm text-ink-700">{comment.body}</p>
-      <div className="mt-3 flex items-center gap-4 text-xs">
-        <button
-          onClick={onLike}
-          disabled={!canLike}
-          className={`flex items-center gap-1 font-medium ${comment.likedByMe ? "text-coral-600" : "text-ink-500"} disabled:opacity-50`}
-        >
-          <Heart className={`h-3.5 w-3.5 ${comment.likedByMe ? "fill-coral-600" : ""}`} /> {comment.likeCount}
-        </button>
+        <time dateTime={comment.createdAt} className="text-caption text-ink-500">
+          {formatDate(comment.createdAt)}
+        </time>
+      </header>
+      <p className="mt-2 whitespace-pre-wrap break-words text-ui text-ink-700">{comment.body}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+        {canLike ? (
+          <button
+            type="button"
+            onClick={onLike}
+            aria-pressed={comment.likedByMe}
+            aria-label={`Polub komentarz (${likesText})`}
+            className={cn(
+              "inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-field px-3 text-small font-semibold hover:bg-ink-100",
+              comment.likedByMe ? "text-coral-600" : "text-ink-700"
+            )}
+          >
+            <Heart size={16} aria-hidden="true" className={comment.likedByMe ? "fill-coral-600" : undefined} />
+            <span className="num">{comment.likeCount}</span>
+          </button>
+        ) : (
+          <span className="inline-flex min-h-11 items-center gap-1.5 px-1 text-small text-ink-500">
+            <Heart size={16} aria-hidden="true" />
+            <span className="num" aria-hidden="true">
+              {comment.likeCount}
+            </span>
+            <span className="sr-only">{likesText}</span>
+          </span>
+        )}
         {canReply && (
-          <button onClick={onToggleReply} className="font-medium text-ink-500 hover:text-ink-900">
+          <button
+            type="button"
+            onClick={onToggleReply}
+            className="inline-flex min-h-11 items-center rounded-field px-3 text-small font-semibold text-ink-700 hover:bg-ink-100"
+          >
             {isReplying ? "Anuluj" : "Odpowiedz"}
           </button>
         )}
       </div>
-    </div>
+    </article>
   );
 }
