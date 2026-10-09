@@ -73,7 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             which is also what feeds User.lastActiveAt for the admin
             "aktywny/a" dot on every page, not just promotion pages. */}
         <PageViewTracker />
-        <AuthModalProvider>
+        <AuthModalProvider user={user ? { id: user.id, name: user.name } : null}>
           <Header user={user} />
           <main id="tresc" tabIndex={-1} className="flex-1 focus:outline-none">
             {children}
