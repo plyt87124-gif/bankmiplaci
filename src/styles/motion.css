@@ -109,10 +109,6 @@ dialog.animate-dialog-in::backdrop { animation: fade-in 160ms var(--ease-out) bo
 .animate-earnings-pop { animation: earnings-pop 400ms var(--ease-out); }
 .animate-reward-pop { animation: reward-pop 400ms var(--ease-out); }
 
-/* LEGACY: EarningsCounter.tsx (WP-05) still renders spark <span>s with this
-   class until it is migrated. Sparks are removed from the design, so hide them. */
-.animate-earnings-firework { display: none; }
-
 /* ------------------------------------------------------------------ */
 /* Loading: skeleton, pending state                                   */
 /* ------------------------------------------------------------------ */
