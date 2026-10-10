@@ -1,16 +1,12 @@
 import type { ReactNode } from "react";
 import { Clock, XCircle } from "lucide-react";
 import { EffortMeter } from "@/components/ui/EffortMeter";
-import { Amount, Money } from "@/components/ui/Money";
+import { Amount } from "@/components/ui/Money";
 import { cn } from "@/lib/cn";
+import { resolveFee } from "@/lib/feeModel";
 import type { Difficulty } from "@prisma/client";
-import {
-  cooldownShort,
-  describeFee,
-  termFact,
-  type CooldownRule,
-  type FactTone
-} from "./offerModel";
+import { FeeValue } from "./FeeValue";
+import { cooldownShort, termFact, type CooldownRule, type FactTone } from "./offerModel";
 
 const TONE_CLASS: Record<FactTone, string> = {
   neutral: "text-ink-700",
@@ -44,7 +40,9 @@ function Fact({
  *
  * The premium is NOT repeated in a separate tile. An offer without a cash
  * premium (maxBonusCents = 0) says "Bez premii gotówkowej" instead of 0 zł. A
- * fee that is not verified says "Brak danych" - never 0 zł.
+ * fee that is not verified says "Brak danych" - never 0 zł; a 0 zł fee next to
+ * an "Inne opłaty" remark says "od 0 zł" (the shared fee model, the same words
+ * as the fees section, the FAQ and the JSON-LD).
  */
 export function KeyFacts({
   maxBonusCents,
@@ -58,14 +56,14 @@ export function KeyFacts({
   maxBonusCents: number;
   endDate: Date | string;
   difficulty: Difficulty;
-  fees: { accountFeeCents: number | null; accountFeeWaiverCondition: string | null } | null;
+  fees: { accountFeeCents: number | null; accountFeeWaiverCondition: string | null; otherFee?: string | null } | null;
   cooldown: CooldownRule | null;
   /** eligibleFor / notEligibleFor exist, so the "Dla kogo jest promocja?" section is on the page. */
   hasEligibilityText: boolean;
   now?: Date;
 }) {
   const term = termFact(endDate, now);
-  const fee = describeFee(fees?.accountFeeCents, fees?.accountFeeWaiverCondition);
+  const fee = resolveFee(fees?.accountFeeCents, fees?.accountFeeWaiverCondition, fees?.otherFee);
   const hasBonus = maxBonusCents > 0;
 
   return (
@@ -102,9 +100,14 @@ export function KeyFacts({
         </Fact>
 
         <Fact label="Opłata za konto">
-          <Money cents={fee.cents} className="block" />
+          <FeeValue fee={fee} className="block" />
           {fee.kind === "conditional" ? (
-            <span className="mt-0.5 block text-small text-ink-700">0&nbsp;zł po spełnieniu warunku</span>
+            <span className="mt-0.5 block text-small text-ink-700">{fee.waiverNote}</span>
+          ) : null}
+          {fee.kind === "free" && fee.hasCaveat ? (
+            <a href="#oplaty" className="link-inline mt-0.5 inline-block text-small">
+              Sprawdź warunki opłat
+            </a>
           ) : null}
         </Fact>
 

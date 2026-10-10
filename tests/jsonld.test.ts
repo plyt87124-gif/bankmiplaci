@@ -258,6 +258,27 @@ test("feesSpecificationText: otherFee text is never copied, only signals that mo
   assert.equal(feesSpecificationText({ otherFee: secret }), null);
 });
 
+test("feesSpecificationText: the card fee follows the same rule as the account fee (best case + remark, condition, plain spaces)", () => {
+  // 0 zł card next to a remark is "od 0 zł", exactly like the account fee
+  assert.equal(
+    feesSpecificationText({ accountFeeCents: 0, cardFeeCents: 0, otherFee: "Karta 6 zł/mies. bez płatności." }),
+    "Opłata za prowadzenie konta: od 0 zł, zależnie od warunków opisanych w taryfie banku. " +
+      "Opłata za kartę: od 0 zł, zależnie od warunków opisanych w taryfie banku. " +
+      "Szczegółowe warunki i pozostałe opłaty: w taryfie opłat i prowizji banku."
+  );
+  // a blank remark is no remark
+  assert.equal(feesSpecificationText({ accountFeeCents: 0, cardFeeCents: 0, otherFee: "  \n " }), "Opłata za prowadzenie konta: 0 zł. Opłata za kartę: 0 zł.");
+  // a condition keeps its words but loses a trailing full stop, so the sentence does not end "..)."
+  assert.equal(
+    feesSpecificationText({ accountFeeCents: 0, cardFeeCents: 600, cardFeeWaiverCondition: "min. 300 zł płatności." }),
+    "Opłata za prowadzenie konta: 0 zł. Opłata za kartę: 6 zł (0 zł po spełnieniu warunku: min. 300 zł płatności)."
+  );
+  // the markup uses regular spaces only (no non-breaking space from the money formatter)
+  const text = feesSpecificationText({ accountFeeCents: 4950, accountFeeWaiverCondition: "wpływ", cardFeeCents: 1050, atmFeeCents: 600 }) ?? "";
+  assert.ok(!/[  ]/.test(text), text);
+  assert.match(text, /49,50 zł \(0 zł po spełnieniu warunku: wpływ\)\. Opłata za kartę: 10,50 zł\. Opłata za wypłatę z bankomatu: 6 zł\./);
+});
+
 test("promotionLd: fee table URL is used only when no fee field is usable", () => {
   const sourceUrl = "https://bank.example/taryfa.pdf";
   const onlyUrl = promotionLd({ ...BASE, fees: { accountFeeCents: null, sourceUrl } }) as Record<string, any>;

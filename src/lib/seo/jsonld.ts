@@ -12,10 +12,11 @@
  * - `@id`s are stable URLs, so nodes emitted on different pages can reference
  *   each other (`{ "@id": ".../#organization" }`).
  */
+import { hasFeeCaveat, resolveFee } from "@/lib/feeModel";
 import { absoluteUrl, siteName, siteUrl } from "./siteUrl";
 import { isoDatePL, isoInstant } from "./dates";
 import { collapseWhitespace, truncateAtWord } from "./text";
-import { formatAmountPlain, promotionHeading } from "./metadata";
+import { promotionHeading } from "./metadata";
 
 export type JsonLdNode = Record<string, unknown>;
 
@@ -252,24 +253,22 @@ export interface FeesLdInput {
   sourceUrl?: string | null;
 }
 
+/**
+ * One fee as a sentence. The reading of the fee (not verified, "0 zł + a
+ * condition" contradiction, "od 0 zł" next to a caveat, the waived rate) is
+ * the site's single fee model (src/lib/feeModel.ts), the same one the offer
+ * page and its FAQ use, so the markup and the visible text cannot disagree.
+ * Only the spaces differ: the JSON-LD gets plain ones.
+ */
 function feeSentence(
   label: string,
   cents: number | null | undefined,
   waiver: string | null | undefined,
   hasCaveat = false
 ): string | null {
-  if (cents == null || !Number.isFinite(cents) || cents < 0) return null; // not verified -> say nothing
-  const condition = waiver ? collapseWhitespace(waiver) : "";
-  if (condition) {
-    // A waiver means `cents` is the fee WITHOUT the condition. "0 zł + condition"
-    // is contradictory data (the site shows it as unknown), so it is skipped.
-    if (cents === 0) return null;
-    return `${label}: ${formatAmountPlain(cents)} (0 zł po spełnieniu warunku: ${truncateAtWord(condition, 200)}).`;
-  }
-  // The site's convention: 0 = best case, the catch is described in otherFee.
-  // Then a bare "0 zł" would overstate it.
-  if (cents === 0 && hasCaveat) return `${label}: od 0 zł, zależnie od warunków opisanych w taryfie banku.`;
-  return `${label}: ${formatAmountPlain(cents)}.`;
+  const fee = resolveFee(cents, waiver, hasCaveat);
+  if (fee.kind === "unknown") return null; // not verified (or contradictory) -> say nothing, never 0 zł
+  return `${label}: ${fee.sentence.replace(/[  ]/g, " ")}.`;
 }
 
 /**
@@ -279,7 +278,7 @@ function feeSentence(
  */
 export function feesSpecificationText(fees: FeesLdInput | null | undefined): string | null {
   if (!fees) return null;
-  const hasCaveat = Boolean(fees.otherFee && collapseWhitespace(fees.otherFee) !== "");
+  const hasCaveat = hasFeeCaveat(fees.otherFee);
   const sentences = [
     feeSentence("Opłata za prowadzenie konta", fees.accountFeeCents, fees.accountFeeWaiverCondition, hasCaveat),
     feeSentence("Opłata za kartę", fees.cardFeeCents, fees.cardFeeWaiverCondition, hasCaveat),
@@ -289,7 +288,7 @@ export function feesSpecificationText(fees: FeesLdInput | null | undefined): str
   // The site shows a numeric fee as the best case and explains the catch in
   // otherFee (see the fee convention in schema.prisma). Do not let the markup
   // read as an unconditional promise.
-  if (fees.otherFee && collapseWhitespace(fees.otherFee) !== "") {
+  if (hasCaveat) {
     sentences.push("Szczegółowe warunki i pozostałe opłaty: w taryfie opłat i prowizji banku.");
   }
   return sentences.join(" ");

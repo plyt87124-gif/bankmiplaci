@@ -8,7 +8,8 @@ import type { OfferState } from "./offerModel";
  * closing block:
  *
  *   live            "Przejdź do promocji" (tracked link to /out/...) and DIRECTLY
- *                   under it the compact affiliate disclosure - always, no exceptions;
+ *                   under it the compact affiliate disclosure - always, no exceptions
+ *                   (a DRAFT, seen only by an admin, adds a preview note after it);
  *   ended / not promoted
  *                   a disabled button and a link to the current offers;
  *   partner link off
@@ -45,6 +46,13 @@ export function OfferCta({
           {label}
         </AffiliateCtaLink>
         <AffiliateDisclosure variant="compact" className={disclosureClassName} />
+        {/* Admin preview of an unpublished offer: the button is shown so the page looks final, but /out/ turns a
+            draft away. The note follows the disclosure, which stays directly under the button. */}
+        {state.draft ? (
+          <p data-draft-cta-note="" className="mt-2 text-caption text-ink-500">
+            Podgląd: link /out jest nieaktywny dla wersji roboczej.
+          </p>
+        ) : null}
       </div>
     );
   }

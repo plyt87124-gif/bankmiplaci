@@ -1,5 +1,6 @@
-import { Money } from "@/components/ui/Money";
-import { describeFee, safeHttpUrl, type FeeLine } from "./offerModel";
+import { hasFeeCaveat, resolveFee, type FeeModel } from "@/lib/feeModel";
+import { FeeValue } from "./FeeValue";
+import { safeHttpUrl } from "./offerModel";
 
 export interface OfferFees {
   accountFeeCents: number | null;
@@ -11,11 +12,11 @@ export interface OfferFees {
   sourceUrl: string | null;
 }
 
-function FeeNote({ fee }: { fee: FeeLine }) {
+function FeeNote({ fee }: { fee: FeeModel }) {
   if (fee.kind === "conditional" && fee.waiver) {
     return (
       <p className="mt-1 break-words text-small text-ink-700 [overflow-wrap:anywhere]">
-        0&nbsp;zł po spełnieniu warunku: {fee.waiver}
+        {fee.waiverNote}: {fee.waiver}
       </p>
     );
   }
@@ -30,14 +31,14 @@ function FeeNote({ fee }: { fee: FeeLine }) {
   return null;
 }
 
-function FeeRow({ label, fee }: { label: string; fee: FeeLine }) {
+function FeeRow({ label, fee }: { label: string; fee: FeeModel }) {
   return (
     <tr className="border-b border-line align-top last:border-b-0">
       <th scope="row" className="w-2/5 py-3.5 pl-4 pr-3 text-left text-ui font-medium text-ink-700 sm:w-1/3 sm:pl-5">
         {label}
       </th>
       <td className="min-w-0 py-3.5 pr-4 text-ui sm:pr-5">
-        <Money cents={fee.cents} className="text-ink-900" />
+        <FeeValue fee={fee} className="text-ink-900" />
         <FeeNote fee={fee} />
       </td>
     </tr>
@@ -46,25 +47,30 @@ function FeeRow({ label, fee }: { label: string; fee: FeeLine }) {
 
 /**
  * "Opłaty za konto i kartę": a compact two-row table, ONE shared footnote and
- * the free-text "Inne opłaty:" - no asterisks anywhere.
+ * the free-text "Inne opłaty:" - no asterisks anywhere. The values come from the
+ * shared fee model (src/lib/feeModel.ts), the same one the FAQ and the JSON-LD
+ * of this page use.
  *
  *   Brak danych      the fee is not verified (no Fees row, or the field is empty).
  *                    NEVER shown as 0 zł.
- *   0 zł             confirmed 0 zł without a condition.
+ *   0 zł             confirmed 0 zł without a condition and without a remark.
+ *   od 0 zł          0 zł is the best case: "Inne opłaty" describes the catch.
  *   12 zł + note     the rate WITHOUT the condition, with "0 zł po spełnieniu warunku: ...".
  *
  * ATM fees are not shown on purpose (owner's rule). Long conditions wrap
  * (break-words) instead of overflowing a phone screen.
  */
 export function FeesSection({ fees }: { fees: OfferFees | null }) {
-  const account = describeFee(fees?.accountFeeCents, fees?.accountFeeWaiverCondition);
-  const card = describeFee(fees?.cardFeeCents, fees?.cardFeeWaiverCondition);
+  const caveat = hasFeeCaveat(fees?.otherFee);
+  const account = resolveFee(fees?.accountFeeCents, fees?.accountFeeWaiverCondition, caveat);
+  const card = resolveFee(fees?.cardFeeCents, fees?.cardFeeWaiverCondition, caveat);
   const anyUnknown = account.kind === "unknown" || card.kind === "unknown";
+  const anyFromZero = [account, card].some((fee) => fee.kind === "free" && fee.hasCaveat);
   const otherFee = fees?.otherFee?.trim() ?? "";
   const feeTableUrl = safeHttpUrl(fees?.sourceUrl);
 
   return (
-    <section aria-labelledby="oplaty-h">
+    <section id="oplaty" aria-labelledby="oplaty-h" className="scroll-mt-20">
       <h2 id="oplaty-h">Opłaty za konto i kartę</h2>
 
       <div className="mt-5 overflow-hidden rounded-card border border-line bg-surface">
@@ -76,6 +82,13 @@ export function FeesSection({ fees }: { fees: OfferFees | null }) {
           </tbody>
         </table>
       </div>
+
+      {anyFromZero ? (
+        <p className="mt-2 text-small text-ink-500">
+          „Od 0 zł” to stawka w najlepszym przypadku – zależnie od warunków może być wyższa. Szczegóły są niżej, w
+          „Inne opłaty”.
+        </p>
+      ) : null}
 
       {anyUnknown ? (
         <p className="mt-2 text-small text-ink-500">

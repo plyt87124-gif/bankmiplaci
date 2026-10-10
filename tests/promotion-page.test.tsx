@@ -81,6 +81,23 @@ test("CTA (partner link off): no bank button at all, only a sentence and the lis
   assert.match(text(out), /Nie udostępniamy obecnie linku do tej oferty\./);
 });
 
+test("CTA (admin draft preview): the disclosure still follows the button directly; a note says /out/ is inactive", () => {
+  const DRAFT = deriveOfferState({ status: "DRAFT", endDate: day("2026-10-31"), affiliateLinkEnabled: true }, NOW);
+  assert.equal(DRAFT.ctaLive, true); // shown on purpose, so the preview looks like the final page
+  const out = html(h(OfferCta, { state: DRAFT, id: "glowny-cta", ...ctaProps }));
+  const afterLink = out.slice(out.indexOf("</a>"));
+  assert.match(afterLink, /^<\/a><p[^>]*data-disclosure="compact"/);
+  assert.match(text(out), /Podgląd: link \/out jest nieaktywny dla wersji roboczej\./);
+  assert.ok(out.indexOf("data-draft-cta-note") > out.indexOf('data-disclosure="compact"'), "the note comes after the disclosure");
+  // the closing block shows it too; a published offer never does
+  const end = html(h(EndCta, { state: DRAFT, bankName: "Alior Bank", href: "/out/x?src=detail-cta-bottom", moreOffersHref: "/promocje", moreOffersLabel: "x" }));
+  assert.match(text(end), /Podgląd: link \/out jest nieaktywny/);
+  assert.doesNotMatch(html(h(OfferCta, { state: OPEN, ...ctaProps })), /data-draft-cta-note|Podgląd/);
+  // a draft past its deadline has no button, hence no note either
+  const lateDraft = deriveOfferState({ status: "DRAFT", endDate: day("2026-09-30"), affiliateLinkEnabled: true }, NOW);
+  assert.doesNotMatch(html(h(OfferCta, { state: lateDraft, ...ctaProps })), /Podgląd:/);
+});
+
 test("end CTA: own tracking source, disclosure under the button, standing 'not a bank' sentence", () => {
   const out = html(h(EndCta, { state: OPEN, bankName: "Alior Bank", href: "/out/x?src=detail-cta-bottom", moreOffersHref: "/promocje", moreOffersLabel: "x" }));
   assert.match(out, /href="\/out\/x\?src=detail-cta-bottom"/);
@@ -381,6 +398,22 @@ test("bonus breakdown: details only for more than one open part; closed parts ar
   const onlyClosed = html(h(BonusBreakdown, { openParts: [], closedParts: closed, maxBonusCents: 0 }));
   assert.doesNotMatch(onlyClosed, /<details/);
   assert.match(text(onlyClosed), /Zakończone dla nowych uczestników/);
+});
+
+test("bonus breakdown: a label stored with its own amount does not print the amount twice", () => {
+  const parts = [
+    { id: "1", label: "Nagroda za 1. miesiąc po złożeniu wniosku — 200 zł", amountCents: 20000, availableUntil: null },
+    { id: "2", label: "Nagroda za 2. miesiąc (200 zł)", amountCents: 20000, availableUntil: null },
+    { id: "3", label: "Nagroda III stopnia (4× 100 zł)", amountCents: 40000, availableUntil: null },
+    { id: "4", label: "Kantor — 100 zł", amountCents: 10000, availableUntil: day("2026-09-30") }
+  ];
+  const { open, closed } = splitBonusParts(parts, NOW);
+  const t = text(html(h(BonusBreakdown, { openParts: open, closedParts: closed, maxBonusCents: 80000 })));
+  assert.match(t, /Nagroda za 1\. miesiąc po złożeniu wniosku 200 zł Nagroda za 2\. miesiąc 200 zł Nagroda III stopnia \(4× 100 zł\) 400 zł Premia maksymalna 800 zł/);
+  assert.doesNotMatch(t, /200 zł\s+200 zł|— 200 zł|\(200 zł\)/);
+  // the ended part: label without its amount, then the sign-up date, then the amount once
+  assert.match(t, /Kantor \(zapisy do 30\.09\.2026\) 100 zł/);
+  assert.doesNotMatch(t, /Kantor — 100 zł/);
 });
 
 test("conditions: numbered static list, the ściąga link and card only when the offer has a ściąga", () => {

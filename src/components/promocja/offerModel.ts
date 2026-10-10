@@ -1,15 +1,15 @@
 /**
  * Pure decisions of the offer page (/promocje/[slug]): which state the offer is
- * in, how a fee / a deadline / a cooldown is worded, which lines of a free-text
- * field to show. No React, no database - the page, the components and the tests
- * all use the SAME rules.
+ * in, how a deadline / a cooldown is worded, which lines of a free-text field to
+ * show. No React, no database - the page, the components and the tests all use
+ * the SAME rules. (Fees are read by the shared model in src/lib/feeModel.ts.)
  *
  * Hard rules encoded here (docs/redesign-v2/03 and 04):
  *  - nothing is invented: a missing value is "Brak danych", never 0 zl;
  *  - dates are the stored ones, days are counted on Poland's calendar;
  *  - the partner commission is not an input of anything on this page.
  */
-import { formatDatePL, formatPLN, pluralizePl } from "@/lib/format";
+import { formatDatePL, pluralizePl } from "@/lib/format";
 import { deadlineState } from "@/lib/freshness";
 import { isDeadlinePassed } from "@/lib/promotionAvailability";
 import { formatCooldownWindow } from "@/lib/cooldownText";
@@ -41,9 +41,12 @@ export interface OfferState {
 }
 
 /**
- * Same availability rule as /out/[slug] (promotionAvailability.ts), split into
- * the cases the page words differently. DRAFT keeps the CTA visible on purpose:
- * the admin preview shows the page as it will look.
+ * The availability rules of promotionAvailability.ts, split into the cases the
+ * page words differently. For a published offer `ctaLive` equals
+ * isAffiliateLinkLive() - what /out/[slug] enforces (open sign-up, then the
+ * campaign switch). The ONE deliberate difference is DRAFT: the admin preview
+ * keeps the CTA so the page looks as it will once published, although /out/[slug]
+ * sends a DRAFT to /promocje?niedostepna=1 (OfferCta says so under the button).
  */
 export function deriveOfferState(input: OfferStateInput, now: Date = new Date()): OfferState {
   const deadlinePassed = isDeadlinePassed(input.endDate, now);
@@ -59,54 +62,6 @@ export function deriveOfferState(input: OfferStateInput, now: Date = new Date())
     affiliateOff,
     ctaLive: !expired && !affiliateOff
   };
-}
-
-/* ------------------------------------------------------------------ */
-/* Fees                                                                */
-/* ------------------------------------------------------------------ */
-
-export type FeeKind = "free" | "conditional" | "paid" | "unknown";
-
-export interface FeeLine {
-  kind: FeeKind;
-  /** The rate to print; null when unknown (print "Brak danych"). */
-  cents: number | null;
-  /** Waiver condition, trimmed; null when there is none. */
-  waiver: string | null;
-}
-
-/**
- * The Fees row stores the rate charged WHEN the waiver condition is NOT met;
- * the waived rate is always 0 (see Fees in prisma/schema.prisma). So:
- *
- *   null (no Fees row / not verified)        -> unknown   "Brak danych" (never 0 zl)
- *   0 zl and no condition                    -> free      "0 zl"
- *   0 zl WITH a condition (contradictory)    -> unknown   (the real rate is not known)
- *   12 zl with a condition                   -> conditional "12 zl", "0 zl po spelnieniu warunku"
- *   12 zl and no condition                   -> paid      "12 zl"
- */
-export function describeFee(cents: number | null | undefined, waiverCondition?: string | null): FeeLine {
-  const waiver = waiverCondition?.trim() ? waiverCondition.trim() : null;
-  if (cents == null || !Number.isFinite(cents) || cents < 0) return { kind: "unknown", cents: null, waiver };
-  if (cents === 0) return waiver ? { kind: "unknown", cents: null, waiver } : { kind: "free", cents: 0, waiver: null };
-  return waiver ? { kind: "conditional", cents, waiver } : { kind: "paid", cents, waiver: null };
-}
-
-/** "0 zl" / "12 zl" / "Brak danych" - the value as one string (FAQ, notes). */
-export function feeValueText(fee: FeeLine): string {
-  return fee.cents == null ? "Brak danych" : formatPLN(fee.cents);
-}
-
-/** One sentence per fee for the FAQ answer: "12 zl (0 zl po spelnieniu warunku)" / "brak danych - sprawdz tabele oplat banku". */
-export function feeFaqText(fee: FeeLine): string {
-  switch (fee.kind) {
-    case "unknown":
-      return "brak danych – sprawdź tabelę opłat banku";
-    case "conditional":
-      return `${formatPLN(fee.cents ?? 0)} (0 zł po spełnieniu warunku)`;
-    default:
-      return formatPLN(fee.cents ?? 0);
-  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -164,10 +119,16 @@ export function cooldownRule(p: {
   return months === null && cutoff === null ? null : { months, cutoff };
 }
 
-/** The short "Karencja" fact of the summary bar. */
+/**
+ * The short "Karencja" fact of the summary bar (also usable by the comparison).
+ * A stored cut-off date is a concrete requirement, so it wins over "0 months":
+ * "Bez karencji" is said only when there is no date to state.
+ */
 export function cooldownShort(rule: CooldownRule): string {
-  if (rule.months !== null) return rule.months === 0 ? "Bez karencji" : `Karencja ${rule.months} mies.`;
-  return `Bez konta w banku od ${formatDatePL(rule.cutoff as Date)}`;
+  const cutoffText = rule.cutoff ? `Bez konta w banku od ${formatDatePL(rule.cutoff)}` : null;
+  if (rule.months === 0) return cutoffText ?? "Bez karencji";
+  if (rule.months !== null) return `Karencja ${rule.months} mies.`;
+  return cutoffText ?? "Brak danych";
 }
 
 /**
@@ -211,6 +172,53 @@ export function splitLines(text: string | null | undefined): string[] {
     .split(/\r?\n/)
     .map((line) => line.replace(/^\s*(?:[-–—•*]|\d{1,2}[.)])\s+/, "").trim())
     .filter(Boolean);
+}
+
+/** "200" and "1 200" for whole zloty, "10,50" and "1 200,50" with grosze: how the amount may be typed inside a label. */
+function amountForms(cents: number): string[] {
+  const zloty = cents / 100;
+  const whole = String(Math.trunc(zloty));
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  if (cents % 100 === 0) return [...new Set([whole, grouped])];
+  const decimals = zloty.toFixed(2).slice(-2);
+  return [...new Set([`${whole},${decimals}`, `${grouped},${decimals}`])];
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Part labels of a bonus are often stored WITH their amount ("Nagroda za 1.
+ * miesiąc po złożeniu wniosku — 200 zł"), while the page prints the amount in a
+ * column of its own. This cuts a trailing "— 200 zł" or "(200 zł)" that equals
+ * `amountCents` (the amount formatPLN prints), so it is not said twice.
+ * The same goes for "Nagroda I — 200 zł (10 dni po zawarciu umów)": the amount
+ * before a closing remark in parentheses is cut, the remark stays.
+ * Nothing else is touched: an amount that differs from the part's ("(4× 100 zł)"
+ * for 400 zł), one with a qualifier ("— do 120 zł") or one elsewhere in the
+ * label stays, and a label that would become empty is returned whole.
+ */
+export function labelWithoutAmount(label: string, amountCents: number): string {
+  // \s also covers the non-breaking and narrow no-break spaces Intl puts into amounts.
+  const text = label.replace(/\s+/g, " ").trim();
+  if (!Number.isFinite(amountCents) || amountCents <= 0) return text;
+  for (const form of amountForms(amountCents)) {
+    const amount = escapeRegExp(form);
+    const money = String.raw`${amount}\s?(?:zł|zl|PLN)`;
+    const trailing = new RegExp(String.raw`(?:\s+[—–-]\s+${money}|\s*\(\s*${money}\s*\))$`, "i").exec(text);
+    if (trailing) {
+      const rest = text.slice(0, trailing.index).replace(/[\s,;:—–-]+$/, "");
+      return rest || text;
+    }
+    // "— 200 zł (remark)": drop the dash and the amount, keep the closing remark.
+    const beforeRemark = new RegExp(String.raw`\s+[—–-]\s+${money}(?=\s*\([^()]*\)$)`, "i").exec(text);
+    if (beforeRemark) {
+      const rest = (text.slice(0, beforeRemark.index) + text.slice(beforeRemark.index + beforeRemark[0].length)).trim();
+      return rest || text;
+    }
+  }
+  return text;
 }
 
 /** http(s) URL or null: a link typed in the admin panel never reaches an href unchecked. */

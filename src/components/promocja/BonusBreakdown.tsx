@@ -2,6 +2,7 @@ import { ChevronDown } from "lucide-react";
 import { Money } from "@/components/ui/Money";
 import { formatDatePL } from "@/lib/format";
 import { isBonusPartOpen } from "@/lib/promotionAvailability";
+import { labelWithoutAmount } from "./offerModel";
 
 export interface BonusPartView {
   id: string;
@@ -28,6 +29,9 @@ export function splitBonusParts<T extends { availableUntil?: Date | string | nul
  * always in the HTML. Parts whose own sign-up window has closed (e.g. a bonus
  * that ended before the main offer) are listed separately and are NEVER summed
  * into the amount: they stay in the data for people who joined earlier.
+ *
+ * A label stored with its own amount ("… — 200 zł") is shown without it: the
+ * amount has a column of its own (labelWithoutAmount).
  */
 export function BonusBreakdown({
   openParts,
@@ -56,7 +60,7 @@ export function BonusBreakdown({
             <ul role="list" className="divide-y divide-line border-t border-line">
               {openParts.map((part) => (
                 <li key={part.id} className="flex items-baseline justify-between gap-4 px-4 py-3 sm:px-5">
-                  <span className="min-w-0 break-words text-ui text-ink-700">{part.label}</span>
+                  <span className="min-w-0 break-words text-ui text-ink-700">{labelWithoutAmount(part.label, part.amountCents)}</span>
                   <Money cents={part.amountCents} className="shrink-0 text-ui text-ink-900" />
                 </li>
               ))}
@@ -90,7 +94,7 @@ export function BonusBreakdown({
               return (
                 <li key={part.id} className="flex items-baseline justify-between gap-4 py-2">
                   <span className="min-w-0 break-words">
-                    {part.label}
+                    {labelWithoutAmount(part.label, part.amountCents)}
                     {until ? <> (zapisy do {until})</> : null}
                   </span>
                   <Money cents={part.amountCents} className="shrink-0" />

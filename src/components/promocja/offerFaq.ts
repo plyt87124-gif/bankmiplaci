@@ -11,12 +11,12 @@
  *  - plain text only (the same string is rendered and put into the JSON-LD).
  */
 import type { FaqAccordionItem } from "@/components/FaqAccordion";
+import { resolveFee } from "@/lib/feeModel";
 import { formatDatePL, formatPLN } from "@/lib/format";
 import {
   COOLDOWN_EXPLAINER,
   cooldownSentences,
-  describeFee,
-  feeFaqText,
+  labelWithoutAmount,
   splitLines,
   type CooldownRule
 } from "./offerModel";
@@ -39,6 +39,8 @@ export interface OfferFaqInput {
     accountFeeWaiverCondition: string | null;
     cardFeeCents: number | null;
     cardFeeWaiverCondition: string | null;
+    /** Free text "Inne opłaty": its presence turns a bare "0 zł" into "od 0 zł" (the shared fee model). */
+    otherFee?: string | null;
   } | null;
   lastVerifiedAt: Date | string | null;
   /** Where "Jak liczymy ocenę" / "Co znaczy Zweryfikowano" lead (methodology page or its fallback). */
@@ -51,6 +53,12 @@ function stripTrailingPunctuation(text: string): string {
   return text.replace(/\s+/g, " ").trim().replace(/[.;,:\s]+$/, "");
 }
 
+/** One free-text line as a sentence: no doubled full stop, and a question or exclamation mark is kept. */
+function asSentence(text: string): string {
+  const body = stripTrailingPunctuation(text);
+  return /[?!…]$/.test(body) ? body : `${body}.`;
+}
+
 function questionBonus(input: OfferFaqInput): FaqAccordionItem {
   const question = `Ile można zyskać w promocji „${input.name}”?`;
   if (input.maxBonusCents <= 0) {
@@ -61,9 +69,12 @@ function questionBonus(input: OfferFaqInput): FaqAccordionItem {
         NO_DATA_TAIL
     };
   }
+  // Stored labels often end with their own amount ("… — 200 zł"): the amount is added once, here.
   const parts =
     input.bonusParts.length > 1
-      ? ` Części premii: ${input.bonusParts.map((p) => `${stripTrailingPunctuation(p.label)} – ${formatPLN(p.amountCents)}`).join("; ")}.`
+      ? ` Części premii: ${input.bonusParts
+          .map((p) => `${stripTrailingPunctuation(labelWithoutAmount(p.label, p.amountCents))} – ${formatPLN(p.amountCents)}`)
+          .join("; ")}.`
       : "";
   return {
     question,
@@ -79,10 +90,12 @@ function questionSteps(input: OfferFaqInput): FaqAccordionItem {
   if (titles.length === 0) {
     return { question, answer: `Nie mamy jeszcze rozpisanych warunków tej promocji. ${NO_DATA_TAIL}` };
   }
+  // These are OUR write-up of the terms (the same list as the "Warunki promocji" section), not a quotation
+  // of the regulation - and the data has no flag telling a step from a note, so all of them are listed.
   const steps = titles.map((title, index) => `${index + 1}) ${title}`).join("; ");
   return {
     question,
-    answer: `Według regulaminu: ${steps}. Opisy kroków znajdziesz w sekcji „Warunki promocji”.`
+    answer: `Według naszego opisu promocji: ${steps}. Szczegóły znajdziesz w sekcji „Warunki promocji”, a wiążące zasady w regulaminie banku.`
   };
 }
 
@@ -114,7 +127,7 @@ function questionEligibility(input: OfferFaqInput): FaqAccordionItem {
       answer: `${sentences}${explainer} Zawsze sprawdź pełne warunki uczestnictwa w regulaminie banku.`
     };
   }
-  const who = splitLines(input.eligibleFor).join(" ");
+  const who = splitLines(input.eligibleFor).map(asSentence).join(" ");
   return {
     question,
     answer:
@@ -126,12 +139,14 @@ function questionEligibility(input: OfferFaqInput): FaqAccordionItem {
 
 function questionCost(input: OfferFaqInput): FaqAccordionItem {
   const question = "Ile kosztuje konto w tej promocji?";
-  const account = describeFee(input.fees?.accountFeeCents, input.fees?.accountFeeWaiverCondition);
-  const card = describeFee(input.fees?.cardFeeCents, input.fees?.cardFeeWaiverCondition);
+  // The same fee model as the fees section and the JSON-LD: one reading, one set of words.
+  const fees = input.fees;
+  const account = resolveFee(fees?.accountFeeCents, fees?.accountFeeWaiverCondition, fees?.otherFee);
+  const card = resolveFee(fees?.cardFeeCents, fees?.cardFeeWaiverCondition, fees?.otherFee);
   return {
     question,
     answer:
-      `Opłata za konto: ${feeFaqText(account)}. Opłata za kartę: ${feeFaqText(card)}. ` +
+      `Opłata za konto: ${account.sentence}. Opłata za kartę: ${card.sentence}. ` +
       "Warunki zwolnienia z opłat i inne opłaty opisujemy w sekcji „Opłaty za konto i kartę”."
   };
 }

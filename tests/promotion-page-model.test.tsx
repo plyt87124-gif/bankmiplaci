@@ -11,9 +11,7 @@ import {
   cooldownSentences,
   cooldownShort,
   deriveOfferState,
-  describeFee,
-  feeFaqText,
-  feeValueText,
+  labelWithoutAmount,
   methodologyHref,
   normalizeRef,
   pickBankOffers,
@@ -25,6 +23,7 @@ import {
 } from "../src/components/promocja/offerModel";
 import { buildOfferFaq, type OfferFaqInput } from "../src/components/promocja/offerFaq";
 import { buildOfferStructuredData } from "../src/components/promocja/offerStructuredData";
+import { isAffiliateLinkLive } from "../src/lib/promotionAvailability";
 import { serializeJsonLd } from "../src/lib/seo/jsonld";
 
 // 9 Oct 2026, noon in Warsaw.
@@ -91,48 +90,25 @@ test("state: DRAFT keeps the CTA so the admin preview looks like the final page"
   assert.equal(s.ctaLive, true);
 });
 
-/* ------------------------------------------------------------------ */
-/* Fees                                                                */
-/* ------------------------------------------------------------------ */
-
-test("fee: not verified (null / undefined) is 'Brak danych', never 0 zł", () => {
-  for (const cents of [null, undefined]) {
-    const f = describeFee(cents, null);
-    assert.equal(f.kind, "unknown");
-    assert.equal(f.cents, null);
-    assert.equal(feeValueText(f), "Brak danych");
+test("state: ctaLive is exactly what /out/[slug] allows (isAffiliateLinkLive) - except a DRAFT, kept for the admin preview", () => {
+  const statuses = ["ACTIVE", "EXPIRED", "ARCHIVED", "DRAFT"];
+  const endDates = ["2026-09-30", "2026-10-08", "2026-10-09", "2026-10-31"]; // ended, yesterday, today (last day), ahead
+  for (const status of statuses) {
+    for (const end of endDates) {
+      for (const affiliateLinkEnabled of [true, false]) {
+        const input = { status, endDate: day(end), affiliateLinkEnabled };
+        const state = deriveOfferState(input, NOW);
+        const label = `${status} ${end} affiliate=${affiliateLinkEnabled}`;
+        if (status === "DRAFT") {
+          // /out/ turns a DRAFT away; the page still shows the button to the admin while the offer is open.
+          assert.equal(isAffiliateLinkLive(input, NOW), false, label);
+          assert.equal(state.ctaLive, !state.deadlinePassed && affiliateLinkEnabled, label);
+        } else {
+          assert.equal(state.ctaLive, isAffiliateLinkLive(input, NOW), label);
+        }
+      }
+    }
   }
-});
-
-test("fee: 0 zł without a condition is confirmed free", () => {
-  const f = describeFee(0, null);
-  assert.equal(f.kind, "free");
-  assert.equal(nbsp(feeValueText(f)), "0 zł");
-  assert.equal(describeFee(0, "   ").kind, "free"); // blank waiver text is no condition
-});
-
-test("fee: 0 zł WITH a waiver condition is contradictory data = unknown, the condition is kept", () => {
-  const f = describeFee(0, "wpływ min. 1000 zł");
-  assert.equal(f.kind, "unknown");
-  assert.equal(f.cents, null);
-  assert.equal(f.waiver, "wpływ min. 1000 zł");
-});
-
-test("fee: a rate with a waiver is conditional, a plain rate is paid", () => {
-  assert.equal(describeFee(1200, "5 płatności kartą").kind, "conditional");
-  assert.equal(nbsp(feeValueText(describeFee(1200, "5 płatności kartą"))), "12 zł");
-  assert.equal(describeFee(990, null).kind, "paid");
-});
-
-test("fee: a negative or non-finite amount is not believed", () => {
-  assert.equal(describeFee(-1, null).kind, "unknown");
-  assert.equal(describeFee(Number.NaN, null).kind, "unknown");
-});
-
-test("fee FAQ wording never turns an unknown fee into 0 zł", () => {
-  assert.match(feeFaqText(describeFee(null, null)), /brak danych/);
-  assert.doesNotMatch(feeFaqText(describeFee(null, null)), /0\s*zł/);
-  assert.match(nbsp(feeFaqText(describeFee(1200, "warunek"))), /12 zł \(0 zł po spełnieniu warunku\)/);
 });
 
 /* ------------------------------------------------------------------ */
@@ -198,6 +174,9 @@ test("cooldownShort and cooldownSentences use the stored values only", () => {
   assert.equal(cooldownShort({ months: 36, cutoff: null }), "Karencja 36 mies.");
   assert.equal(cooldownShort({ months: 0, cutoff: null }), "Bez karencji");
   assert.equal(cooldownShort({ months: null, cutoff: day("2024-08-01") }), "Bez konta w banku od 01.08.2024");
+  // a stored date is a concrete requirement: it wins over "0 months", "Bez karencji" only without a date
+  assert.equal(cooldownShort({ months: 0, cutoff: day("2024-08-01") }), "Bez konta w banku od 01.08.2024");
+  assert.equal(cooldownShort({ months: 36, cutoff: day("2024-08-01") }), "Karencja 36 mies.");
 
   const months = cooldownSentences({ months: 36, cutoff: null }, "Alior Bank");
   assert.equal(months.length, 1);
@@ -221,6 +200,45 @@ test("splitLines: bullets and numbering are stripped, a single line stays one en
   assert.deepEqual(splitLines("- jedna\n• dwie\r\n3. trzy\n\n  \n* cztery"), ["jedna", "dwie", "trzy", "cztery"]);
   // a number that belongs to the sentence is not a list marker
   assert.deepEqual(splitLines("3 lata bez konta"), ["3 lata bez konta"]);
+});
+
+test("labelWithoutAmount: cuts a trailing amount that equals the part's amount, nothing else", () => {
+  // the shapes found in the stored labels
+  assert.equal(
+    labelWithoutAmount("Nagroda za 1. miesiąc po złożeniu wniosku — 200 zł", 20000),
+    "Nagroda za 1. miesiąc po złożeniu wniosku"
+  );
+  assert.equal(labelWithoutAmount("Premia I – 50 zł", 5000), "Premia I");
+  assert.equal(labelWithoutAmount("Premia I - 50 zł", 5000), "Premia I");
+  assert.equal(labelWithoutAmount("Nagroda (200 zł)", 20000), "Nagroda");
+  assert.equal(labelWithoutAmount("Premia — 10,50 zł", 1050), "Premia");
+  assert.equal(labelWithoutAmount("Kantor — 1 200 zł", 120000), "Kantor");
+  assert.equal(labelWithoutAmount("Kantor — 1200 zł", 120000), "Kantor");
+  assert.equal(labelWithoutAmount("Kantor — 1 200 zł", 120000), "Kantor"); // no-break spaces, as Intl writes them
+  assert.equal(labelWithoutAmount("Kantor — 1 200 zł", 120000), "Kantor");
+  assert.equal(labelWithoutAmount("Bonus — 100zł", 10000), "Bonus");
+  // a different amount, a qualifier, a part of a bigger number, or an amount in the middle stays as stored
+  assert.equal(labelWithoutAmount("Nagroda III stopnia (4× 100 zł)", 40000), "Nagroda III stopnia (4× 100 zł)");
+  assert.equal(labelWithoutAmount("Zwrot 5% — do 120 zł", 12000), "Zwrot 5% — do 120 zł");
+  assert.equal(labelWithoutAmount("Nagroda — 1200 zł", 20000), "Nagroda — 1200 zł");
+  assert.equal(labelWithoutAmount("Nagroda — 200 zł", 2000), "Nagroda — 200 zł");
+  assert.equal(labelWithoutAmount("Nagroda — 200 zł za wniosek", 20000), "Nagroda — 200 zł za wniosek");
+  assert.equal(labelWithoutAmount("Nagrody III stopnia — 4 × 100 zł", 40000), "Nagrody III stopnia — 4 × 100 zł");
+  // an amount before a closing remark in parentheses is cut, the remark stays
+  assert.equal(
+    labelWithoutAmount("Nagroda na start I stopnia — 200 zł (+ obrączka płatnicza, nagroda rzeczowa)", 20000),
+    "Nagroda na start I stopnia (+ obrączka płatnicza, nagroda rzeczowa)"
+  );
+  assert.equal(
+    labelWithoutAmount("Premia I — 100 zł (wpływ w 7 dni, transakcje 350 zł, saldo Moje cele)", 10000),
+    "Premia I (wpływ w 7 dni, transakcje 350 zł, saldo Moje cele)"
+  );
+  assert.equal(labelWithoutAmount("Premia I — 100 zł (wpływ)", 20000), "Premia I — 100 zł (wpływ)"); // not this part's amount
+  assert.equal(labelWithoutAmount("— 100 zł (wpływ)", 10000), "— 100 zł (wpływ)"); // nothing would be left of the label
+  // nothing left of the label -> the label is kept whole; junk amounts change nothing
+  assert.equal(labelWithoutAmount("200 zł", 20000), "200 zł");
+  assert.equal(labelWithoutAmount("Nagroda — 200 zł", 0), "Nagroda — 200 zł");
+  assert.equal(labelWithoutAmount("  Nagroda   I  ", 20000), "Nagroda I");
 });
 
 test("safeHttpUrl: only http(s) reaches an href", () => {
@@ -306,7 +324,7 @@ test("FAQ: six questions with answers, built from the fields", () => {
   assert.match(text, /1\) Otwórz konto; 2\) Zaloguj się do aplikacji/);
   assert.match(text, /Do 31\.10\.2026/);
   assert.match(text, /36 miesięcy/);
-  assert.match(text, /Opłata za konto: 0 zł\. Opłata za kartę: 6 zł \(0 zł po spełnieniu warunku\)/);
+  assert.match(text, /Opłata za konto: 0 zł\. Opłata za kartę: 6 zł \(0 zł po spełnieniu warunku: min\. 300 zł płatności\)\./);
   assert.match(text, /Ostatnia weryfikacja: 07\.10\.2026/);
 });
 
@@ -349,6 +367,67 @@ test("FAQ: the cooldown answer explains the term only for a monthly rule", () =>
   const cutoffOnly = buildOfferFaq({ ...FAQ_BASE, cooldown: { months: null, cutoff: day("2024-08-01") } })[3]?.answer ?? "";
   assert.doesNotMatch(cutoffOnly, /Karencja to okres/);
   assert.match(cutoffOnly, /od 01\.08\.2024/);
+});
+
+test("FAQ: a part label that already ends with its amount does not print it twice", () => {
+  const items = buildOfferFaq({
+    ...FAQ_BASE,
+    maxBonusCents: 40000,
+    bonusParts: [
+      { label: "Nagroda za 1. miesiąc po złożeniu wniosku — 200 zł", amountCents: 20000 },
+      { label: "Nagroda za 2. miesiąc (200 zł)", amountCents: 20000 }
+    ]
+  });
+  const answer = nbsp(items[0]?.answer ?? "");
+  assert.match(answer, /Nagroda za 1\. miesiąc po złożeniu wniosku – 200 zł; Nagroda za 2\. miesiąc – 200 zł\./);
+  assert.doesNotMatch(answer, /200 zł – 200 zł|— 200 zł|\(200 zł\)/);
+});
+
+test("FAQ: the steps are our write-up of the terms, not a quotation of the regulation", () => {
+  const answer = buildOfferFaq(FAQ_BASE)[1]?.answer ?? "";
+  assert.match(answer, /^Według naszego opisu promocji: 1\) Otwórz konto; 2\) Zaloguj się do aplikacji\./);
+  assert.doesNotMatch(answer, /Według regulaminu/);
+  assert.match(answer, /wiążące zasady w regulaminie banku/);
+});
+
+test("FAQ: free-text eligibility lines become separate sentences", () => {
+  const answer = buildOfferFaq({
+    ...FAQ_BASE,
+    cooldown: null,
+    eligibleFor: "Nowi klienci.\n- Osoby pełnoletnie;\n2) Bez konta w ostatnich 3 latach"
+  })[3]?.answer;
+  assert.match(
+    answer ?? "",
+    /Kto może skorzystać: Nowi klienci\. Osoby pełnoletnie\. Bez konta w ostatnich 3 latach\. Sprawdź to w regulaminie banku\.$/
+  );
+  // a question mark is kept, no ".?" and no ".."
+  const odd = buildOfferFaq({ ...FAQ_BASE, cooldown: null, eligibleFor: "Czy masz 18 lat?\nTak.." })[3]?.answer ?? "";
+  assert.match(odd, /Kto może skorzystać: Czy masz 18 lat\? Tak\. Sprawdź/);
+});
+
+test("FAQ: a 0 zł fee next to an 'Inne opłaty' remark is 'od 0 zł', never a bare 0 zł", () => {
+  const remark = "Karta 6 zł/mies., chyba że płatności min. 300 zł.";
+  const answer = nbsp(
+    buildOfferFaq({
+      ...FAQ_BASE,
+      fees: { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: 0, cardFeeWaiverCondition: null, otherFee: remark }
+    })[4]?.answer ?? ""
+  );
+  assert.match(
+    answer,
+    /^Opłata za konto: od 0 zł, zależnie od warunków opisanych w taryfie banku\. Opłata za kartę: od 0 zł, zależnie od warunków opisanych w taryfie banku\./
+  );
+  assert.doesNotMatch(answer, /Opłata za (konto|kartę): 0 zł/);
+  // the remark itself is not copied into the answer (it is free text; the section shows it)
+  assert.doesNotMatch(answer, /chyba że/);
+  // without a remark the same fees are plainly free
+  const plain = nbsp(
+    buildOfferFaq({
+      ...FAQ_BASE,
+      fees: { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: 0, cardFeeWaiverCondition: null, otherFee: "   " }
+    })[4]?.answer ?? ""
+  );
+  assert.match(plain, /^Opłata za konto: 0 zł\. Opłata za kartę: 0 zł\./);
 });
 
 /* ------------------------------------------------------------------ */
@@ -401,6 +480,33 @@ test("structured data: a verified fee goes into the fee specification", () => {
   });
   const product = ld["@graph"].find((n) => n["@type"] === "FinancialProduct") as { feesAndCommissionsSpecification: string };
   assert.match(nbsp(product.feesAndCommissionsSpecification), /Opłata za prowadzenie konta: 0 zł/);
+});
+
+test("structured data: the fee specification and the visible FAQ word the same fees the same way", () => {
+  const cases = [
+    { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: 0, cardFeeWaiverCondition: null, otherFee: "Karta 6 zł/mies. bez płatności." },
+    { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: 600, cardFeeWaiverCondition: "min. 300 zł płatności", otherFee: null },
+    { accountFeeCents: 1200, accountFeeWaiverCondition: "wpływ 1000 zł", cardFeeCents: null, cardFeeWaiverCondition: null, otherFee: "Inne plany: zob. cennik." },
+    { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: 0, cardFeeWaiverCondition: null, otherFee: null }
+  ];
+  for (const fees of cases) {
+    const faq = buildOfferFaq({ ...FAQ_BASE, fees });
+    const answer = nbsp(faq[4]?.answer ?? "");
+    const ld = structured({ fees });
+    const product = ld["@graph"].find((n) => n["@type"] === "FinancialProduct") as { feesAndCommissionsSpecification?: string };
+    const spec = product.feesAndCommissionsSpecification ?? "";
+    // every fee the specification states is worded identically in the FAQ answer
+    for (const label of ["Opłata za prowadzenie konta", "Opłata za kartę"]) {
+      const sentence = new RegExp(String.raw`${label}: (.+?)\.(?: Opłata| Szczegółowe|$)`).exec(spec)?.[1];
+      if (!sentence) continue;
+      assert.ok(answer.includes(sentence), `${label}: "${sentence}" not in "${answer}"`);
+    }
+    // a bare "0 zł" appears in neither when a remark qualifies it
+    if (fees.otherFee) {
+      assert.doesNotMatch(spec, /: 0 zł\./);
+      assert.doesNotMatch(answer, /: 0 zł\./);
+    }
+  }
 });
 
 test("structured data: a title with </script> cannot break out of the tag", () => {

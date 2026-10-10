@@ -3,10 +3,8 @@
  * functions so they are unit-tested without rendering and reused by anything
  * else that has to say the same thing (listing, hubs, bank pages).
  */
-import { formatPLN } from "@/lib/format";
+import { resolveFee } from "@/lib/feeModel";
 import { isRouteLive } from "@/lib/seo/routes";
-
-const NBSP = "\u00A0";
 
 export type AccountFeeKind = "free" | "conditional" | "paid" | "unknown";
 
@@ -25,21 +23,24 @@ export interface AccountFeeLine {
  *
  *   no Fees row / fee not verified (null)      -> "Brak danych"   (never 0 zł)
  *   0 zł and no condition                      -> "0 zł"          (confirmed free)
+ *   ... with an "Inne opłaty" remark (hasOtherFee) -> "od 0 zł"   (0 zł is the best case)
  *   0 zł WITH a condition (contradictory data) -> "Brak danych"   (the real rate is unknown)
  *   12 zł and no condition                     -> "12 zł"
  *   12 zł with a condition                     -> "12 zł" + note "0 zł po spełnieniu warunku"
+ *
+ * The reading is the site's single fee model (src/lib/feeModel.ts), shared with
+ * the offer page, its FAQ and JSON-LD and the comparison. `hasOtherFee` is the
+ * yes/no "the offer has an Inne opłaty remark"; the card data does not carry it
+ * yet, so until it does a card without it keeps saying "0 zł".
  */
 export function describeAccountFee(
-  fees: { accountFeeCents: number | null; accountFeeWaiverCondition?: string | null } | null | undefined
+  fees:
+    | { accountFeeCents: number | null; accountFeeWaiverCondition?: string | null; hasOtherFee?: boolean }
+    | null
+    | undefined
 ): AccountFeeLine {
-  const unknown: AccountFeeLine = { kind: "unknown", text: "Brak danych" };
-  if (!fees || fees.accountFeeCents == null) return unknown;
-  const hasCondition = Boolean(fees.accountFeeWaiverCondition?.trim());
-  if (fees.accountFeeCents === 0) return hasCondition ? unknown : { kind: "free", text: formatPLN(0) };
-  const amount = formatPLN(fees.accountFeeCents);
-  return hasCondition
-    ? { kind: "conditional", text: amount, note: `0${NBSP}zł po spełnieniu warunku` }
-    : { kind: "paid", text: amount };
+  const fee = resolveFee(fees?.accountFeeCents, fees?.accountFeeWaiverCondition, fees?.hasOtherFee);
+  return fee.waiverNote ? { kind: fee.kind, text: fee.label, note: fee.waiverNote } : { kind: fee.kind, text: fee.label };
 }
 
 /**
