@@ -71,6 +71,7 @@ export function FilterSheet({
   }
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- natywny <dialog>: mouse down/up tylko wykrywa klik w tlo (backdrop); zamykanie z klawiatury (Esc) obsluguje przegladarka (onClose).
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}

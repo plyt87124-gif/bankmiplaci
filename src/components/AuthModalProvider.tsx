@@ -205,6 +205,7 @@ function AuthDialog({
   }
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- natywny <dialog>: mouse down/up tylko wykrywa klik w tlo (backdrop); zamykanie z klawiatury (Esc) obsluguje onCancel.
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}

@@ -371,6 +371,7 @@ export function PromotionComments({
                           invalid={Boolean(replyError)}
                           aria-describedby={replyError ? `${baseId}-reply-error` : undefined}
                           className="min-h-[5rem] flex-1"
+                          // eslint-disable-next-line jsx-a11y/no-autofocus -- pole odpowiedzi pojawia sie dopiero po kliknieciu „Odpowiedz”; przeniesienie fokusu jest reakcja na te akcje uzytkownika, nie niespodzianka przy ladowaniu strony.
                           autoFocus
                         />
                         <Button type="submit" disabled={!replyBody.trim()} className="self-start">

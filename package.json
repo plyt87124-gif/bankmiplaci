@@ -20,7 +20,8 @@
     "import:promotions": "tsx scripts/import-promotions.ts",
     "recompute:ratings": "tsx scripts/recompute-ratings.ts",
     "checklist:reminders": "tsx scripts/checklist-deadline-reminders.ts",
-    "audit:fees": "tsx scripts/audit-unverified-fees.ts"
+    "audit:fees": "tsx scripts/audit-unverified-fees.ts",
+    "audit:a11y": "node scripts/a11y-audit.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -52,6 +53,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "autoprefixer": "^10.4.20",
+    "axe-core": "^4.13.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "15.5.27",
     "postcss": "8.5.28",
