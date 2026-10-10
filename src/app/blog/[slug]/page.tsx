@@ -12,22 +12,19 @@ import { categoryHref, categoryInfo } from "@/components/blog/categories";
 import { containsPartnerLinks } from "@/components/blog/links";
 import { formatDatePL } from "@/lib/format";
 import { articleLd, breadcrumbLd, buildMetadata, collapseWhitespace, truncateAtWord, DESCRIPTION_MAX } from "@/lib/seo";
-import { getPublishedArticle, getRelatedArticles, getRelatedPromotionCard, listPublishedSlugs } from "../data";
+import { getPublishedArticle, getRelatedArticles, getRelatedPromotionCard } from "../data";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
 /**
- * Articles are rendered once and refreshed every 10 minutes (ISR). Slugs that
- * are not known at build time are rendered on first request; with no database
- * at build time nothing is prerendered and everything is rendered on demand.
+ * The route is rendered per request. It must NOT export `revalidate` or
+ * `generateStaticParams`: the root layout reads the session cookie, so Next treats the
+ * page as dynamic, and an ISR-style export turns an unknown slug into HTTP 500
+ * (DYNAMIC_SERVER_USAGE) in production instead of 404. WP-17 (session out of the
+ * layout) can bring ISR back; tests/route-structure.test.ts guards this.
  */
-export const revalidate = 600;
-
-export async function generateStaticParams() {
-  return (await listPublishedSlugs()).map((slug) => ({ slug }));
-}
 
 /** Where the author line of the structured data points: the editorial page (there are no author profiles). */
 const AUTHOR_URL = "/o-nas";

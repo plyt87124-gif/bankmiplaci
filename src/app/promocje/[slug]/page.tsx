@@ -55,8 +55,7 @@ import {
   getRelatedArticle,
   getTracking,
   getViewer,
-  isAdminViewer,
-  listIndexableSlugs
+  isAdminViewer
 } from "./offerData";
 
 interface PageProps {
@@ -65,17 +64,12 @@ interface PageProps {
 }
 
 /**
- * Preparation for WP-17 (session out of the root layout -> ISR): the slugs are
- * known and the page may be re-validated every 10 minutes. TODAY neither has an
- * effect: the root layout and this page read the visitor's session cookie, so
- * Next renders the route per request. User-specific data (cooldown, bank
- * history, ściąga state) stays on the server until WP-17 moves it to the client.
+ * Rendered per request. The root layout and this page read the visitor's session cookie,
+ * so the route is dynamic; it must NOT export `revalidate` / `generateStaticParams` (an
+ * ISR-style export on a dynamic route turns edge cases into HTTP 500 in production and
+ * needs the database at build time). WP-17 (session out of the layout) can bring ISR
+ * back; user-specific data stays on the server until then.
  */
-export const revalidate = 600;
-
-export async function generateStaticParams() {
-  return (await listIndexableSlugs()).map((slug) => ({ slug }));
-}
 
 /** DOM ids shared between the aside's main call to action, the sticky bar and the comments. */
 const MAIN_CTA_ID = "glowny-cta";
