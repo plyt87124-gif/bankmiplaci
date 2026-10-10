@@ -526,7 +526,7 @@ export const STATIC_PAGE_META = {
     path: "/metodologia",
     title: "Jak liczymy ocenę serwisu",
     description:
-      "Z czego składa się ocena serwisu, skąd bierzemy dane, jak często je weryfikujemy i czego nie uwzględniamy w ocenie (np. prowizji)."
+      "Z czego składa się ocena serwisu, skąd bierzemy dane, co znaczy „Zweryfikowano” i czego nie uwzględniamy w ocenie (np. prowizji)."
   },
   oNas: {
     path: "/o-nas",
@@ -544,7 +544,7 @@ export const STATIC_PAGE_META = {
     path: "/kontakt",
     title: "Kontakt",
     description:
-      "Zauważyłeś nieaktualną promocję bankową albo błąd w warunkach? Napisz do nas – każde zgłoszenie trafia do weryfikacji przed aktualizacją."
+      "Nieaktualna promocja bankowa albo błąd w warunkach? Napisz do nas – każde zgłoszenie trafia do weryfikacji przed aktualizacją."
   }
 } as const satisfies Record<string, StaticPageMeta>;
 

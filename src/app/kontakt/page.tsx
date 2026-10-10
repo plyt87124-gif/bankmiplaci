@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { staticPageMetadata } from "@/lib/seo";
 import { TextPage } from "../jak-to-dziala/TextPage";
-import { PUBLISHER } from "../o-nas/publisher";
+import { PUBLISHER, publisherAddress } from "@/lib/publisher";
 import { ContactForm } from "./ContactForm";
 import { initialMessageFor } from "./initialMessage";
 
@@ -21,8 +21,8 @@ export default async function KontaktPage({
       title="Kontakt"
       lead={
         <p>
-          Zauważyłeś(-aś) nieaktualną promocję albo błąd w warunkach? Daj nam znać – każde zgłoszenie sprawdzamy w źródle
-          przed zmianą w serwisie.
+          Nieaktualna promocja albo błąd w warunkach? Daj nam znać – każde zgłoszenie sprawdzamy w źródle przed zmianą w
+          serwisie.
         </p>
       }
     >
@@ -36,7 +36,7 @@ export default async function KontaktPage({
       </div>
 
       <p className="mt-6 text-small text-ink-500">
-        Administratorem danych jest {PUBLISHER.name} ({PUBLISHER.addressLine}). Dane z formularza przetwarzamy w celu
+        Administratorem danych jest {PUBLISHER.name} ({publisherAddress()}). Dane z formularza przetwarzamy w celu
         udzielenia odpowiedzi i obsługi zgłoszenia. Szczegóły oraz Twoje prawa opisuje{" "}
         <Link href="/polityka-prywatnosci" className="link-inline">
           Polityka prywatności

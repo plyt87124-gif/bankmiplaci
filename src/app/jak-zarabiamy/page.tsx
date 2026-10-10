@@ -42,7 +42,7 @@ export default function HowWeEarnPage() {
         <>
           <p>Zarabiamy z prowizji od banków za polecenie.</p>
           <p className="mt-3">
-            Bankmiplaci jest bezpłatne dla użytkowników. Poniżej piszemy, jak to działa, co zmienia w tym, co widzisz
+            Korzystanie z Bankmiplaci jest bezpłatne dla użytkowników. Poniżej piszemy, jak to działa, co zmienia w tym, co widzisz
             na stronie, a czego nie zmienia.
           </p>
         </>
@@ -66,8 +66,8 @@ export default function HowWeEarnPage() {
         oferty. Ostateczne warunki zawsze określa regulamin banku.
       </p>
       <p>
-        Na domyślną kolejność ofert – tak: opisujemy to w następnej sekcji. Ocena serwisu jest natomiast liczona bez
-        uwzględniania prowizji.
+        Na domyślną kolejność ofert – tak, i to wyraźnie: opisujemy to w następnej sekcji. Ocena serwisu jest natomiast
+        liczona bez uwzględniania prowizji.
       </p>
 
       <h2 id="polecane">Co to zmienia w kolejności „Polecane”</h2>
@@ -83,7 +83,7 @@ export default function HowWeEarnPage() {
         <li>
           <strong>Współczynnik wynagrodzenia partnerskiego</strong> – liczba od {pl2.format(FACTOR_FLOOR)} do{" "}
           {pl2.format(FACTOR_BEST)}, która zależy od tego, ile bank płaci nam za otwarcie konta w porównaniu z innymi
-          ofertami tego samego typu konta.
+          ofertami tego samego typu konta, które są w tej chwili wyświetlane na liście.
         </li>
       </ol>
       <p>Współczynnik działa tak:</p>
@@ -102,12 +102,18 @@ export default function HowWeEarnPage() {
         </li>
         <li>Oferta, za którą bank nie płaci nam nic, dostaje najniższą wartość – {pl2.format(FACTOR_FLOOR)}.</li>
       </ul>
+      <p>
+        Porównanie dotyczy ofert tego samego typu konta, które są aktualnie wyświetlane. Po zastosowaniu filtrów (np.
+        wybraniu banku albo poziomu trudności) zestaw porównywanych ofert się zmienia, więc kolejność „Polecane” może
+        wyglądać inaczej niż bez filtrów.
+      </p>
       <p>Przy takim samym wyniku wyżej jest oferta z wyższą oceną, a potem z wyższą premią.</p>
       <Callout title="To ma realny wpływ na kolejność">
         <p>
-          Oceny aktualnych ofert są zwykle do siebie zbliżone, więc różnica we współczynniku wynagrodzenia może
-          postawić ofertę o nieco niższej ocenie wyżej niż ofertę o nieco wyższej. Dlatego „Polecane” nie znaczy
-          „najlepsze” – to kolejność, w której uwzględniamy także to, ile możemy zarobić.
+          Współczynnik wynagrodzenia zmienia wynik silniej niż różnice między ocenami serwisu. Dlatego oferta o wyraźnie
+          niższej ocenie, za którą bank płaci nam więcej, może znaleźć się w „Polecane” wyżej niż oferta o wyraźnie
+          wyższej ocenie, za którą płaci mniej albo nic. „Polecane” nie znaczy więc „najlepsze” – to kolejność, w której
+          uwzględniamy także to, ile możemy zarobić.
         </p>
       </Callout>
       <p>

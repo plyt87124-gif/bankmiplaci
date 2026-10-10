@@ -14,8 +14,8 @@ const sections: LegalSection[] = [
 
 export default function Regulamin() {
   return (
-    <LegalPage title="Regulamin serwisu" sections={sections}>
-      <p>Data wejścia w życie: 31.08.2026</p>
+    <LegalPage title="Regulamin serwisu" path="/regulamin" sections={sections}>
+      <p data-legal-date>Data wejścia w życie: 31.08.2026</p>
 
       <h2 id="postanowienia-ogolne">1. Postanowienia ogólne</h2>
       <ol>

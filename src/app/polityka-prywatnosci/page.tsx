@@ -19,8 +19,8 @@ const sections: LegalSection[] = [
 
 export default function PolitykaPrywatnosci() {
   return (
-    <LegalPage title="Polityka prywatności" sections={sections}>
-      <p>Data obowiązywania: 31.08.2026</p>
+    <LegalPage title="Polityka prywatności" path="/polityka-prywatnosci" sections={sections}>
+      <p data-legal-date>Data obowiązywania: 31.08.2026</p>
       <p>
         Niniejsza Polityka prywatności określa zasady przetwarzania danych w związku z korzystaniem z serwisu
         internetowego Bankmiplaci, dostępnego pod adresem bankmiplaci.pl, zwanego dalej „Serwisem”.
@@ -209,7 +209,7 @@ export default function PolitykaPrywatnosci() {
         <li>zmiany zakresu działalności Serwisu.</li>
       </ul>
       <p>Aktualna wersja Polityki prywatności jest dostępna w Serwisie.</p>
-      <p>Data ostatniej aktualizacji: 31.08.2026</p>
+      <p data-legal-date>Data ostatniej aktualizacji: 31.08.2026</p>
     </LegalPage>
   );
 }

@@ -16,8 +16,8 @@ const sections: LegalSection[] = [
 
 export default function Cookies() {
   return (
-    <LegalPage title="Polityka cookies" sections={sections}>
-      <p>Data obowiązywania: 31.08.2026</p>
+    <LegalPage title="Polityka cookies" path="/cookies" sections={sections}>
+      <p data-legal-date>Data obowiązywania: 31.08.2026</p>
       <p>Niniejsza Polityka cookies określa zasady wykorzystywania plików cookies oraz podobnych technologii w serwisie internetowym Bankmiplaci, dostępnym pod adresem bankmiplaci.pl.</p>
       <p>
         Administratorem Serwisu jest:
@@ -132,7 +132,7 @@ export default function Cookies() {
         <li>zmian sposobu funkcjonowania Serwisu.</li>
       </ul>
       <p>Aktualna wersja Polityki cookies jest dostępna w Serwisie.</p>
-      <p>Data ostatniej aktualizacji: 31.08.2026</p>
+      <p data-legal-date>Data ostatniej aktualizacji: 31.08.2026</p>
     </LegalPage>
   );
 }

@@ -36,7 +36,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
         id: "kolejnosc-a-prowizja",
         question: "Czy kolejność ofert zależy od prowizji?",
         answer:
-          "Częściowo. Domyślna kolejność „Polecane” uwzględnia m.in. wynagrodzenie partnerskie od banków, ale ocena serwisu jest liczona bez niego. Pozostałe sortowania (Najlepsza ocena, Najwyższa premia, Najłatwiejsze, Najnowsze, Kończące się wkrótce) nie korzystają z prowizji, więc możesz wybrać kolejność od niej niezależną.",
+          "Tak, domyślna kolejność „Polecane” uwzględnia wynagrodzenie partnerskie od banków, więc oferta o wyraźnie niższej ocenie może w niej stać wyżej niż oferta o wyraźnie wyższej. Ocena serwisu jest liczona bez prowizji. Pozostałe sortowania (Najlepsza ocena, Najwyższa premia, Najłatwiejsze, Najnowsze, Kończące się wkrótce) nie korzystają z prowizji, więc możesz wybrać kolejność od niej niezależną.",
         link: { href: "/jak-zarabiamy#polecane", label: "Co oznacza kolejność „Polecane”" }
       },
       {
@@ -94,7 +94,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
         id: "nowy-klient",
         question: "Jak sprawdzić, czy jestem „nowym klientem”?",
         answer:
-          "Definicję nowego klienta ustala bank w regulaminie promocji. Zwykle chodzi o to, że przez określony czas przed złożeniem wniosku nie miałeś(-aś) w tym banku konta (albo konta danego typu). Jeśli nie masz pewności, zapytaj bank na infolinii lub czacie, zanim założysz konto.",
+          "Definicję nowego klienta ustala bank w regulaminie promocji. Zwykle chodzi o to, że przez określony czas przed złożeniem wniosku nie było Twojego konta w tym banku (albo konta danego typu). Jeśli nie masz pewności, zapytaj bank na infolinii lub czacie, zanim założysz konto.",
         link: { href: "/jak-to-dziala#slowniczek", label: "Słowniczek pojęć" }
       },
       {
@@ -126,7 +126,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
         id: "brak-premii",
         question: "Co zrobić, jeśli nie otrzymam premii?",
         answer:
-          "W pierwszej kolejności skontaktuj się z bankiem, w którym otworzyłeś(-aś) konto – to bank wypłaca premię i może sprawdzić, czy warunki zostały spełnione. Nie mamy dostępu do Twojego konta bankowego ani do informacji o realizacji promocji."
+          "W pierwszej kolejności skontaktuj się z bankiem, w którym masz konto – to bank wypłaca premię i może sprawdzić, czy warunki zostały spełnione. Nie mamy dostępu do Twojego konta bankowego ani do informacji o realizacji promocji."
       },
       {
         id: "podatek",

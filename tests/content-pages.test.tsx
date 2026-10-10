@@ -12,14 +12,15 @@ import KontaktPage from "../src/app/kontakt/page";
 import Regulamin from "../src/app/regulamin/page";
 import { MethodologyContent } from "../src/app/metodologia/MethodologyContent";
 import { FAQ_GROUPS, FAQ_ITEMS } from "../src/app/faq/faqItems";
-import { PUBLISHER } from "../src/app/o-nas/publisher";
+import { PUBLISHER, publisherAddress } from "../src/lib/publisher";
 import { buildContactEmailHtml, contactEmailSubject, escapeHtml } from "../src/app/kontakt/contactEmail";
 import { initialMessageFor } from "../src/app/kontakt/initialMessage";
-import { explainRating, type RatableOffer } from "../src/app/metodologia/ratingModel";
+import { RATING_FLOOR, explainRating, type RatableOffer } from "../src/app/metodologia/ratingModel";
 import type { MethodologyData } from "../src/app/metodologia/loadMethodologyData";
-import { COMMISSION_WEIGHT, recommendedScores } from "../src/lib/recommended";
+import { COMMISSION_WEIGHT, recommendedScores, sortRecommended } from "../src/lib/recommended";
 import { RATING_COMMISSION_RULE } from "../src/lib/disclosureCopy";
 import { isRouteLive, liveRoutes } from "../src/lib/seo/routes";
+import { DESCRIPTION_MAX, STATIC_PAGE_META } from "../src/lib/seo";
 
 // tsx compiles .tsx with the classic JSX transform: give the pages the global React.
 (globalThis as { React?: typeof React }).React = React;
@@ -104,6 +105,17 @@ test("pages that have a table of contents list the same ids as their h2 headings
   }
 });
 
+/** A page exists for the route; route groups such as "(lista)" are not URL segments. */
+function pageExistsFor(route: string): boolean {
+  const walk = (dir: string, segs: string[]): boolean => {
+    if (segs.length === 0 && existsSync(join(dir, "page.tsx"))) return true;
+    if (!existsSync(dir)) return false;
+    if (segs.length > 0 && walk(join(dir, segs[0]!), segs.slice(1))) return true;
+    return readdirSync(dir, { withFileTypes: true }).some((e) => e.isDirectory() && /^\(.+\)$/.test(e.name) && walk(join(dir, e.name), segs));
+  };
+  return walk(join(ROOT, "src", "app"), route.split("/").filter(Boolean));
+}
+
 test("every internal link on my pages leads to an existing page, and #fragments exist on the target", async () => {
   const pages = await renderAll();
   const hrefs = new Set<string>();
@@ -113,8 +125,7 @@ test("every internal link on my pages leads to an existing page, and #fragments 
     const route = pathAndQuery!.split("?")[0]!;
     if (route === "/") continue;
     const dynamic = /^\/promocje\/[a-z0-9-]+$/.test(route) && route !== "/promocje/konczace-sie";
-    const dir = join(ROOT, "src", "app", ...route.split("/").filter(Boolean));
-    assert.ok(dynamic || existsSync(join(dir, "page.tsx")), `${href}: no such page`);
+    assert.ok(dynamic || pageExistsFor(route), `${href}: no such page`);
     if (fragment && pages[route]) assert.ok(pages[route]!.includes(`id="${fragment}"`), `${href}: no element with id="${fragment}"`);
   }
 });
@@ -161,6 +172,35 @@ test("/jak-zarabiamy describes the 'Polecane' formula with the factors that reco
   assert.ok(Math.abs(half - (1 - COMMISSION_WEIGHT / 2)) < 1e-12);
 });
 
+test("/jak-zarabiamy does not understate the commission's influence (no 'nieco'), and the claim holds in the formula", async () => {
+  const page = (await renderAll())["/jak-zarabiamy"]!;
+  const body = text(page);
+  assert.ok(!/nieco (niższ|wyższ)/i.test(body), "the 'nieco niższej ocenie' wording is gone");
+  assert.ok(body.includes("Współczynnik wynagrodzenia zmienia wynik silniej niż różnice między ocenami serwisu"));
+  assert.ok(body.includes("oferta o wyraźnie niższej ocenie"));
+  // The page says the factor can outweigh rating differences. Prove it in the code the page describes:
+  // 8.3 with the best commission beats 9.8 with the lowest, and even the lowest automatic rating
+  // with the best commission beats a perfect 10 for which the bank pays nothing.
+  const pair = sortRecommended([
+    { accountType: "PERSONAL", rating: 9.8, maxBonusCents: 1, commissionCents: 1000 },
+    { accountType: "PERSONAL", rating: 8.3, maxBonusCents: 1, commissionCents: 10000 }
+  ]);
+  assert.equal(pair[0]!.rating, 8.3);
+  const extreme = sortRecommended([
+    { accountType: "PERSONAL", rating: 10, maxBonusCents: 1, commissionCents: 0 },
+    { accountType: "PERSONAL", rating: RATING_FLOOR, maxBonusCents: 1, commissionCents: 10000 }
+  ]);
+  assert.equal(extreme[0]!.rating, RATING_FLOOR);
+});
+
+test("/jak-zarabiamy#polecane says the comparison covers offers of one account type that are currently displayed", async () => {
+  const page = (await renderAll())["/jak-zarabiamy"]!;
+  const section = text(page.slice(page.indexOf('<h2 id="polecane"'), page.indexOf('<h2 id="ocena"')));
+  assert.ok(section.includes("Porównanie dotyczy ofert tego samego typu konta, które są aktualnie wyświetlane."));
+  assert.ok(section.includes("kolejność „Polecane” może wyglądać inaczej niż bez filtrów"));
+  assert.ok(section.includes("które są w tej chwili wyświetlane na liście"));
+});
+
 test("/jak-zarabiamy lists exactly the sorts whose database ordering ignores the commission", () => {
   const source = readFileSync(join(ROOT, "src", "lib", "services", "promotions.ts"), "utf8").replace(/\r\n/g, "\n");
   const start = source.indexOf("export function sortToOrderBy");
@@ -198,6 +238,11 @@ test("/faq: native details, only the first row open, brand name fixed, new quest
   assert.ok(!/na Premii|o Premię|Premia\.pl/.test(all), "the brand is Bankmiplaci, not Premia");
   assert.ok(all.includes("w Bankmiplaci jest bezpłatne"));
   assert.ok(!all.includes("warunki promocji będą takie same"), "the false 'identical conditions' claim is gone");
+  const order = FAQ_ITEMS.find((i) => i.id === "kolejnosc-a-prowizja")!;
+  assert.ok(order.answer.startsWith("Tak, domyślna kolejność „Polecane” uwzględnia wynagrodzenie partnerskie"), "answers the question plainly");
+  assert.ok(!/Częściowo|nieco/.test(order.answer));
+  assert.ok(order.answer.includes("oferta o wyraźnie niższej ocenie może w niej stać wyżej niż oferta o wyraźnie wyższej."));
+  assert.ok(!/\(-aś\)|\(-ś\)/.test(all), "no '(-aś)' forms in the FAQ");
   for (const q of ["Czy kolejność ofert zależy od prowizji?", "Co to jest karencja?", "Czy od premii płaci się podatek?", "Kiedy bank wypłaca premię?"]) {
     assert.ok(FAQ_ITEMS.some((i) => i.question === q), q);
   }
@@ -229,6 +274,20 @@ test("/metodologia: components and weights equal the ones in ratings.ts, commiss
   assert.ok(/6,5 \+ 3,5 × √/.test(body));
 });
 
+test("/metodologia: natural wording, the scale starts where ratings.ts says, meta description promises nothing the page does not do", async () => {
+  const body = text((await renderAll())["/metodologia"]!);
+  assert.ok(body.includes("Za pomocą oceny serwisu porównujemy aktualne promocje"));
+  assert.ok(!body.includes("Oceną serwisu porównujemy"));
+  assert.ok(body.includes(`To liczba od ${new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1 }).format(RATING_FLOOR)} do 10 (np. 9,4/10)`));
+  assert.ok(!body.includes("z przedziału do 10"));
+  const ratingsSource = readFileSync(join(ROOT, "src", "lib", "services", "ratings.ts"), "utf8");
+  assert.ok(ratingsSource.includes(`${RATING_FLOOR} + `), "RATING_FLOOR is the real lower bound of ratings.ts");
+  const description = STATIC_PAGE_META.metodologia.description;
+  assert.ok(description.length <= DESCRIPTION_MAX);
+  assert.ok(!/jak często/.test(description), "the page deliberately gives no verification frequency");
+  assert.ok(description.includes("co znaczy „Zweryfikowano”") && description.includes("prowizji"));
+});
+
 test("/metodologia: the worked example shows its arithmetic and no commission line", async () => {
   const page = (await renderAll())["/metodologia"]!;
   assert.match(page, /<h2 id="przyklad"/);
@@ -253,7 +312,7 @@ test("/o-nas: publisher data are exactly those already public in the Regulamin; 
   const pages = await renderAll();
   const about = text(pages["/o-nas"]!);
   const regulamin = readFileSync(join(ROOT, "src", "app", "regulamin", "page.tsx"), "utf8");
-  for (const value of [PUBLISHER.name, PUBLISHER.addressLine, PUBLISHER.nip, PUBLISHER.regon, PUBLISHER.email]) {
+  for (const value of [PUBLISHER.name, publisherAddress(), PUBLISHER.nip, PUBLISHER.regon, PUBLISHER.email]) {
     assert.ok(regulamin.includes(value), `Regulamin does not contain ${value}`);
     assert.ok(about.includes(value), `/o-nas does not show ${value}`);
   }
@@ -261,6 +320,26 @@ test("/o-nas: publisher data are exactly those already public in the Regulamin; 
   const invented = /zespół|ekspert|założon|\bnagrod|doświadczen|redaktor/i.exec(about);
   assert.equal(invented, null, `invented team/expert/award wording: ${invented?.[0]}`);
   for (const id of ["wydawca", "weryfikacja", "finansowanie", "zasady", "korekty", "kontakt"]) assert.match(pages["/o-nas"]!, new RegExp(`<h2 id="${id}"`));
+});
+
+test("publisher data have ONE source (src/lib/publisher.ts) shared by the footer, /o-nas and /kontakt", () => {
+  assert.ok(!existsSync(join(ROOT, "src", "app", "o-nas", "publisher.ts")), "the duplicate publisher module is gone");
+  for (const file of [["app", "o-nas", "page.tsx"], ["app", "kontakt", "page.tsx"], ["components", "Footer.tsx"]]) {
+    const code = readFileSync(join(ROOT, "src", ...file), "utf8");
+    assert.ok(code.includes('@/lib/publisher'), `${file.join("/")} imports the shared publisher module`);
+    assert.ok(!/o-nas\/publisher|\.\/publisher/.test(code), `${file.join("/")} does not import a second copy`);
+  }
+});
+
+test("/jak-zarabiamy, /o-nas, /kontakt: natural Polish instead of calques", async () => {
+  const pages = await renderAll();
+  assert.ok(text(pages["/jak-zarabiamy"]!).includes("Korzystanie z Bankmiplaci jest bezpłatne dla użytkowników."));
+  assert.ok(!/(?<!z )Bankmiplaci jest bezpłatne/.test(text(pages["/jak-zarabiamy"]!)), "no subject-less calque");
+  const contact = text(pages["/kontakt"]!);
+  assert.ok(!/Zauważyłeś/.test(contact), "no '(-aś)' form on /kontakt");
+  assert.ok(contact.includes("Nieaktualna promocja albo błąd w warunkach? Daj nam znać"));
+  assert.ok(!/Zauważyłeś/.test(STATIC_PAGE_META.kontakt.description));
+  for (const [path, page] of Object.entries(pages)) assert.ok(!/\(-aś\)|\(-ś\)/.test(text(page)) || path === "/regulamin", `${path}: no '(-aś)'`);
 });
 
 test("/jak-to-dziala: step count comes from the data, glossary explains karencja and KYC", async () => {
@@ -327,7 +406,7 @@ test("/metodologia and /o-nas are live in the sitemap registry and have pages", 
   for (const path of ["/metodologia", "/o-nas"]) {
     assert.ok(isRouteLive(path), path);
     assert.ok(liveRoutes().some((r) => r.path === path));
-    assert.ok(existsSync(join(ROOT, "src", "app", ...path.split("/").filter(Boolean), "page.tsx")));
+    assert.ok(pageExistsFor(path));
   }
 });
 

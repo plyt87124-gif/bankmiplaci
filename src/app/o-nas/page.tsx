@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ButtonLink } from "@/components/ui/Button";
 import { staticPageMetadata } from "@/lib/seo";
 import { TextPage, type TocEntry } from "../jak-to-dziala/TextPage";
-import { PUBLISHER } from "./publisher";
+import { PUBLISHER, publisherAddress } from "@/lib/publisher";
 
 export const metadata: Metadata = staticPageMetadata("oNas");
 
@@ -49,9 +49,9 @@ export default function AboutPage() {
       <h2 id="wydawca">Kto prowadzi serwis</h2>
       <p>Operatorem serwisu, zgodnie z Regulaminem, jest:</p>
       <p>
-        {PUBLISHER.name}, {PUBLISHER.form}
+        {PUBLISHER.name}, {PUBLISHER.legalForm}
         <br />
-        {PUBLISHER.addressLine}
+        {publisherAddress()}
         <br />
         NIP: {PUBLISHER.nip}, REGON: {PUBLISHER.regon}
         <br />

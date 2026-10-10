@@ -1,6 +1,8 @@
 import "./legal-setup";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { LegalPage } from "../src/components/LegalPage";
@@ -30,7 +32,7 @@ for (const [name, Page] of Object.entries(pages)) {
 }
 
 test("LegalPage bez sections nie renderuje spisu treści", () => {
-  const html = renderToStaticMarkup(<LegalPage title="T"><p>x</p></LegalPage>);
+  const html = renderToStaticMarkup(<LegalPage title="T" path="/t"><p>x</p></LegalPage>);
   assert.ok(!html.includes("Spis treści"));
 });
 
@@ -48,10 +50,33 @@ for (const [name, Page] of Object.entries(pages)) {
   });
 }
 
-test("LegalPage: jawne path ma pierwszeństwo, nieznany tytuł bez path nie daje JSON-LD", () => {
-  const withPath = renderToStaticMarkup(<LegalPage title="X" path="/x"><p>a</p></LegalPage>);
-  assert.ok(/\/x"/.test(withPath) && withPath.includes("ld+json"));
-  const without = renderToStaticMarkup(<LegalPage title="Nieznana"><p>a</p></LegalPage>);
-  assert.ok(!without.includes("ld+json"));
-  assert.ok(without.includes("Ścieżka nawigacji"));
+test("LegalPage: JSON-LD i ostatni okruszek pochodzą z jawnego path, a nie z tytułu", () => {
+  // Tytuł identyczny ze znanym tytułem, ale inna ścieżka: dawna mapa po tytule dałaby /regulamin.
+  const html = renderToStaticMarkup(<LegalPage title="Regulamin serwisu" path="/inna-sciezka"><p>a</p></LegalPage>);
+  const m = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/);
+  assert.ok(m, "brak JSON-LD");
+  const ld = JSON.parse(m[1]!);
+  assert.equal(ld.itemListElement[1].name, "Regulamin serwisu");
+  assert.ok(String(ld.itemListElement[1].item).endsWith("/inna-sciezka"));
+  assert.ok(!html.includes("/regulamin\""), "ścieżka nie jest zgadywana z tytułu");
 });
+
+test("LegalPage nie wycisza akapitów z racji położenia (first/last-child), tylko oznaczone data-legal-date", () => {
+  const src = readFileSync(join(process.cwd(), "src", "components", "LegalPage.tsx"), "utf8");
+  assert.ok(!/p:first-child|p:last-child/.test(src), "selektory pozycyjne usunięte");
+  assert.ok(src.includes("[&>p[data-legal-date]]:text-ink-500"), "reguła dla oznaczonego akapitu");
+  assert.ok(!src.includes("KNOWN_PATHS"), "mapa ścieżek po tytule usunięta");
+});
+
+for (const [name, Page] of Object.entries(pages)) {
+  test(`${name}: data (obowiązywania, aktualizacji) jest oznaczona jawnie i tylko ona`, () => {
+    const html = renderToStaticMarkup(createElement(Page));
+    const marked = [...html.matchAll(/<p data-legal-date="[^"]*">([^<]*)<\/p>/g)].map((m) => m[1]!);
+    assert.ok(marked.length >= 1, "brak oznaczonej daty");
+    for (const text of marked) assert.match(text, /^Data (wejścia w życie|obowiązywania|ostatniej aktualizacji): \d{2}\.\d{2}\.\d{4}$/);
+    // Każdy akapit zaczynający się od "Data ..." jest oznaczony, a żaden inny nie jest.
+    const allDates = [...html.matchAll(/<p[^>]*>Data (?:wejścia w życie|obowiązywania|ostatniej aktualizacji):/g)];
+    assert.equal(allDates.length, marked.length);
+    assert.equal((html.match(/<p[^>]*data-legal-date/g) ?? []).length, marked.length);
+  });
+}

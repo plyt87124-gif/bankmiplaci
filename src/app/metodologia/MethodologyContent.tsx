@@ -183,7 +183,7 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
       title="Jak liczymy ocenę serwisu"
       lead={
         <p>
-          Oceną serwisu porównujemy aktualne promocje – liczymy ją sami, według jawnych zasad opisanych niżej.{" "}
+          Za pomocą oceny serwisu porównujemy aktualne promocje – liczymy ją sami, według jawnych zasad opisanych niżej.{" "}
           {RATING_NOTE} {RATING_COMMISSION_RULE}
         </p>
       }
@@ -193,7 +193,7 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
         Czym jest ocena serwisu
       </h2>
       <p>
-        To liczba z przedziału do 10 (np. 9,4/10) przy każdej ofercie. Nie jest niezależną ani obiektywną oceną banku,
+        To liczba od {num1.format(RATING_FLOOR)} do 10 (np. 9,4/10) przy każdej ofercie. Nie jest niezależną ani obiektywną oceną banku,
         jego obsługi czy produktów – dotyczy wyłącznie tego, jak dana promocja wypada na tle innych aktualnych promocji w
         serwisie. Liczymy ją automatycznie, według opisanych niżej zasad.
       </p>
@@ -205,8 +205,8 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
         warunki zostały takie same.
       </p>
       <p>
-        W wyjątkowych przypadkach administrator może ręcznie ustawić ocenę oferty, jeśli uzna, że wynik liczony
-        automatycznie nie uwzględnia czegoś istotnego. Wtedy przy ofercie może być widoczne krótkie uzasadnienie.
+        W wyjątkowych przypadkach administrator może ręcznie ustawić ocenę oferty (także spoza tego przedziału),
+        jeśli uzna, że wynik liczony automatycznie nie uwzględnia czegoś istotnego. Wtedy przy ofercie może być widoczne krótkie uzasadnienie.
       </p>
 
       <h2 id="skladniki">Z czego się składa</h2>
