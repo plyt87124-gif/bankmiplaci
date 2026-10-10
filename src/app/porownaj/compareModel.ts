@@ -11,7 +11,9 @@
  *    have a known value and they are not all equal (a row of identical values
  *    has no winner). Ties are all marked.
  */
-import { pluralizePl, formatDatePL } from "@/lib/format";
+import { COMPACT } from "@/lib/disclosureCopy";
+import { resolveFee } from "@/lib/feeModel";
+import { cooldownRule, cooldownShort } from "@/components/promocja/offerModel";
 
 export const COMPARE_MAX = 4;
 
@@ -118,8 +120,8 @@ export function bestFlags(values: readonly (number | null)[], prefer: "max" | "m
 
 export type FeeView =
   | { kind: "unknown" }
-  /** Verified 0 zl, no condition. */
-  | { kind: "free" }
+  /** Verified 0 zl, no condition. `hasCaveat`: the offer has an "Inne opłaty" remark, so 0 zl is the best case ("od 0 zl"). */
+  | { kind: "free"; hasCaveat?: true }
   /** A fee without a waiver condition. */
   | { kind: "paid"; cents: number }
   /** A fee that is 0 zl once the condition is met. */
@@ -128,20 +130,34 @@ export type FeeView =
 /**
  * `cents` = the fee charged when the waiver condition is NOT met (0 when there
  * is none); the waived fee is 0 by definition (see Fees in schema.prisma).
- * null -> unknown. 0 together with a condition is contradictory -> unknown
- * (the same reading as formatFeeCompact).
+ * null -> unknown. 0 together with a condition is contradictory -> unknown.
+ * The reading is the site's single fee model (src/lib/feeModel.ts), the same
+ * one the offer page, its FAQ, its JSON-LD and the offer card use. `hasCaveat`
+ * is the yes/no "the offer has an Inne opłaty remark" (the card data does not
+ * carry it yet, so callers may leave it out).
  */
-export function describeFee(cents: number | null | undefined, waiverCondition?: string | null): FeeView {
-  if (cents == null || !Number.isFinite(cents)) return { kind: "unknown" };
-  const condition = waiverCondition?.trim() ?? "";
-  if (cents === 0) return condition ? { kind: "unknown" } : { kind: "free" };
-  return condition ? { kind: "conditional", cents, condition } : { kind: "paid", cents };
+export function describeFee(
+  cents: number | null | undefined,
+  waiverCondition?: string | null,
+  hasCaveat?: boolean
+): FeeView {
+  const fee = resolveFee(cents, waiverCondition, hasCaveat);
+  switch (fee.kind) {
+    case "unknown":
+      return { kind: "unknown" };
+    case "free":
+      return fee.hasCaveat ? { kind: "free", hasCaveat: true } : { kind: "free" };
+    case "paid":
+      return { kind: "paid", cents: fee.cents ?? 0 };
+    case "conditional":
+      return { kind: "conditional", cents: fee.cents ?? 0, condition: fee.waiver ?? "" };
+  }
 }
 
-/** Rank for "best": only a verified unconditional 0 zl wins; unknown is excluded. */
+/** Rank for "best": only a verified unconditional 0 zl, without a remark that qualifies it, wins; unknown is excluded. */
 export function feeRank(fee: FeeView): number | null {
   if (fee.kind === "unknown") return null;
-  return fee.kind === "free" ? 0 : 1;
+  return fee.kind === "free" && !fee.hasCaveat ? 0 : 1;
 }
 
 /* ------------------------------------------------------------------ */
@@ -149,20 +165,34 @@ export function feeRank(fee: FeeView): number | null {
 /* ------------------------------------------------------------------ */
 
 /**
- * Lines for the "Karencja" row from the structured fields. Both can be set
- * (the user must pass both checks). None set -> `[]` and the cell says
- * "Brak danych": we never claim that there is no karencja.
+ * Lines for the "Karencja" row, worded by the SAME function as the offer page
+ * (cooldownShort in components/promocja/offerModel.ts), so one offer never says
+ * two different things in two places. Both rules can be set (the user must pass
+ * both checks): one line each. 0 months is a rule that adds no waiting time
+ * ("Bez karencji", as on the offer page); nothing set -> `[]` and the cell says
+ * "Brak danych": we never claim that there is no karencja without data.
  */
 export function cooldownLines(cooldownMonths: number | null | undefined, cutoff: Date | string | null | undefined): string[] {
+  const rule = cooldownRule({ cooldownMonths, cooldownCutoffDate: cutoff });
+  if (!rule) return [];
   const lines: string[] = [];
-  if (cooldownMonths != null && Number.isFinite(cooldownMonths) && cooldownMonths > 0) {
-    lines.push(
-      `${cooldownMonths} ${pluralizePl(cooldownMonths, "miesiąc", "miesiące", "miesięcy")} od zamknięcia konta w tym banku`
-    );
-  }
-  if (cutoff != null) {
-    const text = formatDatePL(cutoff);
-    if (text) lines.push(`Bez konta w tym banku od ${text}`);
-  }
+  if (rule.months !== null) lines.push(cooldownShort({ months: rule.months, cutoff: null }));
+  if (rule.cutoff) lines.push(cooldownShort({ months: null, cutoff: rule.cutoff }));
   return lines;
+}
+
+/* ------------------------------------------------------------------ */
+/* Disclosure in a table cell                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The short sentence under a bank button inside the table: the compact
+ * disclosure without its "Link partnerski:" lead (the outline badge above the
+ * button already says that) and without the link (one "Jak zarabiamy" link sits
+ * in the legend under the table instead of four identical ones in a row).
+ * Taken from lib/disclosureCopy.ts, never retyped here.
+ */
+export function cellDisclosureText(lead: string = COMPACT.lead): string {
+  const rest = lead.replace(/^Link partnerski:\s*/i, "");
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
 }

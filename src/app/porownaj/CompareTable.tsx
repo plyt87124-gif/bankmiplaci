@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Info } from "lucide-react";
 import { AffiliateCtaLink } from "@/components/AffiliateCtaLink";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
 import { AffiliateLinkBadge } from "@/components/trust/TrustNote";
@@ -15,7 +15,7 @@ import { DIFFICULTY_LEVEL, formatPLN, formatRatingOutOf10, pluralizePl } from "@
 import { deadlineState } from "@/lib/freshness";
 import type { PromotionCardData } from "@/lib/services/promotionCards";
 import type { CompareExtras } from "./data";
-import { bestFlags, cooldownLines, describeFee, feeRank, type FeeView } from "./compareModel";
+import { bestFlags, cellDisclosureText, cooldownLines, describeFee, feeRank, type FeeView } from "./compareModel";
 
 export interface CompareColumn {
   card: PromotionCardData;
@@ -23,8 +23,13 @@ export interface CompareColumn {
   extras: CompareExtras | undefined;
 }
 
-/** Column geometry (px): label column and one offer column, phone and from `sm`. */
-const MOBILE = { label: 104, offer: 148 };
+/**
+ * Column geometry (px): label column and one offer column, phone and from `sm`.
+ * On a phone the label column plus TWO offer columns (96 + 2 x 115 = 326) fill the
+ * 326 px frame of a 360 px screen, so two offers are visible at once and the
+ * third peeks in on wider phones; the cell padding is 8 px there.
+ */
+const MOBILE = { label: 96, offer: 115 };
 const WIDE = { label: 152, offer: 184 };
 
 const SR_BEST = "najlepsza wartość w wierszu";
@@ -114,19 +119,45 @@ function CooldownCell({ extras }: { extras: CompareExtras | undefined }) {
 
 function ActionCell({ card, extras }: CompareColumn) {
   const showCta = extras?.affiliateLinkEnabled === true;
+  // The action row sits ~1000 px below the column headers on a phone, so it names its own offer.
+  const who = `${card.bank.name} – ${card.name}`;
   return (
     <div className="flex flex-col gap-2">
-      <ButtonLink href={`/promocje/${card.slug}`} variant="secondary" size="sm" fullWidth>
+      <p className="text-caption text-ink-700 break-words">
+        <span className="block font-semibold text-ink-900">{card.bank.name}</span>
+        {card.name}
+      </p>
+      {/* aria-label starts with the visible text (WCAG 2.5.3) and adds which bank it is. */}
+      <ButtonLink
+        href={`/promocje/${card.slug}`}
+        variant="secondary"
+        size="sm"
+        fullWidth
+        aria-label={`Szczegóły: ${who}`}
+        className="px-2 sm:px-4"
+      >
         Szczegóły
       </ButtonLink>
       {showCta ? (
         <div className="flex flex-col items-stretch gap-1.5">
-          <AffiliateLinkBadge className="self-start" />
+          <AffiliateLinkBadge className="h-auto min-h-6 self-start whitespace-normal px-1.5 py-0.5 sm:whitespace-nowrap sm:px-2.5" />
           {/* target="_self": the comparison does not open new tabs. */}
-          <AffiliateCtaLink href={outboundHref(card.slug, { source: "compare-table" })} size="sm" fullWidth target="_self">
-            Przejdź do promocji
+          <AffiliateCtaLink
+            href={outboundHref(card.slug, { source: "compare-table" })}
+            size="sm"
+            fullWidth
+            target="_self"
+            aria-label={`Przejdź do promocji: ${who}`}
+            className="gap-1 px-1.5 sm:gap-2 sm:px-4"
+          >
+            <span className="sm:hidden">Do promocji</span>
+            <span className="hidden sm:inline">Przejdź do promocji</span>
           </AffiliateCtaLink>
-          <AffiliateDisclosure variant="compact" className="mt-0" />
+          {/* The short form of the compact disclosure; its "Jak zarabiamy" link is in the legend under the table. */}
+          <p data-disclosure="compact" data-disclosure-link="legend" className="flex items-start gap-1.5 text-caption text-ink-500">
+            <Info size={14} aria-hidden="true" className="mt-[3px] hidden shrink-0 sm:block" />
+            <span>{cellDisclosureText()}</span>
+          </p>
         </div>
       ) : null}
     </div>
@@ -134,9 +165,9 @@ function ActionCell({ card, extras }: CompareColumn) {
 }
 
 const LABEL_CELL =
-  "sticky left-0 z-10 border-b border-r border-line border-r-line-strong bg-surface px-2.5 py-3 text-left align-top " +
+  "sticky left-0 z-10 border-b border-r border-line border-r-line-strong bg-surface px-1.5 py-3 text-left align-top " +
   "text-caption font-semibold text-ink-700 group-hover:bg-sunken sm:px-4 sm:text-small";
-const VALUE_CELL = "snap-start border-b border-line px-3 py-3 align-top text-small text-ink-700 break-words";
+const VALUE_CELL = "snap-start border-b border-line px-2 py-3 align-top text-small text-ink-700 break-words sm:px-3";
 
 interface Row {
   key: string;
@@ -148,7 +179,7 @@ interface Row {
  * The comparison table (design spec section 5, "Table"): caption, `scope`
  * headers, sticky header row and sticky first column, a focusable
  * `role="region"` that scrolls INSIDE itself (the page never scrolls sideways;
- * the label column is 104 px on a phone and the offer columns snap two at a
+ * the label column is 96 px on a phone and the offer columns snap two at a
  * time), rows in the order of a decision, and links only in the column header
  * and the last row. The best value of a row is bold with a check mark and a
  * word for screen readers - never a coloured background.
@@ -171,7 +202,8 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
       label: "Premia",
       cell: ({ card }, i) =>
         card.maxBonusCents > 0 ? (
-          <Value best={bestBonus[i]}>{formatPLN(card.maxBonusCents)}</Value>
+          /* "do": it is the maximum, reached by meeting every condition (see the legend). */
+          <Value best={bestBonus[i]}>{`do ${formatPLN(card.maxBonusCents)}`}</Value>
         ) : (
           <span className="text-ink-700">Bez premii gotówkowej</span>
         )
@@ -211,7 +243,12 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
     {
       key: "verified",
       label: "Weryfikacja",
-      cell: ({ card }) => <VerifiedLine lastVerifiedAt={card.lastVerifiedAt} />
+      cell: ({ card }) => (
+        <VerifiedLine
+          lastVerifiedAt={card.lastVerifiedAt}
+          className="flex-col items-start gap-1 text-caption sm:flex-row sm:items-center sm:gap-1.5 sm:text-small"
+        />
+      )
     }
   ];
 
@@ -227,7 +264,7 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
       aria-label={`Tabela porównania ${n} ${pluralizePl(n, "oferty", "ofert", "ofert")}, przewijana poziomo`}
       // `relative`: the sr-only (position:absolute) texts inside the table must be clipped by
       // this frame; without a positioned ancestor they widen the whole PAGE past 320 px.
-      className="relative snap-x snap-mandatory scroll-pl-[104px] overflow-auto overscroll-x-contain rounded-card border border-line bg-surface sm:snap-none sm:scroll-pl-0"
+      className="relative snap-x snap-mandatory scroll-pl-[96px] overflow-auto overscroll-x-contain rounded-card border border-line bg-surface sm:snap-none sm:scroll-pl-0"
     >
       <table
         style={widthVars}
@@ -238,7 +275,7 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
           serwisu i weryfikacja. Kolumny to oferty.
         </caption>
         <colgroup>
-          <col className="w-[104px] sm:w-[152px]" />
+          <col className="w-[96px] sm:w-[152px]" />
           {columns.map(({ card }) => (
             <col key={card.slug} />
           ))}
@@ -255,7 +292,7 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
               <th
                 key={card.slug}
                 scope="col"
-                className="sticky top-0 z-20 snap-start border-b border-line-strong bg-paper px-3 py-3 text-left align-top font-normal"
+                className="sticky top-0 z-20 snap-start border-b border-line-strong bg-paper px-2 py-3 text-left align-top font-normal sm:px-3"
               >
                 <span aria-hidden="true" className="block">
                   <BankLogo name={card.bank.name} logoUrl={card.bank.logoUrl} size="xs" className="sm:hidden" />

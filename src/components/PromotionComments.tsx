@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Heart, MessageCircle, Pin, ShieldCheck } from "lucide-react";
 import { formatDate, pluralizePl } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -31,6 +31,66 @@ const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: "top", label: "Najlepiej oceniane" }
 ];
 
+/* ------------------------------------------------------------------ */
+/* Pure list logic (no React): covered by tests/checklist-ui.test.tsx.  */
+/* ------------------------------------------------------------------ */
+
+/** Comments plus replies - the number in the heading. */
+export function countComments(comments: readonly CommentItem[]): number {
+  return comments.reduce((sum, c) => sum + 1 + (c.replies?.length ?? 0), 0);
+}
+
+/** A new top-level comment goes to the top of the list, whatever the sort. */
+export function withNewComment(comments: readonly CommentItem[] | null, comment: CommentItem): CommentItem[] {
+  return [comment, ...(comments ?? [])];
+}
+
+/** Appends a reply under its parent; an unknown parent leaves the list as it was. */
+export function withReply(comments: readonly CommentItem[], parentId: string, reply: CommentItem): CommentItem[] {
+  return comments.map((c) => (c.id === parentId ? { ...c, replies: [...(c.replies ?? []), reply] } : c));
+}
+
+/** Applies the server's like state to a comment (`parentId` = the comment it replies to, if it is a reply). */
+export function withLikeState(
+  comments: readonly CommentItem[],
+  commentId: string,
+  parentId: string | undefined,
+  state: { likeCount: number; likedByMe: boolean }
+): CommentItem[] {
+  return comments.map((c) => {
+    if (parentId) {
+      if (c.id !== parentId) return c;
+      return { ...c, replies: c.replies?.map((r) => (r.id === commentId ? { ...r, ...state } : r)) };
+    }
+    return c.id === commentId ? { ...c, ...state } : c;
+  });
+}
+
+/**
+ * The text of the live region above the list. `visible` = shown to everybody
+ * (the very first load and a failed load); a re-sort only tells screen readers,
+ * because the old list stays on screen until the new one arrives.
+ */
+export function commentsStatus(input: {
+  loading: boolean;
+  hasLoaded: boolean;
+  loadFailed: boolean;
+  sortedBy: string | null;
+}): { text: string; visible: boolean } {
+  if (input.loading && !input.hasLoaded) return { text: "Wczytywanie komentarzy...", visible: true };
+  if (input.loading) return { text: "Sortowanie komentarzy...", visible: false };
+  if (input.loadFailed) {
+    return {
+      text: input.hasLoaded
+        ? "Nie udało się odświeżyć komentarzy. Pokazujemy poprzednią listę."
+        : "Nie udało się wczytać komentarzy. Odśwież stronę, żeby spróbować ponownie.",
+      visible: true
+    };
+  }
+  if (input.sortedBy) return { text: `Komentarze posortowane: ${input.sortedBy}.`, visible: false };
+  return { text: "", visible: false };
+}
+
 export function PromotionComments({
   promotionSlug,
   currentUser
@@ -40,6 +100,11 @@ export function PromotionComments({
 }) {
   const [comments, setComments] = useState<CommentItem[] | null>(null);
   const [sort, setSort] = useState<SortMode>("newest");
+  // Loading is separate from `comments`: changing the sort keeps the old list (and the focused sort
+  // button) on screen, marked aria-busy, and swaps it when the new answer arrives.
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [sortedBy, setSortedBy] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,13 +116,40 @@ export function PromotionComments({
   const formId = `${baseId}-body`;
   const errorId = `${baseId}-error`;
 
+  const hasLoaded = comments !== null;
+  // Only a sort the visitor chose is announced afterwards, not the first load.
+  const sortChosen = useRef(false);
+
   useEffect(() => {
-    setComments(null);
-    fetch(`/api/promotions/${promotionSlug}/comments?sort=${sort}`)
-      .then((r) => r.json())
-      .then((data) => setComments(data.comments ?? []))
-      .catch(() => setComments([]));
+    // The newest request wins: a slower, older answer must not overwrite a newer one.
+    const controller = new AbortController();
+    setLoading(true);
+    setLoadFailed(false);
+    setSortedBy(null);
+    fetch(`/api/promotions/${promotionSlug}/comments?sort=${sort}`, { signal: controller.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error("comments");
+        return r.json();
+      })
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        setComments(data.comments ?? []);
+        setLoading(false);
+        if (sortChosen.current) setSortedBy(SORT_OPTIONS.find((o) => o.value === sort)?.label.toLowerCase() ?? null);
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setLoadFailed(true);
+        setLoading(false);
+      });
+    return () => controller.abort();
   }, [promotionSlug, sort]);
+
+  function chooseSort(next: SortMode) {
+    if (next === sort) return;
+    sortChosen.current = true;
+    setSort(next);
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -69,16 +161,16 @@ export function PromotionComments({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ body })
-    });
-    const data = await res.json().catch(() => null);
+    }).catch(() => null);
+    const data = res ? await res.json().catch(() => null) : null;
     setSubmitting(false);
 
-    if (!res.ok) {
-      setError(data?.error ?? "Nie udało się dodać komentarza.");
+    if (!res || !res.ok) {
+      setError(data?.error ?? "Nie udało się dodać komentarza. Sprawdź połączenie i spróbuj ponownie.");
       return;
     }
 
-    setComments((prev) => [data.comment, ...(prev ?? [])]);
+    setComments((prev) => withNewComment(prev, data.comment));
     setBody("");
   }
 
@@ -89,46 +181,50 @@ export function PromotionComments({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ body: replyBody, parentId })
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
-      setReplyError(data?.error ?? "Nie udało się dodać odpowiedzi.");
+    }).catch(() => null);
+    const data = res ? await res.json().catch(() => null) : null;
+    if (!res || !res.ok) {
+      setReplyError(data?.error ?? "Nie udało się dodać odpowiedzi. Sprawdź połączenie i spróbuj ponownie.");
       return;
     }
 
-    setComments((prev) =>
-      (prev ?? []).map((c) => (c.id === parentId ? { ...c, replies: [...(c.replies ?? []), data.comment] } : c))
-    );
+    setComments((prev) => withReply(prev ?? [], parentId, data.comment));
     setReplyBody("");
     setReplyTo(null);
   }
 
   async function onLike(commentId: string, isReplyOf?: string) {
     if (!currentUser) return;
-    const res = await fetch(`/api/promotions/${promotionSlug}/comments/${commentId}/like`, { method: "POST" });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) return;
+    const res = await fetch(`/api/promotions/${promotionSlug}/comments/${commentId}/like`, { method: "POST" }).catch(
+      () => null
+    );
+    const data = res ? await res.json().catch(() => null) : null;
+    if (!res || !res.ok) return;
 
     setComments((prev) =>
-      (prev ?? []).map((c) => {
-        if (isReplyOf) {
-          if (c.id !== isReplyOf) return c;
-          return { ...c, replies: c.replies?.map((r) => (r.id === commentId ? { ...r, likeCount: data.likeCount, likedByMe: data.likedByMe } : r)) };
-        }
-        if (c.id !== commentId) return c;
-        return { ...c, likeCount: data.likeCount, likedByMe: data.likedByMe };
-      })
+      withLikeState(prev ?? [], commentId, isReplyOf, { likeCount: data.likeCount, likedByMe: data.likedByMe })
     );
   }
 
-  const total = (comments ?? []).reduce((sum, c) => sum + 1 + (c.replies?.length ?? 0), 0);
+  /** A guest has no reply form: the button opens the sign-in dialog instead of toggling a form that never appears. */
+  function onToggleReply(commentId: string) {
+    if (!currentUser) {
+      openAuth({ mode: "login" });
+      return;
+    }
+    setReplyError(null);
+    setReplyTo(replyTo === commentId ? null : commentId);
+  }
+
+  const total = countComments(comments ?? []);
+  const status = commentsStatus({ loading, hasLoaded, loadFailed, sortedBy });
 
   return (
     <section className="mt-12" aria-labelledby={`${baseId}-heading`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id={`${baseId}-heading`} className="flex items-center gap-2">
           <MessageCircle size={24} aria-hidden="true" className="shrink-0 text-ink-500" />
-          <span>Komentarze{comments ? ` (${total})` : ""}</span>
+          <span>Komentarze{hasLoaded ? ` (${total})` : ""}</span>
         </h2>
         {comments && comments.length > 0 && (
           <div role="group" aria-label="Sortowanie komentarzy" className="inline-flex gap-1 rounded-full border border-line-strong p-1">
@@ -139,7 +235,7 @@ export function PromotionComments({
                   key={option.value}
                   type="button"
                   aria-pressed={active}
-                  onClick={() => setSort(option.value)}
+                  onClick={() => chooseSort(option.value)}
                   className={cn(
                     "min-h-9 rounded-full px-4 text-small font-semibold transition-colors duration-150 ease-out",
                     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
@@ -194,71 +290,69 @@ export function PromotionComments({
 
       <TrustNote kind="comments" className="mt-3" />
 
-      <div className="mt-6" aria-busy={comments === null}>
-        {comments === null && (
-          <p role="status" className="text-ui text-ink-500">
-            Wczytywanie komentarzy...
-          </p>
-        )}
-        {comments?.length === 0 && <p className="text-ui text-ink-700">Nikt jeszcze nie skomentował tej promocji.</p>}
-        {comments && comments.length > 0 && (
-          <ul role="list" className="space-y-4">
-            {comments.map((c) => (
-              <li key={c.id}>
-                <CommentCard
-                  comment={c}
-                  canReply
-                  isReplying={replyTo === c.id}
-                  onToggleReply={() => {
-                    setReplyError(null);
-                    setReplyTo(replyTo === c.id ? null : c.id);
-                  }}
-                  onLike={() => onLike(c.id)}
-                  canLike={Boolean(currentUser)}
-                />
-                {replyTo === c.id && currentUser && (
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      onReply(c.id);
-                    }}
-                    className="ml-4 mt-3 sm:ml-8"
-                  >
-                    <Label htmlFor={`${baseId}-reply-${c.id}`} srOnly>
-                      {`Odpowiedź dla: ${c.authorName}`}
-                    </Label>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                      <Textarea
-                        id={`${baseId}-reply-${c.id}`}
-                        value={replyBody}
-                        onChange={(e) => setReplyBody(e.target.value)}
-                        rows={2}
-                        placeholder={`Odpowiedz ${c.authorName}...`}
-                        invalid={Boolean(replyError)}
-                        aria-describedby={replyError ? `${baseId}-reply-error` : undefined}
-                        className="min-h-[5rem] flex-1"
-                        autoFocus
-                      />
-                      <Button type="submit" disabled={!replyBody.trim()} className="self-start">
-                        Wyślij
-                      </Button>
-                    </div>
-                    <FormMessage id={`${baseId}-reply-error`}>{replyError}</FormMessage>
-                  </form>
-                )}
-                {c.replies && c.replies.length > 0 && (
-                  <ul role="list" className="ml-4 mt-3 space-y-3 border-l-2 border-line-strong pl-4 sm:ml-8">
-                    {c.replies.map((r) => (
-                      <li key={r.id}>
-                        <CommentCard comment={r} canReply={false} onLike={() => onLike(r.id, c.id)} canLike={Boolean(currentUser)} />
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+      <div className="mt-6">
+        {/* Always in the DOM and outside the aria-busy container, so the text put into it is announced. */}
+        <div role="status" className={cn("text-ui text-ink-500 empty:hidden", !status.visible && "sr-only")}>
+          {status.text}
+        </div>
+        <div aria-busy={loading}>
+          {comments?.length === 0 && <p className="text-ui text-ink-700">Nikt jeszcze nie skomentował tej promocji.</p>}
+          {comments && comments.length > 0 && (
+            <ul role="list" className="space-y-4">
+              {comments.map((c) => (
+                <li key={c.id}>
+                  <CommentCard
+                    comment={c}
+                    canReply
+                    isReplying={Boolean(currentUser) && replyTo === c.id}
+                    onToggleReply={() => onToggleReply(c.id)}
+                    onLike={() => onLike(c.id)}
+                    canLike={Boolean(currentUser)}
+                  />
+                  {replyTo === c.id && currentUser && (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        onReply(c.id);
+                      }}
+                      className="ml-4 mt-3 sm:ml-8"
+                    >
+                      <Label htmlFor={`${baseId}-reply-${c.id}`} srOnly>
+                        {`Odpowiedź dla: ${c.authorName}`}
+                      </Label>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                        <Textarea
+                          id={`${baseId}-reply-${c.id}`}
+                          value={replyBody}
+                          onChange={(e) => setReplyBody(e.target.value)}
+                          rows={2}
+                          placeholder={`Odpowiedz ${c.authorName}...`}
+                          invalid={Boolean(replyError)}
+                          aria-describedby={replyError ? `${baseId}-reply-error` : undefined}
+                          className="min-h-[5rem] flex-1"
+                          autoFocus
+                        />
+                        <Button type="submit" disabled={!replyBody.trim()} className="self-start">
+                          Wyślij
+                        </Button>
+                      </div>
+                      <FormMessage id={`${baseId}-reply-error`}>{replyError}</FormMessage>
+                    </form>
+                  )}
+                  {c.replies && c.replies.length > 0 && (
+                    <ul role="list" className="ml-4 mt-3 space-y-3 border-l-2 border-line-strong pl-4 sm:ml-8">
+                      {c.replies.map((r) => (
+                        <li key={r.id}>
+                          <CommentCard comment={r} canReply={false} onLike={() => onLike(r.id, c.id)} canLike={Boolean(currentUser)} />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </section>
   );

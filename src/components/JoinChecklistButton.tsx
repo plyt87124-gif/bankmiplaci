@@ -75,60 +75,69 @@ export function JoinChecklistButton({
     );
   }
 
-  if (joined) {
-    return (
-      <div className="rounded-card border border-line bg-surface p-5" data-state="joined">
-        <p role="status" className="flex items-start gap-2 text-ui font-semibold text-ink-900">
-          <CheckCircle2 size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-success" />
-          Dodano do ściągi
-        </p>
-        <p className="mt-1.5 text-small text-ink-700">Twoja szczegółowa ściąga czeka w „Moje konto”.</p>
-        <Link href="/konto" className="link-inline mt-2 inline-flex min-h-11 items-center gap-1 text-ui font-medium">
-          Otwórz ściągę
-          <ArrowRight size={16} aria-hidden="true" />
-        </Link>
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-card border border-line bg-surface p-5">
-      <p className="flex items-start gap-2 text-ui font-semibold text-ink-900">
-        <ListChecks size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-500" />
-        Dołączyłeś/aś do tej promocji?
-      </p>
-      <p className="mt-1.5 text-small text-ink-700">
-        Zbudujemy Ci szczegółową, interaktywną ściągę w „Moje konto” — z krokami rozbitymi na miesiące, do
-        zaznaczania w miarę spełniania warunków.
-      </p>
-
-      <div className="mt-4">
-        <Label htmlFor={dateId}>Kiedy otworzyłeś/aś konto?</Label>
-        <Input
-          id={dateId}
-          type="date"
-          value={accountOpenedAt}
-          max={today()}
-          onChange={(e) => setAccountOpenedAt(e.target.value)}
-          invalid={Boolean(error)}
-          aria-describedby={error ? `${hintId} ${errorId}` : hintId}
-        />
-        <p id={hintId} className="mt-1.5 text-caption text-ink-500">
-          Na tej podstawie odblokujemy kolejne miesiące ściągi dopiero, gdy faktycznie nadejdą.
-        </p>
+    <div className="rounded-card border border-line bg-surface p-5" data-state={joined ? "joined" : undefined}>
+      {/*
+        One live region for the whole card, present from the first render and only filled
+        later: a role="status" node inserted together with its text is often not announced.
+      */}
+      <div role="status" className="empty:hidden">
+        {joined && (
+          <p className="flex items-start gap-2 text-ui font-semibold text-ink-900">
+            <CheckCircle2 size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-success" />
+            Dodano do ściągi
+          </p>
+        )}
       </div>
 
-      <Button
-        variant="secondary"
-        fullWidth
-        className="mt-4"
-        onClick={onButtonClick}
-        loading={loading}
-        disabled={!accountOpenedAt}
-      >
-        {loading ? "Zapisywanie..." : loggedIn ? "Zapisz w ściądze" : "Zapisz w ściądze (wymaga konta)"}
-      </Button>
-      <FormMessage id={errorId}>{error}</FormMessage>
+      {joined ? (
+        <>
+          <p className="mt-1.5 text-small text-ink-700">Twoja szczegółowa ściąga czeka w „Moje konto”.</p>
+          <Link href="/konto" className="link-inline mt-2 inline-flex min-h-11 items-center gap-1 text-ui font-medium">
+            Otwórz ściągę
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </>
+      ) : (
+        <>
+          <p className="flex items-start gap-2 text-ui font-semibold text-ink-900">
+            <ListChecks size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-500" />
+            Dołączyłeś/aś do tej promocji?
+          </p>
+          <p className="mt-1.5 text-small text-ink-700">
+            Zbudujemy Ci szczegółową, interaktywną ściągę w „Moje konto” — z krokami rozbitymi na miesiące, do
+            zaznaczania w miarę spełniania warunków.
+          </p>
+
+          <div className="mt-4">
+            <Label htmlFor={dateId}>Kiedy otworzyłeś/aś konto?</Label>
+            <Input
+              id={dateId}
+              type="date"
+              value={accountOpenedAt}
+              max={today()}
+              onChange={(e) => setAccountOpenedAt(e.target.value)}
+              invalid={Boolean(error)}
+              aria-describedby={error ? `${hintId} ${errorId}` : hintId}
+            />
+            <p id={hintId} className="mt-1.5 text-caption text-ink-500">
+              Na tej podstawie odblokujemy kolejne miesiące ściągi dopiero, gdy faktycznie nadejdą.
+            </p>
+          </div>
+
+          <Button
+            variant="secondary"
+            fullWidth
+            className="mt-4"
+            onClick={onButtonClick}
+            loading={loading}
+            disabled={!accountOpenedAt}
+          >
+            {loading ? "Zapisywanie..." : loggedIn ? "Zapisz w ściądze" : "Zapisz w ściądze (wymaga konta)"}
+          </Button>
+          <FormMessage id={errorId}>{error}</FormMessage>
+        </>
+      )}
     </div>
   );
 }

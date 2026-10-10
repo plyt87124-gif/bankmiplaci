@@ -1,19 +1,44 @@
-// Server-render tests of the ściąga, the conditions list, the join card and the
-// comments (WP-11: presentation and accessibility only). There is no DOM in
-// the test runner, so keyboard behaviour is asserted through the markup that
-// produces it (native checkbox = Space toggles it, <label for> = whole row is
-// the target, aria-disabled instead of disabled = still reachable with Tab);
-// the real key presses were checked in Chromium against the dev server.
+// Tests of the ściąga, the conditions list, the join card and the comments (WP-11 + CHECKCMP).
+//
+// What is tested here: (1) server-rendered MARKUP - there is no DOM, jsdom or
+// testing-library in the runner, so nothing is clicked; keyboard behaviour is
+// asserted through the markup that produces it (native checkbox = Space toggles
+// it, <label for> = the whole row is the target, aria-disabled instead of
+// disabled = still reachable with Tab, live regions present from the first
+// render); (2) the PURE functions the components use for their state changes
+// (optimistic tick and its revert, the failure message of closing a ściąga,
+// comment/reply/like list updates, the comments live-region text).
+//
+// What is NOT covered by any test in the repo: real key presses, focus movement,
+// fetch races and screen-reader announcements. There is no script for them in
+// the repo. The WP-11 note that keys were pressed in Chromium cannot be checked
+// from here. For CHECKCMP the comments behaviour (a guest's "Odpowiedz" opens
+// the sign-in dialog; sorting keeps focus on the sort button and the old list with
+// aria-busy; an older, slower answer does not replace a newer one) was run once in
+// headless Chromium against the dev server with a mocked comments API; that
+// throwaway script was not kept.
 import "./legal-setup";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createElement as h, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { PromotionChecklist } from "../src/components/PromotionChecklist";
+import {
+  PromotionChecklist,
+  completeFailureMessage,
+  stepsOf,
+  withStepChecked
+} from "../src/components/PromotionChecklist";
 import { ConditionsChecklist } from "../src/components/ConditionsChecklist";
 import { JoinChecklistButton } from "../src/components/JoinChecklistButton";
-import { PromotionComments } from "../src/components/PromotionComments";
+import {
+  PromotionComments,
+  commentsStatus,
+  countComments,
+  withLikeState,
+  withNewComment,
+  withReply
+} from "../src/components/PromotionComments";
 import { AuthModalProvider } from "../src/components/AuthModalProvider";
 
 const router = {
@@ -243,4 +268,104 @@ test("komentarze (zalogowany): textarea z ukrytą etykietą sr-only, przycisk wy
   assert.match(out, new RegExp(`<label[^>]*sr-only[^>]*for="${id.replace(/:/g, "\\:")}"|<label[^>]*for="${id.replace(/:/g, "\\:")}"[^>]*sr-only`));
   assert.match(out, />Twój komentarz</);
   assert.match(out, /<button type="submit"[^>]*disabled=""[^>]*>Dodaj komentarz<\/button>/);
+});
+
+// ---------------------------------------------------------------------------
+// Pure functions behind the state changes (CHECKCMP)
+// ---------------------------------------------------------------------------
+
+test("ściąga: stepsOf odmienia „kroków” po „z”, withStepChecked nie zmienia oryginału (zaznaczenie i cofnięcie)", () => {
+  assert.equal(stepsOf(0, 4), "0 z 4 kroków");
+  assert.equal(stepsOf(1, 1), "1 z 1 kroku");
+  const base = new Set(["a"]);
+  const ticked = withStepChecked(base, "b", true);
+  assert.deepEqual([...ticked].sort(), ["a", "b"]);
+  assert.deepEqual([...base], ["a"], "oryginał bez zmian (React state)");
+  // Optimistic tick followed by the revert after a failed save gives the starting state back.
+  assert.deepEqual([...withStepChecked(ticked, "b", false)], ["a"]);
+  assert.deepEqual([...withStepChecked(base, "x", false)], ["a"], "odznaczenie nieobecnego kroku nic nie psuje");
+});
+
+test("ściąga: błąd sieci przy zamykaniu daje komunikat „Nie udało się zapisać. Sprawdź połączenie.”", () => {
+  assert.equal(completeFailureMessage(null, null), "Nie udało się zapisać. Sprawdź połączenie.");
+  assert.equal(completeFailureMessage({ ok: true }, { ok: true } as never), null);
+  assert.equal(completeFailureMessage({ ok: false }, { error: "Musisz być zalogowany." }), "Musisz być zalogowany.");
+  assert.equal(completeFailureMessage({ ok: false }, null), "Coś poszło nie tak.");
+  assert.equal(completeFailureMessage({ ok: false }, { error: 42 }), "Coś poszło nie tak.", "nie-tekstowy błąd nie trafia na ekran");
+});
+
+const c = (id: string, extra: Partial<Parameters<typeof withNewComment>[1]> = {}) => ({
+  id,
+  body: `Treść ${id}`,
+  createdAt: "2026-10-01T10:00:00.000Z",
+  isPinned: false,
+  isAdmin: false,
+  authorName: "Anna",
+  likeCount: 0,
+  likedByMe: false,
+  ...extra
+});
+
+test("komentarze: liczba w nagłówku to komentarze plus odpowiedzi", () => {
+  assert.equal(countComments([]), 0);
+  assert.equal(countComments([c("a"), c("b", { replies: [c("b1"), c("b2")] })]), 4);
+});
+
+test("komentarze: nowy komentarz na górze, odpowiedź pod właściwym rodzicem, polubienie tylko w tym komentarzu", () => {
+  const list = [c("a"), c("b", { replies: [c("b1")] })];
+  assert.deepEqual(withNewComment(list, c("n")).map((x) => x.id), ["n", "a", "b"]);
+  assert.deepEqual(withNewComment(null, c("n")).map((x) => x.id), ["n"], "pierwszy komentarz, gdy lista się nie wczytała");
+
+  const replied = withReply(list, "a", c("a1"));
+  assert.deepEqual(replied[0]!.replies!.map((x) => x.id), ["a1"]);
+  assert.deepEqual(replied[1]!.replies!.map((x) => x.id), ["b1"]);
+  assert.deepEqual(withReply(list, "nie-ma", c("x")), list, "nieznany rodzic nic nie zmienia");
+  assert.equal(list[0]!.replies, undefined, "oryginał bez zmian");
+
+  const liked = withLikeState(list, "a", undefined, { likeCount: 3, likedByMe: true });
+  assert.equal(liked[0]!.likeCount, 3);
+  assert.equal(liked[0]!.likedByMe, true);
+  assert.equal(liked[1]!.likeCount, 0);
+  const likedReply = withLikeState(list, "b1", "b", { likeCount: 1, likedByMe: true });
+  assert.equal(likedReply[1]!.replies![0]!.likeCount, 1);
+  assert.equal(likedReply[1]!.likeCount, 0, "rodzic nie dostaje polubienia odpowiedzi");
+});
+
+test("komentarze: tekst regionu statusu - pierwsze wczytanie widoczne, ponowne sortowanie tylko dla czytników ekranu", () => {
+  assert.deepEqual(commentsStatus({ loading: true, hasLoaded: false, loadFailed: false, sortedBy: null }), {
+    text: "Wczytywanie komentarzy...",
+    visible: true
+  });
+  const resort = commentsStatus({ loading: true, hasLoaded: true, loadFailed: false, sortedBy: null });
+  assert.equal(resort.visible, false, "stara lista zostaje na ekranie, bez migania napisu");
+  assert.match(resort.text, /Sortowanie/);
+  assert.equal(commentsStatus({ loading: false, hasLoaded: true, loadFailed: false, sortedBy: "najnowsze" }).text, "Komentarze posortowane: najnowsze.");
+  assert.equal(commentsStatus({ loading: false, hasLoaded: true, loadFailed: false, sortedBy: null }).text, "");
+  // A failed load is never reported as „Nikt jeszcze nie skomentował”.
+  const failed = commentsStatus({ loading: false, hasLoaded: false, loadFailed: true, sortedBy: null });
+  assert.equal(failed.visible, true);
+  assert.match(failed.text, /Nie udało się wczytać komentarzy/);
+  assert.match(commentsStatus({ loading: false, hasLoaded: true, loadFailed: true, sortedBy: null }).text, /poprzednią listę/);
+});
+
+// ---------------------------------------------------------------------------
+// Live regions are in the DOM from the first render (CHECKCMP)
+// ---------------------------------------------------------------------------
+
+test("komentarze: region statusu jest poza kontenerem aria-busy, a kontener listy ma aria-busy", () => {
+  const out = render(h(PromotionComments, { promotionSlug: "x", currentUser: null }));
+  const status = out.indexOf('role="status"');
+  const busy = out.indexOf('aria-busy="true"');
+  assert.ok(status > 0 && busy > status, "status przed kontenerem listy");
+  // The status node is closed before the busy container opens: they are siblings, not parent and child.
+  assert.match(out, /role="status"[^>]*>Wczytywanie komentarzy\.\.\.<\/div><div aria-busy="true">/);
+});
+
+test("zapis w ściądze: pusty region role=status jest w DOM, zanim pojawi się „Dodano do ściągi”", () => {
+  const form = join({ loggedIn: true });
+  assert.match(form, /<div role="status" class="empty:hidden"><\/div>/, "pusty, ukryty region czeka na komunikat");
+  assert.doesNotMatch(form, /Dodano do ściągi/);
+  const joined = join({ alreadyJoined: true, loggedIn: true });
+  assert.match(joined, /<div role="status"[^>]*>.*Dodano do ściągi.*<\/div>/s);
+  assert.equal((joined.match(/role="status"/g) ?? []).length, 1, "jeden region na kartę");
 });

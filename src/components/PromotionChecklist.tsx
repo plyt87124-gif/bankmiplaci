@@ -59,10 +59,38 @@ function trackingEarnedCents(tracking: Tracking, checked: Set<string>): number {
   return earnedCentsFor(tracking.steps, tracking.accountOpenedAt, checked);
 }
 
+/* ------------------------------------------------------------------ */
+/* Pure helpers (no React): covered by tests/checklist-ui.test.tsx.     */
+/* ------------------------------------------------------------------ */
+
 /** "2 z 5 kroków" - the total is in the genitive after "z". */
-function stepsOf(done: number, total: number): string {
+export function stepsOf(done: number, total: number): string {
   return `${done} z ${total} ${pluralizePl(total, "kroku", "kroków", "kroków")}`;
 }
+
+/** A copy of `checked` with `stepId` ticked (`present` = true) or cleared; the original is not touched. */
+export function withStepChecked(checked: ReadonlySet<string>, stepId: string, present: boolean): Set<string> {
+  const next = new Set(checked);
+  if (present) next.add(stepId);
+  else next.delete(stepId);
+  return next;
+}
+
+/** Shown when "Spełniłem/am warunki" could not be saved because the request itself failed. */
+export const COMPLETE_NETWORK_ERROR = "Nie udało się zapisać. Sprawdź połączenie.";
+
+/**
+ * Why closing the ściąga failed, or null when it worked. `res` is null when the
+ * request never got an answer (offline, DNS, the connection dropped).
+ */
+export function completeFailureMessage(res: { ok: boolean } | null, data: { error?: unknown } | null): string | null {
+  if (!res) return COMPLETE_NETWORK_ERROR;
+  if (res.ok) return null;
+  return typeof data?.error === "string" && data.error ? data.error : "Coś poszło nie tak.";
+}
+
+/** Today's calendar date in Poland (YYYY-MM-DD), the clock the server validates dates against. */
+const warsawToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());
 
 export function PromotionChecklist({
   trackings,
@@ -112,12 +140,7 @@ export function PromotionChecklist({
 
   async function toggleStep(stepId: string, next: boolean) {
     setFailedStepId(null);
-    setChecked((prev) => {
-      const s = new Set(prev);
-      if (next) s.add(stepId);
-      else s.delete(stepId);
-      return s;
-    });
+    setChecked((prev) => withStepChecked(prev, stepId, next));
     const res = await fetch("/api/checklist/toggle", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -125,12 +148,7 @@ export function PromotionChecklist({
     }).catch(() => null);
     if (!res || !res.ok) {
       // Server rejected it (e.g. month not unlocked yet) — revert the optimistic check.
-      setChecked((prev) => {
-        const s = new Set(prev);
-        if (next) s.delete(stepId);
-        else s.add(stepId);
-        return s;
-      });
+      setChecked((prev) => withStepChecked(prev, stepId, !next));
       setFailedStepId(stepId);
     }
   }
@@ -141,24 +159,26 @@ export function PromotionChecklist({
 
   function requestConfirm(t: Tracking) {
     setConfirmingId(t.id);
-    setClosedAtDrafts((prev) => ({ ...prev, [t.id]: prev[t.id] ?? new Date().toISOString().slice(0, 10) }));
+    setClosedAtDrafts((prev) => ({ ...prev, [t.id]: prev[t.id] ?? warsawToday() }));
   }
 
   async function complete(t: Tracking) {
     setPending(t.id);
-    const closedAt = closedAtDrafts[t.id] ?? new Date().toISOString().slice(0, 10);
+    const closedAt = closedAtDrafts[t.id] ?? warsawToday();
+    // A network error must not leave the button spinning forever: treat it like a rejected save.
     const res = await fetch("/api/checklist/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ promotionId: t.promotionId, closedAt })
-    });
-    const data = await res.json().catch(() => null);
+    }).catch(() => null);
+    const data = res ? await res.json().catch(() => null) : null;
     setPending(null);
     setConfirmingId(null);
 
-    if (!res.ok) {
+    const failure = completeFailureMessage(res, data);
+    if (failure) {
       setMessageKind("error");
-      setSuccessMessage(data?.error ?? "Coś poszło nie tak.");
+      setSuccessMessage(failure);
       return;
     }
 
@@ -242,7 +262,7 @@ export function PromotionChecklist({
             confirming={confirmingId === t.id}
             onRequestConfirm={() => requestConfirm(t)}
             onCancelConfirm={() => setConfirmingId(null)}
-            closedAt={closedAtDrafts[t.id] ?? new Date().toISOString().slice(0, 10)}
+            closedAt={closedAtDrafts[t.id] ?? warsawToday()}
             onClosedAtChange={(v) => setClosedAtDrafts((prev) => ({ ...prev, [t.id]: v }))}
             onConfirm={() => complete(t)}
             pending={pending === t.id}
@@ -542,8 +562,6 @@ function ChecklistCard({
     </article>
   );
 }
-
-const warsawToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());
 
 /**
  * Older ściągi were started before the opening date was asked for. Without it

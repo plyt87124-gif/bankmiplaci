@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   COMPARE_MAX,
   bestFlags,
+  cellDisclosureText,
   compareUrl,
   cooldownLines,
   describeFee,
@@ -19,6 +20,8 @@ import {
 } from "../src/app/porownaj/compareModel";
 import { CompareTable, type CompareColumn } from "../src/app/porownaj/CompareTable";
 import { buildCompareHref } from "../src/lib/quiz";
+import { COMPACT } from "../src/lib/disclosureCopy";
+import { cooldownRule, cooldownShort } from "../src/components/promocja/offerModel";
 import type { PromotionCardData } from "../src/lib/services/promotionCards";
 
 // Source files use the classic JSX transform under tsx: they need React in scope.
@@ -162,14 +165,34 @@ test("only a verified unconditional 0 zł wins the fee row", () => {
 
 /* ---------------- karencja ---------------- */
 
-test("cooldownLines: months with Polish plural, the cutoff date, both, or nothing (never 'no karencja')", () => {
-  assert.deepEqual(cooldownLines(24, null), ["24 miesiące od zamknięcia konta w tym banku"]);
-  assert.deepEqual(cooldownLines(12, null), ["12 miesięcy od zamknięcia konta w tym banku"]);
-  assert.deepEqual(cooldownLines(1, null), ["1 miesiąc od zamknięcia konta w tym banku"]);
-  assert.deepEqual(cooldownLines(null, new Date("2024-08-01T00:00:00Z")), ["Bez konta w tym banku od 01.08.2024"]);
-  assert.equal(cooldownLines(36, "2022-01-01T00:00:00Z").length, 2);
-  assert.deepEqual(cooldownLines(null, null), []);
-  assert.deepEqual(cooldownLines(0, null), []);
+test("cooldownLines uses the offer page's wording (cooldownShort): months, the cutoff date, both, or nothing", () => {
+  assert.deepEqual(cooldownLines(24, null), [cooldownShort({ months: 24, cutoff: null })]);
+  assert.match(cooldownLines(24, null)[0]!, /24/);
+  const cutoff = new Date("2024-08-01T00:00:00Z");
+  assert.deepEqual(cooldownLines(null, cutoff), [cooldownShort({ months: null, cutoff })]);
+  assert.match(cooldownLines(null, cutoff)[0]!, /01\.08\.2024/);
+  assert.deepEqual(cooldownLines(36, "2022-01-01T00:00:00Z"), [
+    cooldownShort({ months: 36, cutoff: null }),
+    cooldownShort({ months: null, cutoff: cooldownRule({ cooldownCutoffDate: "2022-01-01T00:00:00Z" })!.cutoff })
+  ]);
+  assert.deepEqual(cooldownLines(null, null), [], "no data: the cell says 'Brak danych', never 'no karencja'");
+  assert.deepEqual(cooldownLines(undefined, undefined), []);
+  assert.deepEqual(cooldownLines(null, "nie-data"), [], "an unreadable date is no data");
+});
+
+test("cooldownLines: 0 months is 'Bez karencji' like on the offer page, not 'Brak danych'", () => {
+  assert.deepEqual(cooldownLines(0, null), [cooldownShort({ months: 0, cutoff: null })]);
+  assert.match(cooldownLines(0, null)[0]!, /Bez karencji/);
+});
+
+test("cellDisclosureText: the compact disclosure without its 'Link partnerski:' lead and without the link", () => {
+  const text = cellDisclosureText();
+  assert.ok(COMPACT.lead.toLowerCase().endsWith(text.slice(1).toLowerCase()), "same words as disclosureCopy");
+  assert.doesNotMatch(text, /^Link partnerski/i);
+  assert.doesNotMatch(text, new RegExp(COMPACT.linkLabel));
+  assert.match(text, /^[A-ZŁŚŻŹĆŃÓĘĄ]/, "starts a sentence");
+  // A lead without the prefix is kept as it is.
+  assert.equal(cellDisclosureText("Możemy dostać prowizję."), "Możemy dostać prowizję.");
 });
 
 /* ---------------- the table ---------------- */
@@ -237,24 +260,28 @@ test("no link opens a new tab; offer links only in the column header and the act
   assert.deepEqual(detailLinks.sort(), ["a", "a", "b", "b", "c", "c"], "header + actions, once each");
 });
 
-test("the CTA goes through /out with rel=sponsored, a compact disclosure under it and the 'Link partnerski' badge", () => {
+test("the CTA goes through /out with rel=sponsored, the badge above and a short disclosure (no link) under it", () => {
   const html = render(columns);
   const out = [...html.matchAll(/<a [^>]*href="(\/out\/[^"]+)"[^>]*>/g)];
   assert.equal(out.length, 1, "only the offer with an enabled partner link has a CTA");
   assert.equal(out[0]![1], "/out/a?src=compare-table");
   assert.match(out[0]![0], /rel="sponsored nofollow noopener noreferrer"/);
   assert.match(out[0]![0], /target="_self"/);
+  // One short disclosure per button; its "Jak zarabiamy" link is NOT repeated in every cell
+  // (the single full compact disclosure with the link is under the table, in page.tsx).
   assert.equal((html.match(/data-disclosure="compact"/g) ?? []).length, 1);
-  assert.ok(html.indexOf("data-disclosure=\"compact\"") > html.indexOf("/out/a?src=compare-table"), "compact sits under the button");
-  assert.match(text(html), /Link partnerski/);
+  assert.ok(html.indexOf("data-disclosure=\"compact\"") > html.indexOf("/out/a?src=compare-table"), "disclosure sits under the button");
+  assert.ok(html.indexOf("Link partnerski") < html.indexOf("/out/a?src=compare-table"), "badge above the button");
+  assert.match(text(html), new RegExp(cellDisclosureText()));
+  assert.doesNotMatch(html, /href="\/jak-zarabiamy/, "no link in the cells");
   // Offers without a live link or without extras get no CTA and no disclosure.
   assert.doesNotMatch(html, /\/out\/b|\/out\/c/);
 });
 
 test("best values: bold + check mark + words for screen readers, no coloured background", () => {
   const html = render(columns);
-  // Bonus 800 zł is the best (a vs b vs 0).
-  assert.match(html, /font-bold"><span>800\szł<\/span>.*?najlepsza wartość w wierszu/s);
+  // Bonus "do 800 zł" is the best (a vs b vs 0).
+  assert.match(html, /font-bold"><span>do\s800\szł<\/span>.*?najlepsza wartość w wierszu/s);
   // Rating 9,4 ties between a and b: both marked, c (7,0) is not.
   const ratingBest = html.match(/9,4\/10<\/span>[^]*?najlepsza wartość w wierszu/g) ?? [];
   assert.equal(ratingBest.length >= 2, true);
@@ -277,7 +304,7 @@ test("unknown values say 'Brak danych', never 0 zł; a waivable fee shows the as
 
 test("karencja row prints the structured data and 'Brak danych' otherwise", () => {
   const t = text(render(columns));
-  assert.match(t, /24 miesiące od zamknięcia konta w tym banku/);
+  assert.ok(t.includes(cooldownShort({ months: 24, cutoff: null })), "the same words as the offer page");
   assert.match(t, /Brak danych Sprawdź warunki w ofercie\./);
 });
 
@@ -300,6 +327,50 @@ test("ratings use a decimal comma and the 'Ocena serwisu' label", () => {
   assert.match(t, /9,4\/10/);
   assert.match(t, /Ocena serwisu/);
   assert.doesNotMatch(t, /9\.4/);
+});
+
+test("premia is shown as a maximum: 'do 800 zł', never a bare amount", () => {
+  const t = text(render(columns));
+  assert.match(t, /do\s800\szł/);
+  assert.match(t, /do\s500\szł/);
+  assert.doesNotMatch(t, /(^|[^o]\s)800\szł/, "no amount without 'do'");
+});
+
+test("karencja cell: 0 months reads 'Bez karencji', no data reads 'Brak danych'", () => {
+  const zero = text(render([{ card: card("z"), extras: { ...EXTRAS_ON, cooldownMonths: 0 } }]));
+  assert.match(zero, /Bez karencji/);
+  const none = text(render([{ card: card("n"), extras: { ...EXTRAS_ON, cooldownMonths: null } }]));
+  assert.match(none, /Brak danych Sprawdź warunki w ofercie\./);
+  assert.doesNotMatch(none, /Bez karencji/);
+});
+
+test("action cell names its bank and offer: caption + aria-labels that start with the visible text", () => {
+  const html = render(columns);
+  // Visible caption: bank name and offer name (the row sits far below the column headers on a phone).
+  assert.match(html, /<p class="[^"]*text-caption[^"]*"><span class="[^"]*font-semibold[^"]*">Bank a<\/span>Oferta a<\/p>/);
+  // The order of attributes is not part of the contract: find the tag by its href, then read its aria-label.
+  const label = (href: string) => {
+    // (/promocje/a is linked twice: the column header has no aria-label, the action cell has.)
+    const tag = [...html.matchAll(/<a [^>]*>/g)].map((m) => m[0]).find((t) => t.includes(`href="${href}"`) && t.includes("aria-label="));
+    return /aria-label="([^"]+)"/.exec(tag ?? "")?.[1];
+  };
+  const detail = label("/promocje/a");
+  const cta = label("/out/a?src=compare-table");
+  assert.equal(detail, "Szczegóły: Bank a – Oferta a");
+  assert.equal(cta, "Przejdź do promocji: Bank a – Oferta a");
+  // WCAG 2.5.3: the accessible name contains the visible words (the phone shows the shorter 'Do promocji').
+  assert.ok(cta!.toLowerCase().includes("do promocji"));
+  assert.ok(detail!.startsWith("Szczegóły"));
+  // Every offer's "Szczegóły" link has a different name.
+  const names = [...html.matchAll(/aria-label="(Szczegóły: [^"]+)"/g)].map((m) => m[1]);
+  assert.equal(new Set(names).size, columns.length);
+});
+
+test("phone geometry: label 96 px + two 115 px offer columns fit the 326 px frame of a 360 px screen", () => {
+  const html = render(columns);
+  assert.match(html, /<col class="w-\[96px\] sm:w-\[152px\]"\/>/);
+  assert.match(html, /--cmp-min-m:441px/, "96 px label + 3 x 115 px offers; the columns snap two at a time");
+  assert.match(html, /scroll-pl-\[96px\]/);
 });
 
 test("no forbidden design patterns in the table markup", () => {

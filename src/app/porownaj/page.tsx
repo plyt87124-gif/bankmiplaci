@@ -6,6 +6,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { TrustNote } from "@/components/trust/TrustNote";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ButtonLink } from "@/components/ui/Button";
+import { COOLDOWN_EXPLAINER } from "@/components/promocja/offerModel";
 import { pluralizePl } from "@/lib/format";
 import { breadcrumbLd, noindexForSearchParams, staticPageMetadata } from "@/lib/seo";
 import { listPromotionCards } from "@/lib/services/promotionCards";
@@ -48,6 +49,8 @@ export default async function ComparePage(props: { searchParams: SearchParams })
   };
   const options = pool.map((c) => ({ slug: c.slug, bank: c.bank.name, name: c.name }));
   const k = selected.length;
+  // One full compact disclosure (with its link) under the table; each button carries the short form.
+  const hasPartnerLink = columns.some((c) => c.extras?.affiliateLinkEnabled === true);
 
   return (
     <div className="container-page py-8 md:py-12">
@@ -105,9 +108,15 @@ export default async function ComparePage(props: { searchParams: SearchParams })
                 oznaczamy wszystkie). Dotyczy jednej wartości, nie całej oferty.
               </span>
             </li>
+            <li>
+              Premia „do”: kwota to maksimum, które można uzyskać po spełnieniu wszystkich warunków promocji.
+              Szczegóły warunków znajdziesz na stronie oferty.
+            </li>
             <li>* Po spełnieniu warunku opłata wynosi 0 zł. Warunek podajemy pod kwotą.</li>
+            <li>{COOLDOWN_EXPLAINER}</li>
             <li>Brak danych: nie zweryfikowaliśmy tej informacji. Sprawdź regulamin lub tabelę opłat banku.</li>
           </ul>
+          {hasPartnerLink ? <AffiliateDisclosure variant="compact" className="mt-1.5" /> : null}
         </>
       )}
 
