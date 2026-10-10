@@ -18,8 +18,8 @@ import type { HomeModel } from "./homeModel";
  *   4 Ile wysiłku wymaga promocja?   5 quiz band   6 Dlaczego możesz nam ufać
  *   7 FAQ shortcut + hubs
  * The hero and the featured list share the segment state (HomeSegmentProvider);
- * everything below the featured list scrolls in with Reveal (never the hero or
- * the offers the visitor came for). `model` is null when the database could not
+ * only the quiz band and the trust block scroll in with Reveal (never the hero, the
+ * result lists or the FAQ). `model` is null when the database could not
  * be read: the static blocks still render.
  *
  * JSON-LD: Organization and WebSite (the `@id`s that the offer pages point to
@@ -57,26 +57,18 @@ export function HomeView({
         <HomeFeatured model={model} now={now} />
       </HomeSegmentProvider>
 
-      {/* Blocks without content are not rendered at all (no empty wrapper, no observer). */}
-      {model && model.endingSoon.length > 0 ? (
-        <Reveal>
-          <HomeEndingSoon model={model} now={now} />
-        </Reveal>
-      ) : null}
-      {model && model.effortExamples.length > 0 ? (
-        <Reveal>
-          <HomeEffort model={model} now={now} />
-        </Reveal>
-      ) : null}
+      {/* Blocks without content are not rendered at all (no empty wrapper). Result lists
+          (Kończą się, Wysiłek) and the FAQ are never revealed on scroll (designSpec §6.3);
+          only the editorial blocks below them scroll in. */}
+      {model && model.endingSoon.length > 0 ? <HomeEndingSoon model={model} now={now} /> : null}
+      {model && model.effortExamples.length > 0 ? <HomeEffort model={model} now={now} /> : null}
       <Reveal>
         <HomeQuizBand />
       </Reveal>
       <Reveal>
         <HomeTrust />
       </Reveal>
-      <Reveal>
-        <HomeFaq items={faqItems} hubs={hubs} />
-      </Reveal>
+      <HomeFaq items={faqItems} hubs={hubs} />
     </>
   );
 }

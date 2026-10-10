@@ -179,15 +179,15 @@ test("shortening: the amount goes first, then the business note, then the name (
   assert.ok(!/ (i|z|w|na|do|za)…$/.test(long), long);
 });
 
-test("expired offer title keeps the date and the question, whatever the name length", () => {
+test("expired offer title keeps the date, whatever the name length", () => {
   const short = expiredPromotionTitle({ bankName: "Alior Bank", name: "Konto z Premią" }, new Date("2026-10-13T00:00:00Z"));
-  assert.equal(short, "Alior Bank: Konto z Premią (zakończona 13.10.2026) – co dalej?");
+  assert.equal(short, "Alior Bank: Konto z Premią (zakończona 13.10.2026)");
   const long = expiredPromotionTitle(
     { bankName: "PKO Bank Polski", name: "Letni Bonus – do 900 zł za konto własne i konto dla dziecka" },
     "2026-09-30T00:00:00Z"
   );
-  assert.ok(long.length <= 75, long);
-  assert.ok(long.endsWith("(zakończona 30.09.2026) – co dalej?"), long);
+  assert.ok(long.length <= 65, long);
+  assert.ok(long.endsWith("(zakończona 30.09.2026)"), long);
   // Unknown date: still honest.
   assert.ok(expiredPromotionTitle({ bankName: "A", name: "B" }, null).includes("(zakończona)"));
 });
@@ -325,7 +325,7 @@ test("/promocje title, H1 and description, with correct Polish inflection of the
 });
 
 test("hub, bank and ending-soon builders", () => {
-  assert.equal(hubTitle("personal", NOW), "Konta osobiste z premią 2026 – ranking promocji | Bankmiplaci");
+  assert.equal(hubTitle("personal", NOW), "Konta osobiste z premią 2026 – aktualne promocje | Bankmiplaci");
   assert.equal(hubTitle("business", NOW), "Konta firmowe z premią 2026 – promocje dla firm i JDG | Bankmiplaci");
   assert.equal(hubHeading("personal"), "Konta osobiste z premią – aktualne promocje");
   assert.equal(hubHeading("business"), "Konta firmowe z premią – promocje dla przedsiębiorców");

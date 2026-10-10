@@ -141,7 +141,7 @@ test("hero: kicker with the newest verification date, lead, segment control, but
   assert.equal((hero.match(/role="radio"/g) ?? []).length, 2);
   assert.match(hero, /aria-checked="true"[^>]*>Konta osobiste</);
 
-  assert.match(hero, /<a [^>]*href="\/promocje\?accountType=PERSONAL"[^>]*>Zobacz promocje<\/a>/);
+  assert.match(hero, /<a [^>]*href="\/promocje"[^>]*>\s*Zobacz promocje\s*<\/a>/, "the hero button is the clean /promocje (canonical), whatever the segment");
   assert.match(hero, /<a [^>]*href="\/jak-to-dziala"[^>]*>Jak to działa<\/a>/);
 
   assert.match(text(hero), /6 aktualnych promocji/, "the counter: the end value is in the server HTML (CountUp)");
@@ -499,6 +499,10 @@ test("source guard: Reveal only below the featured list, CountUp only for the co
   const view = fs.readFileSync(path.join(HOME_DIR, "HomeView.tsx"), "utf8");
   const firstReveal = view.indexOf("<Reveal>");
   assert.ok(firstReveal > view.indexOf("<HomeFeatured"), "no Reveal above or around the hero and Polecane");
+  for (const block of ["HomeEndingSoon", "HomeEffort", "HomeFaq"]) {
+    const before = view.slice(Math.max(0, view.indexOf("<" + block) - 40), view.indexOf("<" + block));
+    assert.doesNotMatch(before, /<Reveal>\s*$/, block + " (result list / FAQ) is not wrapped in Reveal");
+  }
   for (const { file, source } of homeSources()) {
     if (/<CountUp/.test(source)) assert.equal(file, "HomeHero.tsx", "CountUp is the hero counter only");
   }

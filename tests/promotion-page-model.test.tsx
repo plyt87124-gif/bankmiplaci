@@ -388,7 +388,7 @@ test("FAQ: the steps are our write-up of the terms, not a quotation of the regul
   assert.match(answer, /^Według naszego opisu promocji warunki są takie: Otwórz konto; Zaloguj się do aplikacji\./);
   // no numbering: the list holds rules and limits next to actions and the data cannot tell them apart (see offerFaq.ts)
   assert.doesNotMatch(answer, /\d\) /);
-  assert.match(answer, /są na niej także dodatkowe zasady i ograniczenia/);
+  assert.match(answer, /Lista może zawierać także dodatkowe zasady i ograniczenia/);
   assert.doesNotMatch(answer, /Według regulaminu/);
   assert.match(answer, /wiążące zasady w regulaminie banku/);
 });

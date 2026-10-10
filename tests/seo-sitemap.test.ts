@@ -110,7 +110,7 @@ test("pages without an honest date get no lastmod (no invented 'now')", () => {
     assert.ok(entry, p);
     assert.ok(!("lastModified" in entry), `${p} should have no lastmod`);
   }
-  assert.ok(!("lastModified" in find(empty, "/blog")!), "/blog with no articles has no lastmod");
+  assert.equal(find(empty, "/blog"), undefined, "/blog with no articles is a thin (noindex) page: not in the sitemap");
   assert.ok(!("lastModified" in find(empty, "/promocje")!), "no open offers -> no lastmod");
 });
 

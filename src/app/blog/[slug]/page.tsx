@@ -9,6 +9,7 @@ import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ArticleBody, siteHost } from "@/components/blog/ArticleBody";
 import { ArticleCard } from "@/components/blog/ArticleCard";
 import { categoryHref, categoryInfo } from "@/components/blog/categories";
+import { ARTICLE_PAGE_IDS } from "@/components/blog/headingIds";
 import { containsPartnerLinks } from "@/components/blog/links";
 import { formatDatePL } from "@/lib/format";
 import { articleLd, breadcrumbLd, buildMetadata, collapseWhitespace, truncateAtWord, DESCRIPTION_MAX } from "@/lib/seo";
@@ -140,8 +141,8 @@ export default async function ArticlePage(props: PageProps) {
         </article>
 
         {promotion ? (
-          <section aria-labelledby="powiazana-promocja" className="mt-14">
-            <h2 id="powiazana-promocja" className="text-ink-900">
+          <section aria-labelledby={ARTICLE_PAGE_IDS.relatedPromotion} className="mt-14">
+            <h2 id={ARTICLE_PAGE_IDS.relatedPromotion} className="text-ink-900">
               Powiązana promocja
             </h2>
             <p className="mt-2 text-ui text-ink-700">Oferta, której dotyczy ten artykuł.</p>
@@ -152,8 +153,8 @@ export default async function ArticlePage(props: PageProps) {
         ) : null}
 
         {related.length > 0 ? (
-          <section aria-labelledby="czytaj-dalej" className="mt-14">
-            <h2 id="czytaj-dalej" className="text-ink-900">
+          <section aria-labelledby={ARTICLE_PAGE_IDS.readMore} className="mt-14">
+            <h2 id={ARTICLE_PAGE_IDS.readMore} className="text-ink-900">
               Czytaj dalej: {category.label}
             </h2>
             <ul className="mt-5 space-y-4">

@@ -242,12 +242,12 @@ test("bankFaq: computed from the current offers; nothing for a bank without them
     { accountType: "BUSINESS", maxBonusCents: 400_000, endDate: day("2026-10-31") }
   ]);
   assert.equal(faq.length, 2);
-  assert.equal(faq[0]!.question, "Jakie promocje Bank Testowy są teraz dostępne?");
+  assert.equal(faq[0]!.question, "Jakie promocje ma teraz Bank Testowy?");
   assert.equal(
     faq[0]!.answer,
-    "W serwisie mamy teraz 3 aktualne promocje Bank Testowy, w tym 2 dla osób fizycznych i 1 dla firm. Najwyższa premia w tych ofertach to do 4000 zł. Warunki, terminy i opłaty różnią się między ofertami, dlatego sprawdź każdą z nich."
+    "W serwisie mamy teraz 3 aktualne promocje w ofercie: Bank Testowy, w tym 2 dla osób fizycznych i 1 dla firm. Najwyższa premia w tych ofertach to do 4000 zł. Warunki, terminy i opłaty różnią się między ofertami, dlatego sprawdź każdą z nich."
   );
-  assert.equal(faq[1]!.question, "Do kiedy można skorzystać z promocji Bank Testowy?");
+  assert.equal(faq[1]!.question, "Do kiedy trwają te promocje (Bank Testowy)?");
   assert.match(faq[1]!.answer, /^Najbliższy termin zapisów mija 13\.10\.2026, a najdalszy 31\.12\.2026\. Bank może zakończyć promocję wcześniej/);
 });
 
@@ -255,7 +255,7 @@ test("bankFaq: one offer, one deadline, no bonus - plain forms, no invented amou
   const [available, until] = bankFaq("Bank Testowy", [{ accountType: "BUSINESS", maxBonusCents: 0, endDate: day("2026-11-30") }]);
   assert.equal(
     available!.answer,
-    "W serwisie mamy teraz 1 aktualną promocję Bank Testowy (dla firm). Warunki, terminy i opłaty różnią się między ofertami, dlatego sprawdź każdą z nich."
+    "W serwisie mamy teraz 1 aktualną promocję w ofercie: Bank Testowy (dla firm). Warunki, terminy i opłaty różnią się między ofertami, dlatego sprawdź każdą z nich."
   );
   assert.doesNotMatch(available!.answer, /premia|0 zł/);
   assert.match(until!.answer, /^Termin zapisów mija 30\.11\.2026\./);

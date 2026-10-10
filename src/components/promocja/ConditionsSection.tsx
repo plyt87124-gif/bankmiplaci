@@ -44,8 +44,7 @@ export function ConditionsSection({
               rule or a limit (PromotionCondition.type does not separate them), so the list says so.
             */}
             <p className="mb-5 text-small text-ink-500">
-              Obok kroków do wykonania lista zawiera dodatkowe zasady i ograniczenia, np. terminy wypłat czy to, kto
-              może wziąć udział.
+              Lista może zawierać także dodatkowe zasady i ograniczenia, a nie tylko czynności do wykonania.
             </p>
             <ConditionsChecklist conditions={[...conditions]} />
           </>

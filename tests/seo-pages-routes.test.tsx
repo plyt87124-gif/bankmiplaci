@@ -162,7 +162,7 @@ const absoluteTitle = (m: Meta) => (m.title as { absolute: string }).absolute;
 
 test("metadata: hubs - SEO library title/description, canonical on the clean path, indexable", () => {
   const personal = hubMetadata("personal", 12, {}, NOW);
-  assert.equal(absoluteTitle(personal), "Konta osobiste z premią 2026 – ranking promocji | Bankmiplaci");
+  assert.equal(absoluteTitle(personal), "Konta osobiste z premią 2026 – aktualne promocje | Bankmiplaci");
   assert.equal(canonicalOf(personal), `${SITE}/konta-osobiste-z-premia`);
   assert.equal(personal.robots, undefined, "default index,follow");
   assert.match(String(personal.description), /Ranking 12 aktualnych promocji na konta osobiste z premią/);

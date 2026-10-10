@@ -182,18 +182,18 @@ export function bankFaq(bankName: string, cards: readonly BankFaqCard[]): SeoFaq
 
   const split = n === 1 ? ` (${parts[0]?.replace(/^1 /, "") ?? ""})` : `, w tym ${parts.join(" i ")}`;
   const availableAnswer =
-    `W serwisie mamy teraz ${n} ${ACCUSATIVE(n)} ${bankName}${split}. ` +
+    `W serwisie mamy teraz ${n} ${ACCUSATIVE(n)} w ofercie: ${bankName}${split}. ` +
     (maxBonus > 0 ? `Najwyższa premia w tych ofertach to do ${formatAmountPlain(maxBonus)}. ` : "") +
     "Warunki, terminy i opłaty różnią się między ofertami, dlatego sprawdź każdą z nich.";
 
   const dates = cards.map((c) => new Date(c.endDate).getTime()).filter((t) => !Number.isNaN(t));
-  const items: SeoFaqItem[] = [{ question: `Jakie promocje ${bankName} są teraz dostępne?`, answer: availableAnswer }];
+  const items: SeoFaqItem[] = [{ question: `Jakie promocje ma teraz ${bankName}?`, answer: availableAnswer }];
   if (dates.length > 0) {
     const first = formatDatePL(new Date(Math.min(...dates)));
     const last = formatDatePL(new Date(Math.max(...dates)));
     const when = first === last ? `Termin zapisów mija ${first}.` : `Najbliższy termin zapisów mija ${first}, a najdalszy ${last}.`;
     items.push({
-      question: `Do kiedy można skorzystać z promocji ${bankName}?`,
+      question: `Do kiedy trwają te promocje (${bankName})?`,
       answer: `${when} Bank może zakończyć promocję wcześniej, na przykład gdy wyczerpie się pula nagród, dlatego sprawdź termin także w regulaminie banku.`
     });
   }

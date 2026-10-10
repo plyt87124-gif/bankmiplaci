@@ -106,7 +106,7 @@ export const ENDING_SOON_FAQ: readonly SeoFaqItem[] = [
   {
     question: "Co się dzieje z promocją po terminie?",
     answer:
-      "Przestaje być aktualna i znika z listy ofert. Jej strona zostaje w serwisie z informacją, że promocja się zakończyła, a jeśli bank ma inne aktualne oferty, pokazujemy je na tej stronie w osobnym bloku."
+      "Przestaje być aktualna i znika z listy ofert. Jej strona zostaje w serwisie z informacją, że promocja się zakończyła, a jeśli bank ma inne aktualne oferty, pokazujemy je na stronie zakończonej promocji w osobnym bloku."
   }
 ];
 

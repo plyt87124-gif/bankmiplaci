@@ -103,6 +103,8 @@ export function buildSitemapEntries(input: SitemapInput, now: Date): SitemapEntr
   const entries: SitemapEntry[] = [];
 
   for (const route of liveRoutes()) {
+    // An empty blog is a thin page: it is noindex (see blog/(lista)/page.tsx) and stays out of the sitemap.
+    if (route.path === "/blog" && input.articles.length === 0) continue;
     entries.push(withLastMod(absoluteUrl(route.path), lastModBySource[route.lastMod]));
   }
 

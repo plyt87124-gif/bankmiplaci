@@ -101,7 +101,7 @@ function questionSteps(input: OfferFaqInput): FaqAccordionItem {
     question,
     answer:
       `Według naszego opisu promocji warunki są takie: ${list}. ` +
-      "Nie wszystko z tej listy to czynność do wykonania – są na niej także dodatkowe zasady i ograniczenia. " +
+      "Lista może zawierać także dodatkowe zasady i ograniczenia, a nie tylko czynności do wykonania. " +
       "Szczegóły znajdziesz w sekcji „Warunki promocji”, a wiążące zasady w regulaminie banku."
   };
 }

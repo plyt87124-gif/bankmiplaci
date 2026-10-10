@@ -290,17 +290,18 @@ export function promotionTitle(p: PromotionTitleInput, maxLength: number = PROMO
 }
 
 /**
- * Title for an offer that has ended: "{Bank}: {nazwa} (zakończona dd.mm.rrrr) – co dalej?".
+ * Title for an offer that has ended: "{Bank}: {nazwa} (zakończona dd.mm.rrrr)".
  * The fixed tail is kept whole and only the name part is shortened, so the
- * date and the question always survive (default budget 75 characters).
+ * date always survives. Budget 65 characters: with the layout template
+ * (" | Bankmiplaci") that stays near the ~75 a search result still shows.
  */
 export function expiredPromotionTitle(
   p: Pick<PromotionTitleInput, "name" | "bankName">,
   endDate: Date | string | null | undefined,
-  maxLength = 75
+  maxLength = 65
 ): string {
   const date = formatDatePL(endDate);
-  const tail = date ? ` (zakończona ${date}) – co dalej?` : " (zakończona) – co dalej?";
+  const tail = date ? ` (zakończona ${date})` : " (zakończona)";
   const heading = promotionHeading(p);
   if (heading.length + tail.length <= maxLength) return heading + tail;
   return truncateAtWord(heading, Math.max(20, maxLength - tail.length)) + tail;
@@ -421,7 +422,7 @@ export function hubTitle(kind: HubKind, now: Date): string {
   const year = warsawYear(now);
   return withBrand(
     kind === "personal"
-      ? `Konta osobiste z premią ${year} – ranking promocji`
+      ? `Konta osobiste z premią ${year} – aktualne promocje`
       : `Konta firmowe z premią ${year} – promocje dla firm i JDG`
   );
 }

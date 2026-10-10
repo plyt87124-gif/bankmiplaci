@@ -22,7 +22,10 @@ interface PageProps {
  */
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const searchParams = await props.searchParams;
-  return staticPageMetadata("blog", { robots: noindexForSearchParams(searchParams) ?? null });
+  // No published article yet = a thin page: noindex,follow (and not in the sitemap, see sitemapEntries).
+  const empty = await listArticlePage(null, 1).then(({ total }) => total === 0).catch(() => false);
+  const robots = noindexForSearchParams(searchParams) ?? (empty ? { index: false, follow: true } : null);
+  return staticPageMetadata("blog", { robots });
 }
 
 export default async function BlogPage(props: PageProps) {

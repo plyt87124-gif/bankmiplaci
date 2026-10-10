@@ -436,7 +436,7 @@ test("conditions: numbered static list, the ściąga link and card only when the
   assert.match(text(none), /Nie mamy jeszcze rozpisanych kroków tej promocji/);
   assert.doesNotMatch(none, /href="#sciaga"/);
   // the numbered list is introduced as "steps plus rules": not every entry is an action
-  assert.match(text(withSheet), /Obok kroków do wykonania lista zawiera dodatkowe zasady i ograniczenia/);
+  assert.match(text(withSheet), /Lista może zawierać także dodatkowe zasady i ograniczenia/);
   assert.ok(withSheet.indexOf("Obok kroków") < withSheet.indexOf("<ol"));
   assert.doesNotMatch(none, /Obok kroków/);
 });

@@ -4,7 +4,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { CountUp } from "@/components/motion/CountUp";
 import { formatDatePL, pluralizePl } from "@/lib/format";
 import { isoDatePL } from "@/lib/seo/dates";
-import { HomeSegmentControl, HomeSegmentLink } from "./HomeSegment";
+import { HomeSegmentControl } from "./HomeSegment";
 import { HOME_H1, HOME_LEAD, HOME_RATING_HREF } from "./homeContent";
 import type { HomeModel } from "./homeModel";
 
@@ -43,7 +43,10 @@ export function HomeHero({ model }: { model: HomeModel | null }) {
         <div className="mt-8 flex flex-col items-start gap-6">
           <HomeSegmentControl />
           <div className="flex flex-wrap items-center gap-3">
-            <HomeSegmentLink size="lg">Zobacz promocje</HomeSegmentLink>
+            {/* Always the clean, canonical /promocje: the biggest internal link of the site must not point at a noindex filter variant. The segment choice only drives "Zobacz wszystkie (N)" below the list. */}
+            <ButtonLink href="/promocje" size="lg">
+              Zobacz promocje
+            </ButtonLink>
             <ButtonLink href="/jak-to-dziala" variant="ghost" size="lg">
               Jak to działa
             </ButtonLink>
