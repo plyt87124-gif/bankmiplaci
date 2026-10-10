@@ -1,12 +1,14 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import "@/styles/motion.css";
 import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { Footer, FooterView } from "@/components/Footer";
 import { AuthModalProvider } from "@/components/AuthModalProvider";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/components/ui/theme";
+import { siteName as resolveSiteName, siteUrl } from "@/lib/seo/siteUrl";
 import { getCurrentUser } from "@/lib/userSession";
 
 // Source Serif 4 (variable, optical-size axis): only h1/h2, big amounts, lead
@@ -20,15 +22,15 @@ const sourceSerif = Source_Serif_4({
 });
 const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-body", display: "swap" });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const siteName = process.env.NEXT_PUBLIC_SITE_NAME ?? "Bankmiplaci";
+// The origin and brand name come from the single SEO source (src/lib/seo/siteUrl.ts).
+const siteName = resolveSiteName();
 
 // No `openGraph.url` and no `robots` here on purpose: a site-wide og:url would
 // point every subpage at the home page, and a layout-level robots value
 // contradicts the per-page (and 404) robots directives. Pages set their own
 // canonical/og:url (src/lib/seo, WP-02).
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(siteUrl()),
   title: { default: `${siteName} — porównywarka promocji bankowych`, template: `%s | ${siteName}` },
   description:
     "Porównujemy aktualne promocje bankowe w Polsce: ile możesz otrzymać, co musisz zrobić i czy warto skorzystać.",
@@ -74,11 +76,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             "aktywny/a" dot on every page, not just promotion pages. */}
         <PageViewTracker />
         <AuthModalProvider user={user ? { id: user.id, name: user.name } : null}>
-          <Header user={user} />
+          <Header />
           <main id="tresc" tabIndex={-1} className="flex-1 focus:outline-none">
             {children}
           </main>
-          <Footer />
+          {/* The footer's "Dane zaktualizowano" date needs a (cached) database
+              read. Suspense keeps a slow or cold database from holding back the
+              whole page: the static footer (disclosure, links, publisher) is
+              the fallback and is replaced by the full one when the read ends. */}
+          <Suspense fallback={<FooterView />}>
+            <Footer />
+          </Suspense>
         </AuthModalProvider>
       </body>
     </html>

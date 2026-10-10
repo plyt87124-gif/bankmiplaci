@@ -12,7 +12,8 @@ import {
   categoryFromSlug,
   categoryHref
 } from "../src/components/blog/categories";
-import { classifyHref, containsPartnerLinks, extractMarkdownHrefs } from "../src/components/blog/links";
+import { createIdRegistry, slugifyHeading } from "../src/components/blog/headingIds";
+import { classifyHref, containsPartnerLinks, extractMarkdownHrefs, safeImageSrc } from "../src/components/blog/links";
 import { BLOG_MAX_PAGE, BLOG_PAGE_SIZE, pageHref, parsePage, totalPagesFor } from "../src/components/blog/paging";
 
 (globalThis as { React?: typeof React }).React = React;
@@ -232,4 +233,161 @@ test("Pagination: nothing for one page; prev/next hrefs use ?strona=", () => {
   const first = html(h(Pagination, { basePath: "/blog/kategoria/cashback", page: 1, totalPages: 2 }));
   assert.ok(!first.includes("Poprzednia"));
   assert.ok(first.includes('href="/blog/kategoria/cashback?strona=2"'));
+});
+
+// ---------------------------------------------------------------------------
+// Review fixes: link hosts, headings with ids, footnotes, images
+// ---------------------------------------------------------------------------
+
+test("classifyHref: our own /out/ link is a partner link under any host variant of the site", () => {
+  for (const href of [
+    "https://www.bankmiplaci.pl/out/alior-bank",
+    "https://WWW.BankMiPlaci.pl/out/x",
+    "http://bankmiplaci.pl/out/x",
+    "https://bankmiplaci.pl./out/x",
+    "//www.bankmiplaci.pl/out/x",
+    "https://bankmiplaci.pl/OUT/x",
+    "https://bankmiplaci.pl/%6Fut/x"
+  ]) {
+    const link = classifyHref(href, SITE);
+    assert.equal(link?.kind, "partner", href);
+    assert.ok(/^\/(out|OUT|%6Fut)\//.test(link?.href ?? ""), `${href} -> ${link?.href}`);
+  }
+  // the site host given with a "www." works as well
+  assert.equal(classifyHref("https://bankmiplaci.pl/out/x", "www.bankmiplaci.pl")?.kind, "partner");
+  // and a same-site page is internal under the variants
+  assert.deepEqual(classifyHref("https://www.bankmiplaci.pl/porownaj", SITE), { kind: "internal", href: "/porownaj" });
+  // another host with /out/ is just external
+  assert.equal(classifyHref("https://example.com/out/x", SITE)?.kind, "external");
+});
+
+test("classifyHref: a trailing dot or capitals on the partner host do not hide it", () => {
+  assert.equal(classifyHref("https://ebrokerpartner.pl./abc", SITE)?.kind, "partner");
+  assert.equal(classifyHref("https://www.ebrokerpartner.pl./abc", SITE)?.kind, "partner");
+  assert.equal(classifyHref("https://EBROKERPARTNER.PL/abc", SITE)?.kind, "partner");
+});
+
+test("classifyHref: relative links need a leading '/', './' or '../' - 'evil.com/x' is not a link", () => {
+  assert.equal(classifyHref("evil.com/x", SITE), null);
+  assert.equal(classifyHref("www.evil.com", SITE), null);
+  assert.equal(classifyHref("out/alior", SITE), null);
+  assert.deepEqual(classifyHref("./x", SITE), { kind: "internal", href: "/blog/x" });
+  assert.deepEqual(classifyHref("../promocje", SITE), { kind: "internal", href: "/promocje" });
+  // where the browser really goes: from /blog/{slug}, "../out/x" is /out/x
+  assert.equal(classifyHref("../out/alior", SITE)?.kind, "partner");
+  assert.equal(classifyHref("/blog/../out/alior", SITE)?.kind, "partner");
+  assert.equal(classifyHref("/OUT/alior", SITE)?.kind, "partner");
+});
+
+test("classifyHref: tabs and newlines inside a target cannot smuggle a scheme or a host", () => {
+  assert.equal(classifyHref("java\tscript:alert(1)", SITE), null);
+  assert.equal(classifyHref("jav\nascript:alert(1)", SITE), null);
+  assert.equal(classifyHref("/\t/evil.example/x", SITE)?.kind, "external");
+});
+
+test("containsPartnerLinks sees our own /out/ link under a www host and a dotted partner host", () => {
+  assert.equal(containsPartnerLinks("[x](https://www.bankmiplaci.pl/out/alior)", SITE), true);
+  assert.equal(containsPartnerLinks("[x](https://ebrokerpartner.pl./a)", SITE), true);
+});
+
+test("ArticleBody: a relative link that resolves to /out/ is sponsored nofollow", () => {
+  const out = html(h(ArticleBody, { markdown: "[oferta](/blog/../out/alior)" }));
+  const a = anchors(out).find((tag) => tag.includes('href="/blog/../out/alior"'));
+  assert.ok(a, out);
+  assert.ok(a.includes(`rel="${ARTICLE_PARTNER_REL}"`), a);
+});
+
+test("ArticleBody: a link written as bare 'evil.com/x' stays text", () => {
+  const out = html(h(ArticleBody, { markdown: "[ciekawe](evil.com/x)" }));
+  assert.ok(!out.includes("<a "));
+  assert.ok(out.includes("ciekawe"));
+});
+
+test("slugifyHeading: Polish letters, punctuation, empty input", () => {
+  assert.equal(slugifyHeading("Jak założyć konto w 2026?"), "jak-zalozyc-konto-w-2026");
+  assert.equal(slugifyHeading("Łódź, żółć i gęślą jaźń"), "lodz-zolc-i-gesla-jazn");
+  assert.equal(slugifyHeading("  --Premia 500 zł!!  "), "premia-500-zl");
+  assert.equal(slugifyHeading("???"), "sekcja");
+  assert.equal(slugifyHeading(""), "sekcja");
+  assert.ok(slugifyHeading("a".repeat(300)).length <= 80);
+});
+
+test("createIdRegistry: ids are unique within an article and never take a reserved id", () => {
+  const ids = createIdRegistry();
+  assert.equal(ids.unique("Sekcja"), "sekcja");
+  assert.equal(ids.unique("Sekcja"), "sekcja-2");
+  assert.equal(ids.unique("sekcja!"), "sekcja-3");
+  assert.equal(ids.unique("Treść"), "tresc-2", "the page's skip-link target (#tresc) is reserved");
+  assert.equal(ids.unique("Tresc"), "tresc-3");
+  assert.equal(ids.unique("Footnote label"), "footnote-label-2");
+});
+
+test("ArticleBody: headings get ids from their text; a [spis](#fragment) link has a target", () => {
+  const md = [
+    "[spis](#jak-zalozyc-konto) i [drugi](#jak-zalozyc-konto-2)",
+    "",
+    "## Jak założyć konto?",
+    "",
+    "Tekst.",
+    "",
+    "### Jak założyć konto?",
+    "",
+    "#### Łódzki **bank**"
+  ].join("\n");
+  const out = html(h(ArticleBody, { markdown: md }));
+  assert.match(out, /<h2 id="jak-zalozyc-konto"[^>]*>Jak założyć konto\?<\/h2>/);
+  assert.match(out, /<h3 id="jak-zalozyc-konto-2"[^>]*>/);
+  assert.match(out, /<h4 id="lodzki-bank"[^>]*>/);
+  assert.match(out, /href="#jak-zalozyc-konto"/);
+  // the same markdown gives the same ids every time
+  assert.equal(out, html(h(ArticleBody, { markdown: md })));
+});
+
+const FOOTNOTE_MD = ["Zdanie z przypisem[^1] i drugim[^2].", "", "[^1]: Pierwszy przypis.", "[^2]: Drugi przypis."].join("\n");
+
+test("ArticleBody: footnotes are labelled in Polish, the heading stays hidden and the back-links keep their ids", () => {
+  const out = html(h(ArticleBody, { markdown: FOOTNOTE_MD }));
+  assert.match(out, /<h2 id="footnote-label" class="sr-only">Przypisy<\/h2>/);
+  assert.ok(!out.includes("Footnotes"));
+  assert.ok(!out.includes("Back to"));
+  assert.match(out, /aria-label="Wróć do przypisu 1"/);
+  assert.match(out, /aria-label="Wróć do przypisu 2"/);
+  // reference <-> definition links work: ids survive the custom link component
+  assert.match(out, /id="user-content-fnref-1"/);
+  assert.match(out, /href="#user-content-fn-1"/);
+  assert.match(out, /id="user-content-fn-1"/);
+  assert.match(out, /href="#user-content-fnref-1"/);
+  assert.ok(!/<h2[^>]*font-display[^>]*>Przypisy/.test(out), "not styled as a section heading");
+});
+
+test("safeImageSrc: https and own paths only", () => {
+  assert.equal(safeImageSrc("https://cdn.example.com/a.png"), "https://cdn.example.com/a.png");
+  assert.equal(safeImageSrc("/obrazy/a.png"), "/obrazy/a.png");
+  for (const bad of [
+    "http://cdn.example.com/a.png",
+    "//cdn.example.com/a.png",
+    "/\\cdn.example.com/a.png",
+    "data:image/png;base64,AAAA",
+    "javascript:alert(1)",
+    "a.png",
+    "",
+    undefined,
+    null
+  ]) {
+    assert.equal(safeImageSrc(bad), null, String(bad));
+  }
+});
+
+test("ArticleBody: images render only over https, lazy and async; otherwise the alt text stays", () => {
+  const ok = html(h(ArticleBody, { markdown: "![Wykres premii](https://cdn.example.com/a.png)" }));
+  assert.match(ok, /<img [^>]*src="https:\/\/cdn\.example\.com\/a\.png"/);
+  assert.ok(ok.includes('loading="lazy"') && ok.includes('decoding="async"'));
+  assert.ok(ok.includes('alt="Wykres premii"'));
+
+  const http = html(h(ArticleBody, { markdown: "![Wykres premii](http://cdn.example.com/a.png)" }));
+  assert.ok(!http.includes("<img"));
+  assert.ok(http.includes("Wykres premii"));
+
+  const none = html(h(ArticleBody, { markdown: "![](http://cdn.example.com/a.png)" }));
+  assert.ok(!none.includes("<img"));
 });

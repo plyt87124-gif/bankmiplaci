@@ -157,16 +157,18 @@ dialog.animate-dialog-in::backdrop { animation: fade-in 160ms var(--ease-out) bo
 /* Collapsing: grid-rows (accordion, mobile menu) and sticky CTA bar  */
 /* ------------------------------------------------------------------ */
 
-/* <div class="collapse" data-open="true|false"><div>...always in the DOM...</div></div>
+/* <div class="collapse-rows" data-open="true|false"><div>...always in the DOM...</div></div>
    Pair with `inert` on the inner element while closed. Mobile menu: set
-   style="--collapse-dur: var(--dur-base)" for 200 ms instead of 250 ms. */
-.collapse {
+   style="--collapse-dur: var(--dur-base)" for 200 ms instead of 250 ms.
+   Named `collapse-rows`, not `collapse`: Tailwind ships a `collapse` utility
+   (visibility: collapse) that would hide an element carrying this class. */
+.collapse-rows {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows var(--collapse-dur, var(--dur-accordion)) var(--ease-out);
 }
-.collapse[data-open="true"] { grid-template-rows: 1fr; }
-.collapse > * { min-height: 0; overflow: hidden; }
+.collapse-rows[data-open="true"] { grid-template-rows: 1fr; }
+.collapse-rows > * { min-height: 0; overflow: hidden; }
 
 /* Chevron on <summary> / disclosure buttons: rotates 180 deg when open. */
 .acc-chevron { transition: transform var(--dur-base) var(--ease-out); }

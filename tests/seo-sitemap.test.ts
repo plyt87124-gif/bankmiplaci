@@ -172,3 +172,30 @@ test("bank pages are not listed while their flag is off", () => {
   const list = urls({ ...empty, banks: [{ slug: "alior", lastModified: new Date("2026-10-01T00:00:00Z") }] });
   assert.ok(!list.some((u) => u.includes("/banki")));
 });
+
+test("blog category pages are listed only for categories with a published article (same rule as the page's noindex)", () => {
+  const input: SitemapInput = {
+    ...empty,
+    articles: [
+      article("a1", { category: "PORADNIKI", publishedAt: new Date("2026-09-01T00:00:00Z") }),
+      article("a2", { category: "PORADNIKI", publishedAt: new Date("2026-09-15T00:00:00Z") }),
+      article("a3", { category: "CASHBACK", publishedAt: new Date("2026-08-01T00:00:00Z") }),
+      article("a4") // no category known: it contributes no category page
+    ]
+  };
+  const list = urls(input);
+  assert.ok(list.includes(`${SITE}/blog/kategoria/poradniki`));
+  assert.ok(list.includes(`${SITE}/blog/kategoria/cashback`));
+  assert.ok(!list.includes(`${SITE}/blog/kategoria/promocje-bankowe`), "empty category: noindex, so not listed");
+  assert.ok(!list.includes(`${SITE}/blog/kategoria/konta-bankowe`));
+  assert.ok(!list.includes(`${SITE}/blog/kategoria/finanse-osobiste`));
+  assert.equal(new Set(list).size, list.length, "no duplicates");
+  // lastmod = newest article date in the category
+  assert.equal(lastmod(input, "/blog/kategoria/poradniki"), "2026-09-15T00:00:00.000Z");
+  assert.equal(lastmod(input, "/blog/kategoria/cashback"), "2026-08-01T00:00:00.000Z");
+  // no category page without articles at all
+  assert.ok(!urls(empty).some((u) => u.includes("/blog/kategoria/")));
+  // listed after the articles
+  const idx = (path: string) => list.indexOf(`${SITE}${path}`);
+  assert.ok(idx("/blog/a1") < idx("/blog/kategoria/poradniki"));
+});

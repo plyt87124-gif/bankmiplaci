@@ -32,9 +32,18 @@ import { SITE_ROUTES, isRouteLive } from "../src/lib/seo/routes";
 const ROOT = process.cwd();
 const APP = path.join(ROOT, "src", "app");
 
+/** True when `segs` resolve to a page.* file; route groups such as "(lista)" do not count as URL segments. */
+function hasPage(dir: string, segs: string[]): boolean {
+  if (segs.length === 0 && ["page.tsx", "page.ts", "page.jsx", "page.js"].some((f) => fs.existsSync(path.join(dir, f)))) return true;
+  if (!fs.existsSync(dir)) return false;
+  if (segs.length > 0 && hasPage(path.join(dir, segs[0]!), segs.slice(1))) return true;
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .some((e) => e.isDirectory() && /^\(.+\)$/.test(e.name) && hasPage(path.join(dir, e.name), segs));
+}
+
 function pageExists(routePath: string): boolean {
-  const dir = routePath === "/" ? APP : path.join(APP, ...routePath.split("/").filter(Boolean));
-  return ["page.tsx", "page.ts", "page.jsx", "page.js"].some((f) => fs.existsSync(path.join(dir, f)));
+  return hasPage(APP, routePath.split("/").filter(Boolean));
 }
 
 const text = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
@@ -304,4 +313,33 @@ test("mobile menu: signed-in and still-loading states", () => {
 
 test("the panel does not use the bare `collapse` class (Tailwind's visibility: collapse would hide it)", () => {
   assert.ok(!/className="[^"]*\bcollapse\b/.test(read("src/components/MobileNav.tsx")));
+});
+
+test("motion.css names the grid-rows collapse `.collapse-rows`, never a bare `.collapse` (Tailwind's visibility: collapse)", () => {
+  const css = read("src/styles/motion.css");
+  assert.match(css, /\.collapse-rows\s*\{/);
+  assert.match(css, /\.collapse-rows\[data-open="true"\]/);
+  assert.ok(!/(^|[\s,}])\.collapse(?![\w-])/m.test(css), "no bare .collapse selector");
+});
+
+test("root layout: Header takes no props (no user object in the RSC payload); Footer streams behind a Suspense with the static footer", () => {
+  const layout = read("src/app/layout.tsx");
+  assert.ok(!/<Header\s+user/.test(layout));
+  assert.match(layout, /<Header\s*\/>/);
+  assert.match(layout, /<Suspense fallback=\{<FooterView \/>\}>\s*<Footer \/>\s*<\/Suspense>/);
+  assert.ok(!read("src/components/Header.tsx").includes("HeaderProps"));
+});
+
+test("root layout takes the site origin from src/lib/seo, not from process.env", () => {
+  const layout = read("src/app/layout.tsx");
+  assert.ok(!layout.includes("NEXT_PUBLIC_SITE_URL"));
+  assert.ok(!layout.includes("NEXT_PUBLIC_SITE_NAME"));
+  assert.match(layout, /from "@\/lib\/seo\/siteUrl"/);
+});
+
+test("the static footer (FooterView) still carries the affiliate disclosure and the publisher line without a database", () => {
+  const out = renderToStaticMarkup(<FooterView />);
+  assert.match(out, /<footer\b/);
+  assert.match(out, /data-footer="publisher"/);
+  assert.ok(/partner|prowizj/i.test(out), "disclosure wording present");
 });

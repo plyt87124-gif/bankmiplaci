@@ -12,14 +12,6 @@ import { useSession } from "@/components/SessionProvider";
 import { cn } from "@/lib/cn";
 import { getMainNav, navAriaCurrent } from "@/lib/navigation";
 
-interface HeaderProps {
-  /**
-   * @deprecated Ignored. The header reads the signed-in user from
-   * `useSession()`; the root layout may keep passing it until it is cleaned up.
-   */
-  user?: unknown;
-}
-
 /**
  * Site header (docs/redesign-v2/01-design-spec.md, section 5).
  *
@@ -40,8 +32,7 @@ interface HeaderProps {
  *  - The lifetime earnings counter is not mounted here: its number only exists
  *    inside the checklist on /konto (EarningsProvider), where it stays.
  */
-export function Header(props: HeaderProps) {
-  void props;
+export function Header() {
   const { user, status } = useSession();
   const { openAuth } = useAuthModal();
   const pathname = usePathname();

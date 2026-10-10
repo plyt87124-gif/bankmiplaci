@@ -45,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
     db.article.findMany({
       where: { published: true },
-      select: { slug: true, contentUpdatedAt: true, publishedAt: true, updatedAt: true }
+      select: { slug: true, category: true, contentUpdatedAt: true, publishedAt: true, updatedAt: true }
     }),
     loadBanks()
   ]);

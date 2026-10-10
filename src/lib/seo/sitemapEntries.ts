@@ -10,8 +10,13 @@
  *   last, with no extra signals (no changefreq/priority anywhere);
  * - <lastmod> is the real content date: contentUpdatedAt, else lastVerifiedAt
  *   (owner decision: the verification date is an honest lastmod). Static
- *   copy pages get none rather than an invented date.
+ *   copy pages get none rather than an invented date;
+ * - a blog category page (/blog/kategoria/{slug}) is listed only while the
+ *   category has at least one published article, exactly when the page itself
+ *   is indexable (an empty category is noindex); its lastmod is the newest
+ *   article date in it.
  */
+import { CATEGORY_INFO } from "../../components/blog/categories";
 import { isSignupOpen, robotsForStatus } from "../promotionAvailability";
 import { absoluteUrl } from "./siteUrl";
 import { DYNAMIC_ROUTE_FLAGS, liveRoutes, type LastModSource } from "./routes";
@@ -29,6 +34,8 @@ export interface SitemapPromotionRow {
 
 export interface SitemapArticleRow {
   slug: string;
+  /** Prisma ArticleCategory; decides which category page the article keeps listed. */
+  category?: string;
   contentUpdatedAt: Date | null;
   publishedAt: Date | null;
   updatedAt: Date;
@@ -111,6 +118,14 @@ export function buildSitemapEntries(input: SitemapInput, now: Date): SitemapEntr
 
   for (const a of input.articles) {
     entries.push(withLastMod(absoluteUrl(`/blog/${a.slug}`), articleLastModified(a)));
+  }
+
+  // Category pages: only non-empty categories (the others are noindex), in the
+  // fixed order of CATEGORY_INFO.
+  for (const info of Object.values(CATEGORY_INFO)) {
+    const inCategory = input.articles.filter((a) => a.category === info.key);
+    if (inCategory.length === 0) continue;
+    entries.push(withLastMod(absoluteUrl(`/blog/kategoria/${info.slug}`), maxDate(inCategory.map(articleLastModified))));
   }
 
   // Ended but still indexable (<= 90 days): last, same shape, nothing extra.

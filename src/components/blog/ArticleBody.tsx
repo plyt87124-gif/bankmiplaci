@@ -4,7 +4,8 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/cn";
 import { siteUrl } from "@/lib/seo/siteUrl";
-import { classifyHref } from "@/components/blog/links";
+import { rehypeHeadingIds } from "@/components/blog/headingIds";
+import { classifyHref, safeImageSrc } from "@/components/blog/links";
 
 /**
  * Renders an article's markdown in the reading style of the design spec:
@@ -26,7 +27,10 @@ import { classifyHref } from "@/components/blog/links";
  * A link that opens a new tab says so to screen readers.
  *
  * Headings: the page's own <h1> is the article title, so a markdown "# ..."
- * is rendered as an <h2>, and levels 5-6 as <h4>.
+ * is rendered as an <h2>, and levels 5-6 as <h4>. Every heading gets an id
+ * made from its text (blog/headingIds.ts), so "[spis](#sekcja)" links work.
+ * Images: https (or a path on this site) only, otherwise the alt text is shown.
+ * Footnotes (GFM) are labelled in Polish.
  */
 const LINK_CLASS = "link-inline font-medium [overflow-wrap:anywhere]";
 
@@ -48,23 +52,39 @@ export function siteHost(): string | undefined {
 // react-markdown passes the syntax-tree node as a `node` prop; it must not reach the DOM.
 type WithNode<T> = T & { node?: unknown };
 
+/**
+ * Attributes of a link that the page itself relies on: the footnote markers
+ * and back-links of GFM footnotes (id, aria-label, aria-describedby, data-footnote-*),
+ * which only work together. Everything else from the markdown is dropped.
+ */
+function keptLinkAttributes(rest: Record<string, unknown>): Record<string, unknown> {
+  const kept: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(rest)) {
+    if (key === "id" || key === "aria-label" || key === "aria-describedby" || key.startsWith("data-footnote")) {
+      kept[key] = value;
+    }
+  }
+  return kept;
+}
+
 function createComponents(host: string | undefined): Components {
   return {
     a: ({ node: _node, href, children, className: _className, ...rest }: WithNode<ComponentProps<"a">>) => {
       const link = classifyHref(href, host);
+      const kept = keptLinkAttributes(rest as Record<string, unknown>);
       // Empty or unsafe target: keep the words, drop the link.
       if (!link) return <>{children}</>;
 
       if (link.kind === "internal") {
         return (
-          <Link href={link.href} className={LINK_CLASS} title={rest.title}>
+          <Link href={link.href} className={LINK_CLASS} title={rest.title} {...kept}>
             {children}
           </Link>
         );
       }
       if (link.kind === "partner") {
         return (
-          <a href={link.href} target="_blank" rel={ARTICLE_PARTNER_REL} className={LINK_CLASS} title={rest.title}>
+          <a href={link.href} target="_blank" rel={ARTICLE_PARTNER_REL} className={LINK_CLASS} title={rest.title} {...kept}>
             {children}
             <span className="sr-only">{SR_PARTNER}</span>
           </a>
@@ -72,37 +92,66 @@ function createComponents(host: string | undefined): Components {
       }
       if (link.kind === "external") {
         return (
-          <a href={link.href} target="_blank" rel={ARTICLE_EXTERNAL_REL} className={LINK_CLASS} title={rest.title}>
+          <a href={link.href} target="_blank" rel={ARTICLE_EXTERNAL_REL} className={LINK_CLASS} title={rest.title} {...kept}>
             {children}
             <span className="sr-only">{SR_NEW_TAB}</span>
           </a>
         );
       }
       return (
-        <a href={link.href} className={LINK_CLASS} title={rest.title}>
+        <a href={link.href} className={LINK_CLASS} title={rest.title} {...kept}>
           {children}
         </a>
       );
     },
 
-    h1: ({ node: _node, children }: WithNode<ComponentProps<"h1">>) => (
-      <h2 className="mt-12 scroll-mt-20 font-display text-h2 text-ink-900 md:text-h2-lg">{children}</h2>
+    h1: ({ node: _node, id, children }: WithNode<ComponentProps<"h1">>) => (
+      <h2 id={id} className="mt-12 scroll-mt-20 font-display text-h2 text-ink-900 md:text-h2-lg">
+        {children}
+      </h2>
     ),
-    h2: ({ node: _node, children }: WithNode<ComponentProps<"h2">>) => (
-      <h2 className="mt-12 scroll-mt-20 font-display text-h2 text-ink-900 md:text-h2-lg">{children}</h2>
+    // The h2 that remark-gfm adds before the footnotes ("Przypisy", class sr-only,
+    // id footnote-label) stays visually hidden; every other h2 is a section heading.
+    h2: ({ node: _node, id, className, children }: WithNode<ComponentProps<"h2">>) =>
+      className?.split(/\s+/).includes("sr-only") ? (
+        <h2 id={id} className="sr-only">
+          {children}
+        </h2>
+      ) : (
+        <h2 id={id} className="mt-12 scroll-mt-20 font-display text-h2 text-ink-900 md:text-h2-lg">
+          {children}
+        </h2>
+      ),
+    h3: ({ node: _node, id, children }: WithNode<ComponentProps<"h3">>) => (
+      <h3 id={id} className="mt-9 scroll-mt-20 font-body text-h3 text-ink-900">
+        {children}
+      </h3>
     ),
-    h3: ({ node: _node, children }: WithNode<ComponentProps<"h3">>) => (
-      <h3 className="mt-9 scroll-mt-20 font-body text-h3 text-ink-900">{children}</h3>
+    h4: ({ node: _node, id, children }: WithNode<ComponentProps<"h4">>) => (
+      <h4 id={id} className="mt-7 scroll-mt-20 font-body text-h4 text-ink-900">
+        {children}
+      </h4>
     ),
-    h4: ({ node: _node, children }: WithNode<ComponentProps<"h4">>) => (
-      <h4 className="mt-7 scroll-mt-20 font-body text-h4 text-ink-900">{children}</h4>
+    h5: ({ node: _node, id, children }: WithNode<ComponentProps<"h5">>) => (
+      <h4 id={id} className="mt-7 scroll-mt-20 font-body text-h4 text-ink-900">
+        {children}
+      </h4>
     ),
-    h5: ({ node: _node, children }: WithNode<ComponentProps<"h5">>) => (
-      <h4 className="mt-7 scroll-mt-20 font-body text-h4 text-ink-900">{children}</h4>
+    h6: ({ node: _node, id, children }: WithNode<ComponentProps<"h6">>) => (
+      <h4 id={id} className="mt-7 scroll-mt-20 font-body text-h4 text-ink-900">
+        {children}
+      </h4>
     ),
-    h6: ({ node: _node, children }: WithNode<ComponentProps<"h6">>) => (
-      <h4 className="mt-7 scroll-mt-20 font-body text-h4 text-ink-900">{children}</h4>
-    ),
+
+    // GFM footnotes: a quiet block at the end of the article.
+    section: ({ node: _node, className, children, ...rest }: WithNode<ComponentProps<"section">>) =>
+      "data-footnotes" in rest ? (
+        <section data-footnotes="" className="footnotes mt-12 border-t border-line pt-6 text-small">
+          {children}
+        </section>
+      ) : (
+        <section className={className}>{children}</section>
+      ),
 
     p: ({ node: _node, children }: WithNode<ComponentProps<"p">>) => <p className="mt-5">{children}</p>,
     strong: ({ node: _node, children }: WithNode<ComponentProps<"strong">>) => (
@@ -171,12 +220,22 @@ function createComponents(host: string | undefined): Components {
     ),
 
     img: ({ node: _node, src, alt, title }: WithNode<ComponentProps<"img">>) => {
-      if (typeof src !== "string" || src === "") return null;
+      // Only https (or a path on this site): plain http would be mixed content,
+      // and the author cannot be asked to vouch for any host. Otherwise the alt text stays.
+      const safe = safeImageSrc(typeof src === "string" ? src : null);
+      if (!safe) return alt ? <>{alt}</> : null;
       return (
         // Images in articles come from the markdown with unknown dimensions, so the
         // optimiser of next/image (which needs width/height or a fixed host list) is not used.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={alt ?? ""} title={title} loading="lazy" className="mt-6 block h-auto max-w-full rounded-card border border-line" />
+        <img
+          src={safe}
+          alt={alt ?? ""}
+          title={title}
+          loading="lazy"
+          decoding="async"
+          className="mt-6 block h-auto max-w-full rounded-card border border-line"
+        />
       );
     }
   };
@@ -194,7 +253,20 @@ export function ArticleBody({ markdown, className }: { markdown: string; classNa
         className
       )}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={createComponents(siteHost())}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeHeadingIds]}
+        // The footnote block remark-gfm appends has English defaults.
+        remarkRehypeOptions={{
+          footnoteLabel: "Przypisy",
+          footnoteBackLabel: (referenceIndex, rereferenceIndex) =>
+            // rereferenceIndex counts from 1: the first back-link needs no suffix
+            rereferenceIndex > 1
+              ? `Wróć do przypisu ${referenceIndex + 1} (odwołanie ${rereferenceIndex})`
+              : `Wróć do przypisu ${referenceIndex + 1}`
+        }}
+        components={createComponents(siteHost())}
+      >
         {markdown}
       </ReactMarkdown>
     </div>
