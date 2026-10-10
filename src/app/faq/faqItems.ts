@@ -1,4 +1,6 @@
 import type { FaqAccordionItem } from "@/components/FaqAccordion";
+import { STALE_SUFFIX } from "@/lib/freshness";
+import { KARENCJA_DEFINITION } from "@/lib/glossary";
 
 /**
  * Content of /faq: the single source for the visible accordion AND the
@@ -26,6 +28,12 @@ export const FAQ_GROUPS: FaqGroup[] = [
           "Tak. Przeglądanie i porównywanie promocji w Bankmiplaci jest bezpłatne dla użytkowników. Serwis utrzymuje się z wynagrodzenia partnerskiego, które możemy otrzymać od banków lub sieci partnerskich, gdy ktoś otworzy konto przez nasz link i spełni warunki promocji."
       },
       {
+        id: "czy-musze-miec-konto",
+        question: "Czy muszę mieć konto w serwisie?",
+        answer:
+          "Nie. Przeglądanie i porównywanie promocji oraz quiz działają bez konta w Bankmiplaci. Konto jest potrzebne do ściągi, do komentowania ofert i do sprawdzania, czy minęła karencja – na podstawie podanej przez Ciebie daty zamknięcia konta w banku. To osobne konto w naszym serwisie, niezwiązane z kontem w żadnym banku."
+      },
+      {
         id: "jak-zarabiacie",
         question: "Jak zarabiacie?",
         answer:
@@ -43,8 +51,22 @@ export const FAQ_GROUPS: FaqGroup[] = [
         id: "jak-liczycie-ocene",
         question: "Jak liczycie ocenę serwisu?",
         answer:
-          "To nasz wewnętrzny wskaźnik, np. 9,4/10. Liczymy go automatycznie z pięciu składników: wysokości premii, trudności zdobycia, czasu trwania, średniej premii na miesiąc i karencji, na tle innych aktualnych ofert tego samego typu konta. Prowizja nie jest składnikiem oceny. To nie jest porada finansowa ani niezależna ocena banku.",
+          "To nasz wewnętrzny wskaźnik, np. 9,4/10. Zwykle liczymy go automatycznie z pięciu składników: wysokości premii, trudności zdobycia, czasu trwania, średniej premii na miesiąc i karencji, na tle innych aktualnych ofert tego samego typu konta (w wyjątkowych przypadkach ustawiamy go ręcznie – opisujemy to w metodologii). Prowizja nie jest składnikiem oceny. To nie jest porada finansowa ani niezależna ocena banku.",
         link: { href: "/metodologia", label: "Jak liczymy ocenę serwisu" }
+      },
+      {
+        id: "jak-dziala-sciaga",
+        question: "Jak działa ściąga?",
+        answer:
+          "Ściąga to harmonogram kroków promocji rozpisany na kolejne miesiące. Po zalogowaniu dodajesz promocję do ściągi na jej stronie i podajesz datę otwarcia konta w banku, a szczegółową ściągę otwierasz w „Moje konto”. Kolejne miesiące odblokowują się, gdy nadchodzą. Zaznaczenia zapisują się w serwisie i nie są przekazywane bankom.",
+        link: { href: "/jak-to-dziala#kroki", label: "Jak to działa" }
+      },
+      {
+        id: "co-znaczy-zweryfikowano",
+        question: "Co znaczy „Zweryfikowano”?",
+        answer:
+          `To data, kiedy ostatnio porównaliśmy warunki oferty ze źródłem, czyli z regulaminem banku. Widać ją przy każdej ofercie; przy dawnej dacie dopisujemy „${STALE_SUFFIX}”. Data nie oznacza, że bank nie zmienił warunków po tym dniu, dlatego przed otwarciem konta sprawdź aktualny regulamin.`,
+        link: { href: "/metodologia#weryfikacja", label: "Co znaczy „Zweryfikowano”" }
       },
       {
         id: "caly-rynek",
@@ -101,7 +123,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
         id: "karencja",
         question: "Co to jest karencja?",
         answer:
-          "To okres, w którym bank nie przyznaje promocji osobie, która niedawno miała u niego konto. Zwykle liczy się go od dnia zamknięcia poprzedniego konta, a jego długość podaje regulamin promocji. Gdy znamy karencję, możemy na podstawie podanej przez Ciebie daty zamknięcia konta pokazać, od kiedy możesz skorzystać z oferty.",
+          `${KARENCJA_DEFINITION} Gdy znamy karencję, możemy na podstawie podanej przez Ciebie daty zamknięcia konta pokazać, od kiedy możesz skorzystać z oferty.`,
         link: { href: "/jak-to-dziala#slowniczek", label: "Słowniczek pojęć" }
       },
       {

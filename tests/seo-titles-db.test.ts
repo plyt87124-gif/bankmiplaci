@@ -2,7 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { PrismaClient } from "@prisma/client";
-import { DESCRIPTION_MAX, PROMOTION_TITLE_MAX, makeDescription, promotionHeading, promotionTitle } from "../src/lib/seo/metadata";
+import {
+  DESCRIPTION_MAX,
+  PROMOTION_TITLE_MAX,
+  expiredPromotionTitle,
+  makeDescription,
+  nameMentionsBank,
+  promotionHeading,
+  promotionTitle
+} from "../src/lib/seo/metadata";
 
 /**
  * Same uniqueness guarantee as seo-titles.test.ts, but on the REAL offers of
@@ -73,10 +81,33 @@ test("real offers in the local database: unique titles and headings, title <= 60
     })
   }));
 
-  for (const r of rows) {
+  const open = (text: string, ch: string) => text.split(ch).length - 1;
+  for (const [i, r] of rows.entries()) {
+    const offer = offers[i]!;
     assert.ok(r.title.trim() !== "", `empty title: ${r.slug}`);
     assert.ok(r.title.length <= PROMOTION_TITLE_MAX, `${r.title.length} chars: ${r.title}`);
     assert.ok(r.description.length <= DESCRIPTION_MAX, `${r.description.length} chars: ${r.slug}`);
+
+    // Title: no ellipsis in the middle of a phrase, one colon at most, a recognisable bank, no half a parenthesis.
+    assert.ok(!r.title.endsWith("…"), `ellipsis in a title: ${r.title}`);
+    assert.ok(open(r.title, ":") <= 1, `two colons in a title: ${r.title}`);
+    assert.equal(open(r.title, "("), open(r.title, ")"), `unbalanced parenthesis in a title: ${r.title}`);
+    assert.ok(nameMentionsBank(r.title, offer.bank.name), `no bank name in the title: ${r.title}`);
+    assert.ok(!/ (a|i|o|u|w|z|do|na|po|za|od|ze|oraz|lub)$/.test(r.title), `dangling word: ${r.title}`);
+    if (offer.accountType === "BUSINESS") {
+      assert.match(r.title, /firm|biznes|business|jdg|przedsiębiorc/i, `a business offer should say so: ${r.title}`);
+    }
+
+    // The title of an ended offer: same rules, and the date survives.
+    const expired = expiredPromotionTitle({ name: offer.name, bankName: offer.bank.name }, offer.endDate);
+    assert.ok(expired.length <= 65, `${expired.length} chars: ${expired}`);
+    assert.ok(open(expired, ":") <= 1, `two colons in an expired title: ${expired}`);
+    assert.match(expired, /\(zakończona \d\d\.\d\d\.\d{4}\)$/, expired);
+
+    // Description: not cut inside a parenthesis, no dangling comma or conjunction before the full stop or the ellipsis.
+    assert.equal(open(r.description, "("), open(r.description, ")"), `unbalanced parenthesis: ${r.description}`);
+    const body = r.description.replace(/ (Ważna do|Zakończona) \d\d\.\d\d\.\d{4}\.$/, "");
+    assert.ok(!/[,;:(+—-]\s*(…|\.)?$/.test(body) && !/ (a|i|o|u|w|z|do|na|po|za|od|ze|oraz|lub)(…|\.)?$/.test(body), `dangling end: ${body}`);
   }
 
   const duplicates = (key: "title" | "heading") => {

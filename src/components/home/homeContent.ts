@@ -49,7 +49,7 @@ export const HOME_TRUST_COLUMNS: readonly HomeTrustColumn[] = [
     id: "ocena",
     title: "Jak liczymy ocenę",
     text:
-      "Ocenę serwisu liczymy automatycznie z parametrów oferty, m.in. z wysokości premii i trudności. " +
+      "Ocenę serwisu liczymy z parametrów oferty według jawnych zasad (w wyjątkowych przypadkach ustawiamy ją ręcznie, a przy ofercie może być podane uzasadnienie). " +
       RATING_COMMISSION_RULE,
     link: { href: "/metodologia", label: "Jak liczymy ocenę" }
   },

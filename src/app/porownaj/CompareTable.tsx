@@ -243,7 +243,7 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
       label: "Opłata za kartę",
       cell: (_c, i) => <FeeCell fee={fees[i]!.card} best={bestCardFee[i]!} />
     },
-    { key: "cooldown", label: "Karencja", cell: ({ extras }) => <CooldownCell extras={extras} /> },
+    { key: "cooldown", label: "Dla nowych klientów", cell: ({ extras }) => <CooldownCell extras={extras} /> },
     {
       key: "rating",
       label: "Ocena serwisu",

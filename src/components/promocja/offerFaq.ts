@@ -15,6 +15,7 @@ import { resolveFee } from "@/lib/feeModel";
 import { formatDatePL, formatPLN } from "@/lib/format";
 import {
   COOLDOWN_EXPLAINER,
+  COOLDOWN_SCOPE_NOTE,
   cooldownSentences,
   labelWithoutAmount,
   splitLines,
@@ -125,13 +126,16 @@ function questionDeadline(input: OfferFaqInput): FaqAccordionItem {
 }
 
 function questionEligibility(input: OfferFaqInput): FaqAccordionItem {
-  const question = "Czy mogę skorzystać, jeśli miałem(-am) już konto w tym banku?";
+  const question = "Czy mogę skorzystać, jeśli mam już konto w tym banku?";
   if (input.cooldown) {
-    const sentences = cooldownSentences(input.cooldown, input.bankName).join(" ");
-    const explainer = input.cooldown.months !== null && input.cooldown.months > 0 ? ` ${COOLDOWN_EXPLAINER}` : "";
+    const sentences = cooldownSentences(input.cooldown, input.bankName);
+    // The definition comes before the note that points at the regulation (the note is always the last sentence).
+    const note = sentences[sentences.length - 1] === COOLDOWN_SCOPE_NOTE ? sentences.pop() : undefined;
+    if (input.cooldown.months !== null && input.cooldown.months > 0) sentences.push(COOLDOWN_EXPLAINER);
+    if (note) sentences.push(note);
     return {
       question,
-      answer: `${sentences}${explainer} Zawsze sprawdź pełne warunki uczestnictwa w regulaminie banku.`
+      answer: `${sentences.join(" ")} Zawsze sprawdź pełne warunki uczestnictwa w regulaminie banku.`
     };
   }
   const who = splitLines(input.eligibleFor).map(asSentence).join(" ");
@@ -159,7 +163,7 @@ function questionCost(input: OfferFaqInput): FaqAccordionItem {
 }
 
 function questionSource(input: OfferFaqInput): FaqAccordionItem {
-  const verified = formatDatePL(input.lastVerifiedAt ?? "");
+  const verified = formatDatePL(input.lastVerifiedAt ?? "", "short");
   return {
     question: "Skąd mamy te informacje i jak są aktualne?",
     answer:

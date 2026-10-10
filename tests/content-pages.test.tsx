@@ -162,8 +162,15 @@ test("/jak-zarabiamy describes the 'Polecane' formula with the factors that reco
   assert.ok(body.includes(`liczba od ${zero} do ${best}`), "range of the factor");
   assert.ok(body.includes(`dostaje ${best} – jej ocena nie jest pomniejszana`));
   assert.ok(body.includes(`nie mniejszą jednak niż ${zero}`));
-  assert.ok(body.includes(`wartość pośrednią – ${unknown}`));
+  assert.ok(
+    body.includes(
+      `Oferta bez danych o wynagrodzeniu jest traktowana tak, jakby bank płacił połowę najwyższej stawki w grupie (współczynnik ${unknown}) – czyli wyżej niż oferta, za którą nie dostajemy nic (${zero}).`
+    ),
+    "unknown commission = a stand-in for HALF of the best (0,8), above zero (0,6)"
+  );
   assert.ok(body.includes(`najniższą wartość – ${zero}`));
+  // The sentence is only true if the code really maps unknown to half of the best and zero to the floor.
+  assert.ok(Math.abs(scores[2]! - 0.8) < 1e-12 && Math.abs(scores[1]! - 0.6) < 1e-12 && Math.abs(scores[0]! - 1) < 1e-12);
   // A partial commission is proportional: half of the best pays 1 - W/2.
   const half = recommendedScores([
     { accountType: "PERSONAL", rating: 10, maxBonusCents: 1, commissionCents: 10000 },
@@ -269,14 +276,15 @@ test("/metodologia: components and weights equal the ones in ratings.ts, commiss
   }
   assert.ok(body.includes(RATING_COMMISSION_RULE));
   assert.ok(body.includes("Ocena serwisu, nie porada finansowa."));
-  assert.ok(body.includes("Najnowsza taka data wśród aktualnych ofert to 07.10.2026"));
+  assert.ok(body.includes("Najnowsza z tych dat wśród aktualnych ofert to 7 paź 2026"));
+  assert.ok(body.includes("pokazujemy ją jako „Najnowsza weryfikacja oferty”"), "the same name as the footer, the hero and the lists");
   assert.ok(body.includes("od 8,4 do 9,6"));
   assert.ok(/6,5 \+ 3,5 × √/.test(body));
 });
 
 test("/metodologia: natural wording, the scale starts where ratings.ts says, meta description promises nothing the page does not do", async () => {
   const body = text((await renderAll())["/metodologia"]!);
-  assert.ok(body.includes("Za pomocą oceny serwisu porównujemy aktualne promocje"));
+  assert.ok(body.includes("Ocenę serwisu liczymy sami, według jawnych zasad opisanych niżej. Służy do porównania aktualnych promocji."));
   assert.ok(!body.includes("Oceną serwisu porównujemy"));
   assert.ok(body.includes(`To liczba od ${new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1 }).format(RATING_FLOOR)} do 10 (np. 9,4/10)`));
   assert.ok(!body.includes("z przedziału do 10"));
@@ -302,7 +310,7 @@ test("/metodologia: the worked example shows its arithmetic and no commission li
 test("/metodologia without live data still reads well (no example, no stats, no date)", () => {
   const page = html(React.createElement(MethodologyContent, { data: { example: null, ratingStats: null, latestVerifiedAt: null } }));
   assert.ok(!page.includes('id="przyklad"'));
-  assert.ok(!/Najnowsza taka data/.test(text(page)));
+  assert.ok(!/Najnowsza z tych dat/.test(text(page)));
   const ids = [...page.matchAll(/<h2 id="([^"]+)"/g)].map((m) => m[1]!);
   const hrefs = [...page.matchAll(/<nav aria-label="Spis treści"[^>]*>([\s\S]*?)<\/nav>/g)][0]![1]!.matchAll(/href="#([^"]+)"/g);
   assert.deepEqual([...hrefs].map((m) => m[1]), ids);
@@ -426,5 +434,91 @@ test("none of the WP-13 sources reads the commission or the affiliate URL", () =
     assert.ok(!/affiliateCommission|affiliateUrl|commissionCents/.test(code), `${file} touches commission/affiliate fields`);
     assert.ok(!/NEXT_PUBLIC_SITE_URL/.test(code), `${file} reads the site URL directly`);
     assert.ok(!/dangerouslySetInnerHTML/.test(code), `${file} writes raw HTML`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// F2A: wording corrected after the content audit
+// ---------------------------------------------------------------------------
+
+test("/jak-zarabiamy: title says it affects the order, defines the term once, no self-praise, 'Polecane' is not a recommendation", async () => {
+  const page = (await renderAll())["/jak-zarabiamy"]!;
+  const body = text(page);
+  assert.match(page, /<h1[^>]*>Jak zarabiamy – afiliacja i wpływ na kolejność ofert<\/h1>/);
+  assert.ok(!body.includes("niezależność oceny"));
+  assert.ok(body.includes("Wynagrodzenie partnerskie (w skrócie: prowizja) to kwota, którą płaci nam bank lub sieć partnerska."));
+  assert.ok(body.includes("Wpływa ono na domyślną kolejność „Polecane” (szczegóły niżej), ale nie na ocenę serwisu."));
+  assert.equal((body.match(/w skrócie: prowizja/g) ?? []).length, 1, "the definition appears once");
+  assert.ok(body.indexOf("w skrócie: prowizja") < body.indexOf("Czym jest afiliacja"), "defined at first use, in the lead");
+  assert.ok(!body.includes("To częsty model finansowania porównywarek"));
+  assert.ok(
+    body.includes("To nie jest indywidualna rekomendacja ani porada. „Polecane” to domyślna kolejność, w której uwzględniamy wynagrodzenie partnerskie, więc nie oznacza „najlepszej oferty dla Ciebie”.")
+  );
+  assert.match(page, /<h2 id="rekomendacja"/);
+  assert.match(page, /<h2 id="ocena"/);
+  assert.match(page, /<h2 id="polecane"/);
+});
+
+test("/jak-zarabiamy: the 6,5-10 range carries the manual-exception caveat and links to the methodology", async () => {
+  const page = (await renderAll())["/jak-zarabiamy"]!;
+  const body = text(page);
+  assert.ok(body.includes("w wyjątkowych przypadkach ustawiana ręcznie, także spoza tego przedziału – zob. metodologia"));
+  assert.match(page, /href="\/metodologia#czym-jest-ocena"/);
+  const methodology = (await renderAll())["/metodologia"]!;
+  assert.match(methodology, /<h2 id="czym-jest-ocena"/, "the link target exists");
+});
+
+test("the manual-rating wording follows the code: the reason is optional in the admin form, so no page promises one", () => {
+  const validation = readFileSync(join(ROOT, "src", "lib", "validation", "promotion.ts"), "utf8");
+  assert.match(validation, /ratingReason: z\.string\(\)\.max\(280\)\.optional\(\)/, "if this becomes required, the pages may say 'zawsze podajemy uzasadnienie'");
+  const methodology = readFileSync(join(ROOT, "src", "app", "metodologia", "MethodologyContent.tsx"), "utf8");
+  assert.ok(methodology.includes("może być widoczne krótkie uzasadnienie"));
+  assert.ok(!/zawsze podajemy uzasadnienie/.test(methodology));
+});
+
+test("/jak-to-dziala: checklist marks are not passed to banks, reminders are not promised as a standing feature", async () => {
+  const body = text((await renderAll())["/jak-to-dziala"]!);
+  assert.ok(body.includes("Zaznaczenia w ściądze nie są przekazywane bankom."));
+  assert.ok(!body.includes("służą tylko Tobie"));
+  assert.ok(!body.includes("a serwis przypomina o zbliżających się terminach"));
+  assert.ok(body.includes("serwis może wysłać e-mail z przypomnieniem – nie gwarantujemy jednak jego wysyłki"));
+});
+
+test("karencja has ONE definition (glossary.ts) on /faq, the home shortcut, /promocje FAQ and /jak-to-dziala", async () => {
+  const { KARENCJA_DEFINITION } = await import("../src/lib/glossary");
+  const { LISTING_FAQ } = await import("../src/components/promocje/editorialContent");
+  const { homeFaqItems } = await import("../src/components/home/homeContent");
+  assert.ok(KARENCJA_DEFINITION.startsWith("Karencja to okres wymagany przez regulamin promocji, w którym bank nie uznaje Cię za nowego klienta"));
+  assert.ok(KARENCJA_DEFINITION.includes("od daty zamknięcia konta albo od stałej daty podanej w regulaminie"));
+  assert.ok(FAQ_ITEMS.find((i) => i.id === "karencja")!.answer.startsWith(KARENCJA_DEFINITION));
+  assert.ok(homeFaqItems().find((i) => i.id === "karencja")!.answer.startsWith(KARENCJA_DEFINITION));
+  assert.ok(LISTING_FAQ.find((i) => i.question === "Co to jest karencja?")!.answer.startsWith(KARENCJA_DEFINITION));
+  assert.ok(text((await renderAll())["/jak-to-dziala"]!).includes(KARENCJA_DEFINITION));
+  // The old, competing wording is gone from the sources.
+  for (const file of [["app", "faq", "faqItems.ts"], ["components", "promocje", "editorialContent.ts"], ["app", "jak-to-dziala", "page.tsx"]]) {
+    const code = readFileSync(join(ROOT, "src", ...file), "utf8");
+    assert.ok(!/na przykład po zamknięciu konta albo po poprzedniej promocji|Zwykle liczy się go od dnia zamknięcia poprzedniego konta/.test(code), file.join("/"));
+  }
+});
+
+test("/faq: 'Czy muszę mieć konto', 'Jak działa ściąga' and 'Co znaczy Zweryfikowano' are there and match the code", () => {
+  const ask = (id: string) => FAQ_ITEMS.find((i) => i.id === id)!;
+  assert.equal(ask("czy-musze-miec-konto").question, "Czy muszę mieć konto w serwisie?");
+  assert.ok(ask("czy-musze-miec-konto").answer.startsWith("Nie."));
+  assert.equal(ask("jak-dziala-sciaga").question, "Jak działa ściąga?");
+  assert.equal(ask("jak-dziala-sciaga").link?.href, "/jak-to-dziala#kroki");
+  assert.equal(ask("co-znaczy-zweryfikowano").question, "Co znaczy „Zweryfikowano”?");
+  assert.equal(ask("co-znaczy-zweryfikowano").link?.href, "/metodologia#weryfikacja");
+  // Each claim of the first answer is a login wall in the code: the checklist, comments and the eligibility prompt.
+  const joinRoute = readFileSync(join(ROOT, "src", "app", "api", "checklist", "join", "route.ts"), "utf8");
+  const comments = readFileSync(join(ROOT, "src", "app", "api", "promotions", "[slug]", "comments", "route.ts"), "utf8");
+  const banner = readFileSync(join(ROOT, "src", "components", "EligibilityBanner.tsx"), "utf8");
+  assert.ok(/if \(!user\) return NextResponse\.json/.test(joinRoute));
+  assert.ok(/Musisz być zalogowany, aby komentować/.test(comments));
+  assert.ok(banner.includes("Zaloguj się, by sprawdzić, czy możesz skorzystać"));
+  for (const path of ["quiz", "porownaj"]) {
+    const dir = join(ROOT, "src", "app", path);
+    const hits = readdirSync(dir).filter((f) => /\.(ts|tsx)$/.test(f) && /getCurrentUser|useOptionalSession/.test(readFileSync(join(dir, f), "utf8")));
+    assert.deepEqual(hits, [], `/${path} needs no account`);
   }
 });

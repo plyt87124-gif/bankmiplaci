@@ -4,7 +4,7 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
 import Link from "next/link";
 import { buttonClasses, type ButtonSize, type ButtonVariant } from "@/components/ui/Button";
 import { Segment } from "@/components/ui/Segment";
-import type { HomeSegment } from "./homeModel";
+import type { HomeSeeAll, HomeSegment } from "./homeModel";
 
 /**
  * The client island of the home page: the "Konta osobiste | Konta firmowe"
@@ -30,6 +30,12 @@ export interface HomeSegmentOption {
   href: string;
   /** The number in "Zobacz wszystkie (N)". */
   count: number;
+  /**
+   * Target and text of the link under the "Polecane" list (homeModel: the segment's hub while it is
+   * live, otherwise the filtered list). Text and a path only. Without it the link falls back to
+   * `href` and "Zobacz wszystkie (count)".
+   */
+  seeAll?: HomeSeeAll;
 }
 
 interface HomeSegmentState {
@@ -109,13 +115,15 @@ export function HomeSegmentLink({
   );
 }
 
-/** "Zobacz wszystkie (N)" for the selected segment. */
+/** The link under the "Polecane" list for the selected segment ("Wszystkie konta osobiste z premią (N)" or "Zobacz wszystkie (N)"). */
 export function HomeSeeAllLink({ className }: { className?: string }) {
   const { current } = useHomeSegment();
   if (!current) return null;
+  const href = current.seeAll?.href ?? current.href;
+  const label = current.seeAll?.label ?? `Zobacz wszystkie (${current.count})`;
   return (
-    <Link href={current.href} className={buttonClasses({ variant: "secondary", size: "md", className })}>
-      <span>Zobacz wszystkie ({current.count})</span>
+    <Link href={href} className={buttonClasses({ variant: "secondary", size: "md", className })}>
+      <span>{label}</span>
     </Link>
   );
 }

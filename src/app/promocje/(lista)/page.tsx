@@ -26,6 +26,7 @@ import {
   loadEmptyStateHelp,
   loadListing
 } from "@/components/promocje/listingData";
+import { LATEST_VERIFICATION_LABEL } from "@/lib/disclosureCopy";
 import { formatDatePL } from "@/lib/format";
 import {
   breadcrumbLd,
@@ -85,7 +86,7 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
   const filtersOn = hasActiveFilters(state);
   const isEmpty = listing.cards.length === 0;
   const emptyHelp = isEmpty && filtersOn && activeCount > 0 ? await loadEmptyStateHelp(state, bankOptions) : null;
-  const updatedText = latestVerification ? formatDatePL(latestVerification, "numeric") : "";
+  const updatedText = latestVerification ? formatDatePL(latestVerification, "short") : "";
 
   const canonicalList = isCanonicalListing(state, page) && !noindexForSearchParams(params);
 
@@ -137,7 +138,7 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
       </p>
       {updatedText ? (
         <p className="mt-2 text-small text-ink-500">
-          Dane zaktualizowano: <time dateTime={isoDatePL(latestVerification) ?? undefined}>{updatedText}</time>
+          {LATEST_VERIFICATION_LABEL}: <time dateTime={isoDatePL(latestVerification) ?? undefined}>{updatedText}</time>
         </p>
       ) : null}
 

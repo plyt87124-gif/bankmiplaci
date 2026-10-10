@@ -186,14 +186,14 @@ test("footer: affiliate disclosure replaces the old 'not an official partner' se
   assert.ok(!/oficjalnym partnerem/i.test(read("src/components/Footer.tsx")));
 });
 
-test("footer: 'Dane zaktualizowano' shows the date from the data, and no line when there is none", () => {
+test("footer: 'Najnowsza weryfikacja oferty' shows the date from the data, and no line when there is none", () => {
   const withDate = renderToStaticMarkup(<FooterView dataUpdatedAt="2026-10-06T08:00:00Z" now={NOW} />);
-  assert.match(text(withDate), /Dane zaktualizowano: 6 paź 2026/);
+  assert.match(text(withDate), /Najnowsza weryfikacja oferty: 6 paź 2026/);
   assert.match(withDate, /<time dateTime="2026-10-06">/);
 
   for (const missing of [null, undefined, "not a date"]) {
     const html = renderToStaticMarkup(<FooterView dataUpdatedAt={missing} now={NOW} />);
-    assert.ok(!html.includes("Dane zaktualizowano"), `${String(missing)}: no invented date`);
+    assert.ok(!html.includes("Najnowsza weryfikacja oferty"), `${String(missing)}: no invented date`);
     assert.ok(!/1970|0 zł/.test(html));
   }
 });

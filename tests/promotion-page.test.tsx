@@ -205,7 +205,7 @@ test("summary bar: premium, deadline with days, difficulty, account fee, cooldow
   assert.match(t, /Termin do 31\.10\.2026 zostały 22 dni/);
   assert.match(out, /aria-label="Trudność: łatwa, 2 z 4"/);
   assert.match(t, /Opłata za konto 0 zł/);
-  assert.match(t, /Karencja Karencja 36 mies\./);
+  assert.match(t, /Dla nowych klientów Karencja 36 mies\. od zamknięcia konta/);
   assert.equal(count(out, /800/g), 1);
   assert.match(out, /href="#dla-kogo"/);
 });
@@ -370,7 +370,9 @@ test("for whom: one list only, or only a cut-off date, still gives a section (wi
   assert.doesNotMatch(one, /md:grid-cols-2/);
   assert.doesNotMatch(text(one), /Kto nie może/);
   const cutoff = html(h(ForWhom, { eligibleFor: null, notEligibleFor: null, cooldown: { months: null, cutoff: day("2024-08-01") }, bankName: "Erste" }));
-  assert.match(text(cutoff), /nie miałeś\/aś konta w banku Erste od 01\.08\.2024/);
+  assert.match(text(cutoff), /od 01\.08\.2024 nie miały konta w tym banku\./);
+  assert.match(text(cutoff), /Szczegółowy zakres \(jakie produkty się liczą\) podaje regulamin promocji\./);
+  assert.doesNotMatch(text(cutoff), /Erste|miałeś/);
   assert.doesNotMatch(text(cutoff), /Karencja to okres/);
 });
 

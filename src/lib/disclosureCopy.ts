@@ -18,6 +18,15 @@
  * client components and unit tests can all use it.
  */
 
+/**
+ * Label of the one date line the site shows next to a list or in the footer: the NEWEST
+ * `lastVerifiedAt` among the offers on show. It is deliberately not "Dane zaktualizowano" /
+ * "Aktualizacja", which suggested that the whole set was checked on that day: single offers can
+ * have an older date (each card carries its own). Always rendered with formatDatePL(date, "short")
+ * ("7 paź 2026"); the numeric dd.mm.rrrr format is kept for offer deadlines.
+ */
+export const LATEST_VERIFICATION_LABEL = "Najnowsza weryfikacja oferty";
+
 /** Where the "Jak zarabiamy" / "Jak liczymy" links lead. */
 export const DISCLOSURE_LINKS = {
   /** General "how we earn" page. */
@@ -144,7 +153,8 @@ export const FOOTER: DisclosureCopy = {
   lead:
     "Bankmiplaci nie jest bankiem ani oficjalnym przedstawicielem banków. " +
     "Część linków to linki partnerskie – za otwarcie konta przez nasz link możemy otrzymać wynagrodzenie od banku lub sieci partnerskiej. " +
-    "Nie zmienia to warunków oferty ani naszej oceny. " +
+    "Co do zasady nie zmienia to warunków oferty ani naszej oceny; jeśli promocja wymaga otwarcia konta przez link lub kod, sprawdź to w jej warunkach i w regulaminie banku. " +
+    "Wynagrodzenie wpływa na kolejność „Polecane” (opisujemy to w „Jak zarabiamy”). " +
     "Nazwy i logotypy banków należą do ich właścicieli i służą wyłącznie identyfikacji oferty. " +
     "Nie porównujemy całego rynku. Nie jest to doradztwo finansowe.",
   linkLabel: "Jak zarabiamy",

@@ -8,10 +8,15 @@ import {
   QUIZ_QUESTIONS,
   QUIZ_QUESTION_COUNT,
   QUIZ_RESULT_COUNT,
+  QUIZ_NO_FULL_MATCH_NOTICE,
+  QUIZ_RESULT_TITLE_CLOSEST,
+  QUIZ_RESULT_TITLE_FULL,
   buildCompareHref,
   conditionFlagsFromTypes,
   explainMatch,
+  isFullMatch,
   matchOffers,
+  noFullMatch,
   parseAnswers,
   toQuizOffers,
   type QuizAnswers,
@@ -273,4 +278,51 @@ test("buildCompareHref preselects the offers; business adds typ=BUSINESS, person
   assert.equal(buildCompareHref(["a", "b"], "business"), "/porownaj?typ=BUSINESS&oferty=a,b");
   assert.equal(buildCompareHref([], "personal"), "/porownaj");
   assert.equal(buildCompareHref(["a b"], "personal"), "/porownaj?oferty=a%20b");
+});
+
+/* ---------------- no full match, wording of the questions ---------------- */
+
+test("the effort question does not repeat the bonus question", () => {
+  const effort = QUIZ_QUESTIONS.find((q) => q.id === "effort")!;
+  const bonus = QUIZ_QUESTIONS.find((q) => q.id === "topBonus")!;
+  assert.doesNotMatch(effort.options.map((o) => o.label).join(" "), /premi/i);
+  assert.match(bonus.title, /premi/i);
+});
+
+test("an unmet condition cautions with the short 'Możesz nie dostać całej premii.'", () => {
+  const cardOffer = offer("k", { needsCardPayments: true, needsInflow: true });
+  const [match] = matchOffers([cardOffer], { ...ANSWERS, canCardPay: false, canInflow: false });
+  assert.equal(match!.cautions.length, 2);
+  for (const caution of match!.cautions) {
+    assert.match(caution, /Możesz nie dostać całej premii\.$/);
+    assert.doesNotMatch(caution, /poza zasięgiem/);
+  }
+});
+
+test("noFullMatch is true only when every proposal has an unmet condition; isFullMatch only when none has", () => {
+  const needs = (slug: string) => offer(slug, { needsCardPayments: true });
+  const answers = { ...ANSWERS, canCardPay: false };
+  const allUnmet = matchOffers([needs("a"), needs("b")], answers);
+  assert.equal(noFullMatch(allUnmet), true);
+  assert.equal(isFullMatch(allUnmet), false);
+
+  const mixed = matchOffers([needs("a"), offer("b")], answers);
+  assert.equal(noFullMatch(mixed), false);
+  assert.equal(isFullMatch(mixed), false);
+
+  const clean = matchOffers([offer("a"), offer("b")], answers);
+  assert.equal(noFullMatch(clean), false);
+  assert.equal(isFullMatch(clean), true);
+
+  assert.equal(noFullMatch([]), false);
+  assert.equal(isFullMatch([]), false);
+});
+
+test("result copy for the 'nothing fits everything' case", () => {
+  assert.equal(
+    QUIZ_NO_FULL_MATCH_NOTICE,
+    "Żadna promocja nie spełnia wszystkich Twoich odpowiedzi. Poniżej są oferty najbliższe – każda ma warunek, którego wolisz nie spełniać."
+  );
+  assert.equal(QUIZ_RESULT_TITLE_CLOSEST, "Najbliższe Twoim odpowiedziom");
+  assert.equal(QUIZ_RESULT_TITLE_FULL, "Twoje dopasowane promocje");
 });

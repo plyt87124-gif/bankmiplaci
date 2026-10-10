@@ -77,12 +77,11 @@ export function JoinChecklistButton({
       <div className="rounded-card border border-line bg-sunken p-5">
         <p className="flex items-start gap-2 text-ui font-semibold text-ink-900">
           <CheckCircle2 size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-success" />
-          Ukończyłeś/aś tę promocję
+          Promocja ukończona
         </p>
         <p className="mt-1.5 text-small text-ink-700">
-          Data zamknięcia konta jest już zapisana w Twojej historii bankowej w „Moje konto”. Gdy minie okres
-          karencji dla tego banku, ściąga odblokuje się ponownie, żebyś mógł/mogła skorzystać z kolejnej edycji
-          tej promocji.
+          Data zamknięcia konta jest już zapisana w historii bankowej w „Moje konto”. Gdy minie okres karencji dla
+          tego banku, ściąga odblokuje się ponownie i będzie można skorzystać z kolejnej edycji tej promocji.
         </p>
       </div>
     );
@@ -115,7 +114,7 @@ export function JoinChecklistButton({
         <>
           <p className="flex items-start gap-2 text-ui font-semibold text-ink-900">
             <ListChecks size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-500" />
-            Dołączyłeś/aś do tej promocji?
+            Czy konto zostało już otwarte?
           </p>
           <p className="mt-1.5 text-small text-ink-700">
             Zbudujemy Ci szczegółową, interaktywną ściągę w „Moje konto” — z krokami rozbitymi na miesiące, do
@@ -123,7 +122,7 @@ export function JoinChecklistButton({
           </p>
 
           <div className="mt-4">
-            <Label htmlFor={dateId}>Kiedy otworzyłeś/aś konto?</Label>
+            <Label htmlFor={dateId}>Kiedy konto zostało otwarte?</Label>
             <Input
               id={dateId}
               type="date"
@@ -146,7 +145,7 @@ export function JoinChecklistButton({
             loading={loading}
             disabled={!accountOpenedAt}
           >
-            {loading ? "Zapisywanie..." : loggedIn ? "Zapisz w ściądze" : "Zapisz w ściądze (wymaga konta)"}
+            {loading ? "Zapisywanie…" : loggedIn ? "Zapisz w ściądze" : "Zapisz w ściądze (wymaga konta)"}
           </Button>
           <FormMessage id={errorId}>{error}</FormMessage>
         </>

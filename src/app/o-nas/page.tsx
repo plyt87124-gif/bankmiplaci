@@ -67,7 +67,7 @@ export default function AboutPage() {
         <li>Podstawą jest regulamin promocji i tabela opłat banku. Przy ofercie podajemy datę ostatniej weryfikacji i, gdy go mamy, link do źródła.</li>
         <li>Gdy czegoś nie ustaliliśmy (np. opłaty za kartę), piszemy „Brak danych” – nigdy „0 zł”.</li>
         <li>
-          Ocenę serwisu liczymy automatycznie według jawnych zasad, bez prowizji. Opisujemy je w{" "}
+          Ocenę serwisu liczymy z parametrów oferty według jawnych zasad, bez prowizji (w wyjątkowych przypadkach ustawiamy ją ręcznie). Opisujemy je w{" "}
           <Link href="/metodologia">metodologii</Link>.
         </li>
         <li>Nie obiecujemy stałego harmonogramu weryfikacji, a w razie rozbieżności wiążący jest regulamin banku.</li>

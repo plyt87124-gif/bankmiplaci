@@ -7,11 +7,14 @@
  * this module cuts the pool into the blocks of the layout spec
  * (docs/redesign-v2/02-layout-spec.md, HOME):
  *
- *   segments       "Polecane promocje": the first 3 offers of each account type
- *                  (Osobiste / Firmowe) in the pool's order. The "Polecane"
- *                  score of an offer only depends on offers of its own account
- *                  type, so filtering the pool here gives exactly what a
- *                  database filter would (see applyAccountType in
+ *   segments       "Polecane promocje": the first 3 offers of each segment
+ *                  (Osobiste / Firmowe) in the pool's order. "Osobiste" is every
+ *                  non-business account type, "Firmowe" is BUSINESS - the one
+ *                  definition of src/lib/accountTypes.ts, so the number on the
+ *                  home page is the number of the /promocje tab and of the hub.
+ *                  The "Polecane" score of an offer only depends on offers of
+ *                  its own REAL account type, so filtering the pool here gives
+ *                  exactly what a database filter would (see applyAccountType in
  *                  components/promocje/listing.ts).
  *   endingSoon     "Kończą się wkrótce": offers whose last sign-up day is
  *                  today .. 14 days away, soonest deadline first.
@@ -27,14 +30,20 @@
  */
 import { EMPTY_STATE, listingHref } from "@/components/filters/filterParams";
 import { applyAccountType } from "@/components/promocje/listing";
+import { HUBS, type HubKind } from "@/components/seo-pages/hubs";
+import { ACCOUNT_SEGMENTS, type AccountSegment } from "@/lib/accountTypes";
 import { DIFFICULTY_LEVEL, daysUntil } from "@/lib/format";
+import { isRouteLive } from "@/lib/seo/routes";
 import type { PromotionCardData } from "@/lib/services/promotionCards";
 
 /** The two segments of the home page (same values as `accountType` on /promocje). */
-export type HomeSegment = "PERSONAL" | "BUSINESS";
+export type HomeSegment = AccountSegment;
 
 /** Order of the segments in the control. */
-export const HOME_SEGMENTS: readonly HomeSegment[] = ["PERSONAL", "BUSINESS"];
+export const HOME_SEGMENTS: readonly HomeSegment[] = ACCOUNT_SEGMENTS;
+
+/** The hub that lists exactly the offers of a segment. */
+const HUB_OF_SEGMENT: Record<HomeSegment, HubKind> = { PERSONAL: "personal", BUSINESS: "business" };
 
 export const HOME_SEGMENT_LABEL: Record<HomeSegment, string> = {
   PERSONAL: "Konta osobiste",
@@ -48,17 +57,36 @@ export const ENDING_SOON_DAYS = 14;
 /** Cards in "Kończą się wkrótce". */
 export const ENDING_SOON_COUNT = 3;
 
+/** The "see everything" link under "Polecane promocje": where it leads and what it says. */
+export interface HomeSeeAll {
+  href: string;
+  /** Visible text including the number, e.g. "Wszystkie konta osobiste z premią (16)". */
+  label: string;
+}
+
 export interface HomeSegmentModel {
   value: HomeSegment;
   label: string;
-  /** Offers of this account type on the public list. */
+  /** Offers of this segment on the public list (Osobiste = every non-business type). */
   total: number;
   /** The first FEATURED_COUNT in "Polecane" order. */
   featured: PromotionCardData[];
-  /** Where "Zobacz promocje" / "Zobacz wszystkie" lead for this segment. */
+  /** Where "Zobacz promocje" leads for this segment: the filtered /promocje list. */
   href: string;
-  /** The number shown in "Zobacz wszystkie (N)" - what that href lists. */
+  /** The number shown in "Zobacz wszystkie (N)" - what `href` lists. */
   count: number;
+  /**
+   * The link under the "Polecane" list. While the segment's hub page is live
+   * (isRouteLive) it leads to the hub - an indexable page, unlike the filtered
+   * list, which is noindex - with the hub's own number; otherwise it is the
+   * filtered list: `{ href, label: "Zobacz wszystkie (count)" }`.
+   */
+  seeAll: HomeSeeAll;
+}
+
+/** "Wszystkie konta osobiste z premią (16)" - the anchor of the link to a hub; N = what the hub lists. */
+export function hubSeeAllLabel(kind: HubKind, count: number): string {
+  return `Wszystkie ${HUBS[kind].label.toLowerCase()} (${count})`;
 }
 
 export interface HomeModel {
@@ -131,8 +159,16 @@ export function pickEffortExamples(cards: readonly PromotionCardData[]): Promoti
   return DIFFICULTY_LEVEL[easiest.difficulty] === DIFFICULTY_LEVEL[hardest.difficulty] ? [easiest] : [easiest, hardest];
 }
 
-/** `pool` = every active offer in "Polecane" order (listPromotionCards({ sort: "recommended" })). */
-export function buildHomeModel(pool: readonly PromotionCardData[], now: Date): HomeModel {
+/**
+ * `pool` = every active offer in "Polecane" order (listPromotionCards({ sort: "recommended" })).
+ * `isLive` decides whether a hub is linked instead of the filtered list
+ * (injectable for tests; the page leaves it out).
+ */
+export function buildHomeModel(
+  pool: readonly PromotionCardData[],
+  now: Date,
+  isLive: (path: string) => boolean = isRouteLive
+): HomeModel {
   const total = pool.length;
   const byType: Record<HomeSegment, PromotionCardData[]> = {
     PERSONAL: applyAccountType(pool, "PERSONAL"),
@@ -142,14 +178,23 @@ export function buildHomeModel(pool: readonly PromotionCardData[], now: Date): H
   // With one segment there is nothing to choose: the links lead to the whole list.
   const choosable = available.length >= 2;
 
-  const segments: HomeSegmentModel[] = available.map((value) => ({
-    value,
-    label: HOME_SEGMENT_LABEL[value],
-    total: byType[value].length,
-    featured: byType[value].slice(0, FEATURED_COUNT),
-    href: choosable ? listingHref({ ...EMPTY_STATE, accountType: value }) : "/promocje",
-    count: choosable ? byType[value].length : total
-  }));
+  const segments: HomeSegmentModel[] = available.map((value) => {
+    const href = choosable ? listingHref({ ...EMPTY_STATE, accountType: value }) : "/promocje";
+    const count = choosable ? byType[value].length : total;
+    const hub = HUBS[HUB_OF_SEGMENT[value]];
+    const seeAll: HomeSeeAll = isLive(hub.path)
+      ? { href: hub.path, label: hubSeeAllLabel(hub.kind, byType[value].length) }
+      : { href, label: `Zobacz wszystkie (${count})` };
+    return {
+      value,
+      label: HOME_SEGMENT_LABEL[value],
+      total: byType[value].length,
+      featured: byType[value].slice(0, FEATURED_COUNT),
+      href,
+      count,
+      seeAll
+    };
+  });
 
   return {
     total,
@@ -169,10 +214,11 @@ export function buildHomeModel(pool: readonly PromotionCardData[], now: Date): H
 export async function readHomeModel(
   read: () => Promise<readonly PromotionCardData[]>,
   now: Date,
-  onError: (error: unknown) => void = (error) => console.error("[home] could not load the promotions", error)
+  onError: (error: unknown) => void = (error) => console.error("[home] could not load the promotions", error),
+  isLive: (path: string) => boolean = isRouteLive
 ): Promise<HomeModel | null> {
   try {
-    return buildHomeModel(await read(), now);
+    return buildHomeModel(await read(), now, isLive);
   } catch (error) {
     onError(error);
     return null;

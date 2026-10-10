@@ -18,6 +18,7 @@ import {
   resolveSelection,
   segmentOf
 } from "../src/app/porownaj/compareModel";
+import { selectionSummary } from "../src/app/porownaj/CompareControls";
 import { CompareTable, type CompareColumn } from "../src/app/porownaj/CompareTable";
 import { buildCompareHref } from "../src/lib/quiz";
 import { COMPACT } from "../src/lib/disclosureCopy";
@@ -246,7 +247,7 @@ test("rows follow the order of a decision", () => {
     "Trudność",
     "Opłata za konto",
     "Opłata za kartę",
-    "Karencja",
+    "Dla nowych klientów",
     "Ocena serwisu",
     "Weryfikacja",
     "Działania"
@@ -409,11 +410,11 @@ test("table: without the remark a verified 0 zł is still the best value of its 
 
 test("cooldownLines follows the offer page's rule for every (months, date) pair", () => {
   const date = "2024-08-01T00:00:00Z";
-  const dateLine = "Bez konta w banku od 01.08.2024";
+  const dateLine = "Wymagane: brak konta w tym banku od 01.08.2024";
   // (0, date): the date is a concrete requirement; "Bez karencji" next to it would contradict it
   assert.deepEqual(cooldownLines(0, date), [dateLine]);
   // (12, date): two different checks, both printed
-  assert.deepEqual(cooldownLines(12, date), ["Karencja 12 mies.", dateLine]);
+  assert.deepEqual(cooldownLines(12, date), ["Karencja 12 mies. od zamknięcia konta", dateLine]);
   // (0, no date): no waiting time
   assert.deepEqual(cooldownLines(0, null), ["Bez karencji"]);
   // (null, date)
@@ -425,4 +426,9 @@ test("cooldownLines follows the offer page's rule for every (months, date) pair"
     assert.equal(rule ? cooldownShort(rule) : "Brak danych", lines[0] ?? "Brak danych", `${months} / ${cutoff}`);
     assert.ok(!(lines.includes("Bez karencji") && lines.length > 1), "never 'Bez karencji' together with another line");
   }
+});
+
+test("the picker summary counts the chosen offers against the maximum and the available ones", () => {
+  assert.equal(selectionSummary(4, COMPARE_MAX, 16), `Wybrano 4 z maks. ${COMPARE_MAX} ofert (dostępnych: 16)`);
+  assert.equal(selectionSummary(1, 4, 3), "Wybrano 1 z maks. 4 ofert (dostępnych: 3)");
 });

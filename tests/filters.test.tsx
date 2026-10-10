@@ -27,6 +27,7 @@ import {
   panelFilterCount,
   parseListingParams,
   parsePage,
+  segmentOf,
   toQueryString,
   toServiceFilters,
   withSelectedBank,
@@ -304,17 +305,34 @@ test("remainingText declines verb and noun", () => {
   assert.equal(remainingText(22), "Zostały jeszcze 22 promocje");
 });
 
-test("segment counts and the in-memory account type filter agree", () => {
+test("segment counts and the in-memory account type filter agree (Osobiste = every non-business type)", () => {
   const cards = [
     { id: 1, accountType: "PERSONAL" },
     { id: 2, accountType: "BUSINESS" },
     { id: 3, accountType: "PERSONAL" },
-    { id: 4, accountType: "SAVINGS" }
+    { id: 4, accountType: "SAVINGS" },
+    { id: 5, accountType: "YOUNG" },
+    { id: 6, accountType: "JOINT" }
   ];
-  assert.deepEqual(segmentCounts(cards), { all: 4, PERSONAL: 2, BUSINESS: 1 });
-  assert.deepEqual(applyAccountType(cards, "PERSONAL").map((c) => c.id), [1, 3], "order of the rest is untouched");
-  assert.equal(applyAccountType(cards, "").length, 4);
-  assert.equal(applyAccountType(cards, "BUSINESS").length, segmentCounts(cards).BUSINESS);
+  // Osobiste + Firmowe = Wszystkie: a savings, youth or joint account is on the Osobiste tab, not on no tab.
+  const counts = segmentCounts(cards);
+  assert.deepEqual(counts, { all: 6, PERSONAL: 5, BUSINESS: 1 });
+  assert.equal(counts.PERSONAL + counts.BUSINESS, counts.all);
+  assert.deepEqual(applyAccountType(cards, "PERSONAL").map((c) => c.id), [1, 3, 4, 5, 6], "order of the rest is untouched");
+  assert.equal(applyAccountType(cards, "").length, 6);
+  assert.equal(applyAccountType(cards, "BUSINESS").length, counts.BUSINESS);
+  assert.equal(applyAccountType(cards, "PERSONAL").length, counts.PERSONAL, "the tab lists as many as its counter says");
+  // An old link with one type narrows to exactly that type.
+  assert.deepEqual(applyAccountType(cards, "YOUNG").map((c) => c.id), [5]);
+  assert.deepEqual(applyAccountType(cards, "SAVINGS").map((c) => c.id), [4]);
+});
+
+test("the Osobiste tab needs no chip, an old single type does (and clearing keeps the tab)", () => {
+  assert.ok(!buildChips(parseListingParams({ accountType: "PERSONAL" }), BANKS).some((chip) => chip.id === "accountType"));
+  const young = buildChips(parseListingParams({ accountType: "YOUNG" }), BANKS).find((chip) => chip.id === "accountType");
+  assert.equal(young?.label, "Typ konta: Konto dla młodych");
+  assert.equal(segmentOf(parseListingParams({ accountType: "PERSONAL" })), "PERSONAL");
+  assert.equal(segmentOf(parseListingParams({ accountType: "YOUNG" })), "");
 });
 
 test("relaxation candidates: one per active filter, the sort is not one", () => {
@@ -486,7 +504,7 @@ function renderToolbar(search: string, props: Partial<React.ComponentProps<typeo
         h(
           SearchParamsContext.Provider,
           { value: new URLSearchParams(search) },
-          h(Filters, { banks: BANKS, resultCount: 23, shownCount: 23, segmentCounts: { all: 23, PERSONAL: 14, BUSINESS: 9 }, ...props }, h("p", { id: "results" }, "wyniki"))
+          h(Filters, { banks: BANKS, resultCount: 23, shownCount: 23, segmentCounts: { all: 23, PERSONAL: 16, BUSINESS: 7 }, ...props }, h("p", { id: "results" }, "wyniki"))
         )
       )
     )
@@ -496,7 +514,7 @@ function renderToolbar(search: string, props: Partial<React.ComponentProps<typeo
 test("toolbar: segment with counts, labelled search and sort, status counter, the results inside a busy-aware wrapper", () => {
   const out = renderToolbar("");
   assert.match(out, /role="radiogroup"[^>]*aria-label="Typ konta"/);
-  assert.match(text(out), /Wszystkie \(23\).*Osobiste \(14\).*Firmowe \(9\)/);
+  assert.match(text(out), /Wszystkie \(23\).*Osobiste \(16\).*Firmowe \(7\)/);
   assert.match(out, /<label[^>]*for="([^"]+)"[^>]*>Szukaj banku lub oferty<\/label>\s*<input id="\1"[^>]*type="search"/);
   assert.match(out, /<label[^>]*for="([^"]+)"[^>]*>Sortuj<\/label>\s*<select id="\1"/);
   // the default sort is selected and every option is offered

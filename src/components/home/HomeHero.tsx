@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ListChecks, Scale, ShieldCheck } from "lucide-react";
 import { ButtonLink } from "@/components/ui/Button";
 import { CountUp } from "@/components/motion/CountUp";
+import { LATEST_VERIFICATION_LABEL } from "@/lib/disclosureCopy";
 import { formatDatePL, pluralizePl } from "@/lib/format";
 import { isoDatePL } from "@/lib/seo/dates";
 import { HomeSegmentControl } from "./HomeSegment";
@@ -20,7 +21,7 @@ import type { HomeModel } from "./homeModel";
 export function HomeHero({ model }: { model: HomeModel | null }) {
   const total = model?.total ?? 0;
   const verified = model?.latestVerifiedAt ?? null;
-  const verifiedText = verified ? formatDatePL(verified) : "";
+  const verifiedText = verified ? formatDatePL(verified, "short") : "";
   const verifiedIso = verified ? isoDatePL(verified) : null;
 
   return (
@@ -30,7 +31,7 @@ export function HomeHero({ model }: { model: HomeModel | null }) {
           <p className="type-label flex items-center gap-2 text-ink-500">
             <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-teal-600" />
             <span>
-              Aktualizacja: <time dateTime={verifiedIso ?? undefined}>{verifiedText}</time>
+              {LATEST_VERIFICATION_LABEL}: <time dateTime={verifiedIso ?? undefined}>{verifiedText}</time>
             </span>
           </p>
         ) : null}
@@ -66,9 +67,7 @@ export function HomeHero({ model }: { model: HomeModel | null }) {
           {verifiedText ? (
             <li className="flex items-start gap-2.5">
               <ShieldCheck size={20} aria-hidden="true" className="mt-px shrink-0 text-ink-500" />
-              <span>
-                Ostatnia weryfikacja <time dateTime={verifiedIso ?? undefined}>{verifiedText}</time>
-              </span>
+              <span>Przy każdej ofercie pokazujemy datę weryfikacji</span>
             </li>
           ) : null}
           <li className="flex items-start gap-2.5">

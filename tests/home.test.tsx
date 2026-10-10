@@ -14,7 +14,7 @@ import { HomeView } from "../src/components/home/HomeView";
 import { HomeEndingSoon } from "../src/components/home/HomeEndingSoon";
 import { HomeFaq } from "../src/components/home/HomeFaq";
 import { HomeFeatured } from "../src/components/home/HomeFeatured";
-import { HomeSegmentPanels, HomeSegmentProvider } from "../src/components/home/HomeSegment";
+import { HomeSeeAllLink, HomeSegmentPanels, HomeSegmentProvider } from "../src/components/home/HomeSegment";
 import { HOME_FAQ_IDS, HOME_H1, HOME_HUBS, HOME_TRUST_COLUMNS, homeFaqItems, liveHomeHubs } from "../src/components/home/homeContent";
 import { buildHomeModel, type HomeModel } from "../src/components/home/homeModel";
 import { PromotionCard } from "../src/components/PromotionCard";
@@ -82,7 +82,8 @@ function render(model: HomeModel | null, hubs: ReturnType<typeof liveHomeHubs> =
   return renderToStaticMarkup(h(HomeView, { model, now: NOW, hubs }));
 }
 
-const FULL = render(buildHomeModel(pool(), NOW));
+// "Zobacz wszystkie" is tested in both modes: hubs not live here (the legacy ?accountType link), hubs live in the last test.
+const FULL = render(buildHomeModel(pool(), NOW, () => false));
 
 function jsonLdBlocks(markup: string): Record<string, unknown>[] {
   const blocks = [...markup.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
@@ -133,8 +134,9 @@ test("home: the blocks have the planned headings and 'Najlepsze' is nowhere", ()
 
 test("hero: kicker with the newest verification date, lead, segment control, buttons, three facts", () => {
   const hero = FULL.slice(FULL.indexOf('aria-labelledby="home-title"'), FULL.indexOf('aria-labelledby="polecane-title"'));
-  assert.match(text(hero), /Aktualizacja: 07\.10\.2026/, "the NEWEST lastVerifiedAt of the pool (p1), not today's date");
-  assert.match(hero, /Aktualizacja: <time dateTime="2026-10-07">07\.10\.2026<\/time>/);
+  assert.match(text(hero), /Najnowsza weryfikacja oferty: 7 paź 2026/, "the NEWEST lastVerifiedAt of the pool (p1), not today's date");
+  assert.match(hero, /Najnowsza weryfikacja oferty: <time dateTime="2026-10-07">7 paź 2026<\/time>/);
+  assert.doesNotMatch(text(hero), /Aktualizacja:|Ostatnia weryfikacja/, "one name for that date, said once");
   assert.match(text(hero), /Pokazujemy, ile możesz zyskać, ile to kosztuje i co trzeba zrobić – ze ściągą krok po kroku\./);
 
   assert.match(hero, /role="radiogroup" aria-label="Typ konta"/);
@@ -145,7 +147,8 @@ test("hero: kicker with the newest verification date, lead, segment control, but
   assert.match(hero, /<a [^>]*href="\/jak-to-dziala"[^>]*>Jak to działa<\/a>/);
 
   assert.match(text(hero), /6 aktualnych promocji/, "the counter: the end value is in the server HTML (CountUp)");
-  assert.match(text(hero), /Ostatnia weryfikacja 07\.10\.2026/);
+  assert.match(text(hero), /Przy każdej ofercie pokazujemy datę weryfikacji/, "a true statement (VerifiedLine on every card), not a second copy of the date");
+  assert.equal((text(hero).match(/7 paź 2026/g) ?? []).length, 1, "the date appears once in the hero");
   assert.match(hero, /Ocena serwisu bez prowizji –[^<]*<a [^>]*href="\/jak-zarabiamy#ocena"[^>]*>Jak zarabiamy<\/a>/);
 });
 
@@ -217,7 +220,7 @@ test("Polecane: only the visible segment preloads its logos", () => {
 });
 
 test("Polecane: a single segment shows no control and no caption", () => {
-  const html = render(buildHomeModel(pool().filter((c) => c.accountType === "BUSINESS"), NOW));
+  const html = render(buildHomeModel(pool().filter((c) => c.accountType === "BUSINESS"), NOW, () => false));
   assert.doesNotMatch(html, /role="radiogroup"/);
   assert.doesNotMatch(html, /Wybór zmienia listę/);
   assert.doesNotMatch(html, /<p role="status"/);
@@ -367,7 +370,7 @@ test("database failure: the page still renders its static blocks with a notice i
   assert.match(html, /<h1[^>]*>Promocje bankowe: znajdź konto/);
   assert.match(text(html), /Nie udało się teraz wczytać promocji/);
   assert.match(html, /<a [^>]*href="\/promocje"[^>]*>Przejdź do listy promocji/);
-  assert.doesNotMatch(html, /data-card=|role="radiogroup"|Aktualizacja:|data-disclosure="strip"/, "no offers, no control, no invented date");
+  assert.doesNotMatch(html, /data-card=|role="radiogroup"|Aktualizacja:|Najnowsza weryfikacja|data-disclosure="strip"/, "no offers, no control, no invented date");
   assert.doesNotMatch(text(html), /\d+ aktualn/, "no invented counter");
   for (const id of ["quiz-title", "zaufanie-title", "faq-title"]) assert.match(html, new RegExp(`id="${id}"`));
   assert.doesNotMatch(html, /konczace-title|wysilek-title/);
@@ -378,7 +381,7 @@ test("no active offers: an honest message, never a made-up list or '0 aktualnych
   const html = render(buildHomeModel([], NOW));
   assert.match(text(html), /Nie mamy teraz aktualnych promocji do pokazania/);
   assert.doesNotMatch(text(html), /0 aktualnych promocji|0 0 aktualnych/);
-  assert.doesNotMatch(html, /data-card=|Aktualizacja:/);
+  assert.doesNotMatch(html, /data-card=|Aktualizacja:|Najnowsza weryfikacja/);
 });
 
 /* ------------------------------------------------------------------ */
@@ -417,7 +420,7 @@ function walk(node: unknown, visit: (element: ElementLike) => void): void {
 }
 
 test("privacy: the client island gets text and numbers only (segments) and ready-made lists (panels), never offers", () => {
-  const model = buildHomeModel(leakyPool(), NOW);
+  const model = buildHomeModel(leakyPool(), NOW, () => false);
   const view = HomeView({ model, now: NOW, hubs: [] }) as unknown;
 
   let provider: ElementLike | undefined;
@@ -429,10 +432,13 @@ test("privacy: the client island gets text and numbers only (segments) and ready
   assert.deepEqual(
     options.map((o) => Object.keys(o).sort()),
     [
-      ["count", "href", "label", "value"],
-      ["count", "href", "label", "value"]
+      ["count", "href", "label", "seeAll", "value"],
+      ["count", "href", "label", "seeAll", "value"]
     ]
   );
+  for (const o of options) {
+    assert.deepEqual(Object.keys(o.seeAll as object).sort(), ["href", "label"], "seeAll is a link target and its text, nothing else");
+  }
   // `children` are server-rendered nodes (executed on the server); what is serialised for the island is the rest.
   const { children: _children, ...islandProps } = provider!.props;
   void _children;
@@ -521,4 +527,32 @@ test("links with an anchor point at sections that exist (the pages of other pack
     const dir = route === "/" ? "" : route!.replace(/^\//, "");
     assert.ok(fs.existsSync(path.join(process.cwd(), "src", "app", dir, "page.tsx")), `${href}: the page exists`);
   }
+});
+
+test("the link under 'Polecane' shows the label and target the model gives it (the hub), and falls back to 'Zobacz wszystkie (N)'", () => {
+  const base = { value: "PERSONAL" as const, label: "Konta osobiste", href: "/promocje?typ=PERSONAL", count: 4 };
+  const withSeeAll = renderToStaticMarkup(
+    h(
+      HomeSegmentProvider,
+      {
+        options: [{ ...base, seeAll: { href: "/konta-osobiste-z-premia", label: "Wszystkie konta osobiste z premią (16)" } }],
+        initial: "PERSONAL",
+        children: h(HomeSeeAllLink)
+      }
+    )
+  );
+  assert.match(withSeeAll, /<a [^>]*href="\/konta-osobiste-z-premia"[^>]*><span>Wszystkie konta osobiste z premią \(16\)<\/span><\/a>/);
+  assert.doesNotMatch(withSeeAll, /Zobacz wszystkie/);
+
+  const fallback = renderToStaticMarkup(
+    h(HomeSegmentProvider, { options: [base], initial: "PERSONAL", children: h(HomeSeeAllLink) })
+  );
+  assert.match(fallback, /href="\/promocje\?typ=PERSONAL"[^>]*><span>Zobacz wszystkie \(4\)<\/span>/);
+});
+
+test("HomeView passes the model's seeAll to the island: with live hubs the link under 'Polecane' is the indexable hub", () => {
+  const html = renderToStaticMarkup(h(HomeView, { model: buildHomeModel(pool(), NOW, () => true), now: NOW }));
+  assert.match(html, /<a [^>]*href="\/konta-osobiste-z-premia"[^>]*><span>Wszystkie konta osobiste z premią \(\d+\)<\/span><\/a>/);
+  const offline = renderToStaticMarkup(h(HomeView, { model: buildHomeModel(pool(), NOW, () => false), now: NOW }));
+  assert.match(offline, /href="\/promocje\?accountType=PERSONAL"[^>]*><span>Zobacz wszystkie \(\d+\)<\/span>/);
 });

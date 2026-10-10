@@ -8,6 +8,7 @@ import {
   BANK_OFFERS_LIMIT_ENDED,
   bankOffersListHref,
   cooldownRule,
+  COOLDOWN_SCOPE_NOTE,
   cooldownSentences,
   cooldownShort,
   deriveOfferState,
@@ -171,22 +172,42 @@ test("cooldownRule: none, months only, cut-off only, both; junk is ignored", () 
 });
 
 test("cooldownShort and cooldownSentences use the stored values only", () => {
-  assert.equal(cooldownShort({ months: 36, cutoff: null }), "Karencja 36 mies.");
+  assert.equal(cooldownShort({ months: 36, cutoff: null }), "Karencja 36 mies. od zamknięcia konta");
   assert.equal(cooldownShort({ months: 0, cutoff: null }), "Bez karencji");
-  assert.equal(cooldownShort({ months: null, cutoff: day("2024-08-01") }), "Bez konta w banku od 01.08.2024");
+  assert.equal(cooldownShort({ months: null, cutoff: day("2024-08-01") }), "Wymagane: brak konta w tym banku od 01.08.2024");
   // a stored date is a concrete requirement: it wins over "0 months", "Bez karencji" only without a date
-  assert.equal(cooldownShort({ months: 0, cutoff: day("2024-08-01") }), "Bez konta w banku od 01.08.2024");
-  assert.equal(cooldownShort({ months: 36, cutoff: day("2024-08-01") }), "Karencja 36 mies.");
+  assert.equal(cooldownShort({ months: 0, cutoff: day("2024-08-01") }), "Wymagane: brak konta w tym banku od 01.08.2024");
+  assert.equal(cooldownShort({ months: 36, cutoff: day("2024-08-01") }), "Karencja 36 mies. od zamknięcia konta");
 
+  // impersonal, "w tym banku" instead of the bank's name, and the scope is left to the regulation
   const months = cooldownSentences({ months: 36, cutoff: null }, "Alior Bank");
-  assert.equal(months.length, 1);
-  assert.match(months[0] ?? "", /w ciągu ostatnich 36 miesięcy \(3 lat\) przed złożeniem wniosku nie miałeś\/aś konta w banku Alior Bank/);
+  assert.equal(months.length, 2);
+  assert.equal(
+    months[0],
+    "Z promocji mogą skorzystać osoby, które w ciągu ostatnich 36 miesięcy (3 lat) przed złożeniem wniosku nie miały konta w tym banku."
+  );
+  assert.equal(months[1], COOLDOWN_SCOPE_NOTE);
+  assert.equal(COOLDOWN_SCOPE_NOTE, "Szczegółowy zakres (jakie produkty się liczą) podaje regulamin promocji.");
 
   const both = cooldownSentences({ months: 24, cutoff: day("2024-12-31") }, "Erste");
-  assert.equal(both.length, 2);
-  assert.match(both[0] ?? "", /od 31\.12\.2024/);
+  assert.equal(both.length, 3);
+  assert.equal(both[0], "Z promocji mogą skorzystać osoby, które od 31.12.2024 nie miały konta w tym banku.");
+  assert.match(both[1] ?? "", /w ciągu ostatnich 24 miesięcy/);
+  assert.equal(both[2], COOLDOWN_SCOPE_NOTE);
 
-  assert.match(cooldownSentences({ months: 0, cutoff: null }, "mBank")[0] ?? "", /nie obowiązuje dodatkowy okres karencji/);
+  const zero = cooldownSentences({ months: 0, cutoff: null }, "mBank");
+  assert.deepEqual(zero, ["Według naszych danych po zamknięciu konta w tym banku nie obowiązuje dodatkowy okres karencji."]);
+});
+
+test("cooldown wording never names the bank, never uses gendered slashes and never claims which products count", () => {
+  const all = [
+    ...cooldownSentences({ months: 36, cutoff: day("2024-08-01") }, "Bank Pekao"),
+    ...cooldownSentences({ months: 0, cutoff: null }, "Bank Pekao"),
+    ...buildOfferFaq({ ...FAQ_BASE, bankName: "Bank Pekao", cooldown: { months: 12, cutoff: day("2024-08-01") } }).map((i) => i.question + " " + i.answer)
+  ].join(" ");
+  assert.doesNotMatch(all, /Pekao|banku Bank|\/aś|\(-am\)|miałeś|miałem/);
+  assert.match(all, /w tym banku/);
+  assert.equal(buildOfferFaq(FAQ_BASE)[3]?.question, "Czy mogę skorzystać, jeśli mam już konto w tym banku?");
 });
 
 /* ------------------------------------------------------------------ */
@@ -325,7 +346,7 @@ test("FAQ: six questions with answers, built from the fields", () => {
   assert.match(text, /Do 31\.10\.2026/);
   assert.match(text, /36 miesięcy/);
   assert.match(text, /Opłata za konto: 0 zł\. Opłata za kartę: 6 zł \(0 zł po spełnieniu warunku: min\. 300 zł płatności\)\./);
-  assert.match(text, /Ostatnia weryfikacja: 07\.10\.2026/);
+  assert.match(text, /Ostatnia weryfikacja: 7 paź 2026/);
 });
 
 test("FAQ: no countdown wording (the text may be cached and is written to JSON-LD)", () => {

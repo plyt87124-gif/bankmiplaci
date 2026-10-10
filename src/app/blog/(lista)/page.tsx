@@ -57,7 +57,7 @@ export default async function BlogPage(props: PageProps) {
           <div className="mt-8">
             <BlogEmpty
               title="Nie ma jeszcze żadnych artykułów"
-              description="Poradniki pojawią się tutaj po opublikowaniu. Tymczasem sprawdź aktualne promocje bankowe."
+              description="Przygotowujemy pierwsze poradniki. Na razie sprawdź aktualne promocje."
             >
               <Link href="/promocje" className="link-inline inline-flex min-h-11 items-center font-semibold">
                 Zobacz promocje

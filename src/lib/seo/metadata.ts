@@ -257,43 +257,205 @@ export function formatAmountPlain(cents: number): string {
 }
 
 const AMOUNT_IN_NAME = /\d[\d\s.,]*\s*(zł|zl|pln|tys)/i;
-const BUSINESS_IN_NAME = /firm|biznes|business/i;
+/**
+ * Does the name already say that this is a business account? "firmow" (konto
+ * firmowe), "biznes", "business", "JDG", "dla firm", "przedsiębiorc..." - but NOT
+ * a bare "firma"/"firmę" ("Załóż firmę i konto..." names an action, not the kind
+ * of account), so that offer still gets "(konto firmowe)".
+ */
+const BUSINESS_IN_NAME = /firmow|biznes|business|\bjdg\b|dla firm|przedsiębiorc/i;
+/** A product name taken from before the first ": " must be at least this long (otherwise the whole name is kept). */
+const PRODUCT_NAME_MIN = 8;
+/** A trailing "(edycja 2)" / "(edycja I)": the one part of the cut-off remainder that tells two editions of a product apart. */
+const EDITION_TAIL = /\(\s*edycj[a-z]*\s[^()]*\)\s*$/i;
+
+/* ----- shortening helpers (titles and descriptions) ----- */
+
+/** Words that must not end a shortened text ("... konto własne i" reads like a bug). Same list as text.ts#truncateAtWord. */
+const DANGLING_WORDS = new Set([
+  "a", "i", "o", "u", "w", "z", "do", "na", "po", "za", "od", "ze", "we", "ku", "oraz", "lub", "albo", "że", "to", "co"
+]);
+const TRAILING_SEPARATORS = /[\s,;:–—\-+(\[/&|]+$/;
+
+/** Strips separators and dangling short words from the end of a cut text. */
+function tidyTail(text: string): string {
+  let cut = text;
+  for (;;) {
+    const before = cut;
+    cut = cut.replace(TRAILING_SEPARATORS, "");
+    const lastSpace = cut.lastIndexOf(" ");
+    if (lastSpace > 0 && DANGLING_WORDS.has(cut.slice(lastSpace + 1).toLowerCase())) cut = cut.slice(0, lastSpace);
+    if (cut === before) return cut;
+  }
+}
+
+const CLOSER_OF: Record<string, string> = { "(": ")", "[": "]", "„": "”" };
+
+/** Index of the outermost bracket or quote ("(", "[", "„", a straight ") that is still open at the end of `text`, or -1. */
+function unclosedIndex(text: string): number {
+  const open: Array<{ index: number; closer: string }> = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text.charAt(i);
+    const top = open[open.length - 1];
+    if (ch === '"') {
+      // a straight quote opens a quotation, or closes the one that is open
+      if (top?.closer === '"') open.pop();
+      else open.push({ index: i, closer: '"' });
+      continue;
+    }
+    const closer = CLOSER_OF[ch];
+    if (closer) open.push({ index: i, closer });
+    else if (top && ch === top.closer) open.pop();
+  }
+  return open.length > 0 ? open[0]!.index : -1;
+}
+
+/**
+ * Shortens `text` to `max` characters on a word boundary with "…" (like
+ * truncateAtWord) but never inside a parenthesis or a quotation: an unclosed
+ * "(" / "„" at the cut is removed together with what follows it.
+ */
+function shortenAtWord(text: string, max: number): string {
+  const cut = truncateAtWord(text, max);
+  if (!cut.endsWith("…")) return cut;
+  const head = cut.slice(0, -1);
+  const open = unclosedIndex(head);
+  if (open < 0) return cut;
+  const before = tidyTail(head.slice(0, open));
+  return before.length > 0 ? `${before}…` : cut;
+}
+
+/* ----- offer title ----- */
+
+/** Where a name can end without leaving half a phrase: before "za", "dla", "oraz", a dash, a comma, a semicolon, a plus, a parenthesis. */
+const CLAUSE_BOUNDARY = /\s(?:za|dla|oraz|bez)\s|\s[–—-]\s|[,;]\s|\s\+\s|\s\(/g;
+/** A clean cut shorter than this would throw away too much of the name. */
+const CLAUSE_CUT_MIN = 10;
+
+/**
+ * The longest head of `name` that ends at a clause boundary and fits `budget`
+ * characters - a complete phrase, so it needs no ellipsis ("Letni Bonus – do
+ * 900 zł" out of "Letni Bonus – do 900 zł za konto własne i konto dla
+ * dziecka"). null when there is no such boundary.
+ */
+function cutAtClause(name: string, budget: number): string | null {
+  let best: string | null = null;
+  for (const match of name.matchAll(CLAUSE_BOUNDARY)) {
+    const head = tidyTail(name.slice(0, match.index));
+    if (head.length < CLAUSE_CUT_MIN || head.length > budget) continue;
+    if (unclosedIndex(head) >= 0) continue;
+    if (best === null || head.length > best.length) best = head;
+  }
+  return best;
+}
+
+/**
+ * The product name used in a title. Many offer names are "{produkt}: {kwoty i
+ * warunki}" ("Konto Przekorzystne: do 300 zł + do 2400 zł w Promocji Podróżnej
+ * III"): the part before the first ": " is the product (when it is at least 8
+ * characters and has no open parenthesis) and the rest only repeats amounts and
+ * conditions the page shows anyway. An "(edycja N)" at the end of the rest is
+ * kept - it is what tells two editions of one product apart.
+ */
+function productName(name: string): string {
+  const colon = name.search(/:\s/);
+  if (colon < 0) return name;
+  const prefix = name.slice(0, colon).trim();
+  if (prefix.length < PRODUCT_NAME_MIN || unclosedIndex(prefix) >= 0) return name;
+  const rest = name.slice(colon + 1);
+  const edition = EDITION_TAIL.exec(rest.trim());
+  return edition && !EDITION_TAIL.test(prefix) ? `${prefix} ${edition[0].trim()}` : prefix;
+}
+
+interface TitleBase {
+  /** "{Bank}: " or "" when the name already contains the bank. */
+  prefix: string;
+  /** The product name, with no colon left when a bank prefix is added (never "Bank: Produkt: ..."). */
+  name: string;
+}
+
+/** Turns every ": " of a name into " – ", except the first one when `keepFirst` (the name has no bank prefix, so the title has no other colon). */
+function dashesForColons(name: string, keepFirst: boolean): string {
+  let seen = 0;
+  return name.replace(/\s*:\s+/g, () => (keepFirst && seen++ === 0 ? ": " : " – "));
+}
+
+function titleBase(p: Pick<PromotionTitleInput, "name" | "bankName">, whole = false): TitleBase {
+  const full = collapseWhitespace(p.name).replace(/\s*:$/, "");
+  const name = whole ? full : productName(full);
+  if (nameMentionsBank(name, p.bankName)) return { prefix: "", name: dashesForColons(name, true) };
+  return { prefix: `${collapseWhitespace(p.bankName)}: `, name: dashesForColons(name, false) };
+}
+
+/** The name cut to `budget` characters: at a clause boundary when there is one, else on a word boundary with "…". */
+function fitName(name: string, budget: number): string {
+  if (name.length <= budget) return name;
+  return cutAtClause(name, budget) ?? shortenAtWord(name, budget);
+}
+
+/** The title with its notes, longest first: base + business note + amount, base + business note, base. */
+function withNotes(base: TitleBase, p: PromotionTitleInput): string[] {
+  const businessNote = p.accountType === "BUSINESS" && !BUSINESS_IN_NAME.test(base.name) ? " (konto firmowe)" : "";
+  const amountNote =
+    p.maxBonusCents != null && p.maxBonusCents > 0 && !AMOUNT_IN_NAME.test(base.name)
+      ? ` — do ${formatAmountPlain(p.maxBonusCents)}`
+      : "";
+  const text = base.prefix + base.name;
+  return [text + businessNote + amountNote, text + businessNote, text];
+}
 
 /**
  * Title of an offer page, BEFORE the layout template adds " | Bankmiplaci".
  * Always <= PROMOTION_TITLE_MAX (60) characters.
  *
- *   base   = "{Bank}: {name}" (bank omitted when the name already has it)
+ *   base    = "{Bank}: {nazwa}" (bank omitted when the name already has it; a
+ *             ": " inside the name becomes " – " so there are never two colons)
  *   + " (konto firmowe)" for BUSINESS offers whose name doesn't say so
  *   + " — do {kwota}"    when maxBonusCents > 0 and the name carries no amount
  *                        of its own (never the word "premii": it may be a
  *                        refund or cashback)
- * When it is too long the amount goes first, then the business note, and only
- * then the name itself is shortened on a word boundary with "…".
  *
- * Example: "Alior Bank: Konto z Premią — do 800 zł".
+ * What gives way when it is too long, in this order:
+ *   1. the amount note, then the business note;
+ *   2. the rest of the name after its first ": ". Many names are
+ *      "{produkt}: {kwoty i warunki}" ("Konto Przekorzystne: do 300 zł + do
+ *      2400 zł w Promocji Podróżnej III"); the part before the colon is the
+ *      product (when it is at least 8 characters), the rest repeats amounts
+ *      and conditions the page shows anyway, so the amount note (from
+ *      maxBonusCents) and the business note are tried again on the product;
+ *   3. the product name itself: cut at a clause boundary (a complete phrase,
+ *      no ellipsis; the business note stays if it still fits) and only
+ *      without one on a word boundary with "…" - never inside a parenthesis.
+ *
+ * Examples: "Alior Bank: Konto z Premią — do 800 zł",
+ *           "Bank Pekao: Konto Przekorzystne — do 2700 zł".
  */
 export function promotionTitle(p: PromotionTitleInput, maxLength: number = PROMOTION_TITLE_MAX): string {
-  const base = promotionHeading(p);
-  const name = collapseWhitespace(p.name);
-  const businessNote = p.accountType === "BUSINESS" && !BUSINESS_IN_NAME.test(name) ? " (konto firmowe)" : "";
-  const amountNote =
-    p.maxBonusCents != null && p.maxBonusCents > 0 && !AMOUNT_IN_NAME.test(name)
-      ? ` — do ${formatAmountPlain(p.maxBonusCents)}`
-      : "";
-
-  const candidates = [base + businessNote + amountNote, base + businessNote, base];
-  for (const c of candidates) {
-    if (c.length <= maxLength) return c;
+  const whole = titleBase(p, true);
+  const product = titleBase(p);
+  for (const candidate of [...withNotes(whole, p), ...(product.name === whole.name ? [] : withNotes(product, p))]) {
+    if (candidate.length <= maxLength) return candidate;
   }
-  return truncateAtWord(base, maxLength);
+
+  // Even the product name is too long: shorten it, keeping the business note when a clean cut leaves room for it.
+  const { prefix, name } = product;
+  const room = Math.max(CLAUSE_CUT_MIN, maxLength - prefix.length);
+  const businessNote = p.accountType === "BUSINESS" && !BUSINESS_IN_NAME.test(name) ? " (konto firmowe)" : "";
+  if (businessNote) {
+    const cut = cutAtClause(name, room - businessNote.length);
+    if (cut) return prefix + cut + businessNote;
+  }
+  const title = prefix + fitName(name, room);
+  return title.length <= maxLength ? title : truncateAtWord(title, maxLength);
 }
 
 /**
  * Title for an offer that has ended: "{Bank}: {nazwa} (zakończona dd.mm.rrrr)".
- * The fixed tail is kept whole and only the name part is shortened, so the
- * date always survives. Budget 65 characters: with the layout template
- * (" | Bankmiplaci") that stays near the ~75 a search result still shows.
+ * The fixed tail is kept whole and only the name part is shortened (as in
+ * promotionTitle: product name before the first ": ", clean cut at a clause
+ * boundary, "…" only as the last resort), so the date always survives. Budget 65
+ * characters: with the layout template (" | Bankmiplaci") that stays near the
+ * ~75 a search result still shows.
  */
 export function expiredPromotionTitle(
   p: Pick<PromotionTitleInput, "name" | "bankName">,
@@ -302,9 +464,14 @@ export function expiredPromotionTitle(
 ): string {
   const date = formatDatePL(endDate);
   const tail = date ? ` (zakończona ${date})` : " (zakończona)";
-  const heading = promotionHeading(p);
-  if (heading.length + tail.length <= maxLength) return heading + tail;
-  return truncateAtWord(heading, Math.max(20, maxLength - tail.length)) + tail;
+  const budget = Math.max(20, maxLength - tail.length);
+  // The whole name when it fits (without a second colon), otherwise the product name, shortened.
+  const whole = titleBase(p, true);
+  if (whole.prefix.length + whole.name.length <= budget) return whole.prefix + whole.name + tail;
+  const { prefix, name } = titleBase(p);
+  const room = Math.max(CLAUSE_CUT_MIN, budget - prefix.length);
+  const head = prefix + fitName(name, room);
+  return (head.length <= budget ? head : truncateAtWord(head, budget)) + tail;
 }
 
 export interface MakeDescriptionContext {
@@ -323,12 +490,80 @@ function endsWithSentencePunctuation(text: string): boolean {
   return /[.!?…]$/.test(text);
 }
 
+/** A summary is cut at a sentence or a clause only when that keeps at least this many characters. */
+const SUMMARY_CUT_MIN = 80;
+
+/** Words that end in a full stop without ending a sentence ("min. 500 zł", "maks. 120 zł", "np. karta"). */
+const NOT_A_SENTENCE_END = new Set([
+  "min", "max", "maks", "np", "tj", "tzw", "tys", "mln", "mld", "ok", "godz", "ul", "nr", "pkt", "wg", "ws",
+  "art", "ust", "poz", "dr", "mgr", "inż", "prof", "św", "im", "zob", "por", "ds", "m.in"
+]);
+
+/**
+ * Index of the last real sentence end (".", "!" or "?") in the first `limit`
+ * characters of `text`, or -1. A full stop counts only when it is followed by a
+ * space and a capital letter, digit or opening quote, does not close an
+ * abbreviation ("min.", "maks.") or a list number ("12."), and no parenthesis
+ * or quotation is still open before it.
+ */
+function lastSentenceEnd(text: string, limit: number): number {
+  for (let i = Math.min(limit, text.length) - 1; i >= 0; i--) {
+    const ch = text.charAt(i);
+    if (ch !== "." && ch !== "!" && ch !== "?") continue;
+    if (text.charAt(i + 1) !== " " || !/[\p{Lu}\p{N}„"(]/u.test(text.charAt(i + 2))) continue;
+    if (ch === ".") {
+      const word = /([\p{L}\p{N}.]+)$/u.exec(text.slice(0, i))?.[1]?.toLowerCase() ?? "";
+      if (NOT_A_SENTENCE_END.has(word) || /^\d{1,2}$/.test(word)) continue;
+    }
+    if (unclosedIndex(text.slice(0, i + 1)) >= 0) continue;
+    return i;
+  }
+  return -1;
+}
+
+/**
+ * The text up to the last comma or semicolon before `limit` (a decimal comma
+ * such as "5,3%" is not one), without the separator and without a dangling
+ * conjunction, or null when that would keep fewer than SUMMARY_CUT_MIN
+ * characters or the comma sits inside a parenthesis.
+ */
+function lastClauseCut(text: string, limit: number): string | null {
+  for (let i = Math.min(limit, text.length) - 1; i >= SUMMARY_CUT_MIN; i--) {
+    const ch = text.charAt(i);
+    if ((ch !== "," && ch !== ";") || text.charAt(i + 1) !== " ") continue;
+    const head = text.slice(0, i);
+    if (unclosedIndex(head) >= 0) continue;
+    const tidy = tidyTail(head);
+    return tidy.length >= SUMMARY_CUT_MIN ? tidy : null;
+  }
+  return null;
+}
+
+/**
+ * Cuts a long summary to at most SUMMARY_SOFT_MAX characters, in this order:
+ *   1. after the last full sentence (>= 80 characters kept);
+ *   2. else before the last comma/semicolon (>= 80 kept), closed with a full stop;
+ *   3. else on a word boundary with "…" - the only case that shows an ellipsis.
+ * Never inside a parenthesis or quotation (an open one is cut off together
+ * with what follows it) and never with a dangling comma or conjunction.
+ */
+function cutSummary(text: string): string {
+  if (text.length <= SUMMARY_SOFT_MAX) return text;
+  const stop = lastSentenceEnd(text, SUMMARY_SOFT_MAX);
+  if (stop + 1 >= SUMMARY_CUT_MIN) return text.slice(0, stop + 1);
+  const clause = lastClauseCut(text, SUMMARY_SOFT_MAX);
+  if (clause) return `${clause}.`;
+  return shortenAtWord(text, SUMMARY_SOFT_MAX);
+}
+
 /**
  * <meta description> of an offer page, always <= DESCRIPTION_MAX (160).
  *
- * - summary present: whitespace collapsed, cut on a sentence (or word)
- *   boundary at ~155 characters, then " Ważna do dd.mm.rrrr." (or
- *   " Zakończona dd.mm.rrrr." once the deadline has passed) when it still fits.
+ * - summary present: whitespace collapsed, cut at ~155 characters on the last
+ *   full sentence, else on the last comma/semicolon, else on a word boundary
+ *   with "…" (see cutSummary: never inside a parenthesis), then
+ *   " Ważna do dd.mm.rrrr." (or " Zakończona dd.mm.rrrr." once the deadline
+ *   has passed) when it still fits.
  * - summary empty: "Promocja {bank}: {nazwa}. Warunki krok po kroku, koszty i
  *   termin zapisów. Zweryfikowano {data}." (name dropped if that would exceed
  *   the limit, the "Zweryfikowano" sentence dropped if the date is unknown).
@@ -339,12 +574,7 @@ export function makeDescription(summary: string | null | undefined, ctx: MakeDes
 
   if (!text) return fallbackDescription(ctx);
 
-  let body = text;
-  if (body.length > SUMMARY_SOFT_MAX) {
-    const window = body.slice(0, SUMMARY_SOFT_MAX);
-    const lastStop = Math.max(window.lastIndexOf(". "), window.lastIndexOf("! "), window.lastIndexOf("? "));
-    body = lastStop >= 80 ? window.slice(0, lastStop + 1) : truncateAtWord(body, SUMMARY_SOFT_MAX);
-  }
+  let body = cutSummary(text);
   if (!endsWithSentencePunctuation(body) && body.length < SUMMARY_SOFT_MAX) body += ".";
 
   const date = formatDatePL(ctx.endDate);
@@ -386,22 +616,23 @@ export function homeTitle(now: Date): string {
 
 /**
  * Home description. `updatedAt` = newest lastVerifiedAt among active offers;
- * without it the "Aktualizacja" sentence is simply left out.
+ * without it the "Najnowsza weryfikacja oferty" sentence is simply left out (it is the newest
+ * check among the offers, not a review of the whole set).
  */
 export function homeDescription(updatedAt?: Date | string | null): string {
   const date = formatDatePL(updatedAt);
-  const lead = "Aktualne promocje bankowe w Polsce: konta osobiste i firmowe z premią. Sprawdź kwotę, warunki, koszt i termin zapisów";
-  const full = `${lead} – ze ściągą krok po kroku.`;
-  if (!date) return full;
-  const withDate = `${full} Aktualizacja: ${date}.`;
-  // The plan's full wording is 170 characters with the date; keep the date
-  // (freshness signal) and shorten the middle so the whole fits in 160.
-  return withDate.length <= DESCRIPTION_MAX ? withDate : `${lead} – ze ściągą. Aktualizacja: ${date}.`;
+  // No "ściąga" here: the word is the site's own and means nothing in a search result.
+  const lead = "Aktualne promocje bankowe w Polsce: konta osobiste i firmowe z premią. Sprawdź kwotę, warunki, koszt i termin zapisów.";
+  return date ? `${lead} Najnowsza weryfikacja oferty: ${date}.` : lead;
 }
 
-/** /promocje <title> (pass as `{ absolute }`): "Ranking promocji bankowych – październik 2026 | Konta z premią". */
+/**
+ * /promocje <title> (pass as `{ absolute }`): "Promocje bankowe – październik 2026: zestawienie | Bankmiplaci".
+ * "Zestawienie", not "ranking": the default order ("Polecane") depends on the partner
+ * remuneration as well as on the site rating, so the page must not call itself a ranking.
+ */
 export function promotionsListTitle(now: Date): string {
-  return `Ranking promocji bankowych – ${warsawMonthYear(now)} | Konta z premią`;
+  return withBrand(`Promocje bankowe – ${warsawMonthYear(now)}: zestawienie`);
 }
 
 /** /promocje H1: "Promocje bankowe – październik 2026". */
@@ -436,7 +667,7 @@ export function hubHeading(kind: HubKind): string {
 export function hubDescription(kind: HubKind, count?: number | null): string {
   const subject = count != null && count > 0 ? `${Math.trunc(count)} ${currentPromotionsGenitive(count)}` : "aktualnych promocji";
   return kind === "personal"
-    ? `Ranking ${subject} na konta osobiste z premią – kwota, trudność, koszt konta i termin zapisów. Sprawdź warunki i ściągę krok po kroku.`
+    ? `Zestawienie ${subject} na konta osobiste z premią – kwota, trudność, koszt konta i termin zapisów. Sprawdź warunki krok po kroku.`
     : `Porównanie ${subject} na konta firmowe z premią dla firm i JDG – kwota, warunki, koszt konta i termin zapisów. Sprawdź, co trzeba spełnić.`;
 }
 
@@ -513,15 +744,15 @@ export const STATIC_PAGE_META = {
   },
   jakToDziala: {
     path: "/jak-to-dziala",
-    title: "Jak działają promocje bankowe – krok po kroku od wyboru do premii",
+    title: "Jak działają promocje bankowe – krok po kroku",
     description:
       "Jak działa promocja bankowa: od wyboru oferty i założenia konta po spełnienie warunków i odebranie premii. Wyjaśniamy też pojęcia, np. karencję."
   },
   jakZarabiamy: {
     path: "/jak-zarabiamy",
-    title: "Jak zarabiamy – afiliacja i niezależność oceny",
+    title: "Jak zarabiamy – afiliacja i wpływ na kolejność ofert",
     description:
-      "Jak zarabia Bankmiplaci: linki partnerskie, wpływ wynagrodzenia na kolejność „Polecane” i niezależność oceny serwisu od prowizji."
+      "Jak zarabia Bankmiplaci: linki partnerskie, wpływ wynagrodzenia partnerskiego na kolejność „Polecane” oraz to, że ocena serwisu jest liczona bez niego."
   },
   metodologia: {
     path: "/metodologia",
@@ -537,7 +768,7 @@ export const STATIC_PAGE_META = {
   },
   blog: {
     path: "/blog",
-    title: "Poradniki o promocjach bankowych i kontach z premią",
+    title: "Poradniki o promocjach bankowych",
     description:
       "Poradniki o promocjach bankowych i kontach z premią: warunki, terminy, karencja i najczęstsze pułapki regulaminów."
   },

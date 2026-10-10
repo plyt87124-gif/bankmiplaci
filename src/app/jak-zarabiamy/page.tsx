@@ -40,10 +40,14 @@ export default function HowWeEarnPage() {
     <TextPage
       path="/jak-zarabiamy"
       breadcrumbLabel="Jak zarabiamy"
-      title="Jak zarabiamy – afiliacja i niezależność oceny"
+      title="Jak zarabiamy – afiliacja i wpływ na kolejność ofert"
       lead={
         <>
           <p>Zarabiamy z prowizji od banków za polecenie.</p>
+          <p className="mt-3">
+            Wynagrodzenie partnerskie (w skrócie: prowizja) to kwota, którą płaci nam bank lub sieć partnerska. Wpływa ono
+            na domyślną kolejność „Polecane” (szczegóły niżej), ale nie na ocenę serwisu.
+          </p>
           <p className="mt-3">
             Korzystanie z Bankmiplaci jest bezpłatne dla użytkowników. Poniżej piszemy, jak to działa, co zmienia w tym, co widzisz
             na stronie, a czego nie zmienia.
@@ -58,8 +62,7 @@ export default function HowWeEarnPage() {
       <p>
         Gdy przechodzisz do banku przez link oznaczony jako partnerski (przycisk „Przejdź do promocji”, pod którym
         zawsze piszemy „Link partnerski”), a potem otwierasz konto i spełniasz warunki promocji, bank – bezpośrednio albo
-        przez sieć partnerską – może wypłacić nam wynagrodzenie za polecenie. To częsty model finansowania
-        porównywarek. Wynagrodzenie nie pochodzi od Ciebie.
+        przez sieć partnerską – może wypłacić nam wynagrodzenie partnerskie za polecenie. Nie pochodzi ono od Ciebie.
       </p>
 
       <h2 id="wplyw">Czy to wpływa na Ciebie</h2>
@@ -80,8 +83,10 @@ export default function HowWeEarnPage() {
       </p>
       <ol>
         <li>
-          <strong>Ocena serwisu</strong> (od {pl1.format(RATING_FLOOR)} do 10, liczona bez prowizji – zob. niżej). To punkt wyjścia: gdyby nie
-          było drugiego czynnika, kolejność byłaby po prostu kolejnością ocen.
+          <strong>Ocena serwisu</strong> (od {pl1.format(RATING_FLOOR)} do 10, liczona bez prowizji – zob. niżej; w wyjątkowych
+          przypadkach ustawiana ręcznie, także spoza tego przedziału – zob.{" "}
+          <Link href="/metodologia#czym-jest-ocena">metodologia</Link>). To punkt wyjścia: gdyby nie było drugiego
+          czynnika, kolejność byłaby po prostu kolejnością ocen.
         </li>
         <li>
           <strong>Współczynnik wynagrodzenia partnerskiego</strong> – liczba od {pl2.format(FACTOR_FLOOR)} do{" "}
@@ -100,8 +105,9 @@ export default function HowWeEarnPage() {
           {pl2.format(FACTOR_FLOOR)}.
         </li>
         <li>
-          Oferta, dla której nie mamy danych o wynagrodzeniu, dostaje wartość pośrednią – {pl2.format(FACTOR_UNKNOWN)}.
-          Brak informacji ani jej nie pomaga, ani nie szkodzi.
+          Oferta bez danych o wynagrodzeniu jest traktowana tak, jakby bank płacił połowę najwyższej stawki w grupie
+          (współczynnik {pl2.format(FACTOR_UNKNOWN)}) – czyli wyżej niż oferta, za którą nie dostajemy nic (
+          {pl2.format(FACTOR_FLOOR)}).
         </li>
         <li>Oferta, za którą bank nie płaci nam nic, dostaje najniższą wartość – {pl2.format(FACTOR_FLOOR)}.</li>
       </ul>
@@ -149,9 +155,9 @@ export default function HowWeEarnPage() {
       <h2 id="ocena">Jak liczymy ocenę (bez prowizji)</h2>
       <p>
         Ocena serwisu (np. 9,4/10) to nasz wewnętrzny wskaźnik do szybkiego porównania ofert. Nie jest niezależną ani
-        obiektywną oceną banku ani jego produktów, a tym bardziej poradą finansową. Liczymy ją automatycznie z pięciu
-        składników: wysokości premii, trudności zdobycia, czasu trwania promocji, średniej premii na miesiąc i
-        karencji – zawsze na tle innych aktualnych ofert tego samego typu konta.
+        obiektywną oceną banku ani jego produktów, a tym bardziej poradą finansową. Liczymy ją z pięciu składników:
+        wysokości premii, trudności zdobycia, czasu trwania promocji, średniej premii na miesiąc i karencji – zawsze na
+        tle innych aktualnych ofert tego samego typu konta. W wyjątkowych przypadkach ustawiamy ją ręcznie.
       </p>
       <p>
         <strong>{RATING_COMMISSION_RULE}</strong> Wagi składników, skalę oceny i – gdy to możliwe – przykład wyliczenia
@@ -177,8 +183,10 @@ export default function HowWeEarnPage() {
 
       <h2 id="rekomendacja">Czy oferta w serwisie to rekomendacja</h2>
       <p>
-        Nie. Prezentujemy dostępne promocje wraz z warunkami, kosztami i wymaganym wysiłkiem, żeby ułatwić Ci
-        porównanie. Decyzję o skorzystaniu z promocji podejmujesz samodzielnie, na podstawie regulaminu banku.
+        To nie jest indywidualna rekomendacja ani porada. „Polecane” to domyślna kolejność, w której uwzględniamy
+        wynagrodzenie partnerskie, więc nie oznacza „najlepszej oferty dla Ciebie”. Prezentujemy dostępne promocje wraz z
+        warunkami, kosztami i wymaganym wysiłkiem, żeby ułatwić Ci porównanie. Decyzję o skorzystaniu z promocji
+        podejmujesz samodzielnie, na podstawie regulaminu banku.
       </p>
     </TextPage>
   );

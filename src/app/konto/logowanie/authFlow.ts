@@ -11,10 +11,26 @@ export const AUTH_TITLES: Record<AuthMode, string> = {
   register: "Załóż konto"
 };
 
+/**
+ * What an account is for, in one text for /konto/logowanie, /konto/rejestracja
+ * and the sign-up tab of the modal. Every item exists: comments under offers
+ * (PromotionComments), the "ściąga" of an offer (JoinChecklistButton) and the
+ * eligibility check after a karencja (EligibilityBanner, from the bank history
+ * the user types in). Nothing is read from a bank.
+ */
+export const ACCOUNT_BENEFITS =
+  "Konto pozwala komentować promocje, prowadzić ściągę i sprawdzać, od kiedy można skorzystać po okresie karencji. Nie łączymy się z kontem bankowym – korzystamy tylko z danych wpisanych przez Ciebie (np. dat otwarcia i zamknięcia kont).";
+
 export const AUTH_INTROS: Record<AuthMode, string> = {
-  login: "Zaloguj się, żeby dokończyć — zostaniesz tu, gdzie byłeś/aś.",
-  register: "Darmowe konto pozwala komentować promocje i śledzić okresy karencji."
+  login: "Zaloguj się, żeby dokończyć. Zostaniesz na tej samej stronie.",
+  register: ACCOUNT_BENEFITS
 };
+
+/** A form message is a full sentence: adds the final full stop when a message has none. */
+export function finishSentence(message: string): string {
+  const text = message.trim();
+  return /[.!?…]$/.test(text) ? text : `${text}.`;
+}
 
 const SAFE_ORIGIN = "http://redirect-check.invalid";
 
@@ -108,7 +124,7 @@ export async function postAuth(url: string, body: unknown, fallbackError: string
   const data = (await res.json().catch(() => null)) as { error?: unknown; field?: unknown } | null;
   return {
     ok: false,
-    error: typeof data?.error === "string" && data.error ? data.error : fallbackError,
+    error: finishSentence(typeof data?.error === "string" && data.error ? data.error : fallbackError),
     field: typeof data?.field === "string" ? data.field : undefined
   };
 }

@@ -11,13 +11,15 @@
  *    have a known value and they are not all equal (a row of identical values
  *    has no winner). Ties are all marked.
  */
+import { segmentOf as accountSegmentOf, type AccountSegment } from "@/lib/accountTypes";
 import { COMPACT } from "@/lib/disclosureCopy";
 import { resolveFee } from "@/lib/feeModel";
 import { cooldownLines as offerCooldownLines, cooldownRule } from "@/components/promocja/offerModel";
 
 export const COMPARE_MAX = 4;
 
-export type CompareSegment = "PERSONAL" | "BUSINESS";
+/** The two kinds of account (src/lib/accountTypes.ts: the one definition of osobiste / firmowe). */
+export type CompareSegment = AccountSegment;
 
 export const SEGMENT_LABEL: Record<CompareSegment, string> = {
   PERSONAL: "Osobiste",
@@ -32,7 +34,7 @@ export function parseSegment(value: string | string[] | undefined): CompareSegme
 
 /** Only BUSINESS accounts are "firmowe"; PERSONAL, SAVINGS, YOUNG and JOINT are "osobiste". */
 export function segmentOf(accountType: string): CompareSegment {
-  return accountType === "BUSINESS" ? "BUSINESS" : "PERSONAL";
+  return accountSegmentOf(accountType);
 }
 
 /** `?oferty=a,b,c` -> unique, trimmed slugs in the given order. */

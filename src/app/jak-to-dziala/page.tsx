@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/Button";
+import { KARENCJA_DEFINITION } from "@/lib/glossary";
 import { staticPageMetadata } from "@/lib/seo";
 import { pluralizePl } from "@/lib/format";
 import { Callout, TextPage, type TocEntry } from "./TextPage";
@@ -73,9 +74,10 @@ export default function HowItWorksPage() {
           <h3 id="krok-4">4. {STEP_TITLES[3]}</h3>
           <p>
             Promocje z wieloma etapami (np. kilka płatności kartą w drugim miesiącu) możesz dodać do ściągi w{" "}
-            <Link href="/konto">Moim koncie</Link>. Zaznaczasz kroki, gdy je wykonasz, miesiąc po miesiącu, a serwis
-            przypomina o zbliżających się terminach. Ściąga wymaga konta w serwisie. Zaznaczenia w ściądze służą tylko
-            Tobie – bank o nich nie wie.
+            <Link href="/konto">Moim koncie</Link>. Zaznaczasz kroki, gdy je wykonasz, miesiąc po miesiącu. Gdy zbliża
+            się termin kroków z danego miesiąca, a nie wszystkie zaznaczono, serwis może wysłać e-mail z przypomnieniem –
+            nie gwarantujemy jednak jego wysyłki, więc pilnuj terminów także samodzielnie. Ściąga wymaga konta w
+            serwisie. Zaznaczenia w ściądze nie są przekazywane bankom.
           </p>
         </section>
       </div>
@@ -102,10 +104,8 @@ export default function HowItWorksPage() {
       <dl>
         <dt>Karencja</dt>
         <dd>
-          Okres, w którym bank nie przyznaje promocji osobie, która niedawno miała u niego konto. Zwykle liczy się go od
-          dnia zamknięcia poprzedniego konta w tym banku. Długość i sposób liczenia podaje regulamin promocji. Gdy ją
-          znamy, serwis może na podstawie podanej przez Ciebie daty zamknięcia konta pokazać, od kiedy możesz skorzystać
-          z oferty.
+          {KARENCJA_DEFINITION} Gdy ją znamy, serwis może na podstawie podanej przez Ciebie daty zamknięcia konta
+          pokazać, od kiedy możesz skorzystać z oferty.
         </dd>
         <dt>Nowy klient</dt>
         <dd>

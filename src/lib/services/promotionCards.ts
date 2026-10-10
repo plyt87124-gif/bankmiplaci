@@ -26,6 +26,12 @@ export interface PromotionCardData {
   summary: string | null;
   maxBonusCents: number;
   difficulty: Difficulty;
+  /**
+   * The offer's REAL account type: it feeds the badge ("Konto dla młodych"), the
+   * offer page and the "Polecane" groups. Whether the offer is "osobiste" or
+   * "firmowe" for the tabs, hubs, comparison and quiz is decided by
+   * `segmentOf` in src/lib/accountTypes.ts (only BUSINESS is firmowe).
+   */
   accountType: AccountType;
   /** "Ocena serwisu" 0..10. Never influenced by the partner commission. */
   rating: number;
@@ -133,14 +139,19 @@ export function finalizeCards(rows: CardRow[], sort?: PromotionFilters["sort"]):
             accountType: row.accountType as string,
             rating: Number(row.rating),
             maxBonusCents: row.maxBonusCents,
-            commissionCents: row.affiliateCommissionCents
+            commissionCents: row.affiliateCommissionCents,
+            slug: row.slug
           }))
         ).map((x) => x.row)
       : rows;
   return ordered.map(toCard);
 }
 
-/** Same filters and sorts as listActivePromotions (SortKey), slim public output. */
+/**
+ * Same filters and sorts as listActivePromotions (SortKey), slim public output.
+ * `accountType: "PERSONAL"` is the whole "osobiste" segment (PERSONAL, SAVINGS,
+ * YOUNG, JOINT), `"BUSINESS"` only business accounts (src/lib/accountTypes.ts).
+ */
 export async function listPromotionCards(filters: PromotionFilters = {}): Promise<PromotionCardData[]> {
   const rows = await db.promotion.findMany({
     where: buildActiveWhere(filters),

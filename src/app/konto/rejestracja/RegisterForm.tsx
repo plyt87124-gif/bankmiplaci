@@ -6,12 +6,9 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Input } from "@/components/ui/Input";
-import { postAuth } from "@/app/konto/logowanie/authFlow";
-import {
-  validateRegisterValues,
-  type RegisterField,
-  type RegisterFieldErrors
-} from "@/app/api/account/register/registerInput";
+import { finishSentence, postAuth } from "@/app/konto/logowanie/authFlow";
+import type { RegisterField, RegisterFieldErrors } from "@/app/api/account/register/registerInput";
+import { validateRegisterForm } from "./registerMessages";
 
 // DOM order = the order in which the first invalid field gets the focus.
 const FIELD_ORDER: RegisterField[] = ["name", "username", "email", "password", "acceptTerms"];
@@ -64,7 +61,7 @@ export function RegisterForm({
     };
 
     setFormError(null);
-    const clientErrors = validateRegisterValues(values);
+    const clientErrors = validateRegisterForm(values);
     setErrors(clientErrors);
     const firstInvalid = FIELD_ORDER.find((f) => clientErrors[f]);
     if (firstInvalid) {
@@ -89,7 +86,7 @@ export function RegisterForm({
     if (!result.ok) {
       const field = FIELD_ORDER.find((f) => f === result.field);
       if (field) {
-        setErrors({ [field]: result.error });
+        setErrors({ [field]: finishSentence(result.error) });
         focusField(formEl, field);
       } else {
         setFormError(result.error);
@@ -106,7 +103,7 @@ export function RegisterForm({
       </Field>
       <Field
         label="Nazwa użytkownika"
-        hint="Będziesz mógł/mogła zalogować się tą nazwą zamiast e-mailem. 3–20 znaków: litery, cyfry, podkreślenia."
+        hint="Zalogujesz się tą nazwą zamiast e-maila. 3–20 znaków: litery, cyfry, podkreślenia."
         error={errors.username}
         required
       >

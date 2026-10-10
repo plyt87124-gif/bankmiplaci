@@ -3,12 +3,18 @@ import { Prisma, PromotionStatus, Difficulty } from "@prisma/client";
 import { recomputeRatings } from "./ratings";
 import { signupCutoff } from "@/lib/promotionAvailability";
 import { sortRecommended } from "@/lib/recommended";
+import { accountTypeWhere } from "@/lib/accountTypes";
 
 export type SortKey = "recommended" | "top-rated" | "highest-bonus" | "easiest" | "newest" | "ending-soon";
 
 export interface PromotionFilters {
   q?: string;
   bankSlug?: string;
+  /**
+   * "PERSONAL" = every non-business type (PERSONAL, SAVINGS, YOUNG, JOINT),
+   * "BUSINESS" = business only, any other AccountType = exactly that type
+   * (src/lib/accountTypes.ts, the single definition of osobiste/firmowe).
+   */
   accountType?: string;
   difficulty?: string[];
   minBonusCents?: number;
@@ -69,7 +75,7 @@ export function buildActiveWhere(filters: PromotionFilters = {}): Prisma.Promoti
   return {
     ...activeWhere(),
     ...(filters.bankSlug ? { bank: { slug: filters.bankSlug } } : {}),
-    ...(filters.accountType ? { accountType: filters.accountType as never } : {}),
+    ...accountTypeWhere(filters.accountType),
     ...(filters.difficulty?.length ? { difficulty: { in: filters.difficulty as never[] } } : {}),
     ...(filters.minBonusCents ? { maxBonusCents: { gte: filters.minBonusCents } } : {}),
     ...(filters.maxAccountFeeCents !== undefined
@@ -111,7 +117,8 @@ export async function listActivePromotions(filters: PromotionFilters = {}) {
             accountType: row.accountType as string,
             rating: Number(row.rating),
             maxBonusCents: row.maxBonusCents,
-            commissionCents: row.affiliateCommissionCents
+            commissionCents: row.affiliateCommissionCents,
+            slug: row.slug
           }))
         ).map((x) => x.row)
       : rows;
@@ -152,7 +159,7 @@ export interface EffortShowcaseItem {
 const DIFFICULTY_RANK: Record<Difficulty, number> = { VERY_EASY: 0, EASY: 1, MEDIUM: 2, HARD: 3 };
 
 /**
- * Two real, currently-active PERSONAL-account promotions used on the
+ * Two real, currently-active personal-account promotions used on the
  * homepage "Ile wysiłku wymaga promocja?" section — the easiest-difficulty
  * example available and the hardest-difficulty example available, picking
  * the highest bonus within each tier. Restricted to personal accounts so
@@ -163,7 +170,7 @@ const DIFFICULTY_RANK: Record<Difficulty, number> = { VERY_EASY: 0, EASY: 1, MED
  */
 export async function getEffortShowcase(): Promise<EffortShowcaseItem[]> {
   const promos = await db.promotion.findMany({
-    where: { ...activeWhere(), accountType: "PERSONAL" },
+    where: { ...activeWhere(), ...accountTypeWhere("PERSONAL") },
     select: { slug: true, name: true, maxBonusCents: true, difficulty: true, bank: { select: { name: true } } }
   });
   if (promos.length === 0) return [];

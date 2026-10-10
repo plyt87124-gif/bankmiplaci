@@ -208,14 +208,14 @@ test("related links: tools, trust pages, the other hub, banks, ending soon, the 
 const render = (kind: "personal" | "business", cards: PromotionCardData[]) =>
   renderToStaticMarkup(h(HubPage, { kind, cards }));
 
-test("page: H1 from the SEO library, lead, 'Dane zaktualizowano', one strip ABOVE the cards, cards without a partner link", () => {
+test("page: H1 from the SEO library, lead, 'Najnowsza weryfikacja oferty', one strip ABOVE the cards, cards without a partner link", () => {
   const cards = [card(1), card(2, { lastVerifiedAt: new Date("2026-10-09T08:00:00Z") }), card(3)];
   const out = render("personal", cards);
 
   assert.equal((out.match(/<h1[ >]/g) ?? []).length, 1);
   assert.match(out, new RegExp(`<h1[^>]*>${hubHeading("personal")}</h1>`));
   assert.match(text(out), /Zestawiamy 3 oferty na konta dla osób fizycznych/);
-  assert.match(text(out), /Dane zaktualizowano: 09\.10\.2026/);
+  assert.match(text(out), /Najnowsza weryfikacja oferty: 9 paź 2026/);
 
   assert.equal((out.match(/data-disclosure="strip"/g) ?? []).length, 1);
   assert.match(stripTag(out), /data-disclosure-sort="recommended"/);
@@ -325,7 +325,7 @@ test("empty hub: an honest message and a way out, no strip and no ItemList, the 
     assert.match(out, new RegExp(`href="${HUBS[HUBS[kind].other].path}"`));
     assert.doesNotMatch(out, /data-disclosure="strip"/, "no list of offers, no strip");
     assert.doesNotMatch(out, /data-card="promotion"/);
-    assert.doesNotMatch(out, /Dane zaktualizowano/, "no invented date");
+    assert.doesNotMatch(out, /Najnowsza weryfikacja oferty/, "no invented date");
 
     const nodes = jsonLd(out);
     assert.ok(byType(nodes, "BreadcrumbList"));

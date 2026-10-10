@@ -14,6 +14,11 @@ export interface CompareOption {
   name: string;
 }
 
+/** "Wybrano 4 z maks. 4 ofert (dostępnych: 16)" - every number comes from the data. */
+export function selectionSummary(chosen: number, max: number, available: number): string {
+  return `Wybrano ${chosen} z maks. ${max} ofert (dostępnych: ${available})`;
+}
+
 /**
  * Segment (Osobiste | Firmowe) and the offer picker of /porownaj. The state
  * lives in the URL (`?typ=`, `?oferty=`), the page is rendered on the server:
@@ -83,9 +88,9 @@ export function CompareControls({
       <details className="rounded-card border border-line bg-surface">
         <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-2 text-ui font-semibold text-ink-900 [&::-webkit-details-marker]:hidden">
           <span>
-            Wybierz oferty do porównania{" "}
-            <span className="num whitespace-nowrap font-normal text-ink-500">
-              ({chosen.length} z {COMPARE_MAX})
+            Wybierz oferty do porównania
+            <span className="num mt-0.5 block font-normal text-ink-500">
+              {selectionSummary(chosen.length, COMPARE_MAX, options.length)}
             </span>
           </span>
           <ChevronDown size={20} aria-hidden="true" className="acc-chevron shrink-0 text-ink-500" />

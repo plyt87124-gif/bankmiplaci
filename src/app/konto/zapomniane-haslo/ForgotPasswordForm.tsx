@@ -9,6 +9,11 @@ import { FormMessage } from "@/components/ui/FormMessage";
 import { Input } from "@/components/ui/Input";
 import { requestReset } from "./requestReset";
 
+/** An empty field asks for the address; a filled but wrong one says it is not valid. Both are full sentences. */
+export function forgotEmailError(email: string): string {
+  return email.trim() ? "Podaj poprawny adres e-mail." : "Podaj adres e-mail.";
+}
+
 /** Client part of /konto/zapomniane-haslo. The success message never reveals whether the account exists. */
 export function ForgotPasswordForm() {
   const [sent, setSent] = useState(false);
@@ -34,7 +39,7 @@ export function ForgotPasswordForm() {
 
     setFormError(null);
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      setEmailError("Podaj poprawny adres e-mail.");
+      setEmailError(forgotEmailError(email));
       emailRef.current?.focus();
       return;
     }

@@ -6,7 +6,12 @@
  * What the URL can carry (all of it already worked before the redesign):
  *   q            search text (bank, offer name or summary)
  *   bank         bank slug
- *   accountType  PERSONAL | BUSINESS (| SAVINGS | YOUNG | JOINT from old links)
+ *   accountType  PERSONAL | BUSINESS (| SAVINGS | YOUNG | JOINT from old links).
+ *                PERSONAL is the whole "osobiste" segment (every non-business
+ *                type), BUSINESS only the business accounts - one definition for
+ *                the tabs, their counters, the list and the database filter
+ *                (src/lib/accountTypes.ts). SAVINGS / YOUNG / JOINT narrow to
+ *                exactly that type.
  *   difficulty   comma list of VERY_EASY, EASY, MEDIUM, HARD
  *   minBonus     minimum bonus in grosze (the UI offers 20000 / 50000 / 100000)
  *   noFees       "1" = only offers with a confirmed 0 zl account fee
@@ -19,6 +24,7 @@
  */
 import type { AccountType, Difficulty } from "@prisma/client";
 import type { SortKey } from "@/lib/services/promotions";
+import { isAccountSegment } from "@/lib/accountTypes";
 import { SORT_RECOMMENDED_LABEL } from "@/lib/disclosureCopy";
 import { ACCOUNT_TYPE_LABEL, DIFFICULTY_LABEL, formatPLN, pluralizePl } from "@/lib/format";
 
@@ -48,7 +54,7 @@ export type ListingSort = (typeof SORT_VALUES)[number];
 /** The order used when `sort` is missing from the URL (the listing's long-standing default). */
 export const DEFAULT_SORT: ListingSort = "recommended";
 
-/** The two values the Osobiste / Firmowe segment can set. */
+/** The two values the Osobiste / Firmowe segment can set (the segments of src/lib/accountTypes.ts). */
 export type SegmentValue = "" | "PERSONAL" | "BUSINESS";
 
 export const SORT_OPTIONS: readonly { value: ListingSort; label: string }[] = [
@@ -242,7 +248,7 @@ export function buildChips(state: ListingState, banks: readonly { slug: string; 
     chips.push({ ...chip, removeLabel: `Usuń filtr: ${chip.label}` });
 
   if (state.q) add({ id: "q", label: `Fraza: „${shorten(state.q, 24)}”`, clear: { q: "" }, inPanel: false });
-  if (state.accountType && state.accountType !== "PERSONAL" && state.accountType !== "BUSINESS") {
+  if (state.accountType && !isAccountSegment(state.accountType)) {
     add({ id: "accountType", label: `Typ konta: ${ACCOUNT_TYPE_LABEL[state.accountType]}`, clear: { accountType: "" }, inPanel: false });
   }
   if (state.bank) {
@@ -273,9 +279,13 @@ export function clearChips(state: ListingState): ListingState {
   return { ...state, q: "", bank: "", difficulty: [], minBonus: null, noFees: false, accountType: segmentOf(state) };
 }
 
-/** The segment value that matches a state ("" when the account type is not one of the two). */
+/**
+ * The segment value that matches a state ("" when the account type is not one of
+ * the two segments - no tab is selected for SAVINGS / YOUNG / JOINT). For the
+ * segment of an offer's own account type see `segmentOf` in src/lib/accountTypes.ts.
+ */
 export function segmentOf(state: Pick<ListingState, "accountType">): SegmentValue {
-  return state.accountType === "PERSONAL" || state.accountType === "BUSINESS" ? state.accountType : "";
+  return isAccountSegment(state.accountType) ? state.accountType : "";
 }
 
 /* ------------------------------------------------------------------ */

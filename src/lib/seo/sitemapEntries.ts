@@ -17,6 +17,7 @@
  *   article date in it.
  */
 import { CATEGORY_INFO } from "../../components/blog/categories";
+import { isBusinessType, isPersonalType } from "../accountTypes";
 import { isSignupOpen, robotsForStatus } from "../promotionAvailability";
 import { absoluteUrl } from "./siteUrl";
 import { DYNAMIC_ROUTE_FLAGS, liveRoutes, type LastModSource } from "./routes";
@@ -95,8 +96,8 @@ export function buildSitemapEntries(input: SitemapInput, now: Date): SitemapEntr
   const lastModBySource: Record<LastModSource, Date | undefined> = {
     none: undefined,
     openPromotions: maxDate(open.map(promotionLastModified)),
-    openPersonalPromotions: maxDate(open.filter((p) => p.accountType !== "BUSINESS").map(promotionLastModified)),
-    openBusinessPromotions: maxDate(open.filter((p) => p.accountType === "BUSINESS").map(promotionLastModified)),
+    openPersonalPromotions: maxDate(open.filter((p) => isPersonalType(p.accountType)).map(promotionLastModified)),
+    openBusinessPromotions: maxDate(open.filter((p) => isBusinessType(p.accountType)).map(promotionLastModified)),
     articles: maxDate(input.articles.map(articleLastModified))
   };
 

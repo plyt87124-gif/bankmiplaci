@@ -3,9 +3,13 @@
  * no `Date.now()`), so every rule is covered by tests/quiz.test.ts.
  *
  * What the answers do (all five really change the result):
+ *   (effort and topBonus are two separate signals: effort is about how many and how
+ *   demanding the conditions are, topBonus about the size of the bonus - the first
+ *   option of "effort" therefore does not mention the bonus.)
  *   effort      +2 points when the offer's difficulty fits the chosen effort;
  *               an offer harder than the chosen ceiling gets a caution.
- *   audience    only personal accounts OR only business accounts are ranked.
+ *   audience    only personal accounts (PERSONAL, SAVINGS, YOUNG, JOINT) OR only
+ *               business accounts are ranked - the site's one osobiste/firmowe split.
  *   canCardPay  "no" pushes every offer whose conditions include card payments
  *               (condition type "card_payments") below every offer that does not.
  *   canInflow   same for conditions of type "inflow" (a regular transfer in).
@@ -22,6 +26,7 @@
  * it as "obejmuje warunek ...", never as "nie dostaniesz premii".
  */
 import type { AccountType, Difficulty } from "@prisma/client";
+import { isBusinessType } from "@/lib/accountTypes";
 import { DIFFICULTY_LABEL, formatPLN, formatRatingOutOf10 } from "@/lib/format";
 
 /* ------------------------------------------------------------------ */
@@ -69,7 +74,7 @@ export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
     options: [
       { id: "low", label: "Jak najmniej" },
       { id: "medium", label: "Mogę zrobić trochę więcej" },
-      { id: "high", label: "Nie ma znaczenia, zależy mi na wysokiej premii" }
+      { id: "high", label: "Mogę zrobić dużo, nawet przy wielu warunkach" }
     ]
   },
   {
@@ -248,8 +253,9 @@ export interface QuizMatch {
   cautions: string[];
 }
 
+/** "Firmowe" is only BUSINESS; every other account type is a personal one (src/lib/accountTypes.ts). */
 function isBusiness(offer: QuizOffer): boolean {
-  return offer.accountType === "BUSINESS";
+  return isBusinessType(offer.accountType);
 }
 
 function lower(label: string): string {
@@ -281,14 +287,14 @@ function scoreOffer(offer: QuizOffer, answers: QuizAnswers): QuizMatch {
     if (answers.canCardPay) reasons.push("warunki obejmują płatności kartą, które możesz spełnić");
     else {
       unmet += 1;
-      cautions.push("Obejmuje warunek płatności kartą, a zaznaczono, że nie możesz go spełnić. Część nagrody może być poza zasięgiem.");
+      cautions.push("Obejmuje warunek płatności kartą, a zaznaczono, że nie możesz go spełnić. Możesz nie dostać całej premii.");
     }
   }
   if (offer.needsInflow) {
     if (answers.canInflow) reasons.push("warunki obejmują wpływ na konto, który możesz zapewnić");
     else {
       unmet += 1;
-      cautions.push("Obejmuje warunek wpływu na konto, a zaznaczono, że nie możesz go zapewnić. Część nagrody może być poza zasięgiem.");
+      cautions.push("Obejmuje warunek wpływu na konto, a zaznaczono, że nie możesz go zapewnić. Możesz nie dostać całej premii.");
     }
   }
 
@@ -318,6 +324,21 @@ export function matchOffers(
     )
     .slice(0, Math.max(0, limit));
 }
+
+/** Every match has at least one condition the user said they cannot meet (nothing fits all the answers). */
+export function noFullMatch(matches: readonly Pick<QuizMatch, "unmet">[]): boolean {
+  return matches.length > 0 && matches.every((m) => m.unmet > 0);
+}
+
+/** Every match fits all the answers (no unmet condition anywhere). */
+export function isFullMatch(matches: readonly Pick<QuizMatch, "unmet">[]): boolean {
+  return matches.length > 0 && matches.every((m) => m.unmet === 0);
+}
+
+export const QUIZ_NO_FULL_MATCH_NOTICE =
+  "Żadna promocja nie spełnia wszystkich Twoich odpowiedzi. Poniżej są oferty najbliższe – każda ma warunek, którego wolisz nie spełniać.";
+export const QUIZ_RESULT_TITLE_FULL = "Twoje dopasowane promocje";
+export const QUIZ_RESULT_TITLE_CLOSEST = "Najbliższe Twoim odpowiedziom";
 
 /** "Dlaczego: trudność „łatwa” pasuje ...; ocena serwisu 8,9/10." - one sentence for the result card. */
 export function explainMatch(match: Pick<QuizMatch, "reasons">): string {

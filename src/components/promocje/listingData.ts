@@ -61,9 +61,10 @@ export interface ListingResult {
 
 /**
  * One query serves the list and the segment counts: the cards are fetched
- * under every filter EXCEPT the account type, counted per segment, and then
+ * under every filter EXCEPT the account type, counted per segment (Osobiste =
+ * every non-business type, so Osobiste + Firmowe = Wszystkie), and then
  * narrowed to the chosen account type in memory (same result and order as the
- * database filter, see applyAccountType).
+ * database filter, see applyAccountType and accountTypeWhere).
  *
  * TODO(WP-17): this loads EVERY matching offer into memory and the page cuts
  * the first 24 x `strona` out of it. Fine for the current catalogue (a few

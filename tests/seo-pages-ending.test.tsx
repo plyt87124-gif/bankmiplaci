@@ -123,32 +123,38 @@ test("groups: the day is Poland's - 00:30 in Warsaw on the last day is still 'to
 /* Caption                                                             */
 /* ------------------------------------------------------------------ */
 
-test("caption: 'zostało N dni' with the verb and noun agreeing with the number, and the real date", () => {
+test("caption completes the badge instead of repeating it: last day within 14 days, days left beyond", () => {
   const cap = (d: number) => deadlineCaption(inDays(d), NOW);
-  assert.equal(cap(0), "Ostatni dzień zapisów: dziś (10.10.2026)");
-  assert.equal(cap(1), "Został 1 dzień (do 11.10.2026)");
-  assert.equal(cap(2), "Zostały 2 dni (do 12.10.2026)");
-  assert.equal(cap(4), "Zostały 4 dni (do 14.10.2026)");
-  assert.equal(cap(5), "Zostało 5 dni (do 15.10.2026)");
-  assert.equal(cap(12), "Zostało 12 dni (do 22.10.2026)");
-  assert.equal(cap(13), "Zostało 13 dni (do 23.10.2026)");
-  assert.equal(cap(22), "Zostały 22 dni (do 01.11.2026)");
-  assert.equal(cap(30), "Zostało 30 dni (do 09.11.2026)");
+  // the badge says "Koniec dziś" / "Koniec za N dni" -> the caption gives the date
+  assert.equal(cap(0), "Ostatni dzień zapisów: 10.10.2026");
+  assert.equal(cap(1), "Ostatni dzień zapisów: 11.10.2026");
+  assert.equal(cap(3), "Ostatni dzień zapisów: 13.10.2026");
+  assert.equal(cap(14), "Ostatni dzień zapisów: 24.10.2026");
+  // the badge says "Ważna do dd.mm.rrrr" -> the caption gives the days, with the right verb and noun
+  assert.equal(cap(15), "Zostało 15 dni");
+  assert.equal(cap(22), "Zostały 22 dni");
+  assert.equal(cap(25), "Zostało 25 dni");
+  assert.equal(cap(30), "Zostało 30 dni");
   assert.equal(deadlineCaption(inDays(-3), NOW), "Zakończona 07.10.2026");
   assert.equal(deadlineCaption(null, NOW), null);
   assert.equal(deadlineCaption("garbage", NOW), null);
 });
 
-test("caption agrees with the card's deadline badge (freshness.ts) for every day of the page", () => {
+test("caption agrees with the card's deadline badge (freshness.ts) for every day of the page and never repeats it", () => {
   for (let d = 0; d <= ENDING_SOON_MAX_DAYS; d++) {
     const info = deadlineState(inDays(d), NOW);
     assert.equal(info.days, d);
     const caption = deadlineCaption(inDays(d), NOW)!;
-    if (d > 0) assert.ok(caption.includes(` ${d} `), `${d}: ${caption}`);
-    assert.ok(caption.includes(info.dateText!), `${d}: the same date as the badge`);
-    // wording of the badge for the same day, when it says the days: "Koniec za N dni"
     if (info.state === "soon" || info.state === "urgent") {
+      // badge: the number of days; caption: the date only
       if (d > 0) assert.match(info.label, new RegExp(`Koniec za ${d} (dzień|dni)`));
+      assert.ok(caption.includes(info.dateText!), `${d}: ${caption}`);
+      assert.doesNotMatch(caption, /\d+ (dzień|dni)/, `${d}: no days in the caption`);
+    } else {
+      // badge: the date; caption: the days only
+      assert.ok(info.label.includes(info.dateText!));
+      assert.ok(caption.includes(` ${d} `), `${d}: ${caption}`);
+      assert.ok(!caption.includes(info.dateText!), `${d}: the date is not repeated`);
     }
   }
 });
@@ -186,14 +192,15 @@ test("page: H1 from the SEO library, lead, early-end note, one strip for a non-'
 test("page: an h2 per non-empty group with its count, cards under it, a caption under every card", () => {
   const out = render([card(1, 2), card(2, 3), card(3, 20)]);
   const visible = text(out);
-  assert.match(out, /<h2 id="grupa-do-7">Zostało do 7 dni <span[^>]*>\(2\)<\/span><\/h2>/);
-  assert.match(out, /<h2 id="grupa-15-30">Zostało 15–30 dni <span[^>]*>\(1\)<\/span><\/h2>/);
+  assert.match(out, /<h2 id="grupa-do-7">Do 7 dni <span[^>]*>\(2\)<\/span><\/h2>/);
+  assert.match(out, /<h2 id="grupa-15-30">15–30 dni <span[^>]*>\(1\)<\/span><\/h2>/);
   assert.doesNotMatch(out, /grupa-8-14/, "no empty group, no empty heading");
   assert.equal((out.match(/data-card="promotion"/g) ?? []).length, 3);
-  assert.ok(visible.indexOf("Zostało do 7 dni") < visible.indexOf("Zostało 15–30 dni"));
-  assert.match(visible, /Zostały 2 dni \(do 12\.10\.2026\)/);
-  assert.match(visible, /Został 1 dzień|Zostały 3 dni \(do 13\.10\.2026\)/);
-  assert.match(visible, /Zostało 20 dni \(do 30\.10\.2026\)/);
+  assert.ok(visible.indexOf("Do 7 dni") < visible.indexOf("15–30 dni"));
+  assert.match(visible, /Ostatni dzień zapisów: 12\.10\.2026/);
+  assert.match(visible, /Ostatni dzień zapisów: 13\.10\.2026/);
+  assert.match(visible, /Zostało 20 dni/);
+  assert.doesNotMatch(visible, /Zostały 2 dni|Zostały 3 dni/, "the days under a short-deadline card are the badge's job");
   assert.equal((out.match(/<h3[^>]*>/g) ?? []).length, 3, "cards are h3 under the group h2");
   // the card's own badge says the same number of days
   assert.match(out, /Koniec za 2 dni/);
@@ -202,7 +209,7 @@ test("page: an h2 per non-empty group with its count, cards under it, a caption 
 
 test("page: the caption sits under its card, so the cards of a row start on one line", () => {
   const out = render([card(1, 5)]);
-  assert.ok(out.indexOf('data-card="promotion"') < out.indexOf("Zostało 5 dni"));
+  assert.ok(out.indexOf('data-card="promotion"') < out.indexOf("Ostatni dzień zapisów"));
   assert.match(out, /<li class="flex min-w-0 flex-col gap-2">/);
 });
 

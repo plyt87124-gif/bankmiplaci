@@ -2,13 +2,14 @@ import Link from "next/link";
 import { unstable_cache } from "next/cache";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
 import { db } from "@/lib/db";
+import { LATEST_VERIFICATION_LABEL } from "@/lib/disclosureCopy";
 import { formatDatePL } from "@/lib/format";
 import { getFooterColumns } from "@/lib/navigation";
 import { PUBLISHER, publisherAddress } from "@/lib/publisher";
 import { isoDatePL, toValidDate, warsawYear } from "@/lib/seo/dates";
 import { activeWhere } from "@/lib/services/promotions";
 
-/** How long the "Dane zaktualizowano" date may lag behind the database. */
+/** How long the "Najnowsza weryfikacja oferty" date may lag behind the database. */
 const DATA_UPDATED_REVALIDATE_SECONDS = 600;
 
 /**
@@ -80,8 +81,8 @@ export function FooterView({ dataUpdatedAt, now }: { dataUpdatedAt?: Date | stri
           <div>
             <p className="font-display text-[22px] font-semibold leading-none text-ink-900">Bankmiplaci</p>
             <p className="mt-3 max-w-sm text-small text-ink-500">
-              Porównujemy aktualne promocje bankowe w Polsce i pokazujemy uczciwie, ile możesz otrzymać oraz co musisz
-              zrobić, aby zdobyć premię.
+              Porównujemy aktualne promocje bankowe w Polsce i pokazujemy, ile możesz otrzymać i co musisz zrobić, aby
+              zdobyć premię.
             </p>
           </div>
 
@@ -108,7 +109,7 @@ export function FooterView({ dataUpdatedAt, now }: { dataUpdatedAt?: Date | stri
 
           {updated && updatedIso ? (
             <p className="text-small text-ink-500" data-footer="updated">
-              Dane zaktualizowano: <time dateTime={updatedIso}>{formatDatePL(updated, "short")}</time>
+              {LATEST_VERIFICATION_LABEL}: <time dateTime={updatedIso}>{formatDatePL(updated, "short")}</time>
             </p>
           ) : null}
 
@@ -131,7 +132,7 @@ export function FooterView({ dataUpdatedAt, now }: { dataUpdatedAt?: Date | stri
 }
 
 /**
- * Site footer (server component): FooterView plus the "Dane zaktualizowano" date from the database
+ * Site footer (server component): FooterView plus the "Najnowsza weryfikacja oferty" date from the database
  * (cached, at most DATA_UPDATED_TIMEOUT_MS of waiting). Exactly one <footer> ends up in the HTML.
  */
 export async function Footer() {

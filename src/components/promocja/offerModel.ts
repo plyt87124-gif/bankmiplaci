@@ -13,6 +13,7 @@ import { formatDatePL, pluralizePl } from "@/lib/format";
 import { deadlineState } from "@/lib/freshness";
 import { isDeadlinePassed } from "@/lib/promotionAvailability";
 import { formatCooldownWindow } from "@/lib/cooldownText";
+import { KARENCJA_DEFINITION } from "@/lib/glossary";
 
 /* ------------------------------------------------------------------ */
 /* Offer state                                                         */
@@ -124,8 +125,8 @@ export function cooldownRule(p: {
  * (cooldownShort) and the comparison table (compareModel.cooldownLines) both
  * read it, so one offer never says two different things.
  *
- *   months > 0             "Karencja N mies."
- *   a cut-off date         "Bez konta w banku od <date>"
+ *   months > 0             "Karencja N mies. od zamknięcia konta" (a rolling period)
+ *   a cut-off date         "Wymagane: brak konta w tym banku od <date>" (a fixed date)
  *   months === 0, no date  "Bez karencji"
  *   months === 0 + date    ONLY the date line: the date is a concrete
  *                          requirement, and "Bez karencji" next to it would
@@ -137,9 +138,9 @@ export function cooldownRule(p: {
 export function cooldownLines(rule: CooldownRule): string[] {
   const lines: string[] = [];
   if (rule.months !== null && !(rule.months === 0 && rule.cutoff)) {
-    lines.push(rule.months === 0 ? "Bez karencji" : `Karencja ${rule.months} mies.`);
+    lines.push(rule.months === 0 ? "Bez karencji" : `Karencja ${rule.months} mies. od zamknięcia konta`);
   }
-  if (rule.cutoff) lines.push(`Bez konta w banku od ${formatDatePL(rule.cutoff)}`);
+  if (rule.cutoff) lines.push(`Wymagane: brak konta w tym banku od ${formatDatePL(rule.cutoff)}`);
   return lines;
 }
 
@@ -153,30 +154,39 @@ export function cooldownShort(rule: CooldownRule): string {
 }
 
 /**
- * The full sentences of the "Kiedy możesz otworzyć konto?" block (also used by
- * the FAQ). Wording kept from the pre-redesign page; "w banku X" avoids
- * declining the bank's name.
+ * What "konto w tym banku" covers is the regulation's business: Pekao excludes
+ * any "umowa o produkty i usługi", Alior speaks of ROR, PKO of an account in
+ * zloty. We store only the date or the number of months, so the text never
+ * says WHICH products count and points to the regulation instead.
  */
-export function cooldownSentences(rule: CooldownRule, bankName: string): string[] {
+export const COOLDOWN_SCOPE_NOTE = "Szczegółowy zakres (jakie produkty się liczą) podaje regulamin promocji.";
+
+/**
+ * The full sentences of the "Kiedy możesz otworzyć konto?" block (also used by
+ * the FAQ). Impersonal wording, and "w tym banku" instead of the bank's name
+ * ("w banku Bank Pekao" was a tautology and the name cannot be declined). When a
+ * date or a period is stored, the last sentence is COOLDOWN_SCOPE_NOTE. The
+ * `bankName` argument is no longer used; it stays so that callers do not change.
+ */
+export function cooldownSentences(rule: CooldownRule, _bankName?: string): string[] {
   const out: string[] = [];
   if (rule.cutoff) {
-    out.push(
-      `Możesz skorzystać z tej promocji, jeśli nie miałeś/aś konta w banku ${bankName} od ${formatDatePL(rule.cutoff)}.`
-    );
+    out.push(`Z promocji mogą skorzystać osoby, które od ${formatDatePL(rule.cutoff)} nie miały konta w tym banku.`);
   }
-  if (rule.months !== null) {
+  if (rule.months !== null && !(rule.months === 0 && rule.cutoff)) {
+    // months === 0 next to a date: the date line above is the whole requirement, "no extra period" would contradict it.
     out.push(
       rule.months === 0
-        ? `Według naszych danych po zamknięciu konta w banku ${bankName} nie obowiązuje dodatkowy okres karencji.`
-        : `Możesz skorzystać z tej promocji, jeśli ${formatCooldownWindow(rule.months)} przed złożeniem wniosku nie miałeś/aś konta w banku ${bankName}.`
+        ? "Według naszych danych po zamknięciu konta w tym banku nie obowiązuje dodatkowy okres karencji."
+        : `Z promocji mogą skorzystać osoby, które ${formatCooldownWindow(rule.months)} przed złożeniem wniosku nie miały konta w tym banku.`
     );
   }
+  if (rule.cutoff || (rule.months !== null && rule.months > 0)) out.push(COOLDOWN_SCOPE_NOTE);
   return out;
 }
 
 /** The plain-language definition used wherever "karencja" first appears (same meaning as the FAQ). */
-export const COOLDOWN_EXPLAINER =
-  "Karencja to okres, w którym bank nie przyznaje promocji osobie, która niedawno miała u niego konto.";
+export const COOLDOWN_EXPLAINER = KARENCJA_DEFINITION;
 
 /* ------------------------------------------------------------------ */
 /* Text helpers                                                        */

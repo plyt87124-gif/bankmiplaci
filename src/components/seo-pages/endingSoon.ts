@@ -1,7 +1,7 @@
 /**
  * Pure model of /promocje/konczace-sie (docs/redesign-v2/03-content-and-seo-plan.md,
  * section E): grouping of the offers by how many days are left, the
- * "zostało N dni" caption, the lead, the editorial text and the FAQ.
+ * "zostało N dni" / last-day caption, the lead, the editorial text and the FAQ.
  *
  * Days are counted by format.ts#daysUntil - the SAME function the deadline
  * badge of a card (lib/freshness.ts) uses: whole calendar days on Poland's
@@ -9,7 +9,8 @@
  * day itself is still open. So the caption and the badge on one card can never
  * disagree. Nothing is invented: an offer without a usable end date is left out.
  */
-import { daysUntil, formatDatePL, pluralizePl } from "@/lib/format";
+import { daysUntil, pluralizePl } from "@/lib/format";
+import { deadlineState } from "@/lib/freshness";
 import { COMMON_RELATED_LINKS, countWords, type EditorialSection, type RelatedLink, type SeoFaqItem } from "./shared";
 
 /** The farthest deadline the page shows (getEndingSoon(30)). */
@@ -26,9 +27,9 @@ export interface EndingSoonGroupDef {
 
 /** Thresholds of the plan: 7 / 14 / 30 days. */
 export const ENDING_SOON_GROUPS: readonly EndingSoonGroupDef[] = [
-  { id: "do-7", from: 0, to: 7, heading: "Zostało do 7 dni" },
-  { id: "8-14", from: 8, to: 14, heading: "Zostało 8–14 dni" },
-  { id: "15-30", from: 15, to: ENDING_SOON_MAX_DAYS, heading: "Zostało 15–30 dni" }
+  { id: "do-7", from: 0, to: 7, heading: "Do 7 dni" },
+  { id: "8-14", from: 8, to: 14, heading: "8–14 dni" },
+  { id: "15-30", from: 15, to: ENDING_SOON_MAX_DAYS, heading: "15–30 dni" }
 ];
 
 export interface EndingSoonGroup<T> extends EndingSoonGroupDef {
@@ -54,16 +55,22 @@ export function groupEndingSoon<T extends { endDate: Date | string }>(
   })).filter((group) => group.cards.length > 0);
 }
 
-/** "Zostało 17 dni (do 27.10.2026)" / "Został 1 dzień (do ...)" / "Ostatni dzień zapisów: dziś (...)"; null without a usable date. */
+/**
+ * The line under a card. The card's own deadline badge (lib/freshness.ts) already
+ * says "Koniec za N dni" within 14 days and "Ważna do dd.mm.rrrr" farther out, so
+ * the caption adds only the half the badge leaves out and repeats nothing:
+ * the last sign-up day when the badge counts days ("Ostatni dzień zapisów:
+ * 13.10.2026"), the days left when the badge shows the date ("Zostało 20 dni").
+ * Same days as the badge (daysUntil). Null without a usable date.
+ */
 export function deadlineCaption(endDate: Date | string | null | undefined, now: Date): string | null {
-  const days = daysUntil(endDate, now);
-  if (days === null) return null;
-  const date = formatDatePL(endDate as Date | string, "numeric");
-  if (days < 0) return `Zakończona ${date}`;
-  if (days === 0) return `Ostatni dzień zapisów: dziś (${date})`;
-  const verb = pluralizePl(days, "Został", "Zostały", "Zostało");
-  const noun = pluralizePl(days, "dzień", "dni", "dni");
-  return `${verb} ${days} ${noun} (do ${date})`;
+  const info = deadlineState(endDate, now);
+  if (info.state === "unknown" || info.days === null) return null;
+  if (info.state === "ended") return `Zakończona ${info.dateText}`;
+  if (info.state === "soon" || info.state === "urgent") return `Ostatni dzień zapisów: ${info.dateText}`;
+  const verb = pluralizePl(info.days, "Został", "Zostały", "Zostało");
+  const noun = pluralizePl(info.days, "dzień", "dni", "dni");
+  return `${verb} ${info.days} ${noun}`;
 }
 
 const PROMOTIONS = (n: number) => pluralizePl(n, "promocję", "promocje", "promocji");
@@ -94,7 +101,7 @@ export const ENDING_SOON_SECTIONS: readonly EditorialSection[] = [
 
 export const ENDING_SOON_FAQ: readonly SeoFaqItem[] = [
   {
-    question: "Co znaczy „zostało N dni”?",
+    question: "Jak liczymy dni do końca promocji?",
     answer:
       "To liczba dni kalendarzowych, według czasu polskiego, od dziś do ostatniego dnia zapisów podanego w ofercie. W ostatnim dniu zapisów można jeszcze skorzystać z promocji."
   },

@@ -8,11 +8,13 @@ import {
   ENDING_SOON_DAYS,
   FEATURED_COUNT,
   buildHomeModel,
+  hubSeeAllLabel,
   latestVerification,
   pickEffortExamples,
   pickEndingSoon,
   readHomeModel
 } from "../src/components/home/homeModel";
+import { isRouteLive } from "../src/lib/seo/routes";
 import type { PromotionCardData } from "../src/lib/services/promotionCards";
 
 // 2026-10-10 12:00 in Warsaw is 10:00 UTC. endDate = last sign-up day at 00:00 UTC.
@@ -73,27 +75,84 @@ test("model: segments keep the pool's order and show the first three of each", (
   assert.equal(model.defaultSegment, "PERSONAL");
 });
 
-test("model: with both segments the links lead to the segment's list and carry its count", () => {
-  const pool = [card("p1"), card("p2"), card("b1", { accountType: "BUSINESS" }), card("s1", { accountType: "SAVINGS" })];
-  const model = buildHomeModel(pool, NOW);
+test("model: with both segments the links lead to the segment's list and carry its count (Osobiste = every non-business type)", () => {
+  const pool = [
+    card("p1"),
+    card("p2"),
+    card("b1", { accountType: "BUSINESS" }),
+    card("s1", { accountType: "SAVINGS" }),
+    card("y1", { accountType: "YOUNG" })
+  ];
+  const model = buildHomeModel(pool, NOW, () => false);
   const personal = model.segments.find((s) => s.value === "PERSONAL")!;
   const business = model.segments.find((s) => s.value === "BUSINESS")!;
   assert.equal(personal.href, "/promocje?accountType=PERSONAL");
-  assert.equal(personal.count, 2);
+  assert.equal(personal.count, 4, "PERSONAL + SAVINGS + YOUNG, as on the /promocje tab");
+  assert.equal(personal.total, 4);
+  assert.deepEqual(slugs(personal.featured), ["p1", "p2", "s1"], "a savings or a youth account is a personal offer on the home page too");
   assert.equal(business.href, "/promocje?accountType=BUSINESS");
   assert.equal(business.count, 1);
+  assert.equal(personal.total + business.total, model.total, "the two segments add up to every offer");
 });
 
 test("model: one segment only = nothing to choose, the links lead to the whole list and count all of it", () => {
-  const pool = [card("b1", { accountType: "BUSINESS" }), card("b2", { accountType: "BUSINESS" }), card("s1", { accountType: "SAVINGS" })];
-  const model = buildHomeModel(pool, NOW);
+  const pool = [card("b1", { accountType: "BUSINESS" }), card("b2", { accountType: "BUSINESS" })];
+  const model = buildHomeModel(pool, NOW, () => false);
   assert.deepEqual(
     model.segments.map((s) => s.value),
     ["BUSINESS"]
   );
   assert.equal(model.defaultSegment, "BUSINESS", "business is the default when there are no personal offers");
   assert.equal(model.segments[0]!.href, "/promocje");
-  assert.equal(model.segments[0]!.count, 3);
+  assert.equal(model.segments[0]!.count, 2);
+  assert.deepEqual(model.segments[0]!.seeAll, { href: "/promocje", label: "Zobacz wszystkie (2)" });
+
+  // A youth account alone is a personal offer: the home page then has a Osobiste segment, not "a segment missing".
+  const young = buildHomeModel([card("y1", { accountType: "YOUNG" })], NOW, () => false);
+  assert.deepEqual(young.segments.map((s) => s.value), ["PERSONAL"]);
+  assert.equal(young.defaultSegment, "PERSONAL");
+});
+
+test("model: 'Zobacz wszystkie' leads to the segment's hub while the hub is live, with the hub's own number", () => {
+  const pool = [
+    card("p1"),
+    card("p2"),
+    card("y1", { accountType: "YOUNG" }),
+    card("b1", { accountType: "BUSINESS" }),
+    card("b2", { accountType: "BUSINESS" })
+  ];
+  const live = buildHomeModel(pool, NOW, () => true);
+  const personal = live.segments.find((s) => s.value === "PERSONAL")!;
+  const business = live.segments.find((s) => s.value === "BUSINESS")!;
+  assert.deepEqual(personal.seeAll, { href: "/konta-osobiste-z-premia", label: "Wszystkie konta osobiste z premią (3)" });
+  assert.deepEqual(business.seeAll, { href: "/konta-firmowe-z-premia", label: "Wszystkie konta firmowe z premią (2)" });
+  // The list link of the hero button is unchanged (the filtered list), only the link under "Polecane" moves to the hub.
+  assert.equal(personal.href, "/promocje?accountType=PERSONAL");
+  assert.equal(business.href, "/promocje?accountType=BUSINESS");
+  assert.equal(personal.count, 3);
+
+  // The default liveness is the route registry: today both hubs are live.
+  assert.equal(isRouteLive("/konta-osobiste-z-premia") && isRouteLive("/konta-firmowe-z-premia"), true);
+  const byDefault = buildHomeModel(pool, NOW);
+  assert.equal(byDefault.segments.find((s) => s.value === "PERSONAL")!.seeAll.href, "/konta-osobiste-z-premia");
+  assert.equal(byDefault.segments.find((s) => s.value === "BUSINESS")!.seeAll.href, "/konta-firmowe-z-premia");
+
+  // Only the page that is live is linked: with the business hub off, that segment keeps the link with the parameter.
+  const half = buildHomeModel(pool, NOW, (path) => path === "/konta-osobiste-z-premia");
+  assert.equal(half.segments.find((s) => s.value === "PERSONAL")!.seeAll.href, "/konta-osobiste-z-premia");
+  assert.deepEqual(half.segments.find((s) => s.value === "BUSINESS")!.seeAll, {
+    href: "/promocje?accountType=BUSINESS",
+    label: "Zobacz wszystkie (2)"
+  });
+
+  // The anchor of the link to a hub: "Wszystkie {name of the hub in lower case} (N)".
+  assert.equal(hubSeeAllLabel("personal", 16), "Wszystkie konta osobiste z premią (16)");
+  assert.equal(hubSeeAllLabel("business", 7), "Wszystkie konta firmowe z premią (7)");
+});
+
+test("model: a single live segment still links to its own hub (the hub lists exactly that segment)", () => {
+  const model = buildHomeModel([card("b1", { accountType: "BUSINESS" }), card("b2", { accountType: "BUSINESS" })], NOW, () => true);
+  assert.deepEqual(model.segments[0]!.seeAll, { href: "/konta-firmowe-z-premia", label: "Wszystkie konta firmowe z premią (2)" });
 });
 
 test("model: an empty pool gives an empty, honest model (no segments, no date, no examples)", () => {
@@ -209,6 +268,15 @@ test("effort examples: personal accounts are compared with each other; business 
   assert.deepEqual(slugs(pickEffortExamples(businessOnly)), ["b1", "b2"]);
 });
 
+test("effort examples: every non-business account counts as personal (a youth account is compared with the others)", () => {
+  const pool = [
+    card("p-easy", { difficulty: "EASY", maxBonusCents: 10_000 }),
+    card("y-hard", { accountType: "YOUNG", difficulty: "HARD", maxBonusCents: 10_000 }),
+    card("b-very-easy", { accountType: "BUSINESS", difficulty: "VERY_EASY", maxBonusCents: 900_000 })
+  ];
+  assert.deepEqual(slugs(pickEffortExamples(pool)), ["p-easy", "y-hard"]);
+});
+
 test("effort examples: the result does not depend on the order of the pool", () => {
   const pool = [
     card("a", { difficulty: "EASY", maxBonusCents: 20_000, rating: 9 }),
@@ -234,6 +302,11 @@ test("readHomeModel: a database failure gives null (the page renders its static 
   );
   assert.equal(model, null);
   assert.deepEqual(errors, [failure]);
+});
+
+test("readHomeModel passes the liveness check on to the model", async () => {
+  const model = await readHomeModel(async () => [card("p1")], NOW, undefined, () => false);
+  assert.deepEqual(model?.segments[0]?.seeAll, { href: "/promocje", label: "Zobacz wszystkie (1)" });
 });
 
 test("readHomeModel: a working read builds the model from one call", async () => {

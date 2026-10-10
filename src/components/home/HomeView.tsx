@@ -45,7 +45,8 @@ export function HomeView({
     value: segment.value,
     label: segment.label,
     href: segment.href,
-    count: segment.count
+    count: segment.count,
+    seeAll: segment.seeAll
   }));
 
   return (

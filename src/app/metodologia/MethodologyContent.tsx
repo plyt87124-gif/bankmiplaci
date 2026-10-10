@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ACCOUNT_TYPE_LABEL, formatDatePL, formatPLN, pluralizePl } from "@/lib/format";
-import { RATING_COMMISSION_RULE, RATING_NOTE } from "@/lib/disclosureCopy";
+import { LATEST_VERIFICATION_LABEL, RATING_COMMISSION_RULE, RATING_NOTE } from "@/lib/disclosureCopy";
 import { AGING_MAX_DAYS, FRESH_MAX_DAYS, STALE_SUFFIX } from "@/lib/freshness";
 import { Callout, TextPage, type TocEntry } from "../jak-to-dziala/TextPage";
 import type { MethodologyData, RatingExample } from "./loadMethodologyData";
@@ -163,7 +163,7 @@ function ExampleBlock({ example }: { example: RatingExample }) {
 
 export function MethodologyContent({ data }: { data: MethodologyData }) {
   const { example, ratingStats, latestVerifiedAt } = data;
-  const latestVerified = latestVerifiedAt ? formatDatePL(latestVerifiedAt) : "";
+  const latestVerified = latestVerifiedAt ? formatDatePL(latestVerifiedAt, "short") : "";
 
   const toc: TocEntry[] = [
     { id: "czym-jest-ocena", label: "Czym jest ocena serwisu" },
@@ -183,7 +183,7 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
       title="Jak liczymy ocenę serwisu"
       lead={
         <p>
-          Za pomocą oceny serwisu porównujemy aktualne promocje – liczymy ją sami, według jawnych zasad opisanych niżej.{" "}
+          Ocenę serwisu liczymy sami, według jawnych zasad opisanych niżej. Służy do porównania aktualnych promocji.{" "}
           {RATING_NOTE} {RATING_COMMISSION_RULE}
         </p>
       }
@@ -195,7 +195,7 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
       <p>
         To liczba od {num1.format(RATING_FLOOR)} do 10 (np. 9,4/10) przy każdej ofercie. Nie jest niezależną ani obiektywną oceną banku,
         jego obsługi czy produktów – dotyczy wyłącznie tego, jak dana promocja wypada na tle innych aktualnych promocji w
-        serwisie. Liczymy ją automatycznie, według opisanych niżej zasad.
+        serwisie. Zwykle liczymy ją automatycznie, według opisanych niżej zasad.
       </p>
       <p>
         Oferty porównujemy z innymi aktualnymi ofertami <strong>tego samego typu konta</strong> (np. osobiste i firmowe
@@ -342,8 +342,10 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
       <p>
         Data przy napisie „Zweryfikowano” to data zapisana przy ofercie, gdy ostatnio porównaliśmy jej warunki ze
         źródłem, czyli z regulaminem banku.{" "}
-        {latestVerified ? `Najnowsza taka data wśród aktualnych ofert to ${latestVerified}. ` : ""}Nie oznacza ona, że bank
-        nie zmienił warunków po tym dniu, i nie ogłaszamy stałego harmonogramu weryfikacji.
+        {latestVerified
+          ? `Najnowsza z tych dat wśród aktualnych ofert to ${latestVerified}; pokazujemy ją jako „${LATEST_VERIFICATION_LABEL}” w stopce i nad listami ofert, ale nie znaczy to, że wszystkie oferty sprawdzono tego dnia – każda ma własną datę. `
+          : ""}
+        Data nie oznacza, że bank nie zmienił warunków po tym dniu. Nie ogłaszamy stałego harmonogramu weryfikacji.
       </p>
       <p>
         Wygląd znacznika zależy od wieku daty: gdy weryfikacja ma do {FRESH_MAX_DAYS} dni, ikona tarczy jest wyróżniona

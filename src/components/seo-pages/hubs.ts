@@ -5,13 +5,16 @@
  * No React, no database - the page, the component and the tests share it.
  *
  * Which offers: only BUSINESS accounts are "firmowe"; PERSONAL, SAVINGS, YOUNG
- * and JOINT are "osobiste" (the same rule as /porownaj and as the sitemap's
- * lastmod of the personal hub). The list keeps the order it was given: the
- * hub always shows the default "Polecane" order, so the disclosure strip above
- * it is the "recommended" one. Filtering a list that is already in that order
+ * and JOINT are "osobiste" - the one definition in src/lib/accountTypes.ts,
+ * shared with the /promocje tabs and their counters, the home segments,
+ * /porownaj and the quiz (the sitemap's lastmod of the personal hub applies the
+ * same rule), so the number of a hub is the number of its tab. The list keeps
+ * the order it was given: the hub always shows the default "Polecane" order,
+ * so the disclosure strip above it is the "recommended" one. Filtering a list that is already in that order
  * keeps the order right: an offer's "Polecane" score only depends on the
  * offers of its own account type.
  */
+import { segmentOf } from "@/lib/accountTypes";
 import { pluralizePl } from "@/lib/format";
 import type { HubKind } from "@/lib/seo";
 import {
@@ -44,7 +47,7 @@ export const HUBS: Record<HubKind, HubConfig> = {
 
 /** Which hub an account type (Prisma AccountType) belongs to. */
 export function hubKindOf(accountType: string): HubKind {
-  return accountType === "BUSINESS" ? "business" : "personal";
+  return segmentOf(accountType) === "BUSINESS" ? "business" : "personal";
 }
 
 /** The offers of one hub, in the order given. */

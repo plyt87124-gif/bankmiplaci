@@ -8,6 +8,7 @@ import { remainingText } from "@/components/promocje/listing";
 import { TrustNote } from "@/components/trust/TrustNote";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ButtonLink } from "@/components/ui/Button";
+import { LATEST_VERIFICATION_LABEL } from "@/lib/disclosureCopy";
 import { formatDatePL } from "@/lib/format";
 import { breadcrumbLd, faqLd, hubHeading, isoDatePL, itemListLd, promotionHeading, type HubKind } from "@/lib/seo";
 import { EmptyOffers } from "./EmptyOffers";
@@ -27,7 +28,7 @@ import {
  * /konta-osobiste-z-premia and /konta-firmowe-z-premia
  * (docs/redesign-v2/02-layout-spec.md "Nowe strony SEO", 03-content-and-seo-plan.md section E).
  *
- *   breadcrumbs -> H1 (from the SEO library) -> lead -> "Dane zaktualizowano" ->
+ *   breadcrumbs -> H1 (from the SEO library) -> lead -> "Najnowsza weryfikacja oferty" ->
  *   list: disclosure strip ("Polecane", the order of the list) + cards ->
  *   scope note -> editorial block -> FAQ -> "Zobacz także".
  *
@@ -73,8 +74,8 @@ export function HubPage({ kind, cards }: { kind: HubKind; cards: readonly Promot
       <p className="type-lead mt-3 max-w-2xl text-ink-700">{hubLead(kind, total)}</p>
       {verified ? (
         <p className="mt-2 text-small text-ink-500">
-          Dane zaktualizowano:{" "}
-          <time dateTime={isoDatePL(verified) ?? undefined}>{formatDatePL(verified, "numeric")}</time>
+          {LATEST_VERIFICATION_LABEL}:{" "}
+          <time dateTime={isoDatePL(verified) ?? undefined}>{formatDatePL(verified, "short")}</time>
         </p>
       ) : null}
 

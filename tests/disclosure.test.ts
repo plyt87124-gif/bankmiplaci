@@ -5,6 +5,7 @@ import {
   COMPACT,
   DISCLOSURE_LINKS,
   FOOTER,
+  LATEST_VERIFICATION_LABEL,
   MARKET_SCOPE_NOTE,
   NOT_BANK_NOTE,
   SORT_RECOMMENDED_LABEL,
@@ -77,11 +78,25 @@ test("footer disclosure replaces the old 'not an official partner' claim", () =>
     text,
     "Bankmiplaci nie jest bankiem ani oficjalnym przedstawicielem banków. " +
       "Część linków to linki partnerskie – za otwarcie konta przez nasz link możemy otrzymać wynagrodzenie od banku lub sieci partnerskiej. " +
-      "Nie zmienia to warunków oferty ani naszej oceny. " +
+      "Co do zasady nie zmienia to warunków oferty ani naszej oceny; jeśli promocja wymaga otwarcia konta przez link lub kod, sprawdź to w jej warunkach i w regulaminie banku. " +
+      "Wynagrodzenie wpływa na kolejność „Polecane” (opisujemy to w „Jak zarabiamy”). " +
       "Nazwy i logotypy banków należą do ich właścicieli i służą wyłącznie identyfikacji oferty. " +
       "Nie porównujemy całego rynku. Nie jest to doradztwo finansowe. Jak zarabiamy"
   );
   assert.ok(!/oficjalnym partnerem/i.test(text));
+});
+
+test("footer does not claim that the remuneration changes nothing: promotions can require a link or code, and 'Polecane' is affected", () => {
+  const text = disclosureText(FOOTER);
+  assert.ok(!text.includes("Nie zmienia to warunków oferty ani naszej oceny."), "the unconditional sentence is gone");
+  assert.ok(text.includes("Co do zasady nie zmienia to warunków oferty ani naszej oceny;"));
+  assert.ok(text.includes("jeśli promocja wymaga otwarcia konta przez link lub kod, sprawdź to w jej warunkach i w regulaminie banku"));
+  assert.ok(text.includes("Wynagrodzenie wpływa na kolejność „Polecane”"), "says what the strip says: remuneration acts on 'Polecane'");
+  assert.ok(!/nie płacisz więcej/i.test(text));
+});
+
+test("one name for the date of the newest verification, everywhere", () => {
+  assert.equal(LATEST_VERIFICATION_LABEL, "Najnowsza weryfikacja oferty");
 });
 
 test("standing notes", () => {

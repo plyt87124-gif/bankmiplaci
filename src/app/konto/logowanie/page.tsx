@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { AuthCard } from "./AuthCard";
 import { LoginPageForm } from "./LoginPageForm";
-import { firstParam } from "./authFlow";
+import { ACCOUNT_BENEFITS, firstParam } from "./authFlow";
 
 // Indexing is already blocked for the whole /konto tree (konto/layout.tsx).
-export const metadata: Metadata = { title: "Logowanie" };
+export const metadata: Metadata = { title: "Zaloguj się" };
 
 export default async function LoginPage({
   searchParams
@@ -14,7 +14,7 @@ export default async function LoginPage({
   const { redirect } = await searchParams;
 
   return (
-    <AuthCard title="Zaloguj się" intro="Zaloguj się, aby komentować promocje i zapisywać swoją historię bankową.">
+    <AuthCard title="Zaloguj się" intro={ACCOUNT_BENEFITS}>
       <LoginPageForm redirect={firstParam(redirect)} />
     </AuthCard>
   );

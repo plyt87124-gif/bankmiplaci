@@ -61,3 +61,10 @@ test("stripPrivateFields removes the partner commission and keeps the rest", () 
   assert.deepEqual(out, { id: "x", name: "Promocja" });
   assert.equal("affiliateCommissionCents" in out, false);
 });
+
+test("ties are broken by slug, so an identical pair keeps one order whatever order the database returns", () => {
+  const a = { slug: "alior-a", accountType: "PERSONAL", rating: 8.9, maxBonusCents: 80_000 };
+  const b = { slug: "alior-b", accountType: "PERSONAL", rating: 8.9, maxBonusCents: 80_000 };
+  assert.deepEqual(sortRecommended([b, a]).map((x) => x.slug), ["alior-a", "alior-b"]);
+  assert.deepEqual(sortRecommended([a, b]).map((x) => x.slug), ["alior-a", "alior-b"]);
+});

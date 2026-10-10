@@ -23,7 +23,7 @@ import {
 /**
  * /promocje/konczace-sie - current offers whose last sign-up day is within 30
  * days, grouped by 7 / 14 / 30 days (headings only for non-empty groups), with
- * "Zostało N dni (do dd.mm.rrrr)" under each card, counted by the same
+ * a caption under each card (last day or days left, whichever the badge does not say), counted by the same
  * function as the card's deadline badge.
  *
  * The list is ordered by deadline (service: soonest first, then rating), so the

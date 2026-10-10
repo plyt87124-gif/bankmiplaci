@@ -19,6 +19,7 @@ import {
   bankDescriptionParagraphs,
   bankFaq,
   bankIndexLead,
+  bankSummary,
   endedOfferHref,
   endedOffersNote,
   endedOffersOf,
@@ -226,10 +227,16 @@ test("sortBanks: alphabetical with Polish collation, case-insensitive, a copy", 
   assert.equal(input[0]!.name, "Żubr Bank", "input untouched");
 });
 
-test("bankIndexLead: counts go through the plural rule", () => {
-  assert.match(bankIndexLead(1), /1 bank\./);
-  assert.match(bankIndexLead(2), /2 banki\./);
-  assert.match(bankIndexLead(5), /5 banków\./);
+test("bankIndexLead: the count goes through the plural rule of the genitive; one sentence about the pages", () => {
+  assert.equal(
+    bankIndexLead(11),
+    "Analizujemy promocje 11 banków. Przy każdym widzisz liczbę aktualnych ofert, a na stronie banku znajdziesz też promocje zakończone."
+  );
+  assert.match(bankIndexLead(1), /^Analizujemy promocje 1 banku\./);
+  assert.match(bankIndexLead(2), /^Analizujemy promocje 2 banków\./);
+  assert.match(bankIndexLead(5), /^Analizujemy promocje 5 banków\./);
+  assert.match(bankIndexLead(22), /^Analizujemy promocje 22 banków\./);
+  assert.doesNotMatch(bankIndexLead(3), /których/);
   assert.match(bankIndexLead(0), /Na razie nie mamy banków/);
 });
 
@@ -245,20 +252,82 @@ test("bankFaq: computed from the current offers; nothing for a bank without them
   assert.equal(faq[0]!.question, "Jakie promocje ma teraz Bank Testowy?");
   assert.equal(
     faq[0]!.answer,
-    "W serwisie mamy teraz 3 aktualne promocje w ofercie: Bank Testowy, w tym 2 dla osób fizycznych i 1 dla firm. Najwyższa premia w tych ofertach to do 4000 zł. Warunki, terminy i opłaty różnią się między ofertami, dlatego sprawdź każdą z nich."
+    "Bank Testowy ma w serwisie 3 aktualne promocje: 2 dla osób fizycznych i 1 dla firm. Najwyższa premia to do 4000 zł. Warunki, terminy i opłaty różnią się między ofertami, dlatego sprawdź każdą z nich."
   );
-  assert.equal(faq[1]!.question, "Do kiedy trwają te promocje (Bank Testowy)?");
+  assert.equal(faq[1]!.question, "Do kiedy trwają promocje – Bank Testowy?");
   assert.match(faq[1]!.answer, /^Najbliższy termin zapisów mija 13\.10\.2026, a najdalszy 31\.12\.2026\. Bank może zakończyć promocję wcześniej/);
 });
 
-test("bankFaq: one offer, one deadline, no bonus - plain forms, no invented amount", () => {
+test("bankFaq: the count agrees with the noun (2-4 'aktualne promocje', 5+ 'aktualnych promocji', 22 'aktualne')", () => {
+  const cards = (n: number, accountType = "PERSONAL") =>
+    Array.from({ length: n }, () => ({ accountType, maxBonusCents: 10_000, endDate: day("2026-12-31") }));
+  assert.match(bankFaq("Alior Bank", cards(2))[0]!.answer, /^Alior Bank ma w serwisie 2 aktualne promocje, wszystkie dla osób fizycznych\. /);
+  assert.match(bankFaq("Alior Bank", cards(5))[0]!.answer, /^Alior Bank ma w serwisie 5 aktualnych promocji, wszystkie dla osób fizycznych\. /);
+  assert.match(bankFaq("Alior Bank", cards(12))[0]!.answer, /^Alior Bank ma w serwisie 12 aktualnych promocji, /);
+  assert.match(bankFaq("Alior Bank", cards(22, "BUSINESS"))[0]!.answer, /^Alior Bank ma w serwisie 22 aktualne promocje, wszystkie dla firm\. /);
+  // the name stays the subject in the nominative: no "w ofercie: Bank" template, no bank name in parentheses
+  for (const n of [1, 2, 5]) {
+    const [available, until] = bankFaq("Alior Bank", cards(n));
+    assert.doesNotMatch(available!.answer, /w ofercie:|\(Alior Bank\)/);
+    assert.doesNotMatch(until!.question, /\(Alior Bank\)|te promocje/);
+    assert.equal(until!.question, "Do kiedy trwają promocje – Alior Bank?");
+  }
+});
+
+test("bankFaq: one offer, one deadline, no bonus - singular only, no invented amount", () => {
   const [available, until] = bankFaq("Bank Testowy", [{ accountType: "BUSINESS", maxBonusCents: 0, endDate: day("2026-11-30") }]);
-  assert.equal(
-    available!.answer,
-    "W serwisie mamy teraz 1 aktualną promocję w ofercie: Bank Testowy (dla firm). Warunki, terminy i opłaty różnią się między ofertami, dlatego sprawdź każdą z nich."
-  );
+  assert.equal(available!.answer, "Bank Testowy ma w serwisie 1 aktualną promocję (dla firm). Sprawdź jej warunki, termin i opłaty.");
   assert.doesNotMatch(available!.answer, /premia|0 zł/);
   assert.match(until!.answer, /^Termin zapisów mija 30\.11\.2026\./);
+});
+
+test("bankFaq: one offer with a bonus reads 'premia do ...' and nothing in the plural", () => {
+  const [available] = bankFaq("Alior Bank", [{ accountType: "PERSONAL", maxBonusCents: 80_000, endDate: day("2026-11-30") }]);
+  assert.equal(available!.answer, "Alior Bank ma w serwisie 1 aktualną promocję (dla osób fizycznych): premia do 800 zł. Sprawdź jej warunki, termin i opłaty.");
+  assert.doesNotMatch(available!.answer, /promocje|promocji|ofertami|każdą|Najwyższa/);
+});
+
+test("bankFaq: several offers with the same last day say so once", () => {
+  const two = [
+    { accountType: "PERSONAL", maxBonusCents: 10_000, endDate: day("2026-12-31") },
+    { accountType: "PERSONAL", maxBonusCents: 20_000, endDate: day("2026-12-31") }
+  ];
+  assert.match(bankFaq("Bank Testowy", two)[1]!.answer, /^Termin zapisów na wszystkie aktualne promocje mija 31\.12\.2026\./);
+});
+
+test("bankSummary: made only of the data - kinds of accounts, bonus range, deadline range, newest check", () => {
+  const verified = (iso: string) => new Date(iso);
+  assert.equal(bankSummary([]), null);
+  assert.equal(
+    bankSummary([{ accountType: "PERSONAL", maxBonusCents: 80_000, endDate: day("2026-10-13"), lastVerifiedAt: verified("2026-10-07T10:00:00Z") }]),
+    "Aktualna oferta dotyczy konta osobistego. Premia do 800 zł. Termin zapisów mija 13.10.2026. Najnowsza weryfikacja oferty: 7 paź 2026."
+  );
+  assert.equal(
+    bankSummary([
+      { accountType: "PERSONAL", maxBonusCents: 30_000, endDate: day("2026-10-13"), lastVerifiedAt: verified("2026-10-05T10:00:00Z") },
+      { accountType: "BUSINESS", maxBonusCents: 120_000, endDate: day("2026-12-31"), lastVerifiedAt: verified("2026-10-08T10:00:00Z") }
+    ]),
+    "Aktualne oferty dotyczą kont osobistych i kont firmowych. Maksymalne kwoty premii: od 300 zł do 1200 zł. Terminy zapisów mijają od 13.10.2026 do 31.12.2026. Najnowsza weryfikacja oferty: 8 paź 2026."
+  );
+});
+
+test("bankSummary: leaves out what the data lacks - no zero bonus, no bad date, no guesses", () => {
+  const out = bankSummary([
+    { accountType: "SAVINGS", maxBonusCents: 0, endDate: "garbage", lastVerifiedAt: null },
+    { accountType: "SAVINGS", maxBonusCents: 0, endDate: "garbage", lastVerifiedAt: undefined }
+  ]);
+  assert.equal(out, "Aktualne oferty dotyczą kont oszczędnościowych.");
+  assert.doesNotMatch(out!, /0 zł|premi|termin|weryfikac/i);
+  // an unknown type is simply not named
+  assert.equal(bankSummary([{ accountType: "X", maxBonusCents: 0, endDate: "garbage", lastVerifiedAt: null }]), null);
+});
+
+test("bankSummary: three kinds of accounts are listed with commas and 'i'", () => {
+  const card = (accountType: string) => ({ accountType, maxBonusCents: 0, endDate: "garbage", lastVerifiedAt: null });
+  assert.equal(
+    bankSummary([card("PERSONAL"), card("YOUNG"), card("BUSINESS")]),
+    "Aktualne oferty dotyczą kont osobistych, kont dla młodych i kont firmowych."
+  );
 });
 
 /* ------------------------------------------------------------------ */
@@ -287,6 +356,25 @@ test("bank page with current offers: H1, logo, strip above the cards, cards, FAQ
   assert.equal((out.match(/<details /g) ?? []).length, 2, "two data-based questions");
   assert.match(text(out), /Najczęstsze pytania o promocje: Bank Testowy/);
   assert.match(out, /data-trust-note="scope"/);
+});
+
+test("bank page: a summary paragraph of the data sits under the lead; none without current offers", () => {
+  const cards = [card(1), card(2, { accountType: "BUSINESS", maxBonusCents: 400_000, lastVerifiedAt: new Date("2026-10-08T10:00:00Z") })];
+  const out = renderBank({ cards });
+  assert.match(
+    text(out),
+    /Bank Testowy: 2 aktualne promocje\. Sprawdź kwotę premii, trudność, koszt konta i termin zapisów każdej z nich\. Aktualne oferty dotyczą kont osobistych i kont firmowych\. Maksymalne kwoty premii: od 500 zł do 4000 zł\. Termin zapisów mija 30\.06\.2099\. Najnowsza weryfikacja oferty: 8 paź 2026\./
+  );
+  const none = renderBank({ cards: [], offers: [row("x", "EXPIRED", "2026-09-01")] });
+  assert.doesNotMatch(text(none), /Najnowsza weryfikacja oferty|Aktualne oferty dotyczą|Aktualna oferta dotyczy/);
+});
+
+test("bank page with one offer: the FAQ and the summary stay in the singular", () => {
+  const out = renderBank({ cards: [card(1)] });
+  const visible = text(out);
+  assert.match(visible, /Bank Testowy ma w serwisie 1 aktualną promocję \(dla osób fizycznych\): premia do 500 zł\./);
+  assert.match(visible, /Do kiedy trwają promocje – Bank Testowy\?/);
+  assert.match(visible, /Aktualna oferta dotyczy konta osobistego\. Premia do 500 zł\. Termin zapisów mija 30\.06\.2099\. Najnowsza weryfikacja oferty: 6 paź 2026\./);
 });
 
 test("bank page: Bank.description is shown only when it is not blank, and as text", () => {
@@ -396,7 +484,7 @@ test("/banki: banks in the given (alphabetical) order, each with its count and a
   const out = renderToStaticMarkup(h(BankIndexPage, { banks: INDEX }));
   assert.equal((out.match(/<h1[ >]/g) ?? []).length, 1);
   assert.match(out, /<h1[^>]*>Banki z promocjami<\/h1>/);
-  assert.match(text(out), /Banki, których promocje analizujemy: 3 banki\./);
+  assert.match(text(out), /Analizujemy promocje 3 banków\. Przy każdym widzisz liczbę aktualnych ofert, a na stronie banku znajdziesz też promocje zakończone\./);
 
   const links = [...out.matchAll(/href="(\/banki\/[a-z0-9-]+)"/g)].map((m) => m[1]);
   assert.deepEqual(links, ["/banki/alior", "/banki/nest", "/banki/pko"]);

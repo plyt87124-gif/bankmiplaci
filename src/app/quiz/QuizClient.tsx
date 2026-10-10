@@ -15,8 +15,13 @@ import {
   QUIZ_QUESTION_COUNT,
   buildCompareHref,
   explainMatch,
+  isFullMatch,
   matchOffers,
+  noFullMatch,
   parseAnswers,
+  QUIZ_NO_FULL_MATCH_NOTICE,
+  QUIZ_RESULT_TITLE_CLOSEST,
+  QUIZ_RESULT_TITLE_FULL,
   type QuizDraft,
   type QuizMatch,
   type QuizOffer
@@ -168,7 +173,7 @@ export function QuizClient({ offers }: { offers: QuizOffer[] }) {
 /* Result                                                              */
 /* ------------------------------------------------------------------ */
 
-function QuizResult({
+export function QuizResult({
   matches,
   audience,
   titleRef,
@@ -184,7 +189,7 @@ function QuizResult({
   return (
     <section aria-labelledby="quiz-result-title">
       <h2 id="quiz-result-title" ref={titleRef} tabIndex={-1} className="focus:outline-none">
-        Twoje dopasowane promocje
+        {isFullMatch(matches) ? QUIZ_RESULT_TITLE_FULL : QUIZ_RESULT_TITLE_CLOSEST}
       </h2>
 
       {matches.length === 0 ? (
@@ -200,6 +205,11 @@ function QuizResult({
         </div>
       ) : (
         <>
+          {noFullMatch(matches) ? (
+            <p role="status" className="mt-3 rounded-card border border-line bg-sunken p-4 text-ui font-semibold text-ink-900">
+              {QUIZ_NO_FULL_MATCH_NOTICE}
+            </p>
+          ) : null}
           <p className="mt-3 text-ui text-ink-700">
             Ułożyliśmy oferty według Twoich odpowiedzi. Kolejność nie zależy od prowizji, którą możemy otrzymać od banku.
           </p>

@@ -15,6 +15,7 @@ import {
   activeCountText,
   bankDescriptionParagraphs,
   bankFaq,
+  bankSummary,
   endedOfferHref,
   endedOffersNote,
   endedOffersOf,
@@ -28,7 +29,8 @@ import { COMMON_RELATED_LINKS } from "./shared";
 /**
  * /banki/[slug] - the permanent page of one bank (200 after its offers end).
  *
- *   breadcrumbs -> logo + H1 -> lead (+ Bank.description when it is not blank) ->
+ *   breadcrumbs -> logo + H1 -> lead -> a summary of the current offers made of the
+ *   data (kinds of accounts, bonus and deadline ranges, last check) (+ Bank.description when it is not blank) ->
  *   "Aktualne promocje": disclosure strip + cards, or "Brak aktualnych promocji" ->
  *   "Zakończone promocje banku" (facts from the database: name, type, last day;
  *   a link only while the offer page is indexable) -> FAQ made of the bank's
@@ -53,6 +55,7 @@ export function BankPage({
   const ended = endedOffersOf(offers, now);
   const endedNote = endedOffersNote(ended);
   const faq = bankFaq(bank.name, cards);
+  const summary = bankSummary(cards);
   const about = bankDescriptionParagraphs(bank.description);
   const path = `/banki/${bank.slug}`;
 
@@ -89,6 +92,7 @@ export function BankPage({
               ? `${bank.name}: brak aktualnych promocji. Poniżej znajdziesz zakończone promocje tego banku.`
               : `${bank.name}: brak aktualnych promocji. Sprawdź promocje innych banków.`}
         </p>
+        {summary ? <p className="mt-3 max-w-2xl text-ui text-ink-700">{summary}</p> : null}
         {about.length > 0 ? (
           <div className="mt-4 max-w-2xl space-y-3 text-ui text-ink-700">
             {about.map((paragraph) => (

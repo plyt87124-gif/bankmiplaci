@@ -10,6 +10,7 @@
  * rating mirrors lib/disclosureCopy.ts and services/ratings.ts.
  */
 import { DISCLOSURE_LINKS } from "@/lib/disclosureCopy";
+import { KARENCJA_DEFINITION } from "@/lib/glossary";
 import { ratingExplainerHref } from "@/components/promocje/cardCopy";
 
 export interface EditorialSection {
@@ -66,7 +67,7 @@ export const LISTING_FAQ: readonly FaqEntry[] = [
   {
     question: "Co to jest karencja?",
     answer:
-      "Karencja to okres, w którym bank nie uznaje Cię za nowego klienta, na przykład po zamknięciu konta albo po poprzedniej promocji. Dopiero po jego upływie możesz ponownie skorzystać z promocji dla nowych klientów. Długość karencji podaje regulamin promocji."
+      `${KARENCJA_DEFINITION} Dopiero po jej upływie możesz ponownie skorzystać z promocji dla nowych klientów.`
   },
   {
     question: "Kiedy bank wypłaca premię?",

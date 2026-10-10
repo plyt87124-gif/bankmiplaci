@@ -228,7 +228,9 @@ test("zapis w ściądze: etykieta pola daty (htmlFor), przycisk z dopiskiem „w
   const input = /<input[^>]*type="date"[^>]*>/.exec(out)![0];
   const id = /id="([^"]+)"/.exec(input)![1];
   assert.ok(out.includes(`for="${id}"`));
-  assert.match(out, />Kiedy otworzyłeś\/aś konto\?<\/label>/);
+  assert.match(out, />Kiedy konto zostało otwarte\?<\/label>/);
+  assert.match(out, /Czy konto zostało już otwarte\?/);
+  assert.doesNotMatch(out, /\/aś|mógł\/mogła/);
   assert.match(out, /Zapisz w ściądze \(wymaga konta\)<\/button>/);
   assert.doesNotMatch(out, FORBIDDEN);
 });
@@ -246,7 +248,8 @@ test("zapis w ściądze: stan „Dodano do ściągi” z linkiem do /konto, stan
   assert.match(joined, /<a[^>]*href="\/konto"[^>]*>Otwórz ściągę/);
   assert.doesNotMatch(joined, /<input/);
   const locked = join({ locked: true, loggedIn: true });
-  assert.match(locked, /Ukończyłeś\/aś tę promocję/);
+  assert.match(locked, /Promocja ukończona/);
+  assert.doesNotMatch(locked, /\/aś|mógł\/mogła|Twojej historii/);
   assert.doesNotMatch(locked, /<input|<button/);
 });
 

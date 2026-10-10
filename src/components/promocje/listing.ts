@@ -4,6 +4,7 @@
  * (server) feeds them with cards from listPromotionCards; the tests feed them
  * with fixtures.
  */
+import { matchesAccountTypeFilter, segmentOf } from "@/lib/accountTypes";
 import { ACCOUNT_TYPE_LABEL, DIFFICULTY_LABEL, formatPLN, pluralizePl } from "@/lib/format";
 import { PAGE_SIZE, type ListingState } from "@/components/filters/filterParams";
 
@@ -13,23 +14,30 @@ export interface SegmentCountsResult {
   BUSINESS: number;
 }
 
-/** Counts per segment for cards fetched WITHOUT the account-type filter. */
+/**
+ * Counts per segment for cards fetched WITHOUT the account-type filter.
+ * "Osobiste" is every non-business type (PERSONAL, SAVINGS, YOUNG, JOINT), so
+ * Osobiste + Firmowe always add up to Wszystkie and the count equals what the
+ * tab lists (src/lib/accountTypes.ts is the one definition).
+ */
 export function segmentCounts(cards: readonly { accountType: string }[]): SegmentCountsResult {
   return {
     all: cards.length,
-    PERSONAL: cards.filter((card) => card.accountType === "PERSONAL").length,
-    BUSINESS: cards.filter((card) => card.accountType === "BUSINESS").length
+    PERSONAL: cards.filter((card) => segmentOf(card.accountType) === "PERSONAL").length,
+    BUSINESS: cards.filter((card) => segmentOf(card.accountType) === "BUSINESS").length
   };
 }
 
 /**
  * The account-type filter applied in memory. Equivalent to the database
- * filter (the order of the remaining cards is untouched: the "Polecane" score
- * of an offer only depends on offers of its own account type), but it lets one
- * query serve both the list and the Osobiste / Firmowe counts.
+ * filter (`accountTypeWhere`; the order of the remaining cards is untouched:
+ * the "Polecane" score of an offer only depends on offers of its own REAL
+ * account type), but it lets one query serve both the list and the Osobiste /
+ * Firmowe counts. "PERSONAL" keeps every non-business type, "BUSINESS" only
+ * business accounts, "SAVINGS" / "YOUNG" / "JOINT" exactly that type.
  */
 export function applyAccountType<T extends { accountType: string }>(cards: readonly T[], accountType: string): T[] {
-  return accountType ? cards.filter((card) => card.accountType === accountType) : [...cards];
+  return accountType ? cards.filter((card) => matchesAccountTypeFilter(card.accountType, accountType)) : [...cards];
 }
 
 export interface PageSlice<T> {

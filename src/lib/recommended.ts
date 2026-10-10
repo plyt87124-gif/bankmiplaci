@@ -31,6 +31,8 @@ export interface RecommendInput {
   maxBonusCents: number;
   /** grosze, null/undefined = unknown */
   commissionCents?: number | null;
+  /** Last tie-break, so equal offers keep one order on every page (the database returns ties in any order). */
+  slug?: string;
 }
 
 export function recommendedScores(items: RecommendInput[]): number[] {
@@ -48,11 +50,17 @@ export function recommendedScores(items: RecommendInput[]): number[] {
   });
 }
 
-/** Returns a new array ordered by the "Polecane" score (ties: rating, then bonus). */
+/** Returns a new array ordered by the "Polecane" score (ties: rating, then bonus, then slug). */
 export function sortRecommended<T extends RecommendInput>(items: T[]): T[] {
   const scores = recommendedScores(items);
   return items
     .map((item, i) => ({ item, score: scores[i] ?? 0 }))
-    .sort((a, b) => b.score - a.score || b.item.rating - a.item.rating || b.item.maxBonusCents - a.item.maxBonusCents)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.item.rating - a.item.rating ||
+        b.item.maxBonusCents - a.item.maxBonusCents ||
+        (a.item.slug ?? "").localeCompare(b.item.slug ?? "")
+    )
     .map((x) => x.item);
 }

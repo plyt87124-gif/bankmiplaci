@@ -112,7 +112,7 @@ export function KeyFacts({
         </Fact>
 
         {cooldown ? (
-          <Fact label="Karencja">
+          <Fact label="Dla nowych klientów">
             <span className="block font-semibold">{cooldownShort(cooldown)}</span>
             <a href="#dla-kogo" className="link-inline mt-0.5 inline-block text-small">
               Szczegóły karencji
