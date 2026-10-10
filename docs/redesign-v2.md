@@ -35,7 +35,9 @@ Spis treści:
 | `v2-m1-foundation` | `96a90f9` | 5 | Specyfikacja (docs), „Polecane” z wynagrodzeniem partnerskim, serwis kart ofert, biblioteka SEO, **fundament designu** (kolory, fonty, komponenty `ui`, strony błędów). Stare strony zostają, ale w nowych kolorach i fontach. |
 | `v2-m2-trust-motion-auth` | `85f0c32` | 9 | Do tego: komponenty zaufania (ujawnienie partnerskie, świeżość weryfikacji), ruch (animacje z poszanowaniem „ogranicz ruch”), nowy modal logowania + zgoda na regulamin przy rejestracji, układ stron prawnych. **Bez** nowego nagłówka i stopki. |
 | `v2-m3-pages` | `f06eee1` | 29 | Wszystkie strony przebudowane: nagłówek/stopka, lista i strona promocji, ściąga, porównanie, quiz, strony treści, blog, strona główna, huby SEO, poprawki po recenzjach. |
-| (koniec gałęzi) | `e466b5c` | 30 | Jeden commit ponad `v2-m3-pages`: krótka etykieta sortowania „Polecane”. **Tag `v2-m3-pages` nie obejmuje tego commitu.** Po fali E tag może zostać przesunięty; sprawdź `git rev-parse --short v2-m3-pages`. |
+| `v2-m4-quality` | `a68e05c` | 36 | **Stan końcowy**: bramki jakości (testy zakazanych wzorców i kontrastu, ESLint a11y, skrypt audytu axe), jedna definicja kont osobistych/firmowych, poprawki po końcowym audycie treści i SEO, uczciwsze teksty ujawnień, tytuły i opisy meta bez ucięć. |
+
+Tag `v2-m4-quality` jest ostatnim; jeśli po jego założeniu doszły kolejne commity, `git log --oneline v2-m4-quality..redesign/v2` je pokaże.
 
 ### Ważna uwaga: stara wersja z tagu ≠ dokładnie to, co jest teraz na produkcji
 
@@ -208,7 +210,7 @@ Legenda ryzyka cofnięcia: **niskie** = commit cofa się czysto i nic się nie p
 | **Po recenzjach fali D** | Bez animacji przy listach, nagłówki bezpieczeństwa, noindex logowania admina i pustego bloga, łagodniejsze opisy warunków, zależności `unified`/`remark-parse` | `f06eee1` | wszystkie | 1 konflikt, ryzyko **średnie**. |
 | **Etykieta sortowania** | Krótka etykieta „Polecane (z wynagrodzeniem)” w natywnym select (pełne ujawnienie stoi nad i pod kontrolką) | `e466b5c` | WP-04 | Cofa się czysto, ryzyko **niskie** (ale wraca ucinanie tekstu na telefonie). |
 | **WP-17** (nie zrobiony) | Sesja poza layoutem → cache/ISR | brak | – | – patrz sekcja 6 |
-| **WP-18** Bramki jakości (fala E) | Testy tokenów i kontrastu, audyt dostępności, lint | w drzewie roboczym w chwili pisania (np. `tests/ui-tokens.test.ts`, `tests/contrast.test.ts`), skrypt `scripts/a11y-audit.mjs` jeszcze nie istnieje | strony WP-06…16 | Same testy/narzędzia, nic nie zmieniają dla użytkownika. |
+| **WP-18** Bramki jakości (fala E) | Testy tokenów i kontrastu, audyt dostępności (axe), lint a11y | `3ebba99` (`tests/ui-tokens.test.ts`, `tests/contrast.test.ts`, `.eslintrc.json`, `scripts/a11y-audit.mjs`, `docs/redesign-v2/07-a11y-audit.md`) | strony WP-06…16 | Same testy/narzędzia, nic nie zmieniają dla użytkownika. |
 
 ### 3.4 Gotowe przepisy
 
@@ -445,7 +447,7 @@ npm run build:win      # lokalny build produkcyjny na Windows (osobna kopia, nie
 npm run audit:fees     # tylko odczyt: lista ofert z niezweryfikowanymi opłatami
 ```
 
-Stan testów przy ostatnim uruchomieniu w dniu pisania (2026-10-10): **854 testy, wszystkie przechodzą, 0 błędów** (na początku fali E było 800; liczba rośnie wraz z nowymi bramkami jakości, np. `tests/ui-tokens.test.ts`, `tests/contrast.test.ts`). `tsc` i ESLint były czyste na początku fali E (nie uruchamiałem ich ponownie przy pisaniu tego dokumentu).
+Stan testów przy ostatnim uruchomieniu w dniu pisania (2026-10-10): **922 testy, wszystkie przechodzą, 0 błędów**; `tsc --noEmit` czysty, ESLint bez błędów (10 ostrzeżeń `jsx-a11y` w panelu `/admin`, który nie był przebudowywany).
 
 Dodatkowo:
 
@@ -453,7 +455,7 @@ Dodatkowo:
 npm run test:db        # testy na prawdziwej bazie testowej (wymaga osobnej, pustej bazy; patrz CI)
 ```
 
-**Audyt dostępności** (jeśli dostępny): `npm run audit:a11y` – skrypt `scripts/a11y-audit.mjs` (Playwright + axe) jest dodawany w fali E przez osobnego wykonawcę. W chwili pisania **pliku `scripts/a11y-audit.mjs` jeszcze nie ma i nie ma wpisu `audit:a11y` w `package.json`**, więc polecenia nie uruchomisz; sprawdź `ls scripts/a11y-audit.mjs` i `grep audit:a11y package.json`. Jeśli skrypt się pojawił, wymaga działającego `npm run dev` na porcie 3000.
+**Audyt dostępności**: `npm run audit:a11y` – skrypt `scripts/a11y-audit.mjs` (Playwright + axe-core) wymaga działającego `npm run dev` na porcie 3000 (albo `--base <adres>` dla zbudowanej kopii). Ostatni pełny przebieg na buildzie produkcyjnym kopii: 112 przebiegów (28 stron × 360/1280 px × jasny/ciemny motyw) – 0 naruszeń critical/serious/moderate/minor, brak poziomego scrolla, brak błędów konsoli. Raport i ograniczenia (m.in. brak testów czytnikami ekranu): `docs/redesign-v2/07-a11y-audit.md`.
 
 CI (GitHub Actions, `.github/workflows/ci.yml`) po wypchnięciu uruchamia: audyt zależności, zastosowanie wszystkich migracji na pustej bazie, `tsc`, ESLint, testy, testy bazy, build, kontrole w Chromium i test dymny. Patrz uwaga w punkcie 5.0 o skryptach `ci-visual.js` i `ci-smoke.js`.
 
