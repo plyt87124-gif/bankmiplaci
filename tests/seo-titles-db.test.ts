@@ -98,11 +98,11 @@ test("real offers in the local database: unique titles and headings, title <= 60
       assert.match(r.title, /firm|biznes|business|jdg|przedsiębiorc/i, `a business offer should say so: ${r.title}`);
     }
 
-    // The title of an ended offer: same rules, and the date survives.
+    // The title of an ended offer: same rules, "(zakończona)" survives, within 60 characters.
     const expired = expiredPromotionTitle({ name: offer.name, bankName: offer.bank.name }, offer.endDate);
-    assert.ok(expired.length <= 65, `${expired.length} chars: ${expired}`);
+    assert.ok(expired.length <= 60, `${expired.length} chars: ${expired}`);
     assert.ok(open(expired, ":") <= 1, `two colons in an expired title: ${expired}`);
-    assert.match(expired, /\(zakończona \d\d\.\d\d\.\d{4}\)$/, expired);
+    assert.match(expired, /\(zakończona\)$/, expired);
 
     // Description: not cut inside a parenthesis, no dangling comma or conjunction before the full stop or the ellipsis.
     assert.equal(open(r.description, "("), open(r.description, ")"), `unbalanced parenthesis: ${r.description}`);

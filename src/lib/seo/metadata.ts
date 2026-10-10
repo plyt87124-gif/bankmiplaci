@@ -450,20 +450,20 @@ export function promotionTitle(p: PromotionTitleInput, maxLength: number = PROMO
 }
 
 /**
- * Title for an offer that has ended: "{Bank}: {nazwa} (zakończona dd.mm.rrrr)".
+ * Title for an offer that has ended: "{Bank}: {nazwa} (zakończona)".
  * The fixed tail is kept whole and only the name part is shortened (as in
  * promotionTitle: product name before the first ": ", clean cut at a clause
- * boundary, "…" only as the last resort), so the date always survives. Budget 65
- * characters: with the layout template (" | Bankmiplaci") that stays near the
- * ~75 a search result still shows.
+ * boundary, "…" only as the last resort), so "(zakończona)" always survives. The date of
+ * the end stays in the H1, the body and the description ("Zakończona dd.mm.rrrr."): a
+ * date in the title only crowded out the name. Budget 60 characters, like a live offer.
  */
 export function expiredPromotionTitle(
   p: Pick<PromotionTitleInput, "name" | "bankName">,
   endDate: Date | string | null | undefined,
-  maxLength = 65
+  maxLength = 60
 ): string {
-  const date = formatDatePL(endDate);
-  const tail = date ? ` (zakończona ${date})` : " (zakończona)";
+  void endDate; // part of the signature (callers pass it); the date lives in the H1/body/description, not in the title
+  const tail = " (zakończona)";
   const budget = Math.max(20, maxLength - tail.length);
   // The whole name when it fits (without a second colon), otherwise the product name, shortened.
   const whole = titleBase(p, true);

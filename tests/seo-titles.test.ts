@@ -297,15 +297,15 @@ test("titles never contain two colons, never end in a dangling word and never cu
   }
 });
 
-test("expired offer title keeps the date, whatever the name length", () => {
+test("expired offer title keeps '(zakończona)' within 60 characters, whatever the name length", () => {
   const short = expiredPromotionTitle({ bankName: "Alior Bank", name: "Konto z Premią" }, new Date("2026-10-13T00:00:00Z"));
-  assert.equal(short, "Alior Bank: Konto z Premią (zakończona 13.10.2026)");
+  assert.equal(short, "Alior Bank: Konto z Premią (zakończona)");
   const long = expiredPromotionTitle(
     { bankName: "PKO Bank Polski", name: "Letni Bonus – do 900 zł za konto własne i konto dla dziecka" },
     "2026-09-30T00:00:00Z"
   );
-  assert.ok(long.length <= 65, long);
-  assert.ok(long.endsWith("(zakończona 30.09.2026)"), long);
+  assert.ok(long.length <= 60, long);
+  assert.ok(long.endsWith("(zakończona)"), long);
   // Unknown date: still honest.
   assert.ok(expiredPromotionTitle({ bankName: "A", name: "B" }, null).includes("(zakończona)"));
   // Same shortening rules as a live offer: the product before the colon, never two colons.
@@ -313,18 +313,18 @@ test("expired offer title keeps the date, whatever the name length", () => {
     { bankName: "Bank Pekao", name: "Konto Przekorzystne: do 300 zł + do 2400 zł w Promocji Podróżnej III" },
     "2027-01-12T00:00:00Z"
   );
-  assert.equal(przekorzystne, "Bank Pekao: Konto Przekorzystne (zakończona 12.01.2027)");
+  assert.equal(przekorzystne, "Bank Pekao: Konto Przekorzystne (zakończona)");
   // A whole name that fits keeps its text, with a single colon.
   assert.equal(
     expiredPromotionTitle({ bankName: "Millennium", name: "Konto Mój Biznes: bonus" }, "2027-02-28T00:00:00Z"),
-    "Millennium: Konto Mój Biznes – bonus (zakończona 28.02.2027)"
+    "Millennium: Konto Mój Biznes – bonus (zakończona)"
   );
-  // The date survives and the name is cut at a clause boundary (no ellipsis) when it can be.
+  // The name is cut at a clause boundary (no ellipsis) when it can be.
   const cut = expiredPromotionTitle(
     { bankName: "PKO Bank Polski", name: "Letni Bonus – do 900 zł za konto własne i konto dla dziecka" },
     "2026-09-30T00:00:00Z"
   );
-  assert.equal(cut, "PKO Bank Polski: Letni Bonus – do 900 zł (zakończona 30.09.2026)");
+  assert.equal(cut, "PKO Bank Polski: Letni Bonus – do 900 zł (zakończona)");
 });
 
 test("formatAmountPlain uses plain spaces and keeps grosze when present", () => {

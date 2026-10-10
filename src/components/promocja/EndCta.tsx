@@ -21,7 +21,7 @@ export function EndCta({
   moreOffersLabel: string;
 }) {
   const text = state.ctaLive
-    ? `Sprawdziłeś/aś już warunki? Przejdź bezpośrednio do wniosku na stronie ${bankName}.`
+    ? `Warunki już sprawdzone? Przejdź bezpośrednio do wniosku na stronie ${bankName}.`
     : "Ta oferta nie jest obecnie dostępna przez Bankmiplaci.";
 
   return (
