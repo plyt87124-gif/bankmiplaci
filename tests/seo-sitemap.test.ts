@@ -156,7 +156,7 @@ test("the sitemap lists an offer exactly when its own robots policy says index",
   }
 });
 
-test("hub pages are not listed while they are not live; the home page still sees all offers", () => {
+test("hub pages (live since WP-16) carry the newest change of their own account types; the home page still sees all offers", () => {
   const input: SitemapInput = {
     ...empty,
     promotions: [
@@ -164,13 +164,20 @@ test("hub pages are not listed while they are not live; the home page still sees
       promo("b", { accountType: "BUSINESS", lastVerifiedAt: new Date("2026-10-06T00:00:00Z") })
     ]
   };
-  assert.equal(find(input, "/konta-firmowe-z-premia"), undefined);
+  assert.equal(lastmod(input, "/konta-firmowe-z-premia"), "2026-10-06T00:00:00.000Z");
+  assert.equal(lastmod(input, "/konta-osobiste-z-premia"), "2026-10-02T00:00:00.000Z");
   assert.equal(lastmod(input, "/"), "2026-10-06T00:00:00.000Z");
 });
 
-test("bank pages are not listed while their flag is off", () => {
+test("bank pages (live since WP-16) are listed with the bank's newest change as lastmod, after /banki", () => {
   const list = urls({ ...empty, banks: [{ slug: "alior", lastModified: new Date("2026-10-01T00:00:00Z") }] });
-  assert.ok(!list.some((u) => u.includes("/banki")));
+  assert.ok(list.includes(`${SITE}/banki`));
+  assert.ok(list.includes(`${SITE}/banki/alior`));
+  assert.ok(list.indexOf(`${SITE}/banki`) < list.indexOf(`${SITE}/banki/alior`));
+  assert.equal(
+    lastmod({ ...empty, banks: [{ slug: "alior", lastModified: new Date("2026-10-01T00:00:00Z") }] }, "/banki/alior"),
+    "2026-10-01T00:00:00.000Z"
+  );
 });
 
 test("blog category pages are listed only for categories with a published article (same rule as the page's noindex)", () => {

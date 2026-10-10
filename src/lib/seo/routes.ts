@@ -50,10 +50,10 @@ export const SITE_ROUTES: readonly SiteRoute[] = [
   { path: "/o-nas", live: true, lastMod: "none" },
 
   // Phase 1 hubs (WP-16).
-  { path: "/konta-osobiste-z-premia", live: false, lastMod: "openPersonalPromotions" },
-  { path: "/konta-firmowe-z-premia", live: false, lastMod: "openBusinessPromotions" },
-  { path: "/banki", live: false, lastMod: "openPromotions" },
-  { path: "/promocje/konczace-sie", live: false, lastMod: "none" },
+  { path: "/konta-osobiste-z-premia", live: true, lastMod: "openPersonalPromotions" },
+  { path: "/konta-firmowe-z-premia", live: true, lastMod: "openBusinessPromotions" },
+  { path: "/banki", live: true, lastMod: "openPromotions" },
+  { path: "/promocje/konczace-sie", live: true, lastMod: "none" },
 
   // Phase 2 (WP-16).
   { path: "/promocje/archiwum", live: false, lastMod: "none" },
@@ -67,7 +67,7 @@ export const SITE_ROUTES: readonly SiteRoute[] = [
  * with the `/banki` route above, once src/app/banki/[slug]/page.tsx exists.
  */
 export const DYNAMIC_ROUTE_FLAGS = {
-  bankPages: false
+  bankPages: true
 } as const;
 
 /** Is this path listed (and therefore allowed to be linked from navigation)? */
