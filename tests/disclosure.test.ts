@@ -54,7 +54,7 @@ test("compact disclosure", () => {
 });
 
 test("sort option label and descriptions", () => {
-  assert.equal(SORT_RECOMMENDED_LABEL, "Polecane (uwzględnia wynagrodzenie partnerskie)");
+  assert.equal(SORT_RECOMMENDED_LABEL, "Polecane (z wynagrodzeniem)");
   assert.equal(
     disclosureText(sortDescriptionCopy("recommended")),
     "W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność. Pozostałe sortowania od niego nie zależą. Jak zarabiamy"

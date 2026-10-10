@@ -27,7 +27,7 @@ import {
  *   compact  directly under EVERY button that leads to a bank (offer aside,
  *            bottom CTA, sticky mobile bar, comparison table).
  *   tag      the sort option and the description of the active sort:
- *            by default "Polecane (uwzględnia wynagrodzenie partnerskie)" for
+ *            by default "Polecane (z wynagrodzeniem)" for
  *            "recommended" and a one-line description for the other orders;
  *            `long` swaps the "recommended" label for a short description that
  *            only adds what the strip does not say (remuneration acts in this

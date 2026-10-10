@@ -77,7 +77,7 @@ test("footer renders the full statement ending with the link", () => {
 
 test("tag: label for 'recommended', description for the others, full description with `long`", () => {
   const label = html(h(AffiliateDisclosure, { variant: "tag", sort: "recommended" }));
-  assert.equal(text(label), "Polecane (uwzględnia wynagrodzenie partnerskie)");
+  assert.equal(text(label), "Polecane (z wynagrodzeniem)");
 
   const topRated = html(h(AffiliateDisclosure, { variant: "tag", sort: "top-rated" }));
   assert.equal(text(topRated), "Ocena serwisu nie uwzględnia prowizji. Jak liczymy");

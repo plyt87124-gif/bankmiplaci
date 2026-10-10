@@ -91,8 +91,12 @@ export const AFFILIATE_BADGE_LABEL = "Link partnerski";
 // tag - the sort option and the description of the active sort order
 // ---------------------------------------------------------------------------
 
-/** Label of the "Polecane" sort option: the suffix is permanent, not "może". */
-export const SORT_RECOMMENDED_LABEL = "Polecane (uwzględnia wynagrodzenie partnerskie)";
+/**
+ * Label of the "Polecane" sort option. The suffix is permanent (not "może") and short on purpose:
+ * a native <select> cuts long option text on a phone. The full sentence stands right above
+ * (strip) and right below (tag description) the control.
+ */
+export const SORT_RECOMMENDED_LABEL = "Polecane (z wynagrodzeniem)";
 
 /**
  * Description shown under the sort control while "Polecane" is active. The

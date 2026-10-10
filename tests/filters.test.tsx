@@ -254,7 +254,7 @@ test("the sort select offers every SortKey once; 'Polecane' carries the disclosu
   assert.equal(new Set(SORT_OPTIONS.map((o) => o.value)).size, SORT_OPTIONS.length);
   const recommended = SORT_OPTIONS.find((o) => o.value === "recommended");
   assert.equal(recommended?.label, SORT_RECOMMENDED_LABEL);
-  assert.match(SORT_RECOMMENDED_LABEL, /wynagrodzenie partnerskie/);
+  assert.match(SORT_RECOMMENDED_LABEL, /z wynagrodzeniem/);
 });
 
 /* ------------------------------------------------------------------ */
