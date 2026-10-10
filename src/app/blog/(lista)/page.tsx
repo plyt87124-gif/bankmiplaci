@@ -9,7 +9,7 @@ import { CategoryNav } from "@/components/blog/CategoryNav";
 import { Pagination } from "@/components/blog/Pagination";
 import { parsePage, totalPagesFor } from "@/components/blog/paging";
 import { breadcrumbLd, noindexForSearchParams, STATIC_PAGE_META, staticPageMetadata } from "@/lib/seo";
-import { countArticlesByCategory, listArticlePage } from "./data";
+import { countArticlesByCategory, listArticlePage } from "../data";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;

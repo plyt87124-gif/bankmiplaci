@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Info } from "lucide-react";
-import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
 import { AttributionCapture } from "@/components/AttributionCapture";
 import { Filters } from "@/components/Filters";
 import { JsonLd } from "@/components/JsonLd";
@@ -8,11 +7,12 @@ import { NoResultsState } from "@/components/NoResultsState";
 import { TrustNote } from "@/components/trust/TrustNote";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import {
-  effectiveSort,
   hasActiveFilters,
+  isCanonicalListing,
   listingHref,
   parseListingParams,
-  parsePage
+  parsePage,
+  withSelectedBank
 } from "@/components/filters/filterParams";
 import { ListingEditorial } from "@/components/promocje/ListingEditorial";
 import { ListingGrid } from "@/components/promocje/ListingGrid";
@@ -20,6 +20,7 @@ import { LISTING_FAQ } from "@/components/promocje/editorialContent";
 import { slicePage } from "@/components/promocje/listing";
 import {
   getActiveCount,
+  getBankBySlug,
   getBanksWithOffers,
   getLatestVerification,
   loadEmptyStateHelp,
@@ -75,28 +76,36 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
     getActiveCount()
   ]);
 
+  // ?bank= naming a bank that has no active offers (link from an expired offer, the
+  // eligibility redirect): the filter UI still shows its real name, not the slug.
+  const selectedBank = state.bank && !banks.some((bank) => bank.slug === state.bank) ? await getBankBySlug(state.bank) : null;
+  const bankOptions = withSelectedBank(banks, selectedBank);
+
   const slice = slicePage(listing.cards, page);
   const filtersOn = hasActiveFilters(state);
-  const sort = effectiveSort(state);
   const isEmpty = listing.cards.length === 0;
-  const emptyHelp = isEmpty && filtersOn && activeCount > 0 ? await loadEmptyStateHelp(state, banks) : null;
+  const emptyHelp = isEmpty && filtersOn && activeCount > 0 ? await loadEmptyStateHelp(state, bankOptions) : null;
   const updatedText = latestVerification ? formatDatePL(latestVerification, "numeric") : "";
+
+  const canonicalList = isCanonicalListing(state, page) && !noindexForSearchParams(params);
 
   const structuredData = [
     breadcrumbLd([
       { name: "Start", path: "/" },
       { name: "Promocje", path: "/promocje" }
     ]),
-    // The list of the clean page only: a filtered list is a different list.
-    filtersOn
-      ? null
-      : itemListLd(
+    // The list of the canonical page only (no filter, default order, first page, no
+    // other parameter that makes the page noindex): any other URL shows a different
+    // list or order than the one the canonical URL stands for.
+    canonicalList
+      ? itemListLd(
           slice.visible.map((card) => ({
             name: promotionHeading({ name: card.name, bankName: card.bank.name }),
             path: `/promocje/${card.slug}`
           })),
           { name: "Aktualne promocje bankowe" }
-        ),
+        )
+      : null,
     faqLd(LISTING_FAQ)
   ].filter((node): node is Record<string, unknown> => node !== null);
 
@@ -132,15 +141,15 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
         </p>
       ) : null}
 
-      {/* Above EVERY list of offers; the wording follows the active sort. */}
-      <AffiliateDisclosure variant="strip" sort={sort} className="mt-6 max-w-3xl" />
-
-      <section aria-labelledby="lista-promocji" className="mt-8">
+      <section aria-labelledby="lista-promocji" className="mt-6">
         <h2 id="lista-promocji" className="sr-only">
           Lista promocji
         </h2>
+        {/* Filters renders the disclosure strip above the toolbar: it follows the same
+            (optimistic) sort as the description under the sort control. */}
         <Filters
-          banks={banks}
+          banks={bankOptions}
+          disclosureStrip
           resultCount={listing.cards.length}
           shownCount={slice.visible.length}
           segmentCounts={listing.counts}

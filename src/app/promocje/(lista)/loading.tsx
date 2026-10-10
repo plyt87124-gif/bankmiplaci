@@ -2,18 +2,21 @@ import { Skeleton, SkeletonRegion } from "@/components/ui/Skeleton";
 
 /**
  * Loading state of /promocje: the same skeleton as the page (breadcrumbs,
- * title, lead, strip, segment, toolbar, filter panel) and six placeholders
- * with the geometry of an offer card, so almost nothing moves when the content
- * arrives. The heights of the text blocks are the heights of the real ones at
- * the three layouts (phone / tablet / desktop with the side panel); the card
- * is the height of a typical card (cards in a row stretch to the tallest one).
+ * title, lead, strip, segment, toolbar) and six placeholders with the geometry
+ * of an offer card, so almost nothing moves when the content arrives. The
+ * heights of the text blocks are the heights of the real ones at the three
+ * layouts (phone / tablet / desktop, all without a side panel); the card is
+ * the height of a typical card (cards in a row stretch to the tallest one).
  * The skeleton appears after 200 ms (fast loads never flash) and pulses only
  * when motion is allowed - see `.skeleton` in src/styles/motion.css. One
  * polite "Ładowanie" status for screen readers.
+ *
+ * It sits in the (lista) route group so that it wraps only the list: the offer
+ * page [slug] has no loading file, which keeps an unknown slug a real HTTP 404.
  */
 function CardSkeleton() {
   return (
-    <div className="flex h-full min-h-[27.5rem] flex-col rounded-card border border-line bg-surface p-4 sm:p-5 xl:min-h-[26.5rem]">
+    <div className="flex h-full min-h-[27.5rem] flex-col rounded-card border border-line bg-surface p-4 sm:p-5">
       {/* logo tile + account-type badge */}
       <div className="flex items-center justify-between gap-3">
         <Skeleton className="h-10 w-28 rounded-lg" />
@@ -33,8 +36,8 @@ function CardSkeleton() {
       <div className="mt-1 flex h-[22px] items-center">
         <Skeleton className="h-4 w-4/5" />
       </div>
-      {/* effort + deadline: two rows, one row from xl (as in the card) */}
-      <div className="mt-4 flex flex-col items-start gap-2 xl:flex-row xl:items-center xl:gap-3">
+      {/* effort + deadline: two rows (as in the card) */}
+      <div className="mt-4 flex flex-col items-start gap-2">
         <Skeleton className="h-6 w-36" />
         <Skeleton className="h-6 w-40" />
       </div>
@@ -85,43 +88,40 @@ export default function Loading() {
       {/* disclosure strip: 114 px on a phone, 70 px from sm */}
       <Skeleton className="mt-6 h-[114px] max-w-3xl rounded-field sm:h-[70px]" />
 
-      <div className="mt-8 xl:grid xl:grid-cols-[16rem_minmax(0,1fr)] xl:items-start xl:gap-8">
-        <Skeleton className="hidden h-[34rem] rounded-card xl:block" />
-        <div className="min-w-0">
-          {/* segment: wraps to two rows on a phone */}
-          <div className="flex flex-wrap gap-2">
-            <Skeleton className="h-11 w-40 rounded-full" />
-            <Skeleton className="h-11 w-36 rounded-full" />
-            <Skeleton className="h-11 w-32 rounded-full" />
+      <div className="min-w-0">
+        {/* segment (compact, 36 px): one row on most phones, two on the narrowest */}
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Skeleton className="h-9 w-32 rounded-full" />
+          <Skeleton className="h-9 w-28 rounded-full" />
+          <Skeleton className="h-9 w-28 rounded-full" />
+        </div>
+        {/* search + sort + "Filtry" button */}
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-[1_1_11rem]">
+            <Skeleton className="mb-2 h-5 w-40" />
+            <Skeleton className="h-11 rounded-field" />
           </div>
-          {/* search + sort (+ "Filtry" button below xl) */}
-          <div className="mt-4 flex flex-wrap items-end gap-3">
-            <div className="min-w-0 flex-[1_1_11rem]">
-              <Skeleton className="mb-2 h-5 w-40" />
-              <Skeleton className="h-11 rounded-field" />
-            </div>
-            <div className="min-w-0 flex-[2_1_19rem]">
-              <Skeleton className="mb-2 h-5 w-16" />
-              <Skeleton className="h-11 rounded-field" />
-            </div>
-            <Skeleton className="h-11 w-full rounded-field sm:w-[7.5rem] xl:hidden" />
+          <div className="min-w-0 flex-[2_1_19rem]">
+            <Skeleton className="mb-2 h-5 w-16" />
+            <Skeleton className="h-11 rounded-field" />
           </div>
-          {/* description of the active sort: three lines on a phone, two from sm */}
-          <div className="mt-3 flex h-[66px] max-w-[68ch] flex-col justify-center gap-1.5 sm:h-[44px]">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-1/2 sm:hidden" />
-          </div>
-          {/* counter */}
-          <div className="mt-4 flex h-[22px] items-center">
-            <Skeleton className="h-4 w-40" />
-          </div>
+          <Skeleton className="h-11 w-full rounded-field sm:w-[7.5rem]" />
+        </div>
+        {/* description of the active sort: three lines on a phone, two from sm */}
+        <div className="mt-3 flex h-[66px] max-w-[68ch] flex-col justify-center gap-1.5 sm:h-[44px]">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-1/2 sm:hidden" />
+        </div>
+        {/* counter */}
+        <div className="mt-4 flex h-[22px] items-center">
+          <Skeleton className="h-4 w-40" />
+        </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6 xl:grid-cols-2">
-            {Array.from({ length: 6 }, (_, index) => (
-              <CardSkeleton key={index} />
-            ))}
-          </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+          {Array.from({ length: 6 }, (_, index) => (
+            <CardSkeleton key={index} />
+          ))}
         </div>
       </div>
     </SkeletonRegion>

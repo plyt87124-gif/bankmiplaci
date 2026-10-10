@@ -4,6 +4,12 @@ const nextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "**" }]
   },
+  async redirects() {
+    return [
+      // /blog/kategoria has no content of its own; the categories are listed on /blog.
+      { source: "/blog/kategoria", destination: "/blog", permanent: true }
+    ];
+  },
   async headers() {
     return [
       {

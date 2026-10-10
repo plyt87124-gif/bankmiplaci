@@ -1,8 +1,10 @@
 import { Skeleton, SkeletonRegion } from "@/components/ui/Skeleton";
 
 /**
- * /blog skeleton (also the fallback of the category pages): breadcrumbs, H1,
- * lead, category chips and four article cards in the 44 rem reading column.
+ * /blog skeleton: breadcrumbs, H1, lead, category chips and four article cards
+ * in the 44 rem reading column. It lives in the (lista) route group so that it
+ * wraps only the list; article and category pages have no loading file, which
+ * keeps an unknown slug a real HTTP 404 (a loading boundary streams a 200 first).
  */
 export default function BlogLoading() {
   return (

@@ -6,9 +6,18 @@ import { DYNAMIC_ROUTE_FLAGS, SITE_ROUTES, isRouteLive, liveRoutes } from "../sr
 
 const APP = path.join(process.cwd(), "src", "app");
 
+/** True when `segs` resolve to a page.* file; route groups such as "(lista)" do not count as URL segments. */
+function hasPage(dir: string, segs: string[]): boolean {
+  if (segs.length === 0 && ["page.tsx", "page.ts", "page.jsx", "page.js"].some((f) => fs.existsSync(path.join(dir, f)))) return true;
+  if (!fs.existsSync(dir)) return false;
+  if (segs.length > 0 && hasPage(path.join(dir, segs[0]!), segs.slice(1))) return true;
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .some((e) => e.isDirectory() && /^\(.+\)$/.test(e.name) && hasPage(path.join(dir, e.name), segs));
+}
+
 function pageExists(routePath: string): boolean {
-  const dir = routePath === "/" ? APP : path.join(APP, ...routePath.split("/").filter(Boolean));
-  return ["page.tsx", "page.ts", "page.jsx", "page.js"].some((f) => fs.existsSync(path.join(dir, f)));
+  return hasPage(APP, routePath.split("/").filter(Boolean));
 }
 
 test("every route the sitemap lists has a page in src/app (the sitemap never links to a 404)", () => {
