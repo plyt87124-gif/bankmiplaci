@@ -42,6 +42,16 @@ export const getBanksWithOffers = cache(
     })
 );
 
+/**
+ * The bank named in `?bank=` when it has no active offers (so it is missing
+ * from getBanksWithOffers): its real name for the chip, the select and the
+ * empty-state hint. null for an unknown slug (the UI then falls back to the slug).
+ */
+export const getBankBySlug = cache(
+  (slug: string): Promise<{ slug: string; name: string } | null> =>
+    db.bank.findUnique({ where: { slug }, select: { slug: true, name: true } })
+);
+
 export interface ListingResult {
   /** Every offer matching the URL, in the requested order. */
   cards: PromotionCardData[];
@@ -54,6 +64,11 @@ export interface ListingResult {
  * under every filter EXCEPT the account type, counted per segment, and then
  * narrowed to the chosen account type in memory (same result and order as the
  * database filter, see applyAccountType).
+ *
+ * TODO(WP-17): this loads EVERY matching offer into memory and the page cuts
+ * the first 24 x `strona` out of it. Fine for the current catalogue (a few
+ * dozen offers); move the paging (and the segment counts) into the database
+ * query when the list grows - WP-17 owns that change.
  */
 export async function loadListing(state: ListingState): Promise<ListingResult> {
   const everyType = await listPromotionCards(toServiceFilters(state, ["accountType"]));

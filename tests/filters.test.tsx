@@ -5,6 +5,8 @@
 import test, { mock } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { PathnameContext, SearchParamsContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
@@ -18,15 +20,20 @@ import {
   clearChips,
   describeResultCount,
   effectiveSort,
+  focusAfterChipRemoval,
   hasActiveFilters,
+  isCanonicalListing,
   listingHref,
   panelFilterCount,
   parseListingParams,
   parsePage,
   toQueryString,
   toServiceFilters,
+  withSelectedBank,
   type ListingState
 } from "../src/components/filters/filterParams";
+import { Segment } from "../src/components/ui/Segment";
+import { LISTING_FAQ } from "../src/components/promocje/editorialContent";
 import { createCommitter } from "../src/components/filters/committer";
 import { FilterFields } from "../src/components/filters/FilterFields";
 import { Filters } from "../src/components/Filters";
@@ -549,4 +556,139 @@ test("toolbar without counts still renders (no counter, generic sheet button)", 
   assert.doesNotMatch(out, /role="status"/);
   assert.match(text(out), /Pokaż wyniki/);
   assert.match(text(out), /Wszystkie.*Osobiste.*Firmowe/);
+});
+
+/* ------------------------------------------------------------------ */
+/* WP-LIST review fixes                                                */
+/* ------------------------------------------------------------------ */
+
+const LIST_PAGE_SOURCE = readFileSync(join(__dirname, "..", "src", "app", "promocje", "(lista)", "page.tsx"), "utf8");
+
+test("withSelectedBank adds the bank of the URL when it has no offers, keeps the list sorted, never duplicates", () => {
+  const pekao = { slug: "pekao", name: "Bank Pekao" };
+  const out = withSelectedBank(BANKS, pekao);
+  assert.deepEqual(out.map((b) => b.slug), ["pekao", "mbank", "pko-bp"], "sorted by name: Bank Pekao, mBank, PKO Bank Polski");
+  assert.equal(out.length, BANKS.length + 1);
+  // already listed / nothing selected: the list is returned as it is (a copy)
+  assert.deepEqual(withSelectedBank(BANKS, { slug: "mbank", name: "mBank" }), BANKS);
+  assert.deepEqual(withSelectedBank(BANKS, null), BANKS);
+  assert.deepEqual(withSelectedBank(BANKS, undefined), BANKS);
+  assert.notEqual(withSelectedBank(BANKS, null), BANKS, "never the same array");
+  // Polish collation: "Ł" sorts after "L", before "M"
+  const polish = withSelectedBank([{ slug: "a", name: "Mega Bank" }, { slug: "z", name: "Lokata Bank" }], { slug: "l", name: "Łódzki Bank" });
+  assert.deepEqual(polish.map((b) => b.name), ["Lokata Bank", "Łódzki Bank", "Mega Bank"]);
+});
+
+test("a bank without offers shows its NAME (chip, select option, relaxation hint), not the slug", () => {
+  const banks = withSelectedBank(BANKS, { slug: "pekao", name: "Bank Pekao" });
+  const state = parseListingParams({ bank: "pekao" });
+  assert.deepEqual(buildChips(state, banks).map((c) => c.label), ["Bank: Bank Pekao"]);
+  assert.equal(relaxationCandidates(state, banks)[0]?.label, "Bank: Bank Pekao");
+  const fields = renderToStaticMarkup(h(FilterFields, { idPrefix: "t", banks, state, onChange: noop }));
+  assert.match(fields, /<option value="pekao" selected="">Bank Pekao<\/option>/);
+  assert.doesNotMatch(fields, />pekao</, "no raw slug as visible text");
+  const toolbar = renderToolbar("bank=pekao", { banks });
+  assert.match(text(toolbar), /Bank: Bank Pekao/);
+  assert.doesNotMatch(text(toolbar), /Bank: pekao/);
+});
+
+test("focusAfterChipRemoval: next chip, else the previous one, else the result counter", () => {
+  const ids = ["q", "bank", "difficulty:EASY", "noFees"];
+  assert.deepEqual(focusAfterChipRemoval(ids, "q"), { kind: "chip", id: "bank" });
+  assert.deepEqual(focusAfterChipRemoval(ids, "bank"), { kind: "chip", id: "difficulty:EASY" });
+  assert.deepEqual(focusAfterChipRemoval(ids, "noFees"), { kind: "chip", id: "difficulty:EASY" }, "the last chip hands focus back");
+  // the only chip: the whole block goes away -> the counter
+  assert.deepEqual(focusAfterChipRemoval(["bank"], "bank"), { kind: "status" });
+  assert.deepEqual(focusAfterChipRemoval([], "bank"), { kind: "status" });
+  // an id that is not there (stale click): first remaining chip, never a crash
+  assert.deepEqual(focusAfterChipRemoval(["q", "bank"], "zzz"), { kind: "chip", id: "q" });
+  // the target always names a chip that is still there after the removal
+  for (const removed of ids) {
+    const target = focusAfterChipRemoval(ids, removed);
+    assert.equal(target.kind, "chip");
+    if (target.kind === "chip") assert.ok(ids.includes(target.id) && target.id !== removed);
+  }
+});
+
+test("toolbar: chips are findable for the focus move; the counter is focusable; no side panel at any width", () => {
+  const out = renderToolbar("q=karta&difficulty=EASY&noFees=1", { resultCount: 4, shownCount: 4 });
+  assert.match(out, /<button[^>]*data-chip-id="q"/);
+  assert.match(out, /<button[^>]*data-chip-id="difficulty:EASY"/);
+  assert.match(out, /<p role="status" aria-live="polite" aria-atomic="true" tabindex="-1"/);
+  // filters live in the bar + sheet only (layout spec): no permanent panel, the button is not hidden from xl
+  assert.doesNotMatch(out, /aria-label="Filtry ofert"/);
+  assert.doesNotMatch(out, /xl:(grid|hidden|block|sticky)/);
+  assert.match(out, /aria-haspopup="dialog"/);
+});
+
+test("sheet: 'Wyczyść' stays focusable (aria-disabled, not disabled) so the focus is not dropped to <body>", () => {
+  const none = renderToolbar("q=karta"); // only the phrase: nothing lives in the sheet
+  assert.match(none, /<button[^>]*aria-disabled="true"[^>]*>Wyczyść<\/button>/);
+  assert.doesNotMatch(none, /<button[^>]*disabled=""[^>]*>Wyczyść<\/button>/);
+  const some = renderToolbar("noFees=1");
+  assert.doesNotMatch(some, /<button[^>]*aria-disabled="true"[^>]*>Wyczyść<\/button>/);
+});
+
+test("disclosure: the strip and the sort description come from the same sort, the strip sits above the toolbar", () => {
+  const cases = [
+    ["", "recommended"],
+    ["sort=recommended", "recommended"],
+    ["sort=newest", "other"],
+    ["sort=bogus", "recommended"]
+  ] as const;
+  for (const [search, stripSort] of cases) {
+    const out = renderToolbar(search, { disclosureStrip: true });
+    assert.equal((out.match(/data-disclosure="strip"/g) ?? []).length, 1, search);
+    assert.match(out, new RegExp(`data-disclosure="strip" data-disclosure-sort="${stripSort}"`), search);
+    assert.ok(out.indexOf('data-disclosure="strip"') < out.indexOf('role="radiogroup"'), "strip before the toolbar");
+    // the description under the control says the same thing about the ranking as the strip
+    const recommended = stripSort === "recommended";
+    assert.equal(/Polecane uwzględnia m\.in\. wynagrodzenie partnerskie/.test(text(out)), recommended, search);
+    assert.equal(/Ta kolejność nie zależy od wynagrodzenia partnerskiego/.test(text(out)), !recommended, search);
+  }
+  assert.doesNotMatch(renderToolbar(""), /data-disclosure="strip"/, "the strip is opt-in (the page asks for it)");
+});
+
+test("page: the strip is not rendered by the page from the server sort any more (it would disagree with the optimistic description)", () => {
+  assert.doesNotMatch(LIST_PAGE_SOURCE, /<AffiliateDisclosure/);
+  assert.match(LIST_PAGE_SOURCE, /<Filters[\s\S]*?disclosureStrip/);
+});
+
+test("ItemList only for the canonical list: no filter, default order, first page", () => {
+  assert.equal(isCanonicalListing(EMPTY, 1), true);
+  assert.equal(isCanonicalListing(parseListingParams({ sort: "recommended" }), 1), true, "sort=recommended is the default order");
+  assert.equal(isCanonicalListing(parseListingParams({ utm_source: "x", gclid: "y" }), 1), true, "tracking parameters are not state");
+  assert.equal(isCanonicalListing(EMPTY, 2), false);
+  assert.equal(isCanonicalListing(parseListingParams({ sort: "newest" }), 1), false);
+  assert.equal(isCanonicalListing(parseListingParams({ sort: "top-rated" }), 1), false);
+  assert.equal(isCanonicalListing(parseListingParams({ q: "mbank" }), 1), false);
+  assert.equal(isCanonicalListing(parseListingParams({ accountType: "BUSINESS" }), 1), false);
+  assert.equal(isCanonicalListing(parseListingParams({ bank: "mbank" }), 1), false);
+  assert.equal(isCanonicalListing(parseListingParams({ noFees: "1" }), 1), false);
+  // the page also asks the SEO library, so anything it noindexes (niedostepna, sort=bogus) is out
+  assert.match(LIST_PAGE_SOURCE, /isCanonicalListing\(state, page\) && !noindexForSearchParams\(params\)/);
+  assert.doesNotMatch(LIST_PAGE_SOURCE, /commission|affiliateUrl/i, "the ItemList carries names and paths only");
+});
+
+test("Segment size sm: 36 px pill with a 44 px hit area; md stays 44 px; the list uses the compact one", () => {
+  const options = [
+    { value: "", label: "Wszystkie", count: 23 },
+    { value: "PERSONAL", label: "Osobiste", count: 14 }
+  ];
+  const sm = renderToStaticMarkup(h(Segment, { label: "Typ konta", options, value: "", onChange: noop, size: "sm" }));
+  assert.match(sm, /h-9/);
+  assert.match(sm, /before:-inset-y-\[4px\]/);
+  assert.doesNotMatch(sm, /h-11/);
+  const md = renderToStaticMarkup(h(Segment, { label: "Typ konta", options, value: "", onChange: noop }));
+  assert.match(md, /h-11/);
+  assert.doesNotMatch(md, /h-9/);
+  assert.match(renderToolbar(""), /role="radio"[^>]*class="[^"]*h-9/);
+});
+
+test("listing FAQ promises nothing the data does not back (no requires-referral flag, no payout date field)", () => {
+  const all = LISTING_FAQ.map((item) => item.answer).join(" ");
+  assert.doesNotMatch(all, /zaznaczamy to w warunkach/);
+  assert.doesNotMatch(all, /podajemy go przy ofercie/);
+  assert.match(all, /Termin wypłaty określa regulamin promocji/);
+  assert.match(all, /Sprawdź w regulaminie banku i w warunkach oferty, czy konto trzeba otworzyć przez link lub kod/);
 });

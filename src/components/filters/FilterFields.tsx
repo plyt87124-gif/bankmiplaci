@@ -8,12 +8,10 @@ import { DIFFICULTY_LABEL, formatPLN } from "@/lib/format";
 import { DIFFICULTY_VALUES, MIN_BONUS_OPTIONS, type ListingState } from "@/components/filters/filterParams";
 
 /**
- * The fields that live in the filter side panel (from xl) and in the mobile
- * bottom sheet: difficulty, bank, minimum bonus and "only without fee".
+ * The fields that live in the filter bottom sheet (opened by "Filtry (n)"): difficulty, bank, minimum bonus and "only without fee".
  * Controlled - values come from the URL state, changes go to `onChange`.
  *
- * `idPrefix` keeps ids unique, because the panel and the sheet can be in the
- * DOM at the same time. Every control has a visible label (axe select-name);
+ * `idPrefix` keeps ids unique when the fields are rendered more than once. Every control has a visible label (axe select-name);
  * difficulty is a fieldset with a legend and toggle buttons (`aria-pressed`,
  * a check mark besides the colour, 44 px high).
  */

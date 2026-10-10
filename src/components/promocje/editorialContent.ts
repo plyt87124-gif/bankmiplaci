@@ -37,7 +37,7 @@ export const EDITORIAL_SECTIONS: readonly EditorialSection[] = [
     id: "na-co-uwazac",
     heading: "Na co uważać przed założeniem konta",
     paragraphs: [
-      "Sprawdź termin zapisów i wszystkie warunki jeszcze przed założeniem konta, bo bank może zakończyć promocję wcześniej, na przykład gdy wyczerpie się pula nagród. Zwróć uwagę na opłaty: część kont jest bezpłatna bez żadnych warunków, a w innych opłata znika dopiero po spełnieniu wymagań, na przykład po wpływie na konto lub płatnościach kartą. Jeśli nie zweryfikowaliśmy opłaty, piszemy „Brak danych”, a nie zero. Pamiętaj też, że premia może podlegać opodatkowaniu, a niektóre oferty wymagają otwarcia konta przez link lub kod promocyjny. Ostateczne warunki zawsze określa bank."
+      "Sprawdź termin zapisów i wszystkie warunki jeszcze przed założeniem konta, bo bank może zakończyć promocję wcześniej, na przykład gdy wyczerpie się pula nagród. Zwróć uwagę na opłaty: część kont jest bezpłatna bez żadnych warunków, a w innych opłata znika dopiero po spełnieniu wymagań, na przykład po wpływie na konto lub płatnościach kartą. Jeśli nie zweryfikowaliśmy opłaty, piszemy „Brak danych”, a nie zero. Pamiętaj też, że premia może podlegać opodatkowaniu, a niektóre promocje mogą wymagać otwarcia konta przez link lub kod promocyjny, dlatego sprawdź to w regulaminie banku. Ostateczne warunki zawsze określa bank."
     ]
   },
   {
@@ -61,7 +61,7 @@ export const LISTING_FAQ: readonly FaqEntry[] = [
   {
     question: "Czy promocje bankowe są dla każdego?",
     answer:
-      "Nie zawsze. O tym, kto może skorzystać, decyduje regulamin promocji: bank może wymagać na przykład statusu nowego klienta, odpowiedniego wieku albo założenia konkretnego typu konta. Przy każdej ofercie opisujemy warunki, ale ostateczne zasady zawsze określa bank."
+      "Nie zawsze. O tym, kto może skorzystać, decyduje regulamin promocji: bank może wymagać na przykład statusu nowego klienta, odpowiedniego wieku albo założenia konkretnego typu konta. Zanim założysz konto, sprawdź warunki na stronie oferty i w regulaminie banku – ostateczne zasady zawsze określa bank."
   },
   {
     question: "Co to jest karencja?",
@@ -71,12 +71,12 @@ export const LISTING_FAQ: readonly FaqEntry[] = [
   {
     question: "Kiedy bank wypłaca premię?",
     answer:
-      "Termin zależy od promocji. Zwykle bank wypłaca nagrodę po spełnieniu wszystkich warunków, czasem dopiero po zakończeniu okresu promocji. Jeśli znamy ten termin, podajemy go przy ofercie, a wiążący jest regulamin banku."
+      "Termin zależy od promocji. Zwykle bank wypłaca nagrodę po spełnieniu wszystkich warunków, czasem dopiero po zakończeniu okresu promocji. Termin wypłaty określa regulamin promocji."
   },
   {
     question: "Czy muszę otworzyć konto przez link z waszej strony?",
     answer:
-      "To zależy od oferty. Niektóre promocje wymagają otwarcia konta przez konkretny link lub kod promocyjny. Jeśli tak jest, zaznaczamy to w warunkach oferty. Zawsze sprawdź warunki promocji i regulamin banku, zanim założysz konto.",
+      "To zależy od promocji. Niektóre banki wymagają otwarcia konta przez konkretny link lub kod promocyjny, inne nie. Sprawdź w regulaminie banku i w warunkach oferty, czy konto trzeba otworzyć przez link lub kod, zanim je założysz. Linki do banków na naszej stronie mogą być linkami partnerskimi – opisujemy to w „Jak zarabiamy”.",
     link: { label: "Jak zarabiamy", href: DISCLOSURE_LINKS.howWeEarn }
   },
   {

@@ -165,9 +165,9 @@ export function PromotionCard({
       </div>
       {lead ? <p className="mt-1 line-clamp-1 text-small text-ink-500">{lead}</p> : null}
 
-      {/* One row only where the card is wide enough for both (xl: two columns beside the filter panel);
-          everywhere else two fixed rows, so cards of one grid row line up whatever the label lengths. */}
-      <div className="mt-4 flex flex-col items-start gap-2 xl:flex-row xl:flex-wrap xl:items-center xl:gap-x-3">
+      {/* Two fixed rows at every width, so cards of one grid row line up whatever the label lengths
+          (the list grid is 1 / 2 / 3 columns, a card is never wide enough for both labels on one line). */}
+      <div className="mt-4 flex flex-col items-start gap-2">
         <EffortMeter difficulty={promotion.difficulty} />
         {ended ? null : <DeadlineBadge endDate={promotion.endDate} now={now} />}
       </div>

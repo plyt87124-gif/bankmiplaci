@@ -356,8 +356,8 @@ const WP09_SOURCES = [
   "src/components/promocje/editorialContent.ts",
   "src/components/promocje/listing.ts",
   "src/components/promocje/listingData.ts",
-  "src/app/promocje/page.tsx",
-  "src/app/promocje/loading.tsx"
+  "src/app/promocje/(lista)/page.tsx",
+  "src/app/promocje/(lista)/loading.tsx"
 ];
 
 test("WP-09 sources contain none of the banned patterns of the design spec", () => {

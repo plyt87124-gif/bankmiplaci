@@ -218,7 +218,7 @@ export interface FilterChip {
   removeLabel: string;
   /** What removing the chip changes. */
   clear: Partial<ListingState>;
-  /** True for the filters that live in the sheet / side panel (counted by "Filtry (n)"). */
+  /** True for the filters that live in the sheet (counted by "Filtry (n)"). */
   inPanel: boolean;
 }
 
@@ -263,7 +263,7 @@ export function buildChips(state: ListingState, banks: readonly { slug: string; 
   return chips;
 }
 
-/** The number in "Filtry (n)": chips whose controls live in the sheet / side panel. */
+/** The number in "Filtry (n)": chips whose controls live in the sheet. */
 export function panelFilterCount(chips: readonly FilterChip[]): number {
   return chips.filter((chip) => chip.inPanel).length;
 }
@@ -304,4 +304,64 @@ export function toServiceFilters(state: ListingState, omit: readonly (keyof List
   if (state.noFees && !skip.has("noFees")) filters.maxAccountFeeCents = 0;
   if (state.sort && !skip.has("sort")) filters.sort = state.sort;
   return filters;
+}
+
+/* ------------------------------------------------------------------ */
+/* Bank named in the URL but without active offers                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The bank list for the filter UI plus the bank named in the URL, when that
+ * bank has no active offers (the "Aktualne promocje banku" link of an expired
+ * offer, the redirect of /api/eligibility-link/[token]). `getBanksWithOffers`
+ * only lists banks WITH offers, so without this the chip, the select option and
+ * the empty-state hint would show the raw slug ("Bank: pekao"). The result
+ * stays sorted by name (Polish collation); `selected` is ignored when null or
+ * when the bank is already listed.
+ */
+export function withSelectedBank(
+  banks: readonly { slug: string; name: string }[],
+  selected: { slug: string; name: string } | null | undefined
+): { slug: string; name: string }[] {
+  if (!selected || banks.some((bank) => bank.slug === selected.slug)) return [...banks];
+  return [...banks, selected].sort((a, b) => a.name.localeCompare(b.name, "pl"));
+}
+
+/* ------------------------------------------------------------------ */
+/* Keyboard focus after a chip is removed                              */
+/* ------------------------------------------------------------------ */
+
+/** Where the keyboard focus goes when the focused chip disappears. */
+export type ChipFocusTarget = { kind: "chip"; id: string } | { kind: "status" };
+
+/**
+ * A removed chip takes the focused button with it, and focus would fall to
+ * <body> (WCAG 2.4.3). Rule: the NEXT chip; the last chip hands focus to the
+ * PREVIOUS one; when no chip is left (the whole "Aktywne filtry" block goes
+ * away) it moves to the results counter, which is focusable (tabIndex -1) and
+ * is the live region that announces the new count.
+ */
+export function focusAfterChipRemoval(chipIds: readonly string[], removedId: string): ChipFocusTarget {
+  const index = chipIds.indexOf(removedId);
+  const remaining = chipIds.filter((id) => id !== removedId);
+  if (remaining.length === 0) return { kind: "status" };
+  if (index === -1) return { kind: "chip", id: remaining[0] as string };
+  // after removal the chip that followed now sits at `index`; the last chip falls back to the one before it
+  return { kind: "chip", id: remaining[Math.min(index, remaining.length - 1)] as string };
+}
+
+/* ------------------------------------------------------------------ */
+/* Structured data                                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * True when the URL is the canonical, unfiltered first page of the list in
+ * its default order. Only that list gets the ItemList JSON-LD: every other
+ * variant (filter, search, segment, another sort, `strona` > 1) is `noindex`
+ * and a different list, so an ItemList there would describe an order the
+ * canonical page does not have. Tracking parameters are not part of the state
+ * and do not matter.
+ */
+export function isCanonicalListing(state: ListingState, page: number): boolean {
+  return !hasActiveFilters(state) && effectiveSort(state) === DEFAULT_SORT && page <= 1;
 }

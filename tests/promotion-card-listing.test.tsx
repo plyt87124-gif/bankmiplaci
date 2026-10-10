@@ -14,7 +14,7 @@ import {
   editorialWordCount
 } from "../src/components/promocje/editorialContent";
 import { NoResultsState } from "../src/components/NoResultsState";
-import Loading from "../src/app/promocje/loading";
+import Loading from "../src/app/promocje/(lista)/loading";
 import { faqLd } from "../src/lib/seo";
 import type { PromotionCardData } from "../src/lib/services/promotionCards";
 
@@ -54,9 +54,10 @@ function card(n: number, overrides: Partial<PromotionCardData> = {}): PromotionC
 /* grid                                                                */
 /* ------------------------------------------------------------------ */
 
-test("grid: a list of cards, 1 / 2 / 3 columns (2 beside the side panel), the cards fill their cell", () => {
+test("grid: a list of cards, 1 / 2 / 3 columns that never shrink on a wider screen, the cards fill their cell", () => {
   const out = renderToStaticMarkup(h(ListingGrid, { cards: [card(1), card(2), card(3)], moreHref: null, remaining: 0 }));
-  assert.match(out, /<ul role="list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6 xl:grid-cols-2">/);
+  assert.match(out, /<ul role="list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">/);
+  assert.doesNotMatch(out, /xl:grid-cols/, "no column count that drops at 1280 px (layout spec: 1 / 2 / 3)");
   assert.equal((out.match(/<li /g) ?? []).length, 3);
   assert.equal((out.match(/data-card="promotion"/g) ?? []).length, 3);
   assert.doesNotMatch(out, /Pokaż więcej/);
@@ -69,6 +70,9 @@ test("grid: 'Pokaż więcej' is a plain link to ?strona=N (works without JavaScr
   assert.match(out, /<a [^>]*href="\/promocje\?sort=top-rated&amp;strona=2"[^>]*>Pokaż więcej<\/a>/);
   assert.match(text(out), /Zostało jeszcze 11 promocji/);
   assert.doesNotMatch(out, /<button/);
+  // idle state of the loading-aware link: not busy, no spinner, an empty polite status next to it
+  assert.doesNotMatch(out, /aria-busy|aria-disabled|Ładuję/);
+  assert.match(out, /<span role="status" aria-live="polite" class="sr-only"><\/span>/);
 });
 
 test("grid: the first cards get priority logos", () => {

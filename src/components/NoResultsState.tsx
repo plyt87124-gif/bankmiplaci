@@ -94,7 +94,7 @@ export function NoResultsState({
       {suggestions && suggestions.cards.length > 0 ? (
         <section aria-label={suggestions.caption} className="mt-8">
           <p className="text-small font-semibold text-ink-900">{suggestions.caption}</p>
-          <ul role="list" className="mt-3 grid gap-4 sm:grid-cols-2 lg:gap-6 xl:grid-cols-2">
+          <ul role="list" className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
             {suggestions.cards.map((card) => (
               <li key={card.slug} className="flex">
                 <PromotionCard promotion={card} headingLevel={4} className="w-full" />
