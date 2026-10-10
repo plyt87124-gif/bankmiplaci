@@ -326,7 +326,7 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
       <ul>
         <li>
           <strong>Wynagrodzenia partnerskiego (prowizji).</strong> Wysokość prowizji nie jest składnikiem oceny. Wpływa
-          jedynie na domyślną kolejność „Polecane” – opisujemy to na stronie{" "}
+          natomiast na domyślną kolejność „Polecane” i może ją wyraźnie zmienić – opisujemy to na stronie{" "}
           <Link href="/jak-zarabiamy#polecane">Jak zarabiamy</Link>.
         </li>
         <li>Opinii z for internetowych i mediów społecznościowych.</li>

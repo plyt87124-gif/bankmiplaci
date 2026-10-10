@@ -151,7 +151,8 @@ test("editorial text states general facts only: no amounts, dates, years or prom
   assert.doesNotMatch(all, /\d/, "digits would be hard-coded facts that go stale");
   assert.doesNotMatch(all, /gwarantuj|na pewno|zawsze dostaniesz|bez ryzyka|najlepsze (promocje|oferty|konta)|najlepszy bank|najtańsz|numer 1/i);
   // the ranking and rating wording must match the disclosure (the order is not independent of commission)
-  assert.match(all, /wynagrodzenie partnerskie/);
+  assert.match(all, /wynagrodzeni\w* partnersk/);
+  assert.match(all, /oferta o niższej ocenie może znaleźć się wyżej/, "the FAQ says the commission can change the order markedly");
   assert.match(all, /Prowizja[^.]*nie wpływa na ocenę|Prowizja nie jest składnikiem oceny/);
   assert.match(all, /nie jest to doradztwo finansowe|To nie jest porada/);
 });

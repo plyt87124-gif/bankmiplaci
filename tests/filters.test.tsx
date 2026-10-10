@@ -510,7 +510,7 @@ test("toolbar: segment with counts, labelled search and sort, status counter, th
 
 test("toolbar: the active sort is described right under the control, and follows the URL", () => {
   const recommended = renderToolbar("");
-  assert.match(text(recommended), /Polecane uwzględnia m\.in\. wynagrodzenie partnerskie od banków\. Ocena serwisu jest liczona bez niego\. Jak zarabiamy/);
+  assert.match(text(recommended), /W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność\. Pozostałe sortowania od niego nie zależą\. Jak zarabiamy/);
   assert.match(recommended, /data-disclosure="tag"/);
 
   const topRated = renderToolbar("sort=top-rated");
@@ -641,9 +641,9 @@ test("disclosure: the strip and the sort description come from the same sort, th
     assert.equal((out.match(/data-disclosure="strip"/g) ?? []).length, 1, search);
     assert.match(out, new RegExp(`data-disclosure="strip" data-disclosure-sort="${stripSort}"`), search);
     assert.ok(out.indexOf('data-disclosure="strip"') < out.indexOf('role="radiogroup"'), "strip before the toolbar");
-    // the description under the control says the same thing about the ranking as the strip
+    // the description under the control agrees with the strip (and adds that other sorts ignore remuneration)
     const recommended = stripSort === "recommended";
-    assert.equal(/Polecane uwzględnia m\.in\. wynagrodzenie partnerskie/.test(text(out)), recommended, search);
+    assert.equal(/W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność/.test(text(out)), recommended, search);
     assert.equal(/Ta kolejność nie zależy od wynagrodzenia partnerskiego/.test(text(out)), !recommended, search);
   }
   assert.doesNotMatch(renderToolbar(""), /data-disclosure="strip"/, "the strip is opt-in (the page asks for it)");

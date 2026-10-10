@@ -1,7 +1,7 @@
 import test, { after, before } from "node:test";
 import assert from "node:assert/strict";
 import { updatePromotionRecord } from "../../src/lib/services/promotionWrite";
-import { formatFeeCompact } from "../../src/lib/format";
+import { resolveFee } from "../../src/lib/feeModel";
 import { client, cleanup, makePromotion, reload, submit } from "./helpers";
 
 const AMOUNTS = ["accountFeeCents", "cardFeeCents", "atmFeeCents"] as const;
@@ -33,14 +33,14 @@ async function save(id: string, fees: Record<string, number | string | undefined
 }
 
 for (const field of AMOUNTS) {
-  test(`clearing ${field} on an existing record writes NULL (others untouched, UI says "Nieustalone")`, async () => {
+  test(`clearing ${field} on an existing record writes NULL (others untouched, UI says "Brak danych")`, async () => {
     const row = await fresh(`clear-${field.toLowerCase()}`);
     const after = await save(row.id, { [field]: NaN });
     assert.equal(after.fees![field], null, `${field} must be NULL after clearing`);
     for (const other of AMOUNTS.filter((f) => f !== field)) {
       assert.equal(after.fees![other], { accountFeeCents: 111, cardFeeCents: 222, atmFeeCents: 333 }[other]);
     }
-    assert.equal(formatFeeCompact(after.fees![field]), "Nieustalone");
+    assert.equal(resolveFee(after.fees![field]).label, "Brak danych");
     assert.equal(after.fees!.sourceUrl, "https://example.com/taryfa.pdf", "fees.sourceUrl is not part of the form and must survive");
   });
 
@@ -48,7 +48,7 @@ for (const field of AMOUNTS) {
     const row = await fresh(`zero-${field.toLowerCase()}`);
     const after = await save(row.id, { [field]: 0 });
     assert.equal(after.fees![field], 0);
-    assert.equal(formatFeeCompact(after.fees![field]), "0 zł");
+    assert.equal(resolveFee(after.fees![field]).kind, "free");
   });
 }
 

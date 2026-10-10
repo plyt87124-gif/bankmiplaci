@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { LegalPage, type LegalSection } from "@/components/LegalPage";
+import { staticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Regulamin", alternates: { canonical: "/regulamin" } };
+export const metadata: Metadata = staticPageMetadata("regulamin");
 
 const sections: LegalSection[] = [
   { id: "postanowienia-ogolne", label: "1. Postanowienia ogólne" },

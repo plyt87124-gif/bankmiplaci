@@ -20,6 +20,8 @@
 import "./legal-setup";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join as pathJoin } from "node:path";
 import { createElement as h, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
@@ -32,9 +34,12 @@ import {
 import { ConditionsChecklist } from "../src/components/ConditionsChecklist";
 import { JoinChecklistButton } from "../src/components/JoinChecklistButton";
 import {
+  CommentCard,
   PromotionComments,
   commentsStatus,
   countComments,
+  pressedSortOf,
+  replyButtonLabel,
   withLikeState,
   withNewComment,
   withReply
@@ -368,4 +373,43 @@ test("zapis w ściądze: pusty region role=status jest w DOM, zanim pojawi się 
   const joined = join({ alreadyJoined: true, loggedIn: true });
   assert.match(joined, /<div role="status"[^>]*>.*Dodano do ściągi.*<\/div>/s);
   assert.equal((joined.match(/role="status"/g) ?? []).length, 1, "jeden region na kartę");
+});
+
+test("komentarze: przycisk „Odpowiedz” ma nazwę zaczynającą się od widocznego tekstu i wskazującą autora", () => {
+  assert.equal(replyButtonLabel("Ala", false, true), "Odpowiedz: Ala");
+  assert.equal(replyButtonLabel("Ala", true, true), "Anuluj odpowiedź: Ala");
+  assert.equal(replyButtonLabel("Ala", false, false), "Odpowiedz: Ala (wymaga logowania)");
+
+  const card = (authorName: string, canLike: boolean, isReplying = false) =>
+    render(
+      h(CommentCard, { comment: c("a", { authorName }), canReply: true, isReplying, onToggleReply() {}, onLike() {}, canLike })
+    );
+  const guest = card("Ala", false);
+  assert.match(guest, /aria-label="Odpowiedz: Ala \(wymaga logowania\)"[^>]*>Odpowiedz<\/button>/);
+  const user = card("Bartek", true);
+  assert.match(user, /aria-label="Odpowiedz: Bartek"[^>]*>Odpowiedz<\/button>/);
+  const replying = card("Bartek", true, true);
+  assert.match(replying, /aria-label="Anuluj odpowiedź: Bartek"[^>]*>Anuluj<\/button>/);
+  // a reply (canReply=false) has no such button
+  const reply = render(h(CommentCard, { comment: c("r"), canReply: false, onLike() {}, canLike: true }));
+  assert.doesNotMatch(reply, /Odpowiedz/);
+});
+
+test("komentarze: po nieudanym ponownym sortowaniu przyciski wracają do ostatnio udanego sortu", () => {
+  const base = { appliedSort: "newest", hasLoaded: true } as const;
+  assert.equal(pressedSortOf({ ...base, sort: "top", loadFailed: false }), "top", "zwykle: wybrany sort");
+  assert.equal(pressedSortOf({ ...base, sort: "top", loadFailed: true }), "newest", "porażka: poprzednia lista");
+  // a failed FIRST load has no list to describe: keep the requested sort
+  assert.equal(pressedSortOf({ appliedSort: "newest", sort: "top", loadFailed: true, hasLoaded: false }), "top");
+});
+
+test("zapis w ściądze: po dołączeniu fokus trafia na link „Otwórz ściągę” zamiast na <body>", () => {
+  const src = readFileSync(pathJoin(__dirname, "..", "src", "components", "JoinChecklistButton.tsx"), "utf8");
+  assert.match(src, /openLinkRef = useRef<HTMLAnchorElement>/);
+  assert.match(src, /<Link ref=\{openLinkRef\} href="\/konto"/);
+  assert.match(src, /joinedHere\.current = true;\s*setJoined\(true\)/);
+  assert.match(src, /openLinkRef\.current\?\.focus\(\)/);
+  // an offer that is already joined on first render must not steal focus
+  const out = join({ alreadyJoined: true, loggedIn: true });
+  assert.match(out, /Otwórz ściągę/);
 });

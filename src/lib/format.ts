@@ -70,23 +70,6 @@ export function isExpired(endDate: Date | string): boolean {
 }
 
 /**
- * Single source of truth for rendering a nullable fee amount, used by
- * every card/table that shows a fee without room for the waiver
- * condition's full text (PromotionCard, /porownaj, admin promotions
- * list). `null`/`undefined` means "not verified yet" and must never
- * read as free — see Fees in prisma/schema.prisma. A `*` is appended
- * when a waiver condition exists, matching this site's existing
- * footnote convention (full text shown wherever there's room, e.g. the
- * promotion detail page).
- */
-export function formatFeeCompact(cents: number | null | undefined, waiverCondition?: string | null): string {
-  if (cents == null) return "Nieustalone";
-  const hasWaiver = Boolean(waiverCondition?.trim());
-  if (cents === 0) return hasWaiver ? "Nieustalone" : "0 zł";
-  return hasWaiver ? `${formatPLN(cents)}*` : formatPLN(cents);
-}
-
-/**
  * True only when the account fee has actually been verified as 0 zł
  * with no condition attached — never when it's simply unknown (no Fees
  * row, or accountFeeCents left blank). Powers the "Bez opłat za

@@ -377,3 +377,52 @@ test("no forbidden design patterns in the table markup", () => {
   const html = render(columns);
   assert.doesNotMatch(html, /text-ink-300|border-ink-100|bg-ink-solid|text-\[1[01]px\]|break-all|animate-ping/);
 });
+
+/* ---------------- "od 0 zł" and the karencja rule ---------------- */
+
+test("table: a free fee with an 'Inne opłaty' remark reads 'od 0 zł', is not marked best, and says why", () => {
+  const free = { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: 0, cardFeeWaiverCondition: null };
+  const html = render([
+    { card: card("x", { fees: { ...free, hasOtherFee: true } }), extras: EXTRAS_ON },
+    { card: card("y", { fees: { ...free, accountFeeCents: 1500 } }), extras: EXTRAS_ON }
+  ]);
+  const t = text(html);
+  assert.match(t, /od 0\s?zł/);
+  assert.ok(t.includes("Zależnie od warunków"));
+  // the remark qualifies the card fee as well (like FeesSection): neither fee row of column "x" is a winner
+  const accountRow = html.slice(html.indexOf("Opłata za konto"), html.indexOf("Opłata za kartę"));
+  assert.doesNotMatch(accountRow, /sr-only">[^<]*najlepsz/i);
+  assert.equal(describeFee(0, null, true).kind, "free");
+  assert.equal(feeRank(describeFee(0, null, true)), 1);
+  assert.equal(feeRank(describeFee(0, null)), 0);
+});
+
+test("table: without the remark a verified 0 zł is still the best value of its row", () => {
+  const free = { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: 0, cardFeeWaiverCondition: null };
+  const html = render([
+    { card: card("x", { fees: { ...free, hasOtherFee: false } }), extras: EXTRAS_ON },
+    { card: card("y", { fees: { ...free, accountFeeCents: 1500 } }), extras: EXTRAS_ON }
+  ]);
+  const accountRow = html.slice(html.indexOf("Opłata za konto"), html.indexOf("Opłata za kartę"));
+  assert.match(accountRow, /sr-only">[^<]*najlepsz/i);
+});
+
+test("cooldownLines follows the offer page's rule for every (months, date) pair", () => {
+  const date = "2024-08-01T00:00:00Z";
+  const dateLine = "Bez konta w banku od 01.08.2024";
+  // (0, date): the date is a concrete requirement; "Bez karencji" next to it would contradict it
+  assert.deepEqual(cooldownLines(0, date), [dateLine]);
+  // (12, date): two different checks, both printed
+  assert.deepEqual(cooldownLines(12, date), ["Karencja 12 mies.", dateLine]);
+  // (0, no date): no waiting time
+  assert.deepEqual(cooldownLines(0, null), ["Bez karencji"]);
+  // (null, date)
+  assert.deepEqual(cooldownLines(null, date), [dateLine]);
+  // the summary bar's single line is always the first table line
+  for (const [months, cutoff] of [[0, date], [12, date], [0, null], [null, date], [24, null], [null, null]] as const) {
+    const rule = cooldownRule({ cooldownMonths: months, cooldownCutoffDate: cutoff });
+    const lines = cooldownLines(months, cutoff);
+    assert.equal(rule ? cooldownShort(rule) : "Brak danych", lines[0] ?? "Brak danych", `${months} / ${cutoff}`);
+    assert.ok(!(lines.includes("Bez karencji") && lines.length > 1), "never 'Bez karencji' together with another line");
+  }
+});

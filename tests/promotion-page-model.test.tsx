@@ -321,7 +321,7 @@ test("FAQ: six questions with answers, built from the fields", () => {
   const text = nbsp(items.map((i) => `${i.question} ${i.answer}`).join("\n"));
   assert.match(text, /Maksymalnie 800 zł/);
   assert.match(text, /Nagroda I – 200 zł; Nagroda II – 600 zł/);
-  assert.match(text, /1\) Otwórz konto; 2\) Zaloguj się do aplikacji/);
+  assert.match(text, /warunki są takie: Otwórz konto; Zaloguj się do aplikacji/);
   assert.match(text, /Do 31\.10\.2026/);
   assert.match(text, /36 miesięcy/);
   assert.match(text, /Opłata za konto: 0 zł\. Opłata za kartę: 6 zł \(0 zł po spełnieniu warunku: min\. 300 zł płatności\)\./);
@@ -385,7 +385,10 @@ test("FAQ: a part label that already ends with its amount does not print it twic
 
 test("FAQ: the steps are our write-up of the terms, not a quotation of the regulation", () => {
   const answer = buildOfferFaq(FAQ_BASE)[1]?.answer ?? "";
-  assert.match(answer, /^Według naszego opisu promocji: 1\) Otwórz konto; 2\) Zaloguj się do aplikacji\./);
+  assert.match(answer, /^Według naszego opisu promocji warunki są takie: Otwórz konto; Zaloguj się do aplikacji\./);
+  // no numbering: the list holds rules and limits next to actions and the data cannot tell them apart (see offerFaq.ts)
+  assert.doesNotMatch(answer, /\d\) /);
+  assert.match(answer, /są na niej także dodatkowe zasady i ograniczenia/);
   assert.doesNotMatch(answer, /Według regulaminu/);
   assert.match(answer, /wiążące zasady w regulaminie banku/);
 });

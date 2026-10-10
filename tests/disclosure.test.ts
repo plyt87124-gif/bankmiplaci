@@ -23,7 +23,7 @@ import {
 test("strip for 'recommended' discloses partner remuneration AND that the rating excludes it", () => {
   assert.equal(
     disclosureText(STRIP_RECOMMENDED),
-    "Kolejność „Polecane” uwzględnia m.in. wynagrodzenie partnerskie od banków. Ocena serwisu jest liczona bez niego. Jak zarabiamy"
+    "Kolejność „Polecane” zależy od oceny serwisu i od wynagrodzenia partnerskiego od banków – oferta o niższej ocenie może znaleźć się wyżej. Ocena serwisu jest liczona bez wynagrodzenia. Jak zarabiamy"
   );
   assert.equal(STRIP_RECOMMENDED.href, "/jak-zarabiamy#polecane");
 });
@@ -57,7 +57,7 @@ test("sort option label and descriptions", () => {
   assert.equal(SORT_RECOMMENDED_LABEL, "Polecane (uwzględnia wynagrodzenie partnerskie)");
   assert.equal(
     disclosureText(sortDescriptionCopy("recommended")),
-    "Polecane uwzględnia m.in. wynagrodzenie partnerskie od banków. Ocena serwisu jest liczona bez niego. Jak zarabiamy"
+    "W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność. Pozostałe sortowania od niego nie zależą. Jak zarabiamy"
   );
   const topRated = sortDescriptionCopy("top-rated");
   assert.equal(disclosureText(topRated), "Ocena serwisu nie uwzględnia prowizji. Jak liczymy");

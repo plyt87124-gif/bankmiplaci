@@ -1,31 +1,32 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatFeeCompact, isConfirmedFreeAccount } from "../src/lib/format";
+import { isConfirmedFreeAccount } from "../src/lib/format";
+import { resolveFee } from "../src/lib/feeModel";
 import { feesSchema } from "../src/lib/validation/promotion";
 import { feesWriteData } from "../src/lib/services/promotionWrite";
 
 test("unknown fee is never shown as free", () => {
-  assert.equal(formatFeeCompact(null), "Nieustalone");
-  assert.equal(formatFeeCompact(undefined), "Nieustalone");
+  assert.equal(resolveFee(null).label, "Brak danych");
+  assert.equal(resolveFee(undefined).label, "Brak danych");
   assert.equal(isConfirmedFreeAccount(null), false);
   assert.equal(isConfirmedFreeAccount(undefined), false);
   assert.equal(isConfirmedFreeAccount({ accountFeeCents: null }), false);
 });
 
 test("confirmed zero, fixed cost, and conditional waiver read differently", () => {
-  assert.equal(formatFeeCompact(0), "0 zł");
+  assert.equal(resolveFee(0).kind, "free");
   assert.equal(isConfirmedFreeAccount({ accountFeeCents: 0 }), true);
-  assert.match(formatFeeCompact(900), /9/);
-  assert.equal(formatFeeCompact(900).includes("*"), false);
-  assert.equal(formatFeeCompact(900, "min. 350 zł kartą").endsWith("*"), true);
+  assert.match(resolveFee(900).label, /9/);
+  assert.equal(resolveFee(900).kind, "paid");
+  assert.equal(resolveFee(900, "min. 350 zł kartą").kind, "conditional");
   assert.equal(isConfirmedFreeAccount({ accountFeeCents: 4500 }), false);
 });
 
 test("legacy zero with a waiver is ambiguous, never an unconditional free account", () => {
-  assert.equal(formatFeeCompact(0, "wpływ 500 zł"), "Nieustalone");
+  assert.equal(resolveFee(0, "wpływ 500 zł").kind, "unknown");
   assert.equal(isConfirmedFreeAccount({ accountFeeCents: 0, accountFeeWaiverCondition: "wpływ 500 zł" }), false);
   assert.equal(isConfirmedFreeAccount({ accountFeeCents: 0, accountFeeWaiverCondition: "  " }), true);
-  assert.equal(formatFeeCompact(0, "  "), "0 zł");
+  assert.equal(resolveFee(0, "  ").kind, "free");
 });
 
 test("admin rejects zero with a waiver and accepts unknown or the actual non-waived rate", () => {
@@ -63,4 +64,10 @@ test("feesWriteData: amounts are number|null, blank text is null, fees.sourceUrl
   });
   for (const value of Object.values(data)) assert.notEqual(value, undefined);
   assert.ok(!("sourceUrl" in data));
+});
+
+test("the old compact fee formatter is gone: the shared fee model (feeModel.ts) is the only wording of a fee", async () => {
+  const format = (await import("../src/lib/format")) as Record<string, unknown>;
+  assert.equal("formatFeeCompact" in format, false);
+  assert.equal(typeof format.isConfirmedFreeAccount, "function");
 });

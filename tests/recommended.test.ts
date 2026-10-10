@@ -21,9 +21,19 @@ test("a higher commission lifts an offer above a slightly better-rated one", () 
   assert.equal(out[0]!.id, "high-commission");
 });
 
-test("commission cannot rescue a clearly worse offer", () => {
+test("a better offer that also pays something stays ahead of a much weaker, better-paying one", () => {
   const out = sortRecommended([p("good", 9.6, 5000), p("weak", 6.5, 20000)]);
   assert.equal(out[0]!.id, "good");
+});
+
+test("the influence is NOT small: top commission at the rating floor beats a perfect rating that pays nothing", () => {
+  // The disclosure copy says "oferta o niższej ocenie może znaleźć się wyżej"; this pins the fact behind it.
+  // 6.5 / 10 * 1.0 = 0.65 against 10 / 10 * (1 - COMMISSION_WEIGHT) = 0.60.
+  const [weakButPaying, perfectButFree] = recommendedScores([p("weak", 6.5, 20000), p("perfect", 10, 0)]);
+  assert.ok(Math.abs(weakButPaying! - 0.65) < 1e-9);
+  assert.ok(Math.abs(perfectButFree! - (1 - COMMISSION_WEIGHT)) < 1e-9);
+  assert.ok(weakButPaying! > perfectButFree!);
+  assert.equal(sortRecommended([p("perfect", 10, 0), p("weak", 6.5, 20000)])[0]!.id, "weak");
 });
 
 test("commission is compared only within the same account type", () => {

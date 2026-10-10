@@ -3,6 +3,7 @@ import Link from "next/link";
 import { RATING_COMMISSION_RULE } from "@/lib/disclosureCopy";
 import { COMMISSION_WEIGHT } from "@/lib/recommended";
 import { staticPageMetadata } from "@/lib/seo";
+import { RATING_FLOOR } from "../metodologia/ratingModel";
 import { Callout, TextPage, type TocEntry } from "../jak-to-dziala/TextPage";
 
 export const metadata: Metadata = staticPageMetadata("jakZarabiamy");
@@ -17,6 +18,8 @@ const TOC: TocEntry[] = [
   { id: "rekomendacja", label: "Czy oferta w serwisie to rekomendacja" }
 ];
 
+// RATING_FLOOR comes from the rating model (no server-only imports there), the same constant /metodologia prints.
+const pl1 = new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const pl2 = new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 2 });
 
 /**
@@ -77,7 +80,7 @@ export default function HowWeEarnPage() {
       </p>
       <ol>
         <li>
-          <strong>Ocena serwisu</strong> (od 0 do 10, liczona bez prowizji – zob. niżej). To punkt wyjścia: gdyby nie
+          <strong>Ocena serwisu</strong> (od {pl1.format(RATING_FLOOR)} do 10, liczona bez prowizji – zob. niżej). To punkt wyjścia: gdyby nie
           było drugiego czynnika, kolejność byłaby po prostu kolejnością ocen.
         </li>
         <li>

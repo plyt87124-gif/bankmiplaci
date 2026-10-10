@@ -36,7 +36,7 @@ test("strip (recommended) renders the exact sentence with a link to /jak-zarabia
   const out = html(h(AffiliateDisclosure, { variant: "strip", sort: "recommended" }));
   assert.equal(
     text(out),
-    "Kolejność „Polecane” uwzględnia m.in. wynagrodzenie partnerskie od banków. Ocena serwisu jest liczona bez niego. Jak zarabiamy"
+    "Kolejność „Polecane” zależy od oceny serwisu i od wynagrodzenia partnerskiego od banków – oferta o niższej ocenie może znaleźć się wyżej. Ocena serwisu jest liczona bez wynagrodzenia. Jak zarabiamy"
   );
   assert.match(out, /<a [^>]*href="\/jak-zarabiamy#polecane"[^>]*>Jak zarabiamy<\/a>/);
   assert.match(out, /data-disclosure="strip"/);
@@ -44,7 +44,7 @@ test("strip (recommended) renders the exact sentence with a link to /jak-zarabia
 });
 
 test("strip without a sort falls back to the 'recommended' wording (the listing's default order)", () => {
-  assert.match(text(html(h(AffiliateDisclosure, { variant: "strip" }))), /^Kolejność „Polecane” uwzględnia/);
+  assert.match(text(html(h(AffiliateDisclosure, { variant: "strip" }))), /^Kolejność „Polecane” zależy od oceny serwisu i od wynagrodzenia/);
 });
 
 test("strip for another order is the general affiliate sentence", () => {
@@ -86,7 +86,7 @@ test("tag: label for 'recommended', description for the others, full description
   const longRecommended = html(h(AffiliateDisclosure, { variant: "tag", sort: "recommended", long: true }));
   assert.equal(
     text(longRecommended),
-    "Polecane uwzględnia m.in. wynagrodzenie partnerskie od banków. Ocena serwisu jest liczona bez niego. Jak zarabiamy"
+    "W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność. Pozostałe sortowania od niego nie zależą. Jak zarabiamy"
   );
 
   assert.equal(

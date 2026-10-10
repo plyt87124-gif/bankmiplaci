@@ -368,3 +368,21 @@ test("WP-09 sources contain none of the banned patterns of the design spec", () 
     }
   }
 });
+
+test("account fee: hasOtherFee turns a bare 0 zł into 'od 0 zł', like the offer page", () => {
+  assert.deepEqual(describeAccountFee({ accountFeeCents: 0, accountFeeWaiverCondition: null, hasOtherFee: true }), {
+    kind: "free",
+    text: `od${NBSP}0${NBSP}zł`
+  });
+  assert.deepEqual(describeAccountFee({ accountFeeCents: 0, accountFeeWaiverCondition: null, hasOtherFee: false }), {
+    kind: "free",
+    text: `0${NBSP}zł`
+  });
+  // a paid fee keeps its amount; the unknown stays unknown whatever the remark says
+  assert.equal(describeAccountFee({ accountFeeCents: 1200, hasOtherFee: true }).text, `12${NBSP}zł`);
+  assert.equal(describeAccountFee({ accountFeeCents: null, hasOtherFee: true }).text, "Brak danych");
+
+  const withRemark = text(render(card({ fees: { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: 0, cardFeeWaiverCondition: null, hasOtherFee: true } })));
+  assert.ok(withRemark.includes(`Opłata za konto: od${NBSP}0${NBSP}zł`), withRemark);
+  assert.ok(!withRemark.includes(`Opłata za konto: 0${NBSP}zł`));
+});

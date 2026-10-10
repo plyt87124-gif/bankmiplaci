@@ -1,10 +1,9 @@
-import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import "@/styles/motion.css";
 import { Header } from "@/components/Header";
-import { Footer, FooterView } from "@/components/Footer";
+import { Footer } from "@/components/Footer";
 import { AuthModalProvider } from "@/components/AuthModalProvider";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/components/ui/theme";
@@ -81,12 +80,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {children}
           </main>
           {/* The footer's "Dane zaktualizowano" date needs a (cached) database
-              read. Suspense keeps a slow or cold database from holding back the
-              whole page: the static footer (disclosure, links, publisher) is
-              the fallback and is replaced by the full one when the read ends. */}
-          <Suspense fallback={<FooterView />}>
-            <Footer />
-          </Suspense>
+              read. It is NOT wrapped in Suspense: a streamed fallback footer plus
+              the real one meant two footers (two disclosures, two publisher
+              blocks) in the HTML. Footer caps the read itself (1.5 s) and omits
+              the date line when the database is slow or down. */}
+          <Footer />
         </AuthModalProvider>
       </body>
     </html>

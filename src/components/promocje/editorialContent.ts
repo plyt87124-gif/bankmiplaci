@@ -82,7 +82,7 @@ export const LISTING_FAQ: readonly FaqEntry[] = [
   {
     question: "Czy kolejność ofert zależy od prowizji?",
     answer:
-      "Tak, ale tylko w sortowaniu „Polecane”, które jest ustawione domyślnie. Uwzględnia ono m.in. wynagrodzenie partnerskie od banków. Ocena serwisu jest liczona bez niego, a pozostałe sortowania, czyli „Najlepsza ocena”, „Najwyższa premia”, „Najłatwiejsze”, „Najnowsze” i „Kończące się wkrótce”, od niego nie zależą.",
+      "Tak, ale tylko w sortowaniu „Polecane”, które jest ustawione domyślnie. Kolejność w nim zależy od oceny serwisu i od wynagrodzenia partnerskiego od banków, więc oferta o niższej ocenie może znaleźć się wyżej. Ocena serwisu jest liczona bez wynagrodzenia, a pozostałe sortowania, czyli „Najlepsza ocena”, „Najwyższa premia”, „Najłatwiejsze”, „Najnowsze” i „Kończące się wkrótce”, od niego nie zależą.",
     link: { label: "Jak zarabiamy", href: DISCLOSURE_LINKS.howWeEarnRecommended }
   },
   {

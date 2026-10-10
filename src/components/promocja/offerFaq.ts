@@ -91,11 +91,18 @@ function questionSteps(input: OfferFaqInput): FaqAccordionItem {
     return { question, answer: `Nie mamy jeszcze rozpisanych warunków tej promocji. ${NO_DATA_TAIL}` };
   }
   // These are OUR write-up of the terms (the same list as the "Warunki promocji" section), not a quotation
-  // of the regulation - and the data has no flag telling a step from a note, so all of them are listed.
-  const steps = titles.map((title, index) => `${index + 1}) ${title}`).join("; ");
+  // of the regulation. PromotionCondition.type cannot tell a step from a note: in the live data "other" and
+  // "deadline" hold both steps ("Wpisz kod promocji", "Zaloguj się do aplikacji") and notes ("Kto może wziąć
+  // udział", "Terminy wypłat", "Zależności i limity promocji"), and "card_payments"/"inflow" hold reward
+  // tiers as well as actions. Filtering by type would drop real steps, so every condition is listed, WITHOUT
+  // numbering and with an intro that says some entries are rules, not actions.
+  const list = titles.join("; ");
   return {
     question,
-    answer: `Według naszego opisu promocji: ${steps}. Szczegóły znajdziesz w sekcji „Warunki promocji”, a wiążące zasady w regulaminie banku.`
+    answer:
+      `Według naszego opisu promocji warunki są takie: ${list}. ` +
+      "Nie wszystko z tej listy to czynność do wykonania – są na niej także dodatkowe zasady i ograniczenia. " +
+      "Szczegóły znajdziesz w sekcji „Warunki promocji”, a wiążące zasady w regulaminie banku."
   };
 }
 

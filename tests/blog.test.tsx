@@ -12,7 +12,7 @@ import {
   categoryFromSlug,
   categoryHref
 } from "../src/components/blog/categories";
-import { createIdRegistry, slugifyHeading } from "../src/components/blog/headingIds";
+import { ARTICLE_PAGE_IDS, createIdRegistry, slugifyHeading } from "../src/components/blog/headingIds";
 import { classifyHref, containsPartnerLinks, extractMarkdownHrefs, safeImageSrc } from "../src/components/blog/links";
 import { BLOG_MAX_PAGE, BLOG_PAGE_SIZE, pageHref, parsePage, totalPagesFor } from "../src/components/blog/paging";
 
@@ -390,4 +390,47 @@ test("ArticleBody: images render only over https, lazy and async; otherwise the 
 
   const none = html(h(ArticleBody, { markdown: "![](http://cdn.example.com/a.png)" }));
   assert.ok(!none.includes("<img"));
+});
+
+test("createIdRegistry: the ids of the article page's own sections are reserved too", () => {
+  const ids = createIdRegistry();
+  assert.equal(ids.unique("Czytaj dalej"), "czytaj-dalej-2");
+  assert.equal(ids.unique("Powiązana promocja"), "powiazana-promocja-2");
+  assert.equal(ids.unique("Treść"), "tresc-2");
+  // the constants are what the page uses for its ids; each is a distinct, valid id
+  const values = Object.values(ARTICLE_PAGE_IDS);
+  assert.equal(new Set(values).size, values.length);
+  for (const value of values) {
+    assert.match(value, /^[a-z-]+$/);
+    assert.equal(createIdRegistry().unique(value), `${value}-2`, value);
+  }
+});
+
+test("ArticleBody: a heading called 'Czytaj dalej' does not duplicate the page's id", () => {
+  const out = html(h(ArticleBody, { markdown: "## Czytaj dalej\n\nTekst.\n\n## Powiązana promocja\n\nTekst." }));
+  assert.doesNotMatch(out, /id="czytaj-dalej"/);
+  assert.doesNotMatch(out, /id="powiazana-promocja"/);
+  assert.match(out, /id="czytaj-dalej-2"/);
+  assert.match(out, /id="powiazana-promocja-2"/);
+});
+
+test("containsPartnerLinks decodes entities and backslash escapes like the renderer does", () => {
+  const encodings = [
+    "[x](&#47;out/alior)",
+    "[x](&#x2F;out/alior)",
+    "[x](&sol;out/alior)",
+    "[x](/&#111;ut/alior)",
+    "[x](\\/out/alior)",
+    "[x](<&#47;out/alior>)",
+    "[a][1]\n\n[1]: &#47;out/alior"
+  ];
+  for (const md of encodings) {
+    assert.equal(containsPartnerLinks(md, SITE), true, `note shown for ${md}`);
+    // the renderer really makes it a sponsored link, so the two decisions agree
+    assert.match(html(h(ArticleBody, { markdown: md })), /rel="sponsored/, `sponsored link for ${md}`);
+  }
+  // a decoded ordinary link is still ordinary
+  for (const md of ["[x](&#47;promocje)", "[x](\\/blog/jak-to-dziala)", "[x](&amp;)"]) {
+    assert.equal(containsPartnerLinks(md, SITE), false, md);
+  }
 });

@@ -26,13 +26,37 @@ const readLatestVerification = unstable_cache(
   { revalidate: DATA_UPDATED_REVALIDATE_SECONDS }
 );
 
-/** The footer must never take the page down: a failed lookup just omits the line. */
-async function getDataUpdatedAt(): Promise<string | null> {
+/**
+ * The footer is rendered inline (not behind a Suspense boundary: streaming a
+ * fallback footer and then the real one put TWO footers - two disclosures, two
+ * publisher blocks - into the HTML that bots read). So a slow database must not
+ * hold the page back: the lookup gets this long, then the date line is omitted.
+ */
+export const DATA_UPDATED_TIMEOUT_MS = 1500;
+
+/**
+ * Runs `read` and gives up after `timeoutMs`. A timeout or an error is `null`
+ * ("omit the line"), never an exception: the footer must not take the page down.
+ */
+export async function readWithTimeout(
+  read: () => Promise<string | null>,
+  timeoutMs: number = DATA_UPDATED_TIMEOUT_MS
+): Promise<string | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), timeoutMs);
+  });
   try {
-    return await readLatestVerification();
+    return await Promise.race([read(), timeout]);
   } catch {
     return null;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
   }
+}
+
+async function getDataUpdatedAt(): Promise<string | null> {
+  return readWithTimeout(readLatestVerification);
 }
 
 const footerLinkClasses =
@@ -106,7 +130,10 @@ export function FooterView({ dataUpdatedAt, now }: { dataUpdatedAt?: Date | stri
   );
 }
 
-/** Site footer (server component): FooterView plus the "Dane zaktualizowano" date from the database. */
+/**
+ * Site footer (server component): FooterView plus the "Dane zaktualizowano" date from the database
+ * (cached, at most DATA_UPDATED_TIMEOUT_MS of waiting). Exactly one <footer> ends up in the HTML.
+ */
 export async function Footer() {
   const dataUpdatedAt = await getDataUpdatedAt();
   return <FooterView dataUpdatedAt={dataUpdatedAt} />;

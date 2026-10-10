@@ -77,8 +77,8 @@ export default function AboutPage() {
       <p>
         Zarabiamy z prowizji od banków za polecenie: jeśli otworzysz konto przez nasz link partnerski i spełnisz
         warunki, bank lub sieć partnerska może wypłacić nam wynagrodzenie. Korzystanie z serwisu jest dla Ciebie
-        bezpłatne. Wynagrodzenie nie wchodzi do oceny serwisu, ale wpływa na domyślną kolejność ofert „Polecane” –
-        opisujemy to dokładnie na stronie <Link href="/jak-zarabiamy">Jak zarabiamy</Link>.
+        bezpłatne. Wynagrodzenie nie wchodzi do oceny serwisu. Wpływa natomiast na domyślną kolejność ofert „Polecane” i
+        może ją wyraźnie zmienić – opisujemy to dokładnie na stronie <Link href="/jak-zarabiamy">Jak zarabiamy</Link>.
       </p>
 
       <h2 id="zasady">Zasady redakcyjne</h2>

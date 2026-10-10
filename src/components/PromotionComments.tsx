@@ -67,6 +67,31 @@ export function withLikeState(
 }
 
 /**
+ * Which sort button is `aria-pressed`. Normally the requested sort; but when a
+ * RE-sort failed the old list is still on screen, so the pressed state falls back
+ * to the sort that list was loaded with (`appliedSort`).
+ */
+export function pressedSortOf(input: {
+  sort: SortMode;
+  appliedSort: SortMode;
+  loadFailed: boolean;
+  hasLoaded: boolean;
+}): SortMode {
+  return input.loadFailed && input.hasLoaded ? input.appliedSort : input.sort;
+}
+
+/**
+ * Accessible name of a comment's reply button. It starts with the visible text
+ * ("Odpowiedz" / "Anuluj") so voice control works (WCAG 2.5.3), and names the
+ * author because every card carries the same button. A guest is told that the
+ * button asks them to sign in.
+ */
+export function replyButtonLabel(authorName: string, isReplying: boolean, loggedIn: boolean): string {
+  if (isReplying) return `Anuluj odpowiedź: ${authorName}`;
+  return loggedIn ? `Odpowiedz: ${authorName}` : `Odpowiedz: ${authorName} (wymaga logowania)`;
+}
+
+/**
  * The text of the live region above the list. `visible` = shown to everybody
  * (the very first load and a failed load); a re-sort only tells screen readers,
  * because the old list stays on screen until the new one arrives.
@@ -105,6 +130,11 @@ export function PromotionComments({
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [sortedBy, setSortedBy] = useState<string | null>(null);
+  // The sort whose list is on screen. A failed re-sort leaves the old list in place, so the pressed
+  // state of the sort buttons must go back to this one, not stay on the sort that failed.
+  const [appliedSort, setAppliedSort] = useState<SortMode>("newest");
+  // Bumped to retry the SAME sort after a failure (the sort did not change, so the effect would not rerun).
+  const [reloadKey, setReloadKey] = useState(0);
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,6 +164,7 @@ export function PromotionComments({
       .then((data) => {
         if (controller.signal.aborted) return;
         setComments(data.comments ?? []);
+        setAppliedSort(sort);
         setLoading(false);
         if (sortChosen.current) setSortedBy(SORT_OPTIONS.find((o) => o.value === sort)?.label.toLowerCase() ?? null);
       })
@@ -143,10 +174,20 @@ export function PromotionComments({
         setLoading(false);
       });
     return () => controller.abort();
-  }, [promotionSlug, sort]);
+  }, [promotionSlug, sort, reloadKey]);
+
+  // After a failed re-sort the old list stays, so the buttons describe that list.
+  const pressedSort = pressedSortOf({ sort, appliedSort, loadFailed, hasLoaded });
 
   function chooseSort(next: SortMode) {
-    if (next === sort) return;
+    if (next === sort) {
+      // The sort that just failed is chosen again: try once more.
+      if (loadFailed) {
+        sortChosen.current = true;
+        setReloadKey((key) => key + 1);
+      }
+      return;
+    }
     sortChosen.current = true;
     setSort(next);
   }
@@ -229,7 +270,7 @@ export function PromotionComments({
         {comments && comments.length > 0 && (
           <div role="group" aria-label="Sortowanie komentarzy" className="inline-flex gap-1 rounded-full border border-line-strong p-1">
             {SORT_OPTIONS.map((option) => {
-              const active = sort === option.value;
+              const active = pressedSort === option.value;
               return (
                 <button
                   key={option.value}
@@ -358,7 +399,7 @@ export function PromotionComments({
   );
 }
 
-function CommentCard({
+export function CommentCard({
   comment,
   canReply,
   isReplying,
@@ -432,6 +473,8 @@ function CommentCard({
           <button
             type="button"
             onClick={onToggleReply}
+            // Starts with the visible text (WCAG 2.5.3) and names the comment: every card has the same button.
+            aria-label={replyButtonLabel(comment.authorName, Boolean(isReplying), canLike)}
             className="inline-flex min-h-11 items-center rounded-field px-3 text-small font-semibold text-ink-700 hover:bg-ink-100"
           >
             {isReplying ? "Anuluj" : "Odpowiedz"}

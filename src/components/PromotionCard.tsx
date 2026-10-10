@@ -42,7 +42,12 @@ export interface PromotionCardData {
   /** Missing = "Brak daty weryfikacji". */
   lastVerifiedAt?: Date | string | null;
   summary?: string | null;
-  fees?: { accountFeeCents: number | null; accountFeeWaiverCondition?: string | null } | null;
+  fees?: {
+    accountFeeCents: number | null;
+    accountFeeWaiverCondition?: string | null;
+    /** The offer has an "Inne opłaty" remark: a bare 0 zł reads "od 0 zł". Yes/no only, never the remark's text. */
+    hasOtherFee?: boolean;
+  } | null;
   conditions?: { title: string }[];
   bank: { name: string; slug?: string; logoUrl?: string | null };
   /** Admin preview of an unpublished offer shows a "Roboczy" badge. */

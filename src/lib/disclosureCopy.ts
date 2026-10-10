@@ -58,7 +58,7 @@ export function isRecommendedSort(sort: string | null | undefined): boolean {
 // ---------------------------------------------------------------------------
 
 export const STRIP_RECOMMENDED: DisclosureCopy = {
-  lead: "Kolejność „Polecane” uwzględnia m.in. wynagrodzenie partnerskie od banków. Ocena serwisu jest liczona bez niego.",
+  lead: "Kolejność „Polecane” zależy od oceny serwisu i od wynagrodzenia partnerskiego od banków – oferta o niższej ocenie może znaleźć się wyżej. Ocena serwisu jest liczona bez wynagrodzenia.",
   linkLabel: "Jak zarabiamy",
   href: DISCLOSURE_LINKS.howWeEarnRecommended
 };
@@ -94,9 +94,15 @@ export const AFFILIATE_BADGE_LABEL = "Link partnerski";
 /** Label of the "Polecane" sort option: the suffix is permanent, not "może". */
 export const SORT_RECOMMENDED_LABEL = "Polecane (uwzględnia wynagrodzenie partnerskie)";
 
-/** Longer description shown under the sort control while "Polecane" is active. */
+/**
+ * Description shown under the sort control while "Polecane" is active. The
+ * strip above the list already carries the full statement (what the order
+ * depends on, that a lower-rated offer can rank higher, that the rating is
+ * commission-free), so this line only adds what is new next to the control:
+ * that remuneration acts in THIS sort order and in none of the others.
+ */
 export const TAG_RECOMMENDED_DESCRIPTION: DisclosureCopy = {
-  lead: "Polecane uwzględnia m.in. wynagrodzenie partnerskie od banków. Ocena serwisu jest liczona bez niego.",
+  lead: "W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność. Pozostałe sortowania od niego nie zależą.",
   linkLabel: "Jak zarabiamy",
   href: DISCLOSURE_LINKS.howWeEarnRecommended
 };

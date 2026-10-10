@@ -1,3 +1,7 @@
+import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
+import { unified } from "unified";
+
 /**
  * Classification of the links inside an article (markdown body). Pure: no
  * React, no database, the site host is a parameter - so the rules live in one
@@ -144,9 +148,46 @@ const URL_CANDIDATES: readonly RegExp[] = [
   /(?<![\w/.])www\.[^\s<>()[\]]+/gi
 ];
 
-/** Hrefs found in a markdown source (see URL_CANDIDATES for the precision). */
-export function extractMarkdownHrefs(markdown: string): string[] {
+// A minimal structural view of the mdast tree (the real nodes are assignable to it).
+interface MdastNode {
+  type: string;
+  url?: string;
+  children?: MdastNode[];
+}
+
+/**
+ * Link targets as the RENDERER sees them: the markdown is parsed with the same
+ * parser and GFM extension as ArticleBody (react-markdown is remark-parse plus
+ * remark-gfm), so HTML entities ("&#47;out/x", "&sol;out/x") and backslash
+ * escapes ("\/out/x") are already decoded, and literal autolinks are links.
+ * Reference definitions are included even when unused (a superset: the worst
+ * case is one needless affiliate note, never a missing one).
+ */
+function parsedHrefs(markdown: string): string[] {
+  let tree: MdastNode;
+  try {
+    tree = unified().use(remarkParse).use(remarkGfm).parse(markdown) as unknown as MdastNode;
+  } catch {
+    return [];
+  }
   const found: string[] = [];
+  const walk = (node: MdastNode): void => {
+    if ((node.type === "link" || node.type === "definition") && typeof node.url === "string" && node.url) {
+      found.push(node.url);
+    }
+    for (const child of node.children ?? []) walk(child);
+  };
+  walk(tree);
+  return found;
+}
+
+/**
+ * Hrefs found in a markdown source: those of the parsed tree (what the page
+ * renders) plus the raw-text candidates of URL_CANDIDATES (see there for the
+ * precision), so nothing is missed either way.
+ */
+export function extractMarkdownHrefs(markdown: string): string[] {
+  const found: string[] = parsedHrefs(markdown);
   for (const pattern of URL_CANDIDATES) {
     for (const match of markdown.matchAll(pattern)) {
       let candidate = (match[1] ?? match[0]).trim();
@@ -156,7 +197,7 @@ export function extractMarkdownHrefs(markdown: string): string[] {
       if (candidate) found.push(candidate);
     }
   }
-  return found;
+  return [...new Set(found)];
 }
 
 /** Does the article body contain at least one affiliate link? */

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { LegalPage, type LegalSection } from "@/components/LegalPage";
+import { staticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Polityka cookies", alternates: { canonical: "/cookies" } };
+export const metadata: Metadata = staticPageMetadata("cookies");
 
 const sections: LegalSection[] = [
   { id: "czym-sa-cookies", label: "1. Czym są pliki cookies?" },

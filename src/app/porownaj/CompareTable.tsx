@@ -63,7 +63,15 @@ function FeeCell({ fee, best }: { fee: FeeView; best: boolean }) {
     case "unknown":
       return <Missing />;
     case "free":
-      return <Value best={best}>{formatPLN(0)}</Value>;
+      // "od 0 zł": the "Inne opłaty" remark qualifies the number, so it is never marked as the best value.
+      return fee.hasCaveat ? (
+        <>
+          <Value>{`od ${formatPLN(0)}`}</Value>
+          <p className="mt-1 text-caption text-ink-500">Zależnie od warunków – zob. „Inne opłaty” w ofercie</p>
+        </>
+      ) : (
+        <Value best={best}>{formatPLN(0)}</Value>
+      );
     case "paid":
       return <Value best={best}>{formatPLN(fee.cents)}</Value>;
     case "conditional":
@@ -187,8 +195,9 @@ interface Row {
 export function CompareTable({ columns }: { columns: CompareColumn[] }) {
   const n = columns.length;
   const fees = columns.map((c) => ({
-    account: describeFee(c.card.fees?.accountFeeCents, c.card.fees?.accountFeeWaiverCondition),
-    card: describeFee(c.card.fees?.cardFeeCents, c.card.fees?.cardFeeWaiverCondition)
+    // hasOtherFee qualifies both fees, like on the offer page (FeesSection).
+    account: describeFee(c.card.fees?.accountFeeCents, c.card.fees?.accountFeeWaiverCondition, c.card.fees?.hasOtherFee),
+    card: describeFee(c.card.fees?.cardFeeCents, c.card.fees?.cardFeeWaiverCondition, c.card.fees?.hasOtherFee)
   }));
   const bestBonus = bestFlags(columns.map((c) => c.card.maxBonusCents), "max");
   const bestEffort = bestFlags(columns.map((c) => DIFFICULTY_LEVEL[c.card.difficulty]), "min");

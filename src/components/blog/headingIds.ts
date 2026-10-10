@@ -10,8 +10,25 @@
  * the same ids, in document order.
  */
 
-/** Ids already used by the page around the article body (skip link target) or by the footnote block. */
-const RESERVED_IDS: readonly string[] = ["tresc", "footnote-label"];
+/**
+ * Ids that the page around the article body, or the footnote block, already
+ * uses. A heading whose text slugifies to one of them ("Czytaj dalej", "Treść")
+ * would otherwise duplicate the id in the DOM, so the registry never hands them
+ * out. The article page should import these constants for its own `id`s
+ * instead of repeating the strings.
+ */
+export const ARTICLE_PAGE_IDS = {
+  /** Skip-link target: the article body. */
+  content: "tresc",
+  /** The "Przypisy" heading that remark-gfm adds before the footnotes. */
+  footnotes: "footnote-label",
+  /** Section "Powiązana promocja" under the article. */
+  relatedPromotion: "powiazana-promocja",
+  /** Section "Czytaj dalej" under the article. */
+  readMore: "czytaj-dalej"
+} as const;
+
+const RESERVED_IDS: readonly string[] = Object.values(ARTICLE_PAGE_IDS);
 
 const FALLBACK_SLUG = "sekcja";
 const MAX_SLUG_LENGTH = 80;

@@ -14,7 +14,7 @@ import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared
 import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 import { AuthModalProvider } from "../src/components/AuthModalProvider";
 import { Header } from "../src/components/Header";
-import { FooterView } from "../src/components/Footer";
+import { DATA_UPDATED_TIMEOUT_MS, FooterView, readWithTimeout } from "../src/components/Footer";
 import { MobileNav } from "../src/components/MobileNav";
 import {
   ACCOUNT_LINK,
@@ -322,11 +322,14 @@ test("motion.css names the grid-rows collapse `.collapse-rows`, never a bare `.c
   assert.ok(!/(^|[\s,}])\.collapse(?![\w-])/m.test(css), "no bare .collapse selector");
 });
 
-test("root layout: Header takes no props (no user object in the RSC payload); Footer streams behind a Suspense with the static footer", () => {
+test("root layout: Header takes no props (no user object in the RSC payload); Footer is rendered once, without a Suspense fallback copy", () => {
   const layout = read("src/app/layout.tsx");
   assert.ok(!/<Header\s+user/.test(layout));
   assert.match(layout, /<Header\s*\/>/);
-  assert.match(layout, /<Suspense fallback=\{<FooterView \/>\}>\s*<Footer \/>\s*<\/Suspense>/);
+  // A Suspense with a FooterView fallback streams BOTH footers into the HTML (two disclosures, two publisher blocks).
+  assert.ok(!/Suspense/.test(layout.replace(/\{\/\*[\s\S]*?\*\/\}/g, "")), "no Suspense around the footer");
+  assert.ok(!/FooterView/.test(layout));
+  assert.equal((layout.match(/<Footer\s*\/>/g) ?? []).length, 1);
   assert.ok(!read("src/components/Header.tsx").includes("HeaderProps"));
 });
 
@@ -342,4 +345,29 @@ test("the static footer (FooterView) still carries the affiliate disclosure and 
   assert.match(out, /<footer\b/);
   assert.match(out, /data-footer="publisher"/);
   assert.ok(/partner|prowizj/i.test(out), "disclosure wording present");
+});
+
+test("footer date lookup: a slow or failing database omits the line instead of holding the page back", async () => {
+  assert.equal(DATA_UPDATED_TIMEOUT_MS, 1500);
+  assert.equal(await readWithTimeout(async () => "2026-10-06T08:00:00.000Z", 50), "2026-10-06T08:00:00.000Z");
+  assert.equal(await readWithTimeout(async () => null, 50), null);
+  // an error is "no date", not an exception
+  assert.equal(
+    await readWithTimeout(async () => {
+      throw new Error("db down");
+    }, 50),
+    null
+  );
+  // a lookup that never answers is cut off at the limit
+  const started = Date.now();
+  const slow = await readWithTimeout(() => new Promise<string | null>(() => {}), 40);
+  assert.equal(slow, null);
+  assert.ok(Date.now() - started < 1000, "returned long before any real database timeout");
+});
+
+test("the footer is one <footer> element: the real Footer renders FooterView once", () => {
+  const src = read("src/components/Footer.tsx");
+  assert.equal((src.match(/<FooterView/g) ?? []).length, 1, "Footer renders FooterView exactly once");
+  assert.equal((renderToStaticMarkup(<FooterView />).match(/<footer/g) ?? []).length, 1);
+  assert.match(src, /readWithTimeout\(readLatestVerification\)/);
 });

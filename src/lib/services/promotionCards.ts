@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import type { AccountType, Difficulty, Prisma } from "@prisma/client";
+import { hasFeeCaveat } from "@/lib/feeModel";
 import { sortRecommended } from "@/lib/recommended";
 import { signupCutoff } from "@/lib/promotionAvailability";
 import { activeWhere, buildActiveWhere, sortToOrderBy, type PromotionFilters } from "@/lib/services/promotions";
@@ -11,7 +12,8 @@ import { activeWhere, buildActiveWhere, sortToOrderBy, type PromotionFilters } f
  *
  * What is deliberately NOT in here: `affiliateUrl` (outbound links go through
  * /out/[slug]) and `affiliateCommissionCents` (business-internal, only used to
- * order "Polecane" inside this module and removed before anything is returned).
+ * order "Polecane" inside this module and removed before anything is returned)
+ * and the TEXT of `Fees.otherFee` (only its yes/no, `fees.hasOtherFee`, is carried).
  * Adding a field here means it becomes public: it ends up in server-rendered
  * HTML, client component props and /api/promotions/active.
  *
@@ -36,6 +38,14 @@ export interface PromotionCardData {
     accountFeeWaiverCondition: string | null;
     cardFeeCents: number | null;
     cardFeeWaiverCondition: string | null;
+    /**
+     * Yes/no only: the offer has an "Inne opłaty" remark (Fees.otherFee), so a
+     * bare 0 zł is the best case and reads "od 0 zł" (src/lib/feeModel.ts).
+     * The remark's TEXT never reaches a card - it is shown on the offer page.
+     * Always set by `toCard`; optional in the type only so that hand-written
+     * fixtures without it keep compiling (missing = no remark).
+     */
+    hasOtherFee?: boolean;
   } | null;
   /** At most one entry: the first condition by `order` (empty when there are none). */
   conditions: { title: string }[];
@@ -70,7 +80,9 @@ export const PROMOTION_CARD_SELECT = {
       accountFeeCents: true,
       accountFeeWaiverCondition: true,
       cardFeeCents: true,
-      cardFeeWaiverCondition: true
+      cardFeeWaiverCondition: true,
+      // Read only to derive the boolean `hasOtherFee` in `toCard`; the text is not copied.
+      otherFee: true
     }
   },
   conditions: { select: { title: true }, orderBy: { order: "asc" }, take: 1 },
@@ -96,7 +108,8 @@ function toCard(row: CardRow): PromotionCardData {
           accountFeeCents: row.fees.accountFeeCents,
           accountFeeWaiverCondition: row.fees.accountFeeWaiverCondition,
           cardFeeCents: row.fees.cardFeeCents,
-          cardFeeWaiverCondition: row.fees.cardFeeWaiverCondition
+          cardFeeWaiverCondition: row.fees.cardFeeWaiverCondition,
+          hasOtherFee: hasFeeCaveat(row.fees.otherFee)
         }
       : null,
     conditions: row.conditions.map((c) => ({ title: c.title })),

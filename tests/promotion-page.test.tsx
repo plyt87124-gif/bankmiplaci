@@ -435,6 +435,10 @@ test("conditions: numbered static list, the ściąga link and card only when the
   const none = html(h(ConditionsSection, { bankName: "B", conditions: [], hasChecklist: false }));
   assert.match(text(none), /Nie mamy jeszcze rozpisanych kroków tej promocji/);
   assert.doesNotMatch(none, /href="#sciaga"/);
+  // the numbered list is introduced as "steps plus rules": not every entry is an action
+  assert.match(text(withSheet), /Obok kroków do wykonania lista zawiera dodatkowe zasady i ograniczenia/);
+  assert.ok(withSheet.indexOf("Obok kroków") < withSheet.indexOf("<ol"));
+  assert.doesNotMatch(none, /Obok kroków/);
 });
 
 /* ------------------------------------------------------------------ */
@@ -639,8 +643,10 @@ test("guards: the page keeps its caches and parallel reads", () => {
   assert.match(data, /export const getViewer = cache\(/);
   const page = readFileSync(join(PAGE_DIR, "page.tsx"), "utf8");
   assert.match(page, /await Promise\.all\(\[\s*currentUser \?/);
-  assert.match(page, /export const revalidate = 600/);
-  assert.match(page, /export async function generateStaticParams/);
+  // The route is dynamic (the layout reads the session cookie): an ISR-style export on it turned edge cases
+  // into HTTP 500 in production (commit 3add155), so neither export may come back before WP-17.
+  assert.doesNotMatch(page, /export const revalidate\b/);
+  assert.doesNotMatch(page, /export (async )?function generateStaticParams/);
 });
 
 test("guards: no forbidden design patterns in the page's code (spec sections 2 and 7)", () => {

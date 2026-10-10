@@ -120,15 +120,36 @@ export function cooldownRule(p: {
 }
 
 /**
- * The short "Karencja" fact of the summary bar (also usable by the comparison).
- * A stored cut-off date is a concrete requirement, so it wins over "0 months":
- * "Bez karencji" is said only when there is no date to state.
+ * THE rule for wording a cooldown in short form; the summary bar
+ * (cooldownShort) and the comparison table (compareModel.cooldownLines) both
+ * read it, so one offer never says two different things.
+ *
+ *   months > 0             "Karencja N mies."
+ *   a cut-off date         "Bez konta w banku od <date>"
+ *   months === 0, no date  "Bez karencji"
+ *   months === 0 + date    ONLY the date line: the date is a concrete
+ *                          requirement, and "Bez karencji" next to it would
+ *                          contradict it
+ *   months > 0 + date      both lines (two different checks)
+ *   nothing stored         [] - callers print "Brak danych"; we never claim
+ *                          that there is no karencja without data
+ */
+export function cooldownLines(rule: CooldownRule): string[] {
+  const lines: string[] = [];
+  if (rule.months !== null && !(rule.months === 0 && rule.cutoff)) {
+    lines.push(rule.months === 0 ? "Bez karencji" : `Karencja ${rule.months} mies.`);
+  }
+  if (rule.cutoff) lines.push(`Bez konta w banku od ${formatDatePL(rule.cutoff)}`);
+  return lines;
+}
+
+/**
+ * The short "Karencja" fact of the summary bar: the first line of
+ * cooldownLines (the months rule, or the date when it is the only requirement
+ * or when "0 months" would contradict it).
  */
 export function cooldownShort(rule: CooldownRule): string {
-  const cutoffText = rule.cutoff ? `Bez konta w banku od ${formatDatePL(rule.cutoff)}` : null;
-  if (rule.months === 0) return cutoffText ?? "Bez karencji";
-  if (rule.months !== null) return `Karencja ${rule.months} mies.`;
-  return cutoffText ?? "Brak danych";
+  return cooldownLines(rule)[0] ?? "Brak danych";
 }
 
 /**

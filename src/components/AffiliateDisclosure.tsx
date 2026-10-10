@@ -20,15 +20,18 @@ import {
  *
  *   strip    above EVERY list of offers (home, /promocje, /porownaj, hubs, banks).
  *            Wording depends on the active `sort`: "recommended" (also when no
- *            sort is given, as the listing does) says the order takes partner
- *            remuneration into account while the rating does not; any other
- *            order carries the general affiliate sentence.
+ *            sort is given, as the listing does) says the order depends on the
+ *            rating AND on partner remuneration (so a lower-rated offer can
+ *            rank higher) while the rating itself is computed without it; any
+ *            other order carries the general affiliate sentence.
  *   compact  directly under EVERY button that leads to a bank (offer aside,
  *            bottom CTA, sticky mobile bar, comparison table).
  *   tag      the sort option and the description of the active sort:
  *            by default "Polecane (uwzględnia wynagrodzenie partnerskie)" for
  *            "recommended" and a one-line description for the other orders;
- *            `long` swaps the "recommended" label for the full description.
+ *            `long` swaps the "recommended" label for a short description that
+ *            only adds what the strip does not say (remuneration acts in this
+ *            sort order and in no other).
  *   footer   the site-wide statement in the footer.
  *
  * Every instance carries `data-disclosure="<variant>"` so end-to-end checks

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, ListChecks } from "lucide-react";
@@ -35,6 +35,18 @@ export function JoinChecklistButton({
   const dateId = `${baseId}-date`;
   const hintId = `${baseId}-hint`;
   const errorId = `${baseId}-error`;
+  // Joining removes the button the visitor just pressed, so focus would fall back to <body>.
+  // After a join made on this page it moves to the "Otwórz ściągę" link (not on first render
+  // of an already-joined offer: nothing was pressed then and focus must not be stolen).
+  const joinedHere = useRef(false);
+  const openLinkRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    if (joined && joinedHere.current) {
+      joinedHere.current = false;
+      openLinkRef.current?.focus();
+    }
+  }, [joined]);
 
   async function join() {
     setLoading(true);
@@ -46,6 +58,7 @@ export function JoinChecklistButton({
     }).catch(() => null);
     setLoading(false);
     if (res?.ok) {
+      joinedHere.current = true;
       setJoined(true);
       router.push("/konto");
       return;
@@ -93,7 +106,7 @@ export function JoinChecklistButton({
       {joined ? (
         <>
           <p className="mt-1.5 text-small text-ink-700">Twoja szczegółowa ściąga czeka w „Moje konto”.</p>
-          <Link href="/konto" className="link-inline mt-2 inline-flex min-h-11 items-center gap-1 text-ui font-medium">
+          <Link ref={openLinkRef} href="/konto" className="link-inline mt-2 inline-flex min-h-11 items-center gap-1 text-ui font-medium">
             Otwórz ściągę
             <ArrowRight size={16} aria-hidden="true" />
           </Link>

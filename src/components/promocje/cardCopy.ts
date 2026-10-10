@@ -30,8 +30,9 @@ export interface AccountFeeLine {
  *
  * The reading is the site's single fee model (src/lib/feeModel.ts), shared with
  * the offer page, its FAQ and JSON-LD and the comparison. `hasOtherFee` is the
- * yes/no "the offer has an Inne opłaty remark"; the card data does not carry it
- * yet, so until it does a card without it keeps saying "0 zł".
+ * yes/no "the offer has an Inne opłaty remark" (PromotionCardData.fees.hasOtherFee,
+ * derived from Fees.otherFee in services/promotionCards.ts); a fixture without
+ * it is read as "no remark" and keeps saying "0 zł".
  */
 export function describeAccountFee(
   fees:

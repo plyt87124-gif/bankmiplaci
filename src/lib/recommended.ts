@@ -3,10 +3,17 @@
  *
  * Multiplies the site's own rating by a factor driven by the partner
  * commission we receive (0.6 for the lowest-paying offer up to 1.0 for the
- * best-paying one in its group), so better-paying offers rank higher, yet a
- * clearly weaker offer cannot overtake a clearly better one on commission alone. This is NOT the public "ocena
- * serwisu" (that stays commission-free, see services/ratings.ts) and the
- * influence is disclosed on /jak-zarabiamy and next to the sort control.
+ * best-paying one in its group), so better-paying offers rank higher.
+ *
+ * The influence is substantial, NOT a tie-breaker: the factor spans 0.4 of the
+ * score while the public ratings sit between 6.5 and 10. An offer rated 6.5
+ * with the highest commission scores 0.65 and overtakes an offer rated 10
+ * whose commission is zero (0.60). The disclosure copy
+ * (lib/disclosureCopy.ts), /jak-zarabiamy and the FAQ must therefore say that a
+ * lower-rated offer can rank higher, never that commission only nudges the
+ * order. This is NOT the public "ocena serwisu" (that stays commission-free,
+ * see services/ratings.ts); the influence is disclosed on /jak-zarabiamy, in
+ * the strip above the lists and next to the sort control.
  *
  * Commission is compared only within the same account type (a business
  * sign-up bonus pays far more than a personal one), normalised to the best

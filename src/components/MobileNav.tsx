@@ -21,7 +21,7 @@ export type MobileNavAccount = "user" | "guest" | "loading";
  *    outside, tabbing out of it, following a link and widening the window to
  *    desktop size close it too.
  *  - The panel is always in the DOM and opens by animating `grid-template-rows`
- *    (0fr to 1fr, 200 ms, the technique of .collapse in motion.css); while
+ *    (0fr to 1fr, 200 ms, the technique of .collapse-rows in motion.css); while
  *    closed it is `inert`, so its links leave the tab order and the
  *    accessibility tree.
  *  - The panel is absolutely positioned against the <header> (the nearest
@@ -122,8 +122,9 @@ export function MobileNav({
         {open ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
       </button>
 
-      {/* Not the shared `.collapse` class of motion.css: Tailwind has a `collapse`
-          utility of its own (visibility: collapse) that would hide the open panel. */}
+      {/* The same technique as `.collapse-rows` in motion.css, written with Tailwind utilities here. (The
+          shared class used to be called `.collapse`, which clashed with Tailwind's own `collapse`
+          utility, visibility: collapse, and would hide the open panel.) */}
       <div
         data-open={open}
         className="absolute inset-x-0 top-full grid grid-rows-[0fr] transition-[grid-template-rows] duration-base ease-out data-[open=true]:grid-rows-[1fr]"

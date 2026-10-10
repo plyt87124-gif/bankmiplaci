@@ -32,7 +32,7 @@ function row(slug: string, rating: number, commission: number | null, over: Part
     endDate: new Date("2099-01-31T00:00:00.000Z"),
     lastVerifiedAt: new Date("2026-10-01T00:00:00.000Z"),
     affiliateCommissionCents: commission,
-    fees: { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: null, cardFeeWaiverCondition: null },
+    fees: { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: null, cardFeeWaiverCondition: null, otherFee: null },
     conditions: [{ title: "Załóż konto" }],
     bank: { name: "Bank", slug: "bank", logoUrl: null },
     ...over
@@ -106,7 +106,8 @@ test("a card has exactly the documented public fields", () => {
     "accountFeeCents",
     "accountFeeWaiverCondition",
     "cardFeeCents",
-    "cardFeeWaiverCondition"
+    "cardFeeWaiverCondition",
+    "hasOtherFee"
   ]);
 });
 
@@ -210,4 +211,38 @@ test("an offer with no commission is neither boosted nor buried against one with
   // a clearly better-rated offer without a commission still wins
   const out = finalizeCards([row("paid", 7.0, 90_000), row("unpaid", 9.6, null)], "recommended");
   assert.equal(out[0]!.slug, "unpaid");
+});
+
+test("only the yes/no of Fees.otherFee reaches a card: the remark's text never does", () => {
+  const REMARK = "Tajna-uwaga-o-oplatach-12345";
+  const fee = (otherFee: string | null) => ({
+    accountFeeCents: 0,
+    accountFeeWaiverCondition: null,
+    cardFeeCents: null,
+    cardFeeWaiverCondition: null,
+    otherFee
+  });
+  const cards = finalizeCards(
+    [
+      row("with", 9, null, { fees: fee(REMARK) }),
+      row("blank", 9, null, { fees: fee("   ") }),
+      row("none", 9, null, { fees: fee(null) })
+    ],
+    "top-rated"
+  );
+  assert.deepEqual(
+    cards.map((c) => c.fees!.hasOtherFee),
+    [true, false, false]
+  );
+  const serialized = JSON.stringify(cards);
+  assert.equal(serialized.includes(REMARK), false);
+  assert.equal(serialized.includes('"otherFee"'), false, "no otherFee key, only hasOtherFee");
+  for (const c of cards) assert.equal(typeof c.fees!.hasOtherFee, "boolean");
+});
+
+test("the card query selects otherFee only to derive the boolean (the select is explicit)", () => {
+  assert.equal(PROMOTION_CARD_SELECT.fees.select.otherFee, true);
+  const src = readFileSync(join(__dirname, "..", "src", "lib", "services", "promotionCards.ts"), "utf8");
+  assert.match(src, /hasOtherFee: hasFeeCaveat\(row\.fees\.otherFee\)/);
+  assert.doesNotMatch(src, /otherFee: row\.fees\.otherFee/);
 });

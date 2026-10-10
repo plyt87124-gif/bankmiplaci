@@ -13,7 +13,7 @@
  */
 import { COMPACT } from "@/lib/disclosureCopy";
 import { resolveFee } from "@/lib/feeModel";
-import { cooldownRule, cooldownShort } from "@/components/promocja/offerModel";
+import { cooldownLines as offerCooldownLines, cooldownRule } from "@/components/promocja/offerModel";
 
 export const COMPARE_MAX = 4;
 
@@ -133,8 +133,8 @@ export type FeeView =
  * null -> unknown. 0 together with a condition is contradictory -> unknown.
  * The reading is the site's single fee model (src/lib/feeModel.ts), the same
  * one the offer page, its FAQ, its JSON-LD and the offer card use. `hasCaveat`
- * is the yes/no "the offer has an Inne opłaty remark" (the card data does not
- * carry it yet, so callers may leave it out).
+ * is the yes/no "the offer has an Inne opłaty remark"
+ * (PromotionCardData.fees.hasOtherFee; callers with older data may leave it out).
  */
 export function describeFee(
   cents: number | null | undefined,
@@ -165,20 +165,17 @@ export function feeRank(fee: FeeView): number | null {
 /* ------------------------------------------------------------------ */
 
 /**
- * Lines for the "Karencja" row, worded by the SAME function as the offer page
- * (cooldownShort in components/promocja/offerModel.ts), so one offer never says
+ * Lines for the "Karencja" row: the SAME rule as the offer page's summary bar
+ * (cooldownLines in components/promocja/offerModel.ts), so one offer never says
  * two different things in two places. Both rules can be set (the user must pass
- * both checks): one line each. 0 months is a rule that adds no waiting time
- * ("Bez karencji", as on the offer page); nothing set -> `[]` and the cell says
- * "Brak danych": we never claim that there is no karencja without data.
+ * both checks): one line each, except that "0 months" together with a cut-off
+ * date prints only the date ("Bez karencji" beside it would contradict it).
+ * Nothing set -> `[]` and the cell says "Brak danych": we never claim that
+ * there is no karencja without data.
  */
 export function cooldownLines(cooldownMonths: number | null | undefined, cutoff: Date | string | null | undefined): string[] {
   const rule = cooldownRule({ cooldownMonths, cooldownCutoffDate: cutoff });
-  if (!rule) return [];
-  const lines: string[] = [];
-  if (rule.months !== null) lines.push(cooldownShort({ months: rule.months, cutoff: null }));
-  if (rule.cutoff) lines.push(cooldownShort({ months: null, cutoff: rule.cutoff }));
-  return lines;
+  return rule ? offerCooldownLines(rule) : [];
 }
 
 /* ------------------------------------------------------------------ */

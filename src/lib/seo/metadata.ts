@@ -545,6 +545,26 @@ export const STATIC_PAGE_META = {
     title: "Kontakt",
     description:
       "Nieaktualna promocja bankowa albo błąd w warunkach? Napisz do nas – każde zgłoszenie trafia do weryfikacji przed aktualizacją."
+  },
+  // Legal pages: the title stays the page's own heading; the description only says what the document is
+  // (so they no longer inherit the home page's description). The legal text itself is not touched.
+  regulamin: {
+    path: "/regulamin",
+    title: "Regulamin",
+    description:
+      "Regulamin serwisu Bankmiplaci: zasady korzystania z porównywarki promocji bankowych, charakter serwisu, odpowiedzialność i reklamacje."
+  },
+  polityka: {
+    path: "/polityka-prywatnosci",
+    title: "Polityka prywatności",
+    description:
+      "Polityka prywatności Bankmiplaci: administrator danych, jakie dane przetwarzamy, w jakim celu, jak długo je przechowujemy i jakie prawa Ci przysługują."
+  },
+  cookies: {
+    path: "/cookies",
+    title: "Polityka cookies",
+    description:
+      "Polityka cookies Bankmiplaci: z jakich plików cookies korzystamy, do czego służą i jak zarządzać zgodą na ich używanie."
   }
 } as const satisfies Record<string, StaticPageMeta>;
 
