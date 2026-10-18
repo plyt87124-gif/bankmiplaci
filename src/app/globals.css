@@ -37,14 +37,14 @@
     /* borders of form controls (>= 3:1, WCAG 1.4.11) */
     --color-line-strong: 128 128 126;
 
-    --color-action: 107 20 45;
-    --color-action-hover: 82 12 34;
+    --color-action: 98 15 37;
+    --color-action-hover: 74 9 28;
     --color-on-action: 255 255 255;
     --color-focus-ring: 168 55 90;
     /* The "mi" of the wordmark: decorative, never text on its own. */
-    --color-brand-soft: 199 118 128;
+    --color-brand-soft: 194 117 124;
 
-    --color-teal-700: 107 20 45;
+    --color-teal-700: 98 15 37;
     --color-teal-600: 140 36 68;
     --color-teal-500: 178 80 108;
     --color-teal-100: 246 230 233;

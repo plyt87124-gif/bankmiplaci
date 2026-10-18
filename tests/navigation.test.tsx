@@ -261,7 +261,7 @@ test("header: sticky, 44 px targets, two-tone wordmark, scroll border starts tra
   const html = renderHeader(null);
   assert.match(html, /<header[^>]*class="[^"]*sticky top-0[^"]*border-transparent/);
   assert.match(html, /data-scrolled="false"/);
-  assert.match(html, /aria-label="Bankmiplaci"[^>]*><span aria-hidden="true">Bank<span class="text-brand-soft" style="color:rgb\(var\(--color-brand-soft\)\)">mi<\/span>placi<\/span>/);
+  assert.match(html, /<img src="\/logo\/bankmiplaci-light\.png" alt="Bankmiplaci"/);
   assert.ok(!/backdrop-blur/.test(html), "no blur");
   assert.ok(!/text-ink-300|text-\[1[01]px\]|border-ink-100|h-13/.test(html));
 });

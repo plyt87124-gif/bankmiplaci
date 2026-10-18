@@ -19,7 +19,7 @@ export function HomeEffort({ model, now }: { model: HomeModel | null; now?: Date
   if (examples.length === 0) return null;
 
   return (
-    <section aria-labelledby="wysilek-title" className="border-t border-line">
+    <section aria-labelledby="wysilek-title" className="border-y border-line bg-surface [&_[data-card=promotion]]:bg-paper">
       <div className="container-page py-12 md:py-[72px]">
         <div className="grid gap-8 lg:grid-cols-3 lg:items-start lg:gap-6">
           <div className="lg:pr-6">

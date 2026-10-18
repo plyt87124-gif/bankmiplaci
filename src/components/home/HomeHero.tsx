@@ -25,7 +25,7 @@ export function HomeHero({ model }: { model: HomeModel | null }) {
   const verifiedIso = verified ? isoDatePL(verified) : null;
 
   return (
-    <section aria-labelledby="home-title" className="border-b border-line">
+    <section aria-labelledby="home-title" className="border-b border-line bg-surface">
       <div className="container-page py-14 md:py-[88px]">
         {verifiedText ? (
           <p className="type-label flex items-center gap-2 text-ink-500">

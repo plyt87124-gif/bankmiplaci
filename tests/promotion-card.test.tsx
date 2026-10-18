@@ -64,22 +64,18 @@ const anchors = (markup: string) => [...markup.matchAll(/<a\s([^>]*)>(.*?)<\/a>/
 /* structure                                                           */
 /* ------------------------------------------------------------------ */
 
-test("one article, one stretched link to the offer; 'Jak liczymy?' is a separate link above it", () => {
+test("one article, one stretched link to the offer, no 'Jak liczymy?' link", () => {
   const out = render(card());
   assert.equal((out.match(/<article/g) ?? []).length, 1);
 
   const links = anchors(out);
-  assert.equal(links.length, 2, "title link + rating link, nothing else");
+  assert.equal(links.length, 1, "only the title link (the 'Jak liczymy?' link was removed by the owner)");
   const title = links[0]!;
   assert.match(title.attrs, /href="\/promocje\/alior-konto-z-premia"/);
   assert.match(title.attrs, /after:absolute/);
   assert.match(title.attrs, /after:inset-0/);
   assert.match(text(title.inner), /Konto z Premią/);
-
-  const rating = links[1]!;
-  assert.match(rating.attrs, new RegExp(`href="${ratingExplainerHref().replace(/[/#]/g, "\\$&")}"`));
-  assert.match(rating.attrs, /z-10/);
-  assert.equal(text(rating.inner), "Jak liczymy?");
+  assert.doesNotMatch(text(out), /Jak liczymy/);
 
   // no nested links and never an outbound / partner link on a card
   assert.doesNotMatch(out, /<a\s[^>]*>(?:(?!<\/a>).)*<a\s/s);

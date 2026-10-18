@@ -13,7 +13,6 @@ import { nameMentionsBank } from "@/lib/seo/metadata";
 import {
   describeAccountFee,
   hasShowableLogo,
-  ratingExplainerHref
 } from "@/components/promocje/cardCopy";
 import type { AccountType, Difficulty } from "@prisma/client";
 
@@ -189,12 +188,6 @@ export function PromotionCard({
               Ocena serwisu{" "}
               <span className="num font-semibold text-ink-900">{formatRatingOutOf10(promotion.rating)}</span>
             </p>
-            <Link
-              href={ratingExplainerHref()}
-              className={cn("link-inline", HIT_AREA)}
-            >
-              Jak liczymy?
-            </Link>
           </div>
           {ended && bank.slug ? (
             <Link

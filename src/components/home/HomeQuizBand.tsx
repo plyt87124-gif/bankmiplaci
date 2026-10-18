@@ -10,7 +10,7 @@ import { QUIZ_QUESTION_COUNT, QUIZ_RESULT_COUNT } from "@/lib/quiz";
  */
 export function HomeQuizBand() {
   return (
-    <section aria-labelledby="quiz-title" className="border-y border-line">
+    <section aria-labelledby="quiz-title" className="border-y border-line bg-surface">
       <div className="container-page flex flex-col gap-5 py-8 md:flex-row md:items-center md:justify-between md:gap-10 md:py-10">
         <div className="max-w-2xl">
           <h2 id="quiz-title" className="font-body text-h3 md:text-h3">

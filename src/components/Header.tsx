@@ -74,7 +74,7 @@ export function Header() {
               aria-current={pathname === "/" ? "page" : undefined}
               className="-mx-1 inline-flex min-h-11 items-center rounded-field px-1"
             >
-              <Logo className="text-[24px]" />
+              <Logo height={26} />
             </Link>
 
             <nav aria-label="Menu główne" className="hidden items-center gap-1 lg:flex">

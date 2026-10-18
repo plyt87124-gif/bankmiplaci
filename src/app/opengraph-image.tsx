@@ -9,7 +9,7 @@ export const contentType = "image/png";
 const PAPER = "rgb(249, 247, 242)";
 const INK = "rgb(26, 28, 32)";
 const INK_MUTED = "rgb(88, 93, 102)";
-const ACTION = "rgb(107, 20, 45)";
+const ACTION = "rgb(98, 15, 37)";
 const LINE = "rgb(226, 222, 213)";
 
 const HEADLINE = "Bankmiplaci.pl";
