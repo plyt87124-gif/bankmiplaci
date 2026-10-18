@@ -112,14 +112,13 @@ export async function getSourceBreakdown(days = 30) {
  * one, and on average how far through their checklist the active ones are.
  */
 export async function getChecklistStats() {
-  const [activeCount, completedCount, activeTrackings] = await Promise.all([
-    db.userPromotionTracking.count({ where: { completedAt: null } }),
-    db.userPromotionTracking.count({ where: { completedAt: { not: null } } }),
-    db.userPromotionTracking.findMany({
-      where: { completedAt: null },
-      select: { userId: true, promotion: { select: { checklistSteps: { select: { id: true, rewardCents: true } } } } }
-    })
-  ]);
+  // Sequential on purpose — see getStatsPageData for why.
+  const activeCount = await db.userPromotionTracking.count({ where: { completedAt: null } });
+  const completedCount = await db.userPromotionTracking.count({ where: { completedAt: { not: null } } });
+  const activeTrackings = await db.userPromotionTracking.findMany({
+    where: { completedAt: null },
+    select: { userId: true, promotion: { select: { checklistSteps: { select: { id: true, rewardCents: true } } } } }
+  });
 
   if (activeTrackings.length === 0) {
     return { activeCount, completedCount, avgProgressPercent: 0 };
@@ -233,18 +232,17 @@ interface CampaignGroupRow {
 export async function getCampaignBreakdown(days = 30): Promise<CampaignBreakdownRow[]> {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-  const [impressionRows, clickRows] = await Promise.all([
-    db.$queryRaw<CampaignGroupRow[]>`
-      SELECT "utmSource", "utmMedium", "utmCampaign", "utmContent", COUNT(*)::bigint AS count
-      FROM "impressions"
-      WHERE "utmSource" IS NOT NULL AND "createdAt" >= ${since}
-      GROUP BY "utmSource", "utmMedium", "utmCampaign", "utmContent"`,
-    db.$queryRaw<CampaignGroupRow[]>`
-      SELECT "utmSource", "utmMedium", "utmCampaign", "utmContent", COUNT(*)::bigint AS count
-      FROM "clicks"
-      WHERE "utmSource" IS NOT NULL AND "createdAt" >= ${since}
-      GROUP BY "utmSource", "utmMedium", "utmCampaign", "utmContent"`
-  ]);
+  // Sequential on purpose — see getStatsPageData for why.
+  const impressionRows = await db.$queryRaw<CampaignGroupRow[]>`
+    SELECT "utmSource", "utmMedium", "utmCampaign", "utmContent", COUNT(*)::bigint AS count
+    FROM "impressions"
+    WHERE "utmSource" IS NOT NULL AND "createdAt" >= ${since}
+    GROUP BY "utmSource", "utmMedium", "utmCampaign", "utmContent"`;
+  const clickRows = await db.$queryRaw<CampaignGroupRow[]>`
+    SELECT "utmSource", "utmMedium", "utmCampaign", "utmContent", COUNT(*)::bigint AS count
+    FROM "clicks"
+    WHERE "utmSource" IS NOT NULL AND "createdAt" >= ${since}
+    GROUP BY "utmSource", "utmMedium", "utmCampaign", "utmContent"`;
 
   const keyOf = (r: CampaignGroupRow) => [r.utmSource, r.utmMedium, r.utmCampaign, r.utmContent].join(" ");
 
@@ -283,21 +281,59 @@ export async function getCampaignBreakdown(days = 30): Promise<CampaignBreakdown
 
 export async function getTrafficTotals(days = 30) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  const [uniquePageViewsRows, clicks, uniqueVisitors] = await Promise.all([
-    // Unique visitors (by ipHash) across the whole window — NOT a sum of
-    // the daily-unique trend above, which would double-count someone who
-    // visited on multiple different days.
-    db.$queryRaw<{ count: bigint }[]>`
-      SELECT COUNT(DISTINCT COALESCE("ipHash", "sessionId"))::bigint AS count
-      FROM "page_views"
-      WHERE "createdAt" >= ${since}`,
-    db.click.count({ where: { createdAt: { gte: since } } }),
-    db.pageView.findMany({
-      where: { createdAt: { gte: since }, userId: { not: null } },
-      distinct: ["userId"],
-      select: { userId: true }
-    })
-  ]);
+  // Sequential on purpose — see getStatsPageData for why.
+  // Unique visitors (by ipHash) across the whole window — NOT a sum of
+  // the daily-unique trend above, which would double-count someone who
+  // visited on multiple different days.
+  const uniquePageViewsRows = await db.$queryRaw<{ count: bigint }[]>`
+    SELECT COUNT(DISTINCT COALESCE("ipHash", "sessionId"))::bigint AS count
+    FROM "page_views"
+    WHERE "createdAt" >= ${since}`;
+  const clicks = await db.click.count({ where: { createdAt: { gte: since } } });
+  const uniqueVisitors = await db.pageView.findMany({
+    where: { createdAt: { gte: since }, userId: { not: null } },
+    distinct: ["userId"],
+    select: { userId: true }
+  });
 
   return { pageViews: Number(uniquePageViewsRows[0]?.count ?? 0), clicks, uniqueLoggedInVisitors: uniqueVisitors.length };
+}
+
+/**
+ * Everything /admin/statystyki renders, fetched one query at a time.
+ *
+ * This used to be a Promise.all over all the getters above (some of which
+ * fanned out again internally), so a single page load asked the Prisma pool
+ * for many connections at once; on a small pool later queries could wait for
+ * a connection longer than pool_timeout and fail the page with P2024.
+ * Awaiting sequentially keeps one page load to one pool connection at a time.
+ * It does NOT stop other concurrent requests from competing for the pool.
+ * A failing query still throws — nothing is masked with zeros/empty data.
+ */
+export async function getStatsPageData(days: number) {
+  const pageViewsTrend = await getPageViewsTrend(days);
+  const clicksTrend = await getClicksTrend(days);
+  const pageBreakdown = await getPageBreakdown(days);
+  const sourceBreakdown = await getSourceBreakdown(days);
+  const bankBreakdown = await getBankBreakdown(days);
+  const topByImpressions = await getTopPromotionsByMetric("impressions", 10);
+  const topByClicks = await getTopPromotionsByMetric("clicks", 10);
+  const totals = await getTrafficTotals(days);
+  const checklistStats = await getChecklistStats();
+  const eligibilityFunnel = await getEligibilityFunnelStats();
+  const campaignBreakdown = await getCampaignBreakdown(days);
+
+  return {
+    pageViewsTrend,
+    clicksTrend,
+    pageBreakdown,
+    sourceBreakdown,
+    bankBreakdown,
+    topByImpressions,
+    topByClicks,
+    totals,
+    checklistStats,
+    eligibilityFunnel,
+    campaignBreakdown
+  };
 }
