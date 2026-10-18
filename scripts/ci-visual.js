@@ -130,10 +130,10 @@ async function main() {
     if (viewport.width === 360) {
       const observed = await isolatedPage(context);
       await observed.page.goto(BASE, { waitUntil: "networkidle" });
-      const button = observed.page.getByRole("button", { name: "Otwórz menu" });
+      const button = observed.page.getByRole("button", { name: "Menu", exact: true });
       assert.equal(await button.getAttribute("aria-expanded"), "false");
       await button.click();
-      assert.equal(await observed.page.getByRole("button", { name: "Zamknij menu" }).getAttribute("aria-expanded"), "true");
+      assert.equal(await observed.page.getByRole("button", { name: "Menu", exact: true }).getAttribute("aria-expanded"), "true");
       await observed.page.screenshot({ path: path.join(OUT, "360-menu-open.png"), fullPage: true });
       report.menu = { screenshot: "360-menu-open.png", consoleErrors: observed.consoleErrors, failedRequests: observed.failedRequests };
       assert.deepEqual(observed.consoleErrors, [], "mobile menu: console errors");
