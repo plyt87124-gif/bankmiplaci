@@ -14,7 +14,7 @@ import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared
 import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 import { AuthModalProvider } from "../src/components/AuthModalProvider";
 import { Header } from "../src/components/Header";
-import { DATA_UPDATED_TIMEOUT_MS, FooterView, readWithTimeout } from "../src/components/Footer";
+import { FooterView } from "../src/components/Footer";
 import { MobileNav } from "../src/components/MobileNav";
 import {
   ACCOUNT_LINK,
@@ -177,34 +177,17 @@ test("only the publisher module holds the company data (no copy in the header or
 
 const NOW = new Date("2026-10-09T10:00:00Z");
 
-test("footer: affiliate disclosure replaces the old 'not an official partner' sentence", () => {
-  const html = renderToStaticMarkup(<FooterView dataUpdatedAt="2026-10-06T08:00:00Z" now={NOW} />);
-  assert.match(html, /data-disclosure="footer"/);
-  assert.match(text(html), /Bankmiplaci nie jest bankiem ani oficjalnym przedstawicielem banków\./);
-  assert.match(html, /href="\/jak-zarabiamy"/);
-  assert.ok(!/oficjalnym partnerem/i.test(html), "the false sentence is gone");
-  assert.ok(!/oficjalnym partnerem/i.test(read("src/components/Footer.tsx")));
+test("footer: brand line and link columns only - no disclosure paragraph, date line, company data or copyright block", () => {
+  const html = renderToStaticMarkup(<FooterView />);
+  assert.ok(!/data-disclosure/.test(html), "the bottom disclosure block was removed on purpose");
+  assert.ok(!/nie jest bankiem ani oficjalnym/.test(text(html)));
+  assert.ok(!/Najnowsza weryfikacja oferty|Wydawca|NIP|REGON|©/.test(text(html)));
+  assert.ok(!html.includes("mailto:"));
+  assert.ok(!/oficjalnym partnerem/i.test(html + read("src/components/Footer.tsx")), "the old false sentence stays gone");
 });
 
-test("footer: 'Najnowsza weryfikacja oferty' shows the date from the data, and no line when there is none", () => {
-  const withDate = renderToStaticMarkup(<FooterView dataUpdatedAt="2026-10-06T08:00:00Z" now={NOW} />);
-  assert.match(text(withDate), /Najnowsza weryfikacja oferty: 6 paź 2026/);
-  assert.match(withDate, /<time dateTime="2026-10-06">/);
-
-  for (const missing of [null, undefined, "not a date"]) {
-    const html = renderToStaticMarkup(<FooterView dataUpdatedAt={missing} now={NOW} />);
-    assert.ok(!html.includes("Najnowsza weryfikacja oferty"), `${String(missing)}: no invented date`);
-    assert.ok(!/1970|0 zł/.test(html));
-  }
-});
-
-test("footer: publisher row, copyright of the current year, links of the registry, no forbidden patterns", () => {
-  const html = renderToStaticMarkup(<FooterView dataUpdatedAt={null} now={NOW} />);
-  const visible = text(html);
-  assert.match(visible, /Wydawca: Michał Kamiński \(JDG\), Stawiszyn 7a, 26-800 Białobrzegi, NIP 7981482892, REGON 388504613, pomoc@bankmiplaci\.pl ?\./);
-  assert.match(html, /href="mailto:pomoc@bankmiplaci\.pl"/);
-  assert.match(visible, /© 2026 Bankmiplaci\. Wszystkie prawa zastrzeżone\./);
-  assert.match(renderToStaticMarkup(<FooterView now={new Date("2027-01-02T12:00:00Z")} />), /© 2027 Bankmiplaci/);
+test("footer: links of the registry and no forbidden patterns", () => {
+  const html = renderToStaticMarkup(<FooterView />);
 
   for (const href of ["/promocje", "/porownaj", "/quiz", "/konto", "/blog", "/faq", "/jak-to-dziala", "/jak-zarabiamy", "/kontakt", "/regulamin", "/polityka-prywatnosci", "/cookies"]) {
     assert.ok(html.includes(`href="${href}"`), `footer links to ${href}`);
@@ -340,34 +323,8 @@ test("root layout takes the site origin from src/lib/seo, not from process.env",
   assert.match(layout, /from "@\/lib\/seo\/siteUrl"/);
 });
 
-test("the static footer (FooterView) still carries the affiliate disclosure and the publisher line without a database", () => {
-  const out = renderToStaticMarkup(<FooterView />);
-  assert.match(out, /<footer\b/);
-  assert.match(out, /data-footer="publisher"/);
-  assert.ok(/partner|prowizj/i.test(out), "disclosure wording present");
-});
-
-test("footer date lookup: a slow or failing database omits the line instead of holding the page back", async () => {
-  assert.equal(DATA_UPDATED_TIMEOUT_MS, 1500);
-  assert.equal(await readWithTimeout(async () => "2026-10-06T08:00:00.000Z", 50), "2026-10-06T08:00:00.000Z");
-  assert.equal(await readWithTimeout(async () => null, 50), null);
-  // an error is "no date", not an exception
-  assert.equal(
-    await readWithTimeout(async () => {
-      throw new Error("db down");
-    }, 50),
-    null
-  );
-  // a lookup that never answers is cut off at the limit
-  const started = Date.now();
-  const slow = await readWithTimeout(() => new Promise<string | null>(() => {}), 40);
-  assert.equal(slow, null);
-  assert.ok(Date.now() - started < 1000, "returned long before any real database timeout");
-});
-
 test("the footer is one <footer> element: the real Footer renders FooterView once", () => {
   const src = read("src/components/Footer.tsx");
   assert.equal((src.match(/<FooterView/g) ?? []).length, 1, "Footer renders FooterView exactly once");
   assert.equal((renderToStaticMarkup(<FooterView />).match(/<footer/g) ?? []).length, 1);
-  assert.match(src, /readWithTimeout\(readLatestVerification\)/);
 });

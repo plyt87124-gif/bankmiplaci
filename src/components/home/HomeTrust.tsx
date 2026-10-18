@@ -14,7 +14,7 @@ export function HomeTrust() {
       <h2 id="zaufanie-title">Dlaczego możesz nam ufać</h2>
       <ul
         role="list"
-        className="mt-8 grid divide-y divide-line border-y border-line md:grid-cols-3 md:divide-x md:divide-y-0"
+        className="mt-8 grid divide-y divide-line border-y border-line md:grid-cols-2 md:divide-x md:divide-y-0"
       >
         {HOME_TRUST_COLUMNS.map((column) => (
           <li key={column.id} className="py-6 md:px-6 md:first:pl-0 md:last:pr-0">

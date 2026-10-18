@@ -79,11 +79,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main id="tresc" tabIndex={-1} className="flex-1 focus:outline-none">
             {children}
           </main>
-          {/* The footer's "Dane zaktualizowano" date needs a (cached) database
-              read. It is NOT wrapped in Suspense: a streamed fallback footer plus
-              the real one meant two footers (two disclosures, two publisher
-              blocks) in the HTML. Footer caps the read itself (1.5 s) and omits
-              the date line when the database is slow or down. */}
           <Footer />
         </AuthModalProvider>
       </body>

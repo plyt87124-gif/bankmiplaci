@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import typography from "@tailwindcss/typography";
 
 /**
  * Design tokens "Papier i tusz" (v2) - docs/redesign-v2/01-design-spec.md.
@@ -181,6 +182,6 @@ const config: Config = {
       }
     }
   },
-  plugins: [require("@tailwindcss/typography")({ className: "article-body" })]
+  plugins: [typography({ className: "article-body" })]
 };
 export default config;

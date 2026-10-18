@@ -52,12 +52,6 @@ export const HOME_TRUST_COLUMNS: readonly HomeTrustColumn[] = [
       "Ocenę serwisu liczymy z parametrów oferty według jawnych zasad (w wyjątkowych przypadkach ustawiamy ją ręcznie, a przy ofercie może być podane uzasadnienie). " +
       RATING_COMMISSION_RULE,
     link: { href: "/metodologia", label: "Jak liczymy ocenę" }
-  },
-  {
-    id: "zarobek",
-    title: "Jak zarabiamy",
-    text: `Zarabiamy z prowizji od banków za polecenie. ${STRIP_RECOMMENDED.lead}`,
-    link: { href: "/jak-zarabiamy", label: "Jak zarabiamy" }
   }
 ];
 

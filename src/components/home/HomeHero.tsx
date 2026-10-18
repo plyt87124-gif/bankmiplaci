@@ -70,15 +70,6 @@ export function HomeHero({ model }: { model: HomeModel | null }) {
               <span>Przy każdej ofercie pokazujemy datę weryfikacji</span>
             </li>
           ) : null}
-          <li className="flex items-start gap-2.5">
-            <Scale size={20} aria-hidden="true" className="mt-px shrink-0 text-ink-500" />
-            <span>
-              Ocena serwisu bez prowizji –{" "}
-              <Link href={HOME_RATING_HREF} className="link-inline whitespace-nowrap font-medium">
-                Jak zarabiamy
-              </Link>
-            </span>
-          </li>
         </ul>
       </div>
     </section>

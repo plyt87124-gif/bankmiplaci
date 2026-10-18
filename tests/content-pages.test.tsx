@@ -330,9 +330,9 @@ test("/o-nas: publisher data are exactly those already public in the Regulamin; 
   for (const id of ["wydawca", "weryfikacja", "finansowanie", "zasady", "korekty", "kontakt"]) assert.match(pages["/o-nas"]!, new RegExp(`<h2 id="${id}"`));
 });
 
-test("publisher data have ONE source (src/lib/publisher.ts) shared by the footer, /o-nas and /kontakt", () => {
+test("publisher data have ONE source (src/lib/publisher.ts) shared by /o-nas and /kontakt (the footer no longer shows it)", () => {
   assert.ok(!existsSync(join(ROOT, "src", "app", "o-nas", "publisher.ts")), "the duplicate publisher module is gone");
-  for (const file of [["app", "o-nas", "page.tsx"], ["app", "kontakt", "page.tsx"], ["components", "Footer.tsx"]]) {
+  for (const file of [["app", "o-nas", "page.tsx"], ["app", "kontakt", "page.tsx"]]) {
     const code = readFileSync(join(ROOT, "src", ...file), "utf8");
     assert.ok(code.includes('@/lib/publisher'), `${file.join("/")} imports the shared publisher module`);
     assert.ok(!/o-nas\/publisher|\.\/publisher/.test(code), `${file.join("/")} does not import a second copy`);

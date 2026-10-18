@@ -149,7 +149,7 @@ test("hero: kicker with the newest verification date, lead, segment control, but
   assert.match(text(hero), /6 aktualnych promocji/, "the counter: the end value is in the server HTML (CountUp)");
   assert.match(text(hero), /Przy każdej ofercie pokazujemy datę weryfikacji/, "a true statement (VerifiedLine on every card), not a second copy of the date");
   assert.equal((text(hero).match(/7 paź 2026/g) ?? []).length, 1, "the date appears once in the hero");
-  assert.match(hero, /Ocena serwisu bez prowizji –[^<]*<a [^>]*href="\/jak-zarabiamy#ocena"[^>]*>Jak zarabiamy<\/a>/);
+  assert.doesNotMatch(hero, /Ocena serwisu bez prowizji|Jak zarabiamy/, "the owner removed this fact from the hero");
 });
 
 test("hero: the counter uses the Polish plural form and the exact number", () => {
@@ -296,16 +296,15 @@ test("quiz band: the numbers are the quiz's own constants, the button leads to /
 
 test("trust: three claims with their links, the commission wording from the one source, no deposit-guarantee claim", () => {
   const section = FULL.slice(FULL.indexOf('aria-labelledby="zaufanie-title"'), FULL.indexOf('aria-labelledby="faq-title"'));
-  assert.deepEqual([...section.matchAll(/<h3[^>]*>([^<]+)<\/h3>/g)].map((m) => m[1]), ["Skąd bierzemy dane", "Jak liczymy ocenę", "Jak zarabiamy"]);
-  for (const href of ["/metodologia#zrodla", "/metodologia", "/jak-zarabiamy"]) {
+  assert.deepEqual([...section.matchAll(/<h3[^>]*>([^<]+)<\/h3>/g)].map((m) => m[1]), ["Skąd bierzemy dane", "Jak liczymy ocenę"]);
+  for (const href of ["/metodologia#zrodla", "/metodologia"]) {
     assert.match(section, new RegExp(`<a [^>]*href="${href}"`), href);
   }
   const plain = text(section);
   assert.ok(plain.includes(RATING_COMMISSION_RULE), "'Wysokość prowizji nie jest składnikiem oceny.'");
-  assert.ok(plain.includes(STRIP_RECOMMENDED.lead), "the 'Polecane' claim is the disclosure's own sentence");
-  assert.match(plain, /Zarabiamy z prowizji od banków za polecenie\./);
+  assert.doesNotMatch(plain, /Jak zarabiamy|Zarabiamy z prowizji/, "the owner removed the 'Jak zarabiamy' column");
   assert.doesNotMatch(plain, /BFG|gwarancj|Bankowy Fundusz/i, "the deposit guarantee needs an approved wording first");
-  assert.equal(HOME_TRUST_COLUMNS.length, 3);
+  assert.equal(HOME_TRUST_COLUMNS.length, 2);
 });
 
 test("FAQ shortcut: three questions from the /faq source, answers in the HTML, link to /faq", () => {
