@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { getCurrentUser } from "@/lib/userSession";
-import { isInternalUser } from "@/lib/internalTraffic";
+import { isInternalVisitor } from "@/lib/internalTraffic";
 import { hashVisitor, clientIp } from "@/lib/visitorHash";
 import { isLikelyBot } from "@/lib/botDetection";
 import { advisoryLockKey } from "@/lib/dedup";
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ slug:
   // actual affiliate link (or a legitimate crawler fetching it) still works.
   // (isRedirectable was already checked above, so this never sends a bot
   // or internal user to the partner for an inactive promotion either.)
-  if (isInternalUser(currentUser?.email) || isLikelyBot(userAgent)) {
+  if ((await isInternalVisitor(currentUser?.email)) || isLikelyBot(userAgent)) {
     return NextResponse.redirect(promotion.affiliateUrl, { status: 302 });
   }
 

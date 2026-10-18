@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/userSession";
-import { isInternalUser } from "@/lib/internalTraffic";
+import { isInternalVisitor } from "@/lib/internalTraffic";
 import { hashVisitor, clientIp } from "@/lib/visitorHash";
 import { touchUserActivity } from "@/lib/userActivity";
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   // Deliberately BEFORE the isInternalUser gate below — see touchUserActivity.
   if (currentUser) touchUserActivity(currentUser.id);
 
-  if (isInternalUser(currentUser?.email)) return NextResponse.json({ ok: true });
+  if (await isInternalVisitor(currentUser?.email)) return NextResponse.json({ ok: true });
 
   const ip = clientIp(request);
   const userAgent = request.headers.get("user-agent") ?? "";
