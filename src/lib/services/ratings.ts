@@ -1,43 +1,33 @@
 import { Difficulty, PromotionStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { signupCutoff } from "@/lib/promotionAvailability";
+import { estimateRequiredTurnoverCents } from "@/lib/requiredTurnover";
 
 /**
  * Self-updating "ocena serwisu" algorithm.
  *
  * Scores every currently ACTIVE, not-yet-expired promotion relative to
- * its peers on five factors:
- *   1. maxBonusCents — how much (30%).
- *   2. difficulty — how it's earned; assigned per-promotion by weighing
- *      required card payments and account-funding thresholds, so it
- *      doubles as the "sposób zdobycia" signal without a separate NLP
- *      pass over free-text conditions (30%).
- *   3. duration — how many months the checklist spans (fewer = better);
- *      derived from the highest ChecklistStep month-group, not a
- *      separate stored field (20%).
- *   4. avgRewardPerMonth — maxBonusCents / duration, i.e. how much
- *      you're actually earning per month of effort, not just the
- *      headline total (15%).
- *   5. cooldownMonths — shorter karencja = better (5%, kept low because
- *      most promotions don't have this recorded yet — see below).
+ * offers of the SAME account type (personal and business offers are never
+ * compared with each other) on five factors:
+ *   1. maxBonusCents - how much (30%).
+ *   2. required turnover relative to the bonus - the estimated money you
+ *      have to move or spend (wpływy, płatności kartą; see
+ *      requiredTurnover.ts) per 1 zł of bonus; less is better (25%). Unknown
+ *      when the conditions name no threshold: neutral.
+ *   3. duration - over how many months the bonus is spread, from the
+ *      highest ChecklistStep month-group; fewer = better (20%).
+ *   4. difficulty - assigned per promotion by weighing the required
+ *      payments and thresholds (20%).
+ *   5. cooldownMonths - shorter karencja = better (5%, low because most
+ *      promotions don't have it recorded).
  *
- * Bonus/duration/avgRewardPerMonth/cooldown are all normalized within
- * the same accountType (a 5000 zł business premium and a 900 zł
- * personal one aren't comparable on any of these axes), falling back to
- * the whole active set when a category has too few peers for a
- * meaningful spread.
- *
- * cooldownMonths is null for most promotions today (not every regulamin
- * states one, and not all have been back-filled) — a null gets a
- * neutral 0.5 rather than best- or worst-case, so this factor only
- * actually moves the needle for the promotions that do have it set,
- * which is also why it's weighted lowest of the five.
+ * With fewer than 3 offers of one account type there is no meaningful
+ * spread, so the relative factors (1, 2, 3, 5) are neutral (0.5) rather than
+ * borrowing offers of the other type.
  *
  * The composite (0..1) is mapped onto the public 0..10 scale with a
  * front-loaded curve so a merely-decent promotion already lands ~9,
- * while a weak one (small bonus, hard to earn, long slog) can fall into
- * the 7s/8s — "raczej nie schodzimy poniżej 9, chyba że słaba premia
- * lub brak".
+ * while a weak one can fall into the 7s/8s.
  *
  * Runs after every write that can change the active set (see call sites
  * in admin actions, the import script, and expirePastPromotions) — never
@@ -53,9 +43,9 @@ const DIFFICULTY_SCORE: Record<Difficulty, number> = {
 };
 
 const BONUS_WEIGHT = 0.3;
-const DIFFICULTY_WEIGHT = 0.3;
+const DIFFICULTY_WEIGHT = 0.2;
 const DURATION_WEIGHT = 0.2;
-const AVG_PER_MONTH_WEIGHT = 0.15;
+const COST_WEIGHT = 0.25;
 const COOLDOWN_WEIGHT = 0.05;
 
 const NEUTRAL_SCORE = 0.5;
@@ -75,6 +65,8 @@ interface RatablePromotion {
   cooldownMonths: number | null;
   /** Highest checklist month-group index, i.e. how many months the promotion's requirements span. Null when it has no checklist yet. */
   durationMonths: number | null;
+  /** Estimated required turnover in grosze (see requiredTurnover.ts); null when unknown. */
+  costCents: number | null;
 }
 
 /** Percentile of `value` among peers (same accountType, or the whole active set if too few peers) — higher value = higher score unless `invert`. */
@@ -108,7 +100,8 @@ export async function recomputeRatings(): Promise<number> {
       rating: true,
       ratingOverride: true,
       cooldownMonths: true,
-      checklistSteps: { select: { order: true } }
+      checklistSteps: { select: { order: true } },
+      conditions: { select: { title: true, description: true } }
     }
   });
 
@@ -117,6 +110,7 @@ export async function recomputeRatings(): Promise<number> {
   const active: RatablePromotion[] = rows.map((p) => {
     const groupIndexes = p.checklistSteps.map((s) => Math.floor(s.order / 10));
     const maxGroupIndex = groupIndexes.length > 0 ? Math.max(...groupIndexes) : null;
+    const durationMonths = maxGroupIndex !== null ? Math.max(1, maxGroupIndex) : null;
     return {
       id: p.id,
       accountType: p.accountType,
@@ -125,7 +119,8 @@ export async function recomputeRatings(): Promise<number> {
       rating: p.rating,
       ratingOverride: p.ratingOverride,
       cooldownMonths: p.cooldownMonths,
-      durationMonths: maxGroupIndex !== null ? Math.max(1, maxGroupIndex) : null
+      durationMonths,
+      costCents: estimateRequiredTurnoverCents(p.conditions, durationMonths)
     };
   });
 
@@ -135,10 +130,7 @@ export async function recomputeRatings(): Promise<number> {
     list.push(p);
     byType.set(p.accountType, list);
   }
-  const peersFor = (p: RatablePromotion) => {
-    const sameType = byType.get(p.accountType) ?? [p];
-    return sameType.length >= 3 ? sameType : active;
-  };
+  const peersFor = (p: RatablePromotion) => byType.get(p.accountType) ?? [p];
 
   const updates: { id: string; rating: number }[] = [];
   for (const p of active) {
@@ -148,24 +140,26 @@ export async function recomputeRatings(): Promise<number> {
       effective = override;
     } else {
       const peers = peersFor(p);
+      const enoughPeers = peers.length >= 3;
 
-      const bonusScore = percentileScore(p.maxBonusCents, peers, (x) => x.maxBonusCents);
+      const bonusScore = enoughPeers ? percentileScore(p.maxBonusCents, peers, (x) => x.maxBonusCents) : NEUTRAL_SCORE;
 
       const durationPeers = peers.filter((x) => x.durationMonths !== null);
       const durationScore =
-        p.durationMonths !== null && durationPeers.length >= 2
+        enoughPeers && p.durationMonths !== null && durationPeers.length >= 2
           ? percentileScore(p.durationMonths, durationPeers, (x) => x.durationMonths!, true)
           : NEUTRAL_SCORE;
 
-      const avgPerMonthPeers = peers.filter((x) => x.durationMonths !== null);
-      const avgPerMonthScore =
-        p.durationMonths !== null && avgPerMonthPeers.length >= 2
-          ? percentileScore(p.maxBonusCents / p.durationMonths, avgPerMonthPeers, (x) => x.maxBonusCents / x.durationMonths!)
+      const costRatio = (x: RatablePromotion) => x.costCents! / Math.max(1, x.maxBonusCents);
+      const costPeers = peers.filter((x) => x.costCents !== null);
+      const costScore =
+        enoughPeers && p.costCents !== null && costPeers.length >= 2
+          ? percentileScore(costRatio(p), costPeers, costRatio, true)
           : NEUTRAL_SCORE;
 
       const cooldownPeers = peers.filter((x) => x.cooldownMonths !== null);
       const cooldownScore =
-        p.cooldownMonths !== null && cooldownPeers.length >= 2
+        enoughPeers && p.cooldownMonths !== null && cooldownPeers.length >= 2
           ? percentileScore(p.cooldownMonths, cooldownPeers, (x) => x.cooldownMonths!, true)
           : NEUTRAL_SCORE;
 
@@ -173,7 +167,7 @@ export async function recomputeRatings(): Promise<number> {
         BONUS_WEIGHT * bonusScore +
         DIFFICULTY_WEIGHT * DIFFICULTY_SCORE[p.difficulty] +
         DURATION_WEIGHT * durationScore +
-        AVG_PER_MONTH_WEIGHT * avgPerMonthScore +
+        COST_WEIGHT * costScore +
         COOLDOWN_WEIGHT * cooldownScore;
 
       effective = Math.round(compositeToRating(composite) * 10) / 10;

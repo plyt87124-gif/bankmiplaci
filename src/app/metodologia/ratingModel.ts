@@ -33,9 +33,9 @@ export const DIFFICULTY_LABEL_PL: Record<DifficultyKey, string> = {
 
 export const RATING_WEIGHTS = {
   bonus: 0.3,
-  difficulty: 0.3,
+  cost: 0.25,
   duration: 0.2,
-  avgPerMonth: 0.15,
+  difficulty: 0.2,
   cooldown: 0.05
 } as const;
 
@@ -43,7 +43,7 @@ export type ComponentKey = keyof typeof RATING_WEIGHTS;
 
 /** Value of a component whose input is unknown: neither helps nor hurts. */
 export const NEUTRAL_SCORE = 0.5;
-/** With fewer same-type offers than this, the whole active set is the comparison group. */
+/** With fewer same-type offers than this the relative components are neutral (offers of the other account type are never used). */
 export const MIN_PEERS_OF_TYPE = 3;
 /** Lowest possible rating (composite 0) and the span above it. */
 export const RATING_FLOOR = 6.5;
@@ -66,6 +66,8 @@ export interface RatableOffer {
   cooldownMonths: number | null;
   /** Months spanned by the checklist (>= 1), null when the offer has no checklist. */
   durationMonths: number | null;
+  /** Estimated required turnover in grosze; null = unknown. */
+  costCents: number | null;
 }
 
 function minMaxScore(value: number, values: number[], invert: boolean): number {
@@ -78,7 +80,7 @@ function minMaxScore(value: number, values: number[], invert: boolean): number {
 
 export interface ComponentBreakdown {
   key: ComponentKey;
-  /** The offer's own value (cents for the bonus, months, per-month cents, score for difficulty); null = unknown. */
+  /** The offer's own value (cents for the bonus, months, cost-to-bonus ratio, score for difficulty); null = unknown. */
   value: number | null;
   /** Lowest/highest value among the offers it was compared with; null for difficulty (fixed scale) and neutral components. */
   range: { min: number; max: number } | null;
@@ -99,27 +101,27 @@ export interface RatingBreakdown {
   rating: number;
   /** Offers the example was compared with. */
   peerCount: number;
-  /** True when the comparison group is the whole active set (too few offers of this type). */
-  wholeSetUsed: boolean;
+  /** True when there were too few offers of this type to compare, so the relative components are neutral. */
+  tooFewPeers: boolean;
 }
 
-/** Same grouping as recomputeRatings(): same account type when there are >= 3 of them, else everyone. */
-export function peersOf(offer: RatableOffer, active: readonly RatableOffer[]): { peers: RatableOffer[]; wholeSetUsed: boolean } {
+/** Same grouping as recomputeRatings(): offers of the same account type only. */
+export function peersOf(offer: RatableOffer, active: readonly RatableOffer[]): { peers: RatableOffer[]; tooFewPeers: boolean } {
   const sameType = active.filter((o) => o.accountType === offer.accountType);
   const group = sameType.length === 0 ? [offer] : sameType;
-  return group.length >= MIN_PEERS_OF_TYPE ? { peers: group, wholeSetUsed: false } : { peers: [...active], wholeSetUsed: true };
+  return { peers: group, tooFewPeers: group.length < MIN_PEERS_OF_TYPE };
 }
 
 export function explainRating(offer: RatableOffer, active: readonly RatableOffer[]): RatingBreakdown {
-  const { peers, wholeSetUsed } = peersOf(offer, active);
+  const { peers, tooFewPeers } = peersOf(offer, active);
 
   const bonusValues = peers.map((p) => p.maxBonusCents);
   const bonus: ComponentBreakdown = {
     key: "bonus",
     value: offer.maxBonusCents,
-    range: { min: Math.min(...bonusValues), max: Math.max(...bonusValues) },
-    score: minMaxScore(offer.maxBonusCents, bonusValues, false),
-    neutral: false,
+    range: tooFewPeers ? null : { min: Math.min(...bonusValues), max: Math.max(...bonusValues) },
+    score: tooFewPeers ? NEUTRAL_SCORE : minMaxScore(offer.maxBonusCents, bonusValues, false),
+    neutral: tooFewPeers,
     weight: RATING_WEIGHTS.bonus,
     contribution: 0
   };
@@ -135,7 +137,7 @@ export function explainRating(offer: RatableOffer, active: readonly RatableOffer
   };
 
   const withDuration = peers.filter((p) => p.durationMonths !== null);
-  const durationKnown = offer.durationMonths !== null && withDuration.length >= 2;
+  const durationKnown = !tooFewPeers && offer.durationMonths !== null && withDuration.length >= 2;
   const duration: ComponentBreakdown = {
     key: "duration",
     value: offer.durationMonths,
@@ -153,22 +155,21 @@ export function explainRating(offer: RatableOffer, active: readonly RatableOffer
     contribution: 0
   };
 
-  const perMonth = (p: RatableOffer) => p.maxBonusCents / p.durationMonths!;
-  const avgKnown = offer.durationMonths !== null && withDuration.length >= 2;
-  const avgPerMonth: ComponentBreakdown = {
-    key: "avgPerMonth",
-    value: offer.durationMonths !== null ? offer.maxBonusCents / offer.durationMonths : null,
-    range: avgKnown
-      ? { min: Math.min(...withDuration.map(perMonth)), max: Math.max(...withDuration.map(perMonth)) }
-      : null,
-    score: avgKnown ? minMaxScore(perMonth(offer), withDuration.map(perMonth), false) : NEUTRAL_SCORE,
-    neutral: !avgKnown,
-    weight: RATING_WEIGHTS.avgPerMonth,
+  const ratio = (p: RatableOffer) => p.costCents! / Math.max(1, p.maxBonusCents);
+  const withCost = peers.filter((p) => p.costCents !== null);
+  const costKnown = !tooFewPeers && offer.costCents !== null && withCost.length >= 2;
+  const cost: ComponentBreakdown = {
+    key: "cost",
+    value: offer.costCents !== null ? ratio(offer) : null,
+    range: costKnown ? { min: Math.min(...withCost.map(ratio)), max: Math.max(...withCost.map(ratio)) } : null,
+    score: costKnown ? minMaxScore(ratio(offer), withCost.map(ratio), true) : NEUTRAL_SCORE,
+    neutral: !costKnown,
+    weight: RATING_WEIGHTS.cost,
     contribution: 0
   };
 
   const withCooldown = peers.filter((p) => p.cooldownMonths !== null);
-  const cooldownKnown = offer.cooldownMonths !== null && withCooldown.length >= 2;
+  const cooldownKnown = !tooFewPeers && offer.cooldownMonths !== null && withCooldown.length >= 2;
   const cooldown: ComponentBreakdown = {
     key: "cooldown",
     value: offer.cooldownMonths,
@@ -186,7 +187,7 @@ export function explainRating(offer: RatableOffer, active: readonly RatableOffer
     contribution: 0
   };
 
-  const components = [bonus, difficulty, duration, avgPerMonth, cooldown].map((c) => ({
+  const components = [bonus, cost, duration, difficulty, cooldown].map((c) => ({
     ...c,
     contribution: c.weight * c.score
   }));
@@ -194,25 +195,25 @@ export function explainRating(offer: RatableOffer, active: readonly RatableOffer
     RATING_WEIGHTS.bonus * bonus.score +
     RATING_WEIGHTS.difficulty * difficulty.score +
     RATING_WEIGHTS.duration * duration.score +
-    RATING_WEIGHTS.avgPerMonth * avgPerMonth.score +
+    RATING_WEIGHTS.cost * cost.score +
     RATING_WEIGHTS.cooldown * cooldown.score;
   const rawRating = compositeToRating(composite);
 
-  return { components, composite, rawRating, rating: roundRating(rawRating), peerCount: peers.length, wholeSetUsed };
+  return { components, composite, rawRating, rating: roundRating(rawRating), peerCount: peers.length, tooFewPeers };
 }
 
 /**
  * Which offer to use as the worked example. Deterministic and not "the best
  * looking one": among offers whose rating was computed (no manual override) and
  * that have a checklist, prefer those with a known cooldown (so all five
- * components are real), then take the one whose rating is closest to the middle
+ * components are real (the example also needs a known cost)), then take the one whose rating is closest to the middle
  * of that group (ties: slug order). Returns candidates in that order, so the
  * caller can fall back to the next one when the replica does not match.
  */
 export function exampleCandidates<T extends RatableOffer & { slug: string; rating: number; hasOverride: boolean }>(
   offers: readonly T[]
 ): T[] {
-  const eligible = offers.filter((o) => !o.hasOverride && o.durationMonths !== null);
+  const eligible = offers.filter((o) => !o.hasOverride && o.durationMonths !== null && o.costCents !== null);
   const withCooldown = eligible.filter((o) => o.cooldownMonths !== null);
   const pool = withCooldown.length > 0 ? withCooldown : eligible;
   if (pool.length === 0) return [];

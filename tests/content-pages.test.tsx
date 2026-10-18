@@ -35,7 +35,7 @@ const text = (markup: string) => decode(markup.replace(/<script[\s\S]*?<\/script
 // --- fixtures for the methodology page (no database) -------------------------
 
 function offer(id: string, extra: Partial<RatableOffer> = {}): RatableOffer {
-  return { id, accountType: "PERSONAL", maxBonusCents: 50000, difficulty: "EASY", cooldownMonths: null, durationMonths: 3, ...extra };
+  return { id, accountType: "PERSONAL", maxBonusCents: 50000, difficulty: "EASY", cooldownMonths: null, durationMonths: 3, costCents: 600000, ...extra };
 }
 const FIXTURE_OFFERS: RatableOffer[] = [
   offer("a", { maxBonusCents: 30000, difficulty: "EASY", durationMonths: 2, cooldownMonths: 12 }),
@@ -194,7 +194,7 @@ test("/faq: answers are informational (roughly 25-90 words) and unique", () => {
 
 test("/metodologia: components and weights equal the ones in ratings.ts, commission is excluded", async () => {
   const body = text((await renderAll())["/metodologia"]!);
-  for (const [label, weight] of [["Wysokość premii", "30%"], ["Trudność zdobycia", "30%"], ["Czas trwania", "20%"], ["Średnia premia na miesiąc", "15%"], ["Karencja", "5%"]]) {
+  for (const [label, weight] of [["Wysokość premii", "30%"], ["Wymagany obrót do premii", "25%"], ["Czas trwania", "20%"], ["Trudność zdobycia", "20%"], ["Karencja", "5%"]]) {
     assert.ok(new RegExp(`${label}[^%]*${weight}`).test(body), `${label} ${weight}`);
   }
   assert.ok(body.includes("Ocena serwisu, nie porada finansowa."));

@@ -6,23 +6,28 @@
  * best-paying one in its group), so better-paying offers rank higher.
  *
  * The influence is substantial, NOT a tie-breaker: the factor spans 0.4 of the
- * score while the public ratings sit between 6.5 and 10. An offer rated 6.5
- * with the highest commission scores 0.65 and overtakes an offer rated 10
- * whose commission is zero (0.60). The disclosure copy
- * (lib/disclosureCopy.ts), /jak-zarabiamy and the FAQ must therefore say that a
- * lower-rated offer can rank higher, never that commission only nudges the
- * order. This is NOT the public "ocena serwisu" (that stays commission-free,
- * see services/ratings.ts); the influence is disclosed on /jak-zarabiamy, in
- * the strip above the lists and next to the sort control.
+ * score while the public ratings sit between 6.5 and 10, so an offer rated 6.5
+ * with the highest commission (0.65) overtakes an offer rated 10 whose
+ * commission is zero (0.60). This is NOT the public "ocena serwisu" (that
+ * stays commission-free, see services/ratings.ts). The site does not explain
+ * the order or the commission influence in its copy (owner decision).
  *
- * Commission is compared only within the same account type (a business
- * sign-up bonus pays far more than a personal one), normalised to the best
- * commission in that group. A missing commission gets a neutral 0.5, so
- * data we simply don't have yet neither helps nor hurts an offer.
+ * Commission is compared across the whole list, but a business commission
+ * counts at half its value (BUSINESS_COMMISSION_FACTOR): business sign-up
+ * bonuses naturally pay much more than personal ones, and without the
+ * discount they would always take the top of a mixed list. The values are
+ * normalised to the best (discounted) commission in the list. A missing
+ * commission gets a neutral 0.5, so data we simply don't have yet neither
+ * helps nor hurts an offer.
  */
 
 export const COMMISSION_WEIGHT = 0.4;
 const NEUTRAL = 0.5;
+export const BUSINESS_COMMISSION_FACTOR = 0.5;
+
+function effectiveCommission(accountType: string, cents: number): number {
+  return accountType === "BUSINESS" ? cents * BUSINESS_COMMISSION_FACTOR : cents;
+}
 
 export interface RecommendInput {
   accountType: string;
@@ -36,15 +41,14 @@ export interface RecommendInput {
 }
 
 export function recommendedScores(items: RecommendInput[]): number[] {
-  const maxByType = new Map<string, number>();
+  let max = 0;
   for (const it of items) {
     const c = it.commissionCents ?? 0;
-    if (c > 0) maxByType.set(it.accountType, Math.max(maxByType.get(it.accountType) ?? 0, c));
+    if (c > 0) max = Math.max(max, effectiveCommission(it.accountType, c));
   }
   return items.map((it) => {
-    const max = maxByType.get(it.accountType);
     const c = it.commissionCents;
-    const commissionN = max && c != null && c > 0 ? c / max : c === 0 ? 0 : NEUTRAL;
+    const commissionN = max > 0 && c != null && c > 0 ? effectiveCommission(it.accountType, c) / max : c === 0 ? 0 : NEUTRAL;
     const ratingN = Math.min(1, Math.max(0, it.rating / 10));
     return ratingN * (1 - COMMISSION_WEIGHT + COMMISSION_WEIGHT * commissionN);
   });

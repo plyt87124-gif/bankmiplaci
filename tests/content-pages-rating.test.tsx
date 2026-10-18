@@ -31,7 +31,7 @@ test("weights, difficulty scores, neutral value and mapping equal the constants 
   assert.equal(RATING_WEIGHTS.bonus, constant("BONUS_WEIGHT"));
   assert.equal(RATING_WEIGHTS.difficulty, constant("DIFFICULTY_WEIGHT"));
   assert.equal(RATING_WEIGHTS.duration, constant("DURATION_WEIGHT"));
-  assert.equal(RATING_WEIGHTS.avgPerMonth, constant("AVG_PER_MONTH_WEIGHT"));
+  assert.equal(RATING_WEIGHTS.cost, constant("COST_WEIGHT"));
   assert.equal(RATING_WEIGHTS.cooldown, constant("COOLDOWN_WEIGHT"));
   assert.equal(NEUTRAL_SCORE, constant("NEUTRAL_SCORE"));
   assert.ok(Math.abs(Object.values(RATING_WEIGHTS).reduce((a, b) => a + b, 0) - 1) < 1e-12, "weights add up to 1");
@@ -40,7 +40,7 @@ test("weights, difficulty scores, neutral value and mapping equal the constants 
     assert.equal(DIFFICULTY_SCORE[key], Number(m?.[1]), key);
   }
   assert.ok(ratingsSource.includes(`${RATING_FLOOR} + ${RATING_SPAN} * Math.sqrt(clamped)`), "composite -> rating mapping");
-  assert.ok(ratingsSource.includes(`sameType.length >= ${MIN_PEERS_OF_TYPE} ? sameType : active`), "minimum peers of one type");
+  assert.ok(ratingsSource.includes(`peers.length >= ${MIN_PEERS_OF_TYPE}`), "minimum peers of one type");
   assert.ok(!/commission/i.test(ratingsSource.replace(/\/\*[\s\S]*?\*\//g, "")), "ratings.ts must not use the commission");
 });
 
@@ -75,7 +75,8 @@ function generate(seed: number): RatableOffer[] {
     maxBonusCents: Math.floor(rnd() * 600) * 1000,
     difficulty: difficulties[Math.floor(rnd() * 4)]!,
     cooldownMonths: rnd() < 0.5 ? null : Math.floor(rnd() * 5) * 12,
-    durationMonths: rnd() < 0.15 ? null : 1 + Math.floor(rnd() * 12)
+    durationMonths: rnd() < 0.15 ? null : 1 + Math.floor(rnd() * 12),
+    costCents: rnd() < 0.3 ? null : (1 + Math.floor(rnd() * 900)) * 10000
   }));
 }
 
@@ -97,7 +98,9 @@ test("the replica gives the same rating as the real recomputeRatings() on 300 ge
             ratingOverride: null,
             cooldownMonths: o.cooldownMonths,
             // the real code derives the duration from the highest step group: order / 10
-            checklistSteps: o.durationMonths === null ? [] : [{ order: o.durationMonths * 10 }, { order: 0 }]
+            checklistSteps: o.durationMonths === null ? [] : [{ order: o.durationMonths * 10 }, { order: 0 }],
+            // a single non-repeating threshold, which the real estimator reads back as exactly this amount
+            conditions: o.costCents === null ? [] : [{ title: `Wpływ min. ${o.costCents / 100} zł`, description: null }]
           })),
         update: (args: { where: { id: string }; data: { rating: number } }) => {
           updates.set(args.where.id, args.data.rating);
@@ -126,7 +129,7 @@ test("the breakdown adds up: contributions == composite, and a lone offer gets o
     assert.ok(b.components.every((c) => c.score >= 0 && c.score <= 1));
     assert.equal(b.components.length, 5);
   }
-  const lone: RatableOffer = { id: "x", accountType: "PERSONAL", maxBonusCents: 100, difficulty: "HARD", cooldownMonths: null, durationMonths: null };
+  const lone: RatableOffer = { id: "x", accountType: "PERSONAL", maxBonusCents: 100, difficulty: "HARD", cooldownMonths: null, durationMonths: null, costCents: null };
   const alone = explainRating(lone, [lone]);
   assert.equal(alone.components.find((c) => c.key === "cooldown")!.neutral, true);
   assert.equal(alone.components.find((c) => c.key === "duration")!.score, NEUTRAL_SCORE);
@@ -141,6 +144,7 @@ test("example selection is deterministic, skips manual overrides and prefers a k
     difficulty: "EASY" as DifficultyKey,
     cooldownMonths: 12 as number | null,
     durationMonths: 2 as number | null,
+    costCents: 100 as number | null,
     rating: 9,
     hasOverride: false,
     ...extra
@@ -150,10 +154,11 @@ test("example selection is deterministic, skips manual overrides and prefers a k
     make("2", { rating: 8.4 }),
     make("3", { rating: 9.6, cooldownMonths: 24 }),
     make("4", { hasOverride: true, cooldownMonths: 24 }),
-    make("5", { durationMonths: null })
+    make("5", { durationMonths: null }),
+    make("6", { costCents: null, cooldownMonths: 24 })
   ];
   const picked = exampleCandidates(offers).map((o) => o.id);
-  assert.ok(!picked.includes("4") && !picked.includes("5") && !picked.includes("1"));
+  assert.ok(!picked.includes("4") && !picked.includes("5") && !picked.includes("6") && !picked.includes("1"));
   assert.deepEqual(picked, exampleCandidates([...offers].reverse()).map((o) => o.id));
   assert.deepEqual(exampleCandidates([]), []);
 });

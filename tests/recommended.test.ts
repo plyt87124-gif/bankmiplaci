@@ -36,10 +36,13 @@ test("the influence is NOT small: top commission at the rating floor beats a per
   assert.equal(sortRecommended([p("perfect", 10, 0), p("weak", 6.5, 20000)])[0]!.id, "weak");
 });
 
-test("commission is compared only within the same account type", () => {
-  const items: RecommendInput[] = [p("personal", 9.0, 12000, "PERSONAL"), p("business", 9.0, 90000, "BUSINESS")];
+test("a business commission counts at half its value next to a personal one", () => {
+  const items: RecommendInput[] = [p("personal", 9.0, 12000, "PERSONAL"), p("business", 9.0, 24000, "BUSINESS")];
   const [a, b] = recommendedScores(items);
-  assert.equal(a, b); // each is the best commission in its own group
+  assert.equal(a, b); // 24000 / 2 == 12000
+  const [c, d] = recommendedScores([p("personal", 9.0, 12000, "PERSONAL"), p("business", 9.0, 90000, "BUSINESS")]);
+  assert.ok(d! > c!); // 45000 still beats 12000
+  assert.equal(sortRecommended([p("personal", 9.0, 12000, "PERSONAL"), p("business", 9.0, 18000, "BUSINESS")])[0]!.id, "personal");
 });
 
 test("an unknown commission is neutral, not a penalty or a boost", () => {

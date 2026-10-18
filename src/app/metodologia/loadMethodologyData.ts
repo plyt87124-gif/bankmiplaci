@@ -1,6 +1,7 @@
 import { PromotionStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { signupCutoff } from "@/lib/promotionAvailability";
+import { estimateRequiredTurnoverCents } from "@/lib/requiredTurnover";
 import {
   exampleCandidates,
   explainRating,
@@ -53,7 +54,8 @@ export async function loadMethodologyData(now: Date = new Date()): Promise<Metho
         cooldownMonths: true,
         lastVerifiedAt: true,
         bank: { select: { name: true } },
-        checklistSteps: { select: { order: true } }
+        checklistSteps: { select: { order: true } },
+        conditions: { select: { title: true, description: true } }
       }
     });
     if (rows.length === 0) return EMPTY_METHODOLOGY_DATA;
@@ -61,6 +63,7 @@ export async function loadMethodologyData(now: Date = new Date()): Promise<Metho
     const offers = rows.map((row) => {
       const groups = row.checklistSteps.map((s) => Math.floor(s.order / 10));
       const maxGroup = groups.length > 0 ? Math.max(...groups) : null;
+      const durationMonths = maxGroup !== null ? Math.max(1, maxGroup) : null;
       return {
         id: row.id,
         slug: row.slug,
@@ -70,7 +73,8 @@ export async function loadMethodologyData(now: Date = new Date()): Promise<Metho
         maxBonusCents: row.maxBonusCents,
         difficulty: row.difficulty as DifficultyKey,
         cooldownMonths: row.cooldownMonths,
-        durationMonths: maxGroup !== null ? Math.max(1, maxGroup) : null,
+        durationMonths,
+        costCents: estimateRequiredTurnoverCents(row.conditions, durationMonths),
         rating: Number(row.rating),
         hasOverride: row.ratingOverride !== null
       };

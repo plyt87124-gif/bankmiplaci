@@ -30,19 +30,19 @@ const COMPONENT_ROWS: { key: ComponentKey; name: string; how: string }[] = [
     how: "Im wyższa premia, tym lepiej: najwyższa w grupie porównywanych ofert dostaje 1, najniższa 0, pozostałe są proporcjonalnie pomiędzy."
   },
   {
-    key: "difficulty",
-    name: "Trudność zdobycia",
-    how: `Każda oferta ma jeden z czterech poziomów trudności, który ustalamy m.in. na podstawie wymaganych płatności kartą i progów wpływów na konto: bardzo łatwa ${num2.format(DIFFICULTY_SCORE.VERY_EASY)}, łatwa ${num2.format(DIFFICULTY_SCORE.EASY)}, średnia ${num2.format(DIFFICULTY_SCORE.MEDIUM)}, trudna ${num2.format(DIFFICULTY_SCORE.HARD)}.`
+    key: "cost",
+    name: "Wymagany obrót do premii",
+    how: "Szacujemy, ile pieniędzy trzeba przepuścić przez konto lub wydać kartą, żeby zdobyć premię (progi wpływów i płatności z warunków oferty, przemnożone przez liczbę miesięcy, w których trzeba je spełniać), i dzielimy przez wysokość premii. Mniejszy obrót na każdą złotówkę premii znaczy lepiej. To szacunek: gdy z warunków nie da się odczytać progu, składnik dostaje wartość neutralną."
   },
   {
     key: "duration",
     name: "Czas trwania",
-    how: "Liczba miesięcy, przez które trzeba spełniać warunki (wynika z harmonogramu w ściądze). Krócej znaczy lepiej."
+    how: "Na ile miesięcy rozłożona jest premia, czyli przez ile miesięcy trzeba spełniać warunki (wynika z harmonogramu w ściądze). Krócej znaczy lepiej."
   },
   {
-    key: "avgPerMonth",
-    name: "Średnia premia na miesiąc",
-    how: "Premia podzielona przez liczbę miesięcy, czyli ile wychodzi na miesiąc wysiłku, a nie tylko łączna kwota."
+    key: "difficulty",
+    name: "Trudność zdobycia",
+    how: `Każda oferta ma jeden z czterech poziomów trudności, który ustalamy m.in. na podstawie wymaganych płatności kartą i progów wpływów na konto: bardzo łatwa ${num2.format(DIFFICULTY_SCORE.VERY_EASY)}, łatwa ${num2.format(DIFFICULTY_SCORE.EASY)}, średnia ${num2.format(DIFFICULTY_SCORE.MEDIUM)}, trudna ${num2.format(DIFFICULTY_SCORE.HARD)}.`
   },
   {
     key: "cooldown",
@@ -62,10 +62,10 @@ function describeValue(c: ComponentBreakdown): string {
   switch (c.key) {
     case "bonus":
       return `Oferta: ${formatPLN(c.value ?? 0)}${c.range ? ` · porównywane: od ${formatPLN(c.range.min)} do ${formatPLN(c.range.max)}` : ""}`;
-    case "avgPerMonth":
-      return c.neutral
-        ? "Brak danych o harmonogramie – wartość neutralna"
-        : `Oferta: ${formatPLN(Math.round(c.value ?? 0))} miesięcznie${c.range ? ` · porównywane: od ${formatPLN(Math.round(c.range.min))} do ${formatPLN(Math.round(c.range.max))}` : ""}`;
+    case "cost":
+      return c.neutral || c.value === null
+        ? "Brak odczytanego progu w warunkach – wartość neutralna"
+        : `Oferta: ${num1.format(c.value)} zł obrotu na 1 zł premii${c.range ? ` · porównywane: od ${num1.format(c.range.min)} do ${num1.format(c.range.max)}` : ""}`;
     case "duration":
       return c.neutral || c.value === null
         ? "Brak danych o harmonogramie – wartość neutralna"
@@ -82,9 +82,7 @@ function describeValue(c: ComponentBreakdown): string {
 function ExampleBlock({ example }: { example: RatingExample }) {
   const { breakdown } = example;
   const peerCount = `${breakdown.peerCount} ${pluralizePl(breakdown.peerCount, "oferta", "oferty", "ofert")}`;
-  const peerGroup = breakdown.wholeSetUsed
-    ? `${peerCount} (ofert tego typu konta jest za mało, więc porównujemy z całym zestawem aktywnych ofert)`
-    : `${peerCount} tego samego typu konta (${accountTypeLabel(example.accountType).toLowerCase()})`;
+  const peerGroup = `${peerCount} tego samego typu konta (${accountTypeLabel(example.accountType).toLowerCase()})`;
 
   return (
     <>
@@ -196,8 +194,8 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
       </p>
       <p>
         Oferty porównujemy z innymi aktualnymi ofertami <strong>tego samego typu konta</strong> (np. osobiste i firmowe
-        oceniamy osobno, bo ich premie nie są ze sobą porównywalne). Gdy ofert danego typu jest mniej niż{" "}
-        {MIN_PEERS_OF_TYPE}, porównujemy z całym zestawem aktywnych ofert. Ocena przelicza się automatycznie, gdy w
+        oceniamy osobno i nigdy nie porównujemy ze sobą, bo ich premie nie są porównywalne). Gdy ofert danego typu jest
+        mniej niż {MIN_PEERS_OF_TYPE}, składniki porównawcze dostają wartość neutralną. Ocena przelicza się automatycznie, gdy w
         serwisie pojawia się, znika lub zmienia się promocja – dlatego ocena tej samej oferty może się zmienić, choć jej
         warunki zostały takie same.
       </p>
