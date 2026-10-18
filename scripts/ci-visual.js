@@ -110,12 +110,13 @@ async function main() {
       assert.deepEqual(observed.failedRequests, [], `${viewport.name} ${route}: failed requests`);
 
       if (route === "/promocje/ci-nullfees" || route === "/promocje/ci-conditional-legacy") {
-        const body = await observed.page.locator("body").innerText();
-        assert.match(body, /Nieustalone/, `${route}: unverified fee is explicit`);
-        assert.doesNotMatch(body, /Bez opłat za prowadzenie/, `${route}: no unconditional-free badge`);
+        // v2 wording: an unverified fee says "Brak danych" in the summary bar and never claims to be free.
+        const facts = await observed.page.locator('section[aria-labelledby="w-skrocie"]').innerText();
+        assert.match(facts, /Brak danych/, `${route}: unverified fee is explicit`);
+        assert.doesNotMatch(facts, /Bez opłat/, `${route}: no unconditional-free badge`);
       }
       if (route === "/promocje/ci-conditional-legacy") {
-        await assert.doesNotReject(() => observed.page.getByText(/Znany warunek zwolnienia: wpływ co najmniej 1000 zł miesięcznie/).waitFor());
+        await assert.doesNotReject(() => observed.page.getByText(/0\s*zł gdy wpływ co najmniej 1000 zł miesięcznie/).waitFor());
       }
       if (route === "/blog/ci-article-updated") {
         await assert.doesNotReject(() => observed.page.getByText(/Autor testowy CI.*01\.10\.2026/).waitFor());
