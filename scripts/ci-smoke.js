@@ -255,18 +255,19 @@ async function verify() {
     assert.match(off.location ?? "", /\/promocje\/ci-affoff$/);
     const offPage = await get("/promocje/ci-affoff");
     assert.equal(offPage.status, 200);
-    assert.ok(!offPage.text.includes("Przejdź do promocji"), "no CTA when the partner link is off");
+    // v2: the closing block carries aria-label="Przejdź do promocji", so look at link text, not any occurrence
+    assert.ok(!/<a [^>]*>[^<]*Przejdź do promocji/.test(offPage.text), "no CTA when the partner link is off");
     assert.ok(!offPage.text.includes('href="/out/'), "no /out/ link when the partner link is off");
-    assert.match(offPage.text, /nie udostępniamy obecnie naszego linku/);
+    assert.match(offPage.text, /Nie udostępniamy obecnie linku do tej oferty/);
     assert.equal(robots(offPage.text), "index, follow");
 
     // indexing is separate from availability
     assert.equal(robots((await get("/promocje/ci-pastdeadline")).text), "index, follow");
     assert.equal(robots((await get("/promocje/ci-notpromoted")).text), "noindex, follow");
 
-    // cleared (NULL) fees show as "Nieustalone" on the page, never as a free "0 zł"
+    // cleared (NULL) fees show as "Brak danych" on the page (v2 wording), never as a free "0 zł"
     const nf = (await get("/promocje/ci-nullfees")).text;
-    assert.ok((nf.match(/Nieustalone/g) ?? []).length >= 3, "fee stat + both fee rows say Nieustalone");
+    assert.ok((nf.match(/Brak danych/g) ?? []).length >= 3, "fee stat + both fee rows say Brak danych");
     assert.ok(!nf.includes("0 zł*"), "no fake free marker");
 
     // closed bonus part is listed apart and not summed
