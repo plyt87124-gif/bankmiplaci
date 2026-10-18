@@ -21,8 +21,8 @@ export default async function Image() {
   // here must be the text that is actually drawn - including the upper-cased
   // eyebrow (textTransform: "uppercase" below needs the capital letters).
   const [serif, sansSemibold] = await Promise.all([
-    loadGoogleFont("Source Serif 4", 600, HEADLINE),
-    loadGoogleFont("Inter", 600, EYEBROW.toUpperCase() + TAGLINE)
+    loadGoogleFont("Exo 2", 600, HEADLINE),
+    loadGoogleFont("Lexend", 600, EYEBROW.toUpperCase() + TAGLINE)
   ]);
   return new ImageResponse(
     (
@@ -37,7 +37,7 @@ export default async function Image() {
           padding: "90px",
           backgroundColor: PAPER,
           borderTop: `14px solid ${ACTION}`,
-          fontFamily: "Inter"
+          fontFamily: "Lexend"
         }}
       >
         <div
@@ -53,7 +53,7 @@ export default async function Image() {
         >
           {EYEBROW}
         </div>
-        <div style={{ display: "flex", fontFamily: "Source Serif 4", fontSize: "116px", color: INK, fontWeight: 600 }}>
+        <div style={{ display: "flex", fontFamily: "Exo 2", fontSize: "116px", color: INK, fontWeight: 600 }}>
           {HEADLINE}
         </div>
         <div style={{ display: "flex", width: "120px", height: "4px", backgroundColor: LINE, margin: "36px 0" }} />
@@ -65,8 +65,8 @@ export default async function Image() {
     {
       ...size,
       fonts: [
-        { name: "Source Serif 4", data: serif, weight: 600 },
-        { name: "Inter", data: sansSemibold, weight: 600 }
+        { name: "Exo 2", data: serif, weight: 600 },
+        { name: "Lexend", data: sansSemibold, weight: 600 }
       ]
     }
   );
