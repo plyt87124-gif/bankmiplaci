@@ -157,11 +157,12 @@ async function verify() {
       assert.equal(ld.author.name, "Autor testowy CI");
       assert.equal(ld.datePublished, publishedAt);
       assert.equal(ld.dateModified, modifiedAt, "technical updatedAt is not a content edit");
-      const byline = result.text.match(/<article\b[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? "";
+      // v2: the byline is the paragraph with "Autor:" (the first paragraph of the article is the category link).
+      const byline = [...result.text.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)].map((m) => m[1]).find((p) => p.includes("Autor:")) ?? "";
       assert.ok(byline.includes(ld.author.name), "visible author matches structured data");
       if (publishedAt) assert.ok(byline.includes("01.10.2026"), "known publication date is visible");
-      else assert.ok(byline.includes("Data publikacji nieustalona"), "createdAt is not invented as publication date");
-      assert.equal(byline.includes("zaktualizowano"), Boolean(modifiedAt), "visible update matches structured data");
+      else assert.ok(byline.includes("Brak daty publikacji"), "createdAt is not invented as publication date");
+      assert.equal(byline.toLowerCase().includes("zaktualizowano"), Boolean(modifiedAt), "visible update matches structured data");
     }
     assert.equal((await get("/porownaj?typ=PERSONAL&liczba=4")).status, 200, "async searchParams on comparison page");
     assert.equal((await get("/api/promotions/ci-open/comments")).status, 200, "async params on comments route");
