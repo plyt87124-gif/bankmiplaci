@@ -149,7 +149,7 @@ test("contrast: the formula matches known WCAG values", () => {
   assert.equal(ratioOf(WHITE, WHITE).toFixed(2), "1.00");
   // #767676 on white is the textbook 4.54:1 pass.
   assert.equal(ratioOf([118, 118, 118], WHITE).toFixed(2), "4.54");
-  // Spec section 2 quotes: ink-900/paper ~15.9; the burgundy action colour on paper is >= 10 (light).
+  // Spec section 2 quotes: ink-900/paper ~15.9; the navy action colour on paper is >= 10 (light).
   const inkOnPaper = ratioOf(colour("light", "ink-900"), colour("light", "paper"));
   assert.ok(inkOnPaper > 15.5 && inkOnPaper < 16.5, `ink-900/paper light = ${inkOnPaper.toFixed(2)}`);
   const actionOnPaper = ratioOf(colour("light", "action"), colour("light", "paper"));
