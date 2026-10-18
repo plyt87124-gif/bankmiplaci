@@ -1,13 +1,12 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ExternalLink, Flag } from "lucide-react";
-import { ShareButton } from "@/components/ShareButton";
 import { TrustNote } from "@/components/trust/TrustNote";
 import { VerifiedLine } from "@/components/trust/VerifiedLine";
 import { ButtonLink } from "@/components/ui/Button";
-import { formatDatePL, formatRatingOutOf10 } from "@/lib/format";
+import { formatRatingOutOf10 } from "@/lib/format";
 import { describeAdditionalSource, describeFeesSource } from "@/lib/sourceLinks";
-import { hostLabel, reportErrorHref, safeHttpUrl } from "./offerModel";
+import { reportErrorHref, safeHttpUrl } from "./offerModel";
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -45,8 +44,7 @@ function ExternalSource({ href, children }: { href: string; children: ReactNode 
 export function SourceSection({
   slug,
   lastVerifiedAt,
-  endDate,
-  ended,
+  promoHref,
   sourceUrl,
   additionalSourceUrls,
   feesSourceUrl,
@@ -55,14 +53,12 @@ export function SourceSection({
   ratingReason,
   ratingHref,
   verificationHref,
-  shareUrl,
-  shareTitle,
   now
 }: {
   slug: string;
   lastVerifiedAt: Date | string | null;
-  endDate: Date | string;
-  ended: boolean;
+  /** Internal /out/... link of the bank's promotion page; null when the offer cannot be followed. */
+  promoHref: string | null;
   sourceUrl: string | null;
   additionalSourceUrls: readonly string[];
   feesSourceUrl: string | null;
@@ -71,15 +67,12 @@ export function SourceSection({
   ratingReason: string | null;
   ratingHref: string;
   verificationHref: string;
-  shareUrl: string;
-  shareTitle: string;
   now?: Date;
 }) {
   const regulation = safeHttpUrl(sourceUrl);
   const extra = additionalSourceUrls.map((url) => safeHttpUrl(url)).filter((url): url is string => url !== null);
   const feesDoc = safeHttpUrl(feesSourceUrl);
   const bankSite = safeHttpUrl(bankWebsite);
-  const endText = formatDatePL(endDate);
   const reason = ratingReason?.trim() ?? "";
 
   return (
@@ -94,64 +87,59 @@ export function SourceSection({
           </Link>
         </p>
 
-        <dl className="mt-5 space-y-4">
-          <Row label="Termin zapisów">
-            {endText ? (ended ? `zakończyły się ${endText}` : `do ${endText}`) : "Brak danych"}
-          </Row>
-
-          <Row label="Regulamin promocji">
+        <ul role="list" className="mt-4 space-y-1.5 text-ui">
+          <li>
             {regulation ? (
-              <ExternalSource href={regulation}>
-                Regulamin promocji na stronie banku
-                {hostLabel(regulation) ? <span className="text-ink-500"> ({hostLabel(regulation)})</span> : null}
-              </ExternalSource>
+              <ExternalSource href={regulation}>Regulamin promocji</ExternalSource>
             ) : (
               <>
-                Brak linku w naszych danych – sprawdź regulamin na stronie banku
+                Regulamin promocji: brak linku w naszych danych
                 {bankSite ? (
                   <>
-                    {": "}
-                    <ExternalSource href={bankSite}>{hostLabel(bankSite) || "strona banku"}</ExternalSource>
+                    {" – "}
+                    <ExternalSource href={bankSite}>strona banku</ExternalSource>
                   </>
                 ) : null}
-                .
               </>
             )}
-          </Row>
-
-          {extra.length > 0 ? (
-            <Row label="Zobacz też">
-              <ul role="list" className="space-y-1.5">
-                {extra.map((url, index) => (
-                  <li key={url}>
-                    <ExternalSource href={url}>{describeAdditionalSource(url, index)}</ExternalSource>
-                  </li>
-                ))}
-              </ul>
-            </Row>
-          ) : null}
-
+          </li>
           {feesDoc ? (
-            <Row label={describeFeesSource(feesDoc)}>
-              <ExternalSource href={feesDoc}>Pełny dokument na stronie banku</ExternalSource>
-            </Row>
+            <li>
+              <ExternalSource href={feesDoc}>{describeFeesSource(feesDoc)}</ExternalSource>
+            </li>
           ) : null}
+          {extra.map((url, index) => (
+            <li key={url}>
+              <ExternalSource href={url}>{describeAdditionalSource(url, index)}</ExternalSource>
+            </li>
+          ))}
+          {promoHref ? (
+            <li>
+              <a
+                href={promoHref}
+                target="_blank"
+                rel="sponsored nofollow noopener noreferrer"
+                className="link-inline inline-flex max-w-full items-baseline gap-1"
+              >
+                <span>Strona promocyjna banku</span>
+                <ExternalLink size={14} aria-hidden="true" className="relative top-[2px] shrink-0 self-center" />
+                <span className="sr-only">(otwiera się w nowej karcie)</span>
+              </a>
+            </li>
+          ) : null}
+        </ul>
 
-          <Row label="Ocena serwisu">
-            <span className="num font-semibold">{formatRatingOutOf10(rating)}</span>
-            {" – "}
-            <Link href={ratingHref} className="link-inline font-medium">
-              Jak liczymy?
-            </Link>
-            {reason ? <span className="mt-1 block text-small text-ink-700">{reason}</span> : null}
-            <TrustNote kind="rating" className="mt-1" />
-          </Row>
-        </dl>
+        <div className="mt-4 text-ui text-ink-700">
+          Ocena serwisu <span className="num font-semibold text-ink-900">{formatRatingOutOf10(rating)}</span>
+          {" – "}
+          <Link href={ratingHref} className="link-inline font-medium">
+            Jak liczymy?
+          </Link>
+          {reason ? <span className="mt-1 block text-small text-ink-700">{reason}</span> : null}
+          <TrustNote kind="rating" className="mt-1" />
+        </div>
 
-        <p className="mt-5 text-small text-ink-500">
-          Warunki promocji mogą się zmienić po stronie banku. Zawsze zweryfikuj aktualny regulamin przed podjęciem
-          decyzji – nie stanowimy porady finansowej ani prawnej.
-        </p>
+        <p className="mt-4 text-small text-ink-500">Warunki mogą się zmienić po stronie banku – sprawdź aktualny regulamin.</p>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -159,7 +147,6 @@ export function SourceSection({
           <Flag size={16} aria-hidden="true" className="shrink-0" />
           Zgłoś błąd w tej ofercie
         </ButtonLink>
-        <ShareButton url={shareUrl} title={shareTitle} />
       </div>
     </section>
   );

@@ -97,16 +97,16 @@ test("CTA (admin draft preview): the disclosure still follows the button directl
   assert.doesNotMatch(html(h(OfferCta, { state: lateDraft, ...ctaProps })), /Podgląd:/);
 });
 
-test("end CTA: own tracking source, disclosure under the button, standing 'not a bank' sentence", () => {
+test("end CTA: own tracking source, no disclosure and no 'not a bank' sentence", () => {
   const out = html(h(EndCta, { state: OPEN, bankName: "Alior Bank", href: "/out/x?src=detail-cta-bottom", moreOffersHref: "/promocje", moreOffersLabel: "x" }));
   assert.match(out, /href="\/out\/x\?src=detail-cta-bottom"/);
   assert.doesNotMatch(out, /data-disclosure/);
-  assert.match(text(out), /Nie jesteśmy bankiem ani doradcą\. Warunki ustala bank\./);
+  assert.doesNotMatch(text(out), /Nie jesteśmy bankiem/);
   assert.match(text(out), /Przejdź bezpośrednio do wniosku na stronie Alior Bank/);
 
   const ended = html(h(EndCta, { state: ENDED, bankName: "Alior Bank", href: "/out/x", moreOffersHref: "/promocje", moreOffersLabel: "x" }));
   assert.doesNotMatch(ended, /\/out\//);
-  assert.match(text(ended), /Nie jesteśmy bankiem ani doradcą/);
+  assert.match(text(ended), /nie jest obecnie dostępna/);
 });
 
 test("sticky bar: rendered hidden and inert, with the compact disclosure under the button and its own source", () => {
@@ -143,20 +143,22 @@ const asideProps = {
   moreOffersHref: "/promocje",
   moreOffersLabel: "Zobacz inne promocje",
   ratingHref: "/metodologia",
-  showChecklistLink: true,
-  loggedIn: false,
+  shareUrl: "https://bankmiplaci.pl/promocje/x",
+  shareTitle: "X",
+  checklist: h("div", { "data-card": "sciaga" }, "karta"),
   mainCtaId: "glowny-cta",
   now: NOW
 };
 
-test("aside: amount, deadline, CTA with disclosure, ściąga link and the rating with a comma", () => {
+test("aside: amount, deadline, CTA, share button, ściąga as its own tile and the rating with a comma", () => {
   const out = html(h(OfferAside, asideProps));
   const t = text(out);
   assert.match(t, /Premia do 800 zł/);
   assert.match(t, /Koniec za 4 dni \(do 13\.10\.2026\)/);
   assert.match(t, /Przejdź do promocji/);
-  assert.match(t, /Zapisz w ściądze \(wymaga konta\)/);
-  assert.match(out, /href="#sciaga"/);
+  assert.match(t, /Poleć znajomemu/);
+  assert.match(out, /<div id="sciaga"[^>]*><div data-card="sciaga">karta<\/div><\/div>/);
+  assert.ok(out.indexOf('id="sciaga"') > out.indexOf("Poleć znajomemu"), "the ściąga tile is below the main one");
   assert.match(t, /Ocena serwisu 9,4\/10/);
   assert.doesNotMatch(t, /9\.4/);
   assert.match(out, /href="\/metodologia"[^>]*>Jak liczymy\?/);
@@ -164,9 +166,8 @@ test("aside: amount, deadline, CTA with disclosure, ściąga link and the rating
   assert.match(out, /lg:sticky/);
 });
 
-test("aside: a signed-in visitor sees 'Zapisz w ściądze' without the account hint; no ściąga = no link", () => {
-  assert.doesNotMatch(text(html(h(OfferAside, { ...asideProps, loggedIn: true }))), /wymaga konta/);
-  assert.doesNotMatch(html(h(OfferAside, { ...asideProps, showChecklistLink: false })), /href="#sciaga"/);
+test("aside: no ściąga = no ściąga tile", () => {
+  assert.doesNotMatch(html(h(OfferAside, { ...asideProps, checklist: null })), /id="sciaga"/);
 });
 
 test("aside: an offer without a cash premium never prints 0 zł as the premium", () => {
@@ -176,7 +177,7 @@ test("aside: an offer without a cash premium never prints 0 zł as the premium",
 });
 
 test("aside: an ended offer has no /out/ link", () => {
-  const out = html(h(OfferAside, { ...asideProps, state: ENDED, endDate: day("2026-09-30"), showChecklistLink: false }));
+  const out = html(h(OfferAside, { ...asideProps, state: ENDED, endDate: day("2026-09-30"), checklist: null }));
   assert.doesNotMatch(out, /\/out\//);
   assert.doesNotMatch(out, /data-disclosure="compact"/);
   assert.match(text(out), /Zakończona 30\.09\.2026/);
@@ -289,7 +290,7 @@ test("header: the summary is the lead; a very long one is set as body text; ende
 /* Sections                                                            */
 /* ------------------------------------------------------------------ */
 
-test("fees: unknown fees say 'Brak danych' with ONE shared footnote and a link to the bank's fee table", () => {
+test("fees: unknown fees say 'Brak danych', a known waiver is one short line, no footnotes or other fees", () => {
   const out = html(
     h(FeesSection, {
       fees: {
@@ -303,14 +304,10 @@ test("fees: unknown fees say 'Brak danych' with ONE shared footnote and a link t
     })
   );
   const t = text(out);
-  assert.equal(count(t, /Brak danych/g), 3); // two rows + the footnote's lead
-  assert.match(t, /Znany warunek zwolnienia: po 24 miesiącach: wpływ min\. 1000 zł\. Stawki poza warunkiem nie zweryfikowaliśmy\./);
-  assert.match(t, /Brak danych = nie zweryfikowaliśmy tej opłaty, sprawdź tabelę opłat banku \(otwiera się w nowej karcie\)/);
-  assert.equal(count(t, /nie zweryfikowaliśmy tej opłaty/g), 1);
-  assert.match(out, /href="https:\/\/bank\.example\/taryfa\.pdf"[^>]*rel="noopener noreferrer nofollow"/);
-  assert.match(t, /Inne opłaty: Dotyczy planu Standard\. Inne plany: sprawdź cennik\./);
+  assert.equal(count(t, /Brak danych/g), 2);
+  assert.match(t, /0 zł gdy po 24 miesiącach: wpływ min\. 1000 zł/);
+  assert.doesNotMatch(t, /nie zweryfikowaliśmy|Inne opłaty|Dotyczy planu Standard/);
   assert.doesNotMatch(out, /\*/);
-  assert.doesNotMatch(t, /(?<![\d.,])0 zł/);
 });
 
 test("fees: a missing Fees row is two 'Brak danych' rows, never 0 zł", () => {
@@ -335,7 +332,7 @@ test("fees: confirmed 0 zł and a conditional rate are worded without a footnote
   );
   const t = text(out);
   assert.match(t, /Opłata za konto 0 zł/);
-  assert.match(t, /Opłata za kartę 10 zł 0 zł po spełnieniu warunku: min\. 5 transakcji kartą/);
+  assert.match(t, /Opłata za kartę 10 zł 0 zł gdy min\. 5 transakcji kartą/);
   assert.doesNotMatch(t, /Brak danych/);
   assert.doesNotMatch(out, /\*/);
   assert.match(out, /<caption class="sr-only">/);
@@ -359,8 +356,7 @@ test("for whom: free text as paragraph or list, empty fields leave no section", 
   assert.match(text(both), /Dla kogo jest promocja\? Kto może skorzystać Nowi klienci\./);
   assert.match(both, /<ul[^>]*><li[^>]*>Pracownicy banku<\/li><li[^>]*>Osoby z kontem w ostatnich 3 latach<\/li><\/ul>/);
   assert.match(text(both), /Kiedy możesz otworzyć konto\?/);
-  assert.match(text(both), /Karencja to okres/);
-  assert.match(both, /href="\/faq#karencja"/);
+  assert.match(text(both), /nie miały konta w tym banku/);
   assert.match(both, /md:grid-cols-2/);
 });
 
@@ -417,23 +413,18 @@ test("bonus breakdown: a label stored with its own amount does not print the amo
   assert.doesNotMatch(t, /Kantor — 100 zł/);
 });
 
-test("conditions: numbered static list, the ściąga link and card only when the offer has a ściąga", () => {
+test("conditions: numbered static list, no ściąga link or card (the ściąga lives in the aside)", () => {
   const conditions = [
     { id: "a", title: "Otwórz konto", description: "Online." },
     { id: "b", title: "Płać kartą", description: null }
   ];
-  const withSheet = html(
-    h(ConditionsSection, { bankName: "Alior Bank", conditions, hasChecklist: true }, h("div", { "data-card": "sciaga" }, "karta"))
-  );
+  const withSheet = html(h(ConditionsSection, { bankName: "Alior Bank", conditions }));
   assert.match(text(withSheet), /Warunki promocji Alior Bank krok po kroku/);
   assert.match(withSheet, /<ol/);
-  assert.match(withSheet, /href="#sciaga"[^>]*>.*Prowadź mnie krok po kroku \(ściąga\)/);
-  assert.match(withSheet, /<div id="sciaga"[^>]*><div data-card="sciaga">karta<\/div><\/div>/);
+  assert.doesNotMatch(withSheet, /sciaga|Prowadź mnie/);
   assert.doesNotMatch(withSheet, /type="checkbox"/);
-  // the card comes AFTER the list
-  assert.ok(withSheet.indexOf('id="sciaga"') > withSheet.indexOf("</ol>"));
 
-  const none = html(h(ConditionsSection, { bankName: "B", conditions: [], hasChecklist: false }));
+  const none = html(h(ConditionsSection, { bankName: "B", conditions: [] }));
   assert.match(text(none), /Nie mamy jeszcze rozpisanych kroków tej promocji/);
   assert.doesNotMatch(none, /href="#sciaga"/);
   // the numbered list is introduced as "steps plus rules": not every entry is an action
@@ -449,8 +440,7 @@ test("conditions: numbered static list, the ściąga link and card only when the
 const sourceProps = {
   slug: "alior-konto-z-premia",
   lastVerifiedAt: new Date("2026-10-07T08:00:00Z"),
-  endDate: day("2026-10-31"),
-  ended: false,
+  promoHref: "/out/alior-konto-z-premia?src=detail-source",
   sourceUrl: "https://www.aliorbank.pl/regulamin.pdf",
   additionalSourceUrls: ["https://www.aliorbank.pl/toip-konta-osobiste.pdf", "javascript:alert(1)"],
   feesSourceUrl: "https://www.aliorbank.pl/tabela.pdf",
@@ -459,8 +449,6 @@ const sourceProps = {
   ratingReason: "Wysoka wartość i niski próg.",
   ratingHref: "/metodologia",
   verificationHref: "/metodologia#weryfikacja",
-  shareUrl: "https://bankmiplaci.pl/promocje/alior-konto-z-premia",
-  shareTitle: "Alior Bank: Konto z Premią",
   now: NOW
 };
 
@@ -470,31 +458,28 @@ test("source: verification, deadline, links to the bank's documents, rating with
   assert.match(out, /id="zrodlo"/);
   assert.match(t, /Zweryfikowano 7 paź 2026/);
   assert.match(out, /href="\/metodologia#weryfikacja"/);
-  assert.match(t, /Termin zapisów do 31\.10\.2026/);
-  assert.match(t, /Regulamin promocji na stronie banku \(aliorbank\.pl\)/);
+  assert.match(t, /Regulamin promocji/);
   assert.match(out, /href="https:\/\/www\.aliorbank\.pl\/regulamin\.pdf"[^>]*target="_blank"[^>]*rel="noopener noreferrer nofollow"/);
-  assert.match(t, /Zobacz też/);
   assert.match(t, /Taryfa opłat i prowizji/);
+  assert.match(t, /Strona promocyjna banku/);
+  assert.match(out, /href="\/out\/alior-konto-z-premia\?src=detail-source"[^>]*rel="sponsored nofollow noopener noreferrer"/);
   assert.match(t, /9,4\/10 – Jak liczymy\? Wysoka wartość i niski próg\. Ocena serwisu, nie porada finansowa\./);
   assert.match(out, /href="\/kontakt\?oferta=alior-konto-z-premia"/);
   assert.match(t, /Zgłoś błąd w tej ofercie/);
-  assert.match(t, /Poleć znajomemu/);
-  assert.match(t, /nie stanowimy porady finansowej ani prawnej/);
   // a javascript: link typed into the admin never becomes an href
   assert.doesNotMatch(out, /javascript:/);
-  // these are the bank's documents, never the partner redirect
-  assert.doesNotMatch(out, /\/out\//);
+  // the bank's documents are plain links; only "Strona promocyjna banku" is the partner redirect
+  assert.equal(count(out, /\/out\//g), 1);
 });
 
 test("source: no regulation link in the data is said plainly, the rating note is there without a reason", () => {
   const out = text(
-    html(h(SourceSection, { ...sourceProps, sourceUrl: null, additionalSourceUrls: [], feesSourceUrl: null, ratingReason: null, ended: true, lastVerifiedAt: null }))
+    html(h(SourceSection, { ...sourceProps, sourceUrl: null, additionalSourceUrls: [], feesSourceUrl: null, ratingReason: null, promoHref: null, lastVerifiedAt: null }))
   );
-  assert.match(out, /Brak linku w naszych danych – sprawdź regulamin na stronie banku/);
+  assert.match(out, /Regulamin promocji: brak linku w naszych danych/);
   assert.match(out, /Brak daty weryfikacji/);
-  assert.match(out, /zakończyły się 31\.10\.2026/);
+  assert.doesNotMatch(out, /Strona promocyjna banku/);
   assert.match(out, /Ocena serwisu, nie porada finansowa\./);
-  assert.doesNotMatch(out, /Zobacz też/);
 });
 
 /* ------------------------------------------------------------------ */

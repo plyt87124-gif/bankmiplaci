@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { CheckCircle2, XCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import {
-  COOLDOWN_EXPLAINER,
   cooldownSentences,
   splitLines,
   type CooldownRule
@@ -26,7 +24,7 @@ function Panel({
         {title}
       </h3>
       {lines.length > 1 ? (
-        <ul role="list" className="mt-3 list-disc space-y-2 pl-5 text-article text-ink-700 marker:text-ink-400">
+        <ul role="list" className="mt-3 list-disc space-y-2 pl-5 text-ui text-ink-700 marker:text-ink-400">
           {lines.map((line) => (
             <li key={line} className="break-words">
               {line}
@@ -34,7 +32,7 @@ function Panel({
           ))}
         </ul>
       ) : (
-        <p className="mt-3 whitespace-pre-line break-words text-article text-ink-700">{lines[0]}</p>
+        <p className="mt-3 whitespace-pre-line break-words text-ui text-ink-700">{lines[0]}</p>
       )}
     </div>
   );
@@ -64,7 +62,6 @@ export function ForWhom({
 
   const panels = (can.length > 0 ? 1 : 0) + (cannot.length > 0 ? 1 : 0);
   const sentences = cooldown ? cooldownSentences(cooldown, bankName) : [];
-  const hasMonths = cooldown?.months != null && cooldown.months > 0;
 
   return (
     <section id="dla-kogo" aria-labelledby="dla-kogo-h">
@@ -82,21 +79,13 @@ export function ForWhom({
       ) : null}
 
       {sentences.length > 0 ? (
-        <div className="mt-4 rounded-card border border-line bg-sunken p-4 sm:p-5">
+        <div className="mt-4 rounded-card border border-line bg-sunken p-4">
           <h3 className="text-h4">Kiedy możesz otworzyć konto?</h3>
           {sentences.map((sentence) => (
-            <p key={sentence} className="mt-2 text-article text-ink-700">
+            <p key={sentence} className="mt-1.5 text-ui text-ink-700">
               {sentence}
             </p>
           ))}
-          {hasMonths ? (
-            <p className="mt-3 text-small text-ink-500">
-              {COOLDOWN_EXPLAINER}{" "}
-              <Link href="/faq#karencja" className="link-inline font-medium">
-                Co to jest karencja?
-              </Link>
-            </p>
-          ) : null}
         </div>
       ) : null}
     </section>

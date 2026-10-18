@@ -18,7 +18,7 @@ export type ButtonVariant = "primary" | "cta" | "secondary" | "ghost" | "danger"
 export type ButtonSize = "sm" | "md" | "lg";
 
 const base =
-  "relative inline-flex select-none items-center justify-center gap-2 rounded-field border border-transparent text-center font-brand font-semibold " +
+  "group/cta relative inline-flex select-none items-center justify-center gap-2 rounded-field border border-transparent text-center font-brand font-semibold " +
   "[transition:background-color_150ms_var(--ease-out,ease),border-color_150ms_var(--ease-out,ease),transform_120ms_var(--ease-out,ease)] " +
   "active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
@@ -70,7 +70,7 @@ export function buttonClasses({
 }
 
 function CtaArrow() {
-  return <ArrowRight size={18} aria-hidden="true" className="shrink-0" />;
+  return <ArrowRight size={18} aria-hidden="true" className="shrink-0 transition-transform duration-200 ease-out group-hover/cta:translate-x-1 group-focus-visible/cta:translate-x-1 motion-reduce:transition-none" />;
 }
 
 function Spinner() {

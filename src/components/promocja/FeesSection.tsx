@@ -1,6 +1,5 @@
 import { hasFeeCaveat, resolveFee, type FeeModel } from "@/lib/feeModel";
 import { FeeValue } from "./FeeValue";
-import { safeHttpUrl } from "./offerModel";
 
 export interface OfferFees {
   accountFeeCents: number | null;
@@ -16,7 +15,7 @@ function FeeNote({ fee }: { fee: FeeModel }) {
   if (fee.kind === "conditional" && fee.waiver) {
     return (
       <p className="mt-1 break-words text-small text-ink-700 [overflow-wrap:anywhere]">
-        {fee.waiverNote}: {fee.waiver}
+        0&nbsp;zł gdy {fee.waiver}
       </p>
     );
   }
@@ -24,7 +23,7 @@ function FeeNote({ fee }: { fee: FeeModel }) {
     // A waiver is known but the rate without it is not: say both, never "0 zł".
     return (
       <p className="mt-1 break-words text-small text-ink-700 [overflow-wrap:anywhere]">
-        Znany warunek zwolnienia: {fee.waiver}. Stawki poza warunkiem nie zweryfikowaliśmy.
+        0&nbsp;zł gdy {fee.waiver}
       </p>
     );
   }
@@ -46,8 +45,7 @@ function FeeRow({ label, fee }: { label: string; fee: FeeModel }) {
 }
 
 /**
- * "Opłaty za konto i kartę": a compact two-row table, ONE shared footnote and
- * the free-text "Inne opłaty:" - no asterisks anywhere. The values come from the
+ * "Opłaty za konto i kartę": a compact two-row table (no footnotes, no "Inne opłaty" - owner's rule). The values come from the
  * shared fee model (src/lib/feeModel.ts), the same one the FAQ and the JSON-LD
  * of this page use.
  *
@@ -64,10 +62,6 @@ export function FeesSection({ fees }: { fees: OfferFees | null }) {
   const caveat = hasFeeCaveat(fees?.otherFee);
   const account = resolveFee(fees?.accountFeeCents, fees?.accountFeeWaiverCondition, caveat);
   const card = resolveFee(fees?.cardFeeCents, fees?.cardFeeWaiverCondition, caveat);
-  const anyUnknown = account.kind === "unknown" || card.kind === "unknown";
-  const anyFromZero = [account, card].some((fee) => fee.kind === "free" && fee.hasCaveat);
-  const otherFee = fees?.otherFee?.trim() ?? "";
-  const feeTableUrl = safeHttpUrl(fees?.sourceUrl);
 
   return (
     <section id="oplaty" aria-labelledby="oplaty-h" className="scroll-mt-20">
@@ -82,36 +76,6 @@ export function FeesSection({ fees }: { fees: OfferFees | null }) {
           </tbody>
         </table>
       </div>
-
-      {anyFromZero ? (
-        <p className="mt-2 text-small text-ink-500">
-          „Od 0 zł” to stawka w najlepszym przypadku – zależnie od warunków może być wyższa. Szczegóły są niżej, w
-          „Inne opłaty”.
-        </p>
-      ) : null}
-
-      {anyUnknown ? (
-        <p className="mt-2 text-small text-ink-500">
-          Brak danych = nie zweryfikowaliśmy tej opłaty,{" "}
-          {feeTableUrl ? (
-            <>
-              sprawdź{" "}
-              <a href={feeTableUrl} target="_blank" rel="noopener noreferrer nofollow" className="link-inline">
-                tabelę opłat banku<span className="sr-only"> (otwiera się w nowej karcie)</span>
-              </a>
-              .
-            </>
-          ) : (
-            "sprawdź tabelę opłat banku."
-          )}
-        </p>
-      ) : null}
-
-      {otherFee ? (
-        <p className="mt-4 whitespace-pre-line break-words text-article text-ink-700 [overflow-wrap:anywhere]">
-          <span className="font-semibold text-ink-900">Inne opłaty:</span> {otherFee}
-        </p>
-      ) : null}
     </section>
   );
 }

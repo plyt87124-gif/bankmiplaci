@@ -1,7 +1,7 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { ListChecks } from "lucide-react";
+import { ShareButton } from "@/components/ShareButton";
 import { DeadlineBadge } from "@/components/trust/DeadlineBadge";
-import { ButtonLink } from "@/components/ui/Button";
 import { Money } from "@/components/ui/Money";
 import { formatRatingOutOf10 } from "@/lib/format";
 import { OfferCta } from "./OfferCta";
@@ -10,8 +10,7 @@ import type { OfferState } from "./offerModel";
 /**
  * The panel next to the offer (sticky from lg, 22.5 rem wide): the amount (Inter
  * 600, tabular), the deadline, the main call to action with its compact
- * disclosure directly beneath, "Zapisz w ściądze" (a link to the ściąga card in
- * the conditions section) and the site rating with "Jak liczymy?".
+ * disclosure directly beneath, "Poleć znajomemu", the ściąga card as its own tile and the site rating with "Jak liczymy?".
  *
  * Below lg the amount and deadline are not repeated here (the summary bar sits
  * right above): the panel is then just the button, its disclosure and the
@@ -26,8 +25,9 @@ export function OfferAside({
   moreOffersHref,
   moreOffersLabel,
   ratingHref,
-  showChecklistLink,
-  loggedIn,
+  shareUrl,
+  shareTitle,
+  checklist,
   mainCtaId,
   now
 }: {
@@ -39,9 +39,10 @@ export function OfferAside({
   moreOffersHref: string;
   moreOffersLabel: string;
   ratingHref: string;
-  /** The offer has a ściąga and is not ended: show "Zapisz w ściądze". */
-  showChecklistLink: boolean;
-  loggedIn: boolean;
+  shareUrl: string;
+  shareTitle: string;
+  /** The ściąga card (JoinChecklistButton): its own tile under the main one; null when the offer has no ściąga. */
+  checklist: ReactNode;
   mainCtaId: string;
   now?: Date;
 }) {
@@ -74,12 +75,7 @@ export function OfferAside({
           className="lg:mt-5"
         />
 
-        {showChecklistLink ? (
-          <ButtonLink href="#sciaga" variant="secondary" fullWidth className="mt-3">
-            <ListChecks size={18} aria-hidden="true" className="shrink-0" />
-            {loggedIn ? "Zapisz w ściądze" : "Zapisz w ściądze (wymaga konta)"}
-          </ButtonLink>
-        ) : null}
+        <ShareButton url={shareUrl} title={shareTitle} fullWidth className="mt-3" />
 
         <div className="mt-5 border-t border-line pt-4 text-small">
           <p className="text-ink-700">
@@ -90,6 +86,12 @@ export function OfferAside({
           </Link>
         </div>
       </div>
+
+      {checklist ? (
+        <div id="sciaga" className="mt-4 scroll-mt-20">
+          {checklist}
+        </div>
+      ) : null}
     </aside>
   );
 }

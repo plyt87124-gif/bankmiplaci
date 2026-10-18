@@ -277,15 +277,15 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
           moreOffersHref={moreOffersHref}
           moreOffersLabel={moreOffersLabel}
           ratingHref={ratingHref}
-          showChecklistLink={hasChecklist && !state.expired}
-          loggedIn={Boolean(currentUser)}
-          mainCtaId={MAIN_CTA_ID}
-          now={now}
-        />
-
-        <div className="min-w-0 space-y-12 md:space-y-14 lg:col-start-1 lg:row-start-1">
-          <ConditionsSection bankName={bank.name} conditions={promotion.conditions} hasChecklist={hasChecklist}>
-            {hasChecklist ? (
+          shareUrl={absoluteUrl(`/promocje/${promotion.slug}`)}
+          shareTitle={promotionTitle({
+            name: promotion.name,
+            bankName: bank.name,
+            accountType: promotion.accountType,
+            maxBonusCents: promotion.maxBonusCents
+          })}
+          checklist={
+            hasChecklist ? (
               <JoinChecklistButton
                 promotionId={promotion.id}
                 loggedIn={Boolean(currentUser)}
@@ -297,8 +297,16 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
                 alreadyJoined={Boolean(tracking) && !tracking?.completedAt}
                 locked={isChecklistRestartLocked(tracking?.completedAt, eligibility)}
               />
-            ) : null}
-          </ConditionsSection>
+            ) : null
+          }
+          mainCtaId={MAIN_CTA_ID}
+          now={now}
+        />
+
+        <div className="min-w-0 space-y-12 md:space-y-14 lg:col-start-1 lg:row-start-1">
+          <ConditionsSection bankName={bank.name} conditions={promotion.conditions} />
+
+          <BonusBreakdown openParts={openParts} closedParts={closedParts} maxBonusCents={promotion.maxBonusCents} />
 
           <ForWhom
             eligibleFor={promotion.eligibleFor}
@@ -307,15 +315,12 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
             bankName={bank.name}
           />
 
-          <BonusBreakdown openParts={openParts} closedParts={closedParts} maxBonusCents={promotion.maxBonusCents} />
-
           <FeesSection fees={promotion.fees} />
 
           <SourceSection
             slug={promotion.slug}
             lastVerifiedAt={promotion.lastVerifiedAt}
-            endDate={promotion.endDate}
-            ended={state.deadlinePassed}
+            promoHref={state.ctaLive ? endCtaHref : null}
             sourceUrl={promotion.sourceUrl}
             additionalSourceUrls={promotion.additionalSourceUrls}
             feesSourceUrl={promotion.fees?.sourceUrl ?? null}
@@ -324,14 +329,15 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
             ratingReason={promotion.ratingReason}
             ratingHref={ratingHref}
             verificationHref={verificationHref}
-            shareUrl={absoluteUrl(`/promocje/${promotion.slug}`)}
-            shareTitle={promotionTitle({
-              name: promotion.name,
-              bankName: bank.name,
-              accountType: promotion.accountType,
-              maxBonusCents: promotion.maxBonusCents
-            })}
             now={now}
+          />
+
+          <EndCta
+            state={state}
+            bankName={bank.name}
+            href={endCtaHref}
+            moreOffersHref={moreOffersHref}
+            moreOffersLabel={moreOffersLabel}
           />
 
           <section aria-labelledby="faq-h">
@@ -343,30 +349,20 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
 
           <RelatedGuide article={relatedArticle} />
 
-          <BankOffers
-            bankName={bank.name}
-            offers={bankOffers}
-            ended={state.expired}
-            allOffersHref={bankOffersListHref(bank.slug, DYNAMIC_ROUTE_FLAGS.bankPages)}
-          />
-
           <div id={COMMENTS_ID} className="scroll-mt-20">
             <PromotionComments
               promotionSlug={promotion.slug}
               currentUser={currentUser ? { email: currentUser.email, name: currentUser.name } : null}
             />
           </div>
-        </div>
-      </div>
 
-      <div className="mx-auto max-w-3xl">
-        <EndCta
-          state={state}
-          bankName={bank.name}
-          href={endCtaHref}
-          moreOffersHref={moreOffersHref}
-          moreOffersLabel={moreOffersLabel}
-        />
+          <BankOffers
+            bankName={bank.name}
+            offers={bankOffers}
+            ended={state.expired}
+            allOffersHref={bankOffersListHref(bank.slug, DYNAMIC_ROUTE_FLAGS.bankPages)}
+          />
+        </div>
       </div>
 
       {state.ctaLive ? (

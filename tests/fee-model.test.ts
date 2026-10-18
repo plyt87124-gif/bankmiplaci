@@ -216,7 +216,7 @@ test("every surface reads the same input the same way", () => {
   }
 });
 
-test("page: 'od 0 zł' comes with an explanation and a way to the conditions", () => {
+test("page: 'od 0 zł' in the table, a way to the conditions, no footnote and no other fees", () => {
   const fees = {
     accountFeeCents: 0,
     accountFeeWaiverCondition: null,
@@ -227,8 +227,7 @@ test("page: 'od 0 zł' comes with an explanation and a way to the conditions", (
   };
   const table = html(h(FeesSection, { fees }));
   assert.match(table, /<section id="oplaty"/);
-  assert.match(text(table), /„Od 0 zł” to stawka w najlepszym przypadku/);
-  assert.match(text(table), /Inne opłaty: Karta 6 zł\/mies\., chyba że płatności min\. 300 zł\./);
+  assert.doesNotMatch(text(table), /najlepszym przypadku|Inne opłaty/);
   assert.doesNotMatch(text(table), /Opłata za (konto|kartę) 0 zł/);
 
   const facts = html(

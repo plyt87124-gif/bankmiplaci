@@ -13,11 +13,13 @@ import { Button } from "@/components/ui/Button";
 export function ShareButton({
   url,
   title,
-  className
+  className,
+  fullWidth
 }: {
   url: string;
   title: string;
   className?: string;
+  fullWidth?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,8 +51,8 @@ export function ShareButton({
   }
 
   return (
-    <span className={className}>
-      <Button variant="secondary" onClick={handleShare}>
+    <span className={fullWidth ? `block ${className ?? ""}` : className}>
+      <Button variant="secondary" fullWidth={fullWidth} onClick={handleShare}>
         {copied ? <Check size={16} aria-hidden="true" className="shrink-0" /> : <Share2 size={16} aria-hidden="true" className="shrink-0" />}
         {copied ? "Link skopiowany" : "Poleć znajomemu"}
       </Button>

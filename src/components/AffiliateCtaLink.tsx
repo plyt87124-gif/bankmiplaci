@@ -74,7 +74,7 @@ export function AffiliateCtaLink({ href: baseHref, target = "_blank", rel, prefe
       className={buttonClasses({ variant: "cta", size, fullWidth, className })}
     >
       {children}
-      <ArrowRight size={18} aria-hidden="true" className="shrink-0" />
+      <ArrowRight size={18} aria-hidden="true" className="shrink-0 transition-transform duration-200 ease-out group-hover/cta:translate-x-1 group-focus-visible/cta:translate-x-1 motion-reduce:transition-none" />
     </a>
   );
 }

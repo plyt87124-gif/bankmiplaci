@@ -1,11 +1,9 @@
-import { TrustNote } from "@/components/trust/TrustNote";
 import { OfferCta } from "./OfferCta";
 import type { OfferState } from "./offerModel";
 
 /**
  * Closing block of an offer page: a second call to action (a distinct tracking
- * source, so the admin click report can tell the positions apart) and the
- * standing statement "Nie jesteśmy bankiem ani doradcą. Warunki ustala bank."
+ * source, so the admin click report can tell the positions apart).
  */
 export function EndCta({
   state,
@@ -25,7 +23,7 @@ export function EndCta({
     : "Ta oferta nie jest obecnie dostępna przez Bankmiplaci.";
 
   return (
-    <section aria-label="Przejdź do promocji" className="mt-12 rounded-card border border-line bg-surface p-5 text-center sm:p-8 md:mt-16">
+    <section aria-label="Przejdź do promocji" className="rounded-card border border-line bg-surface p-5 text-center sm:p-8">
       <p className="mx-auto max-w-xl text-ui text-ink-700">{text}</p>
       <OfferCta
         state={state}
@@ -35,7 +33,6 @@ export function EndCta({
         className="mx-auto mt-5 max-w-sm"
         disclosureClassName="justify-center text-left"
       />
-      <TrustNote kind="notBank" className="mt-6" />
     </section>
   );
 }
