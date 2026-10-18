@@ -286,7 +286,8 @@ async function verify() {
     assert.ok(sm.includes("/jak-to-dziala<"));
     const entry = (slug) => (sm.match(new RegExp(`<url>\\s*<loc>[^<]*/promocje/${slug}</loc>([\\s\\S]*?)</url>`)) ?? [])[1] ?? "";
     assert.ok(entry("ci-open").includes("<lastmod>"), "known contentUpdatedAt -> lastmod");
-    assert.ok(!entry("ci-lastday").includes("<lastmod>"), "unknown date -> no lastmod");
+    // v2: lastmod falls back to the real verification date (lastVerifiedAt), which every fixture has
+    assert.ok(entry("ci-lastday").includes("<lastmod>"), "verified date -> lastmod");
 
     console.log("ci-smoke: all checks passed");
   } finally {
