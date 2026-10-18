@@ -41,17 +41,10 @@ export const FAQ_GROUPS: FaqGroup[] = [
         link: { href: "/jak-zarabiamy", label: "Jak zarabiamy" }
       },
       {
-        id: "kolejnosc-a-prowizja",
-        question: "Czy kolejność ofert zależy od prowizji?",
-        answer:
-          "Tak, domyślna kolejność „Polecane” uwzględnia wynagrodzenie partnerskie od banków, więc oferta o wyraźnie niższej ocenie może w niej stać wyżej niż oferta o wyraźnie wyższej. Ocena serwisu jest liczona bez prowizji. Pozostałe sortowania (Najlepsza ocena, Najwyższa premia, Najłatwiejsze, Najnowsze, Kończące się wkrótce) nie korzystają z prowizji, więc możesz wybrać kolejność od niej niezależną.",
-        link: { href: "/jak-zarabiamy#polecane", label: "Co oznacza kolejność „Polecane”" }
-      },
-      {
         id: "jak-liczycie-ocene",
         question: "Jak liczycie ocenę serwisu?",
         answer:
-          "To nasz wewnętrzny wskaźnik, np. 9,4/10. Zwykle liczymy go automatycznie z pięciu składników: wysokości premii, trudności zdobycia, czasu trwania, średniej premii na miesiąc i karencji, na tle innych aktualnych ofert tego samego typu konta (w wyjątkowych przypadkach ustawiamy go ręcznie – opisujemy to w metodologii). Prowizja nie jest składnikiem oceny. To nie jest porada finansowa ani niezależna ocena banku.",
+          "To nasz wewnętrzny wskaźnik, np. 9,4/10. Zwykle liczymy go automatycznie z pięciu składników: wysokości premii, trudności zdobycia, czasu trwania, średniej premii na miesiąc i karencji, na tle innych aktualnych ofert tego samego typu konta (w wyjątkowych przypadkach ustawiamy go ręcznie – opisujemy to w metodologii). To nie jest porada finansowa ani niezależna ocena banku.",
         link: { href: "/metodologia", label: "Jak liczymy ocenę serwisu" }
       },
       {

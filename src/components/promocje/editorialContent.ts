@@ -45,7 +45,7 @@ export const EDITORIAL_SECTIONS: readonly EditorialSection[] = [
     id: "jak-czytac-ocene-i-trudnosc",
     heading: "Jak czytać naszą ocenę i trudność",
     paragraphs: [
-      "Ocena serwisu to nasza ocena samej promocji, a nie banku. Porównujemy w niej m.in. wysokość premii, trudność jej zdobycia i czas potrzebny na spełnienie warunków z innymi aktualnymi ofertami. Prowizja, którą możemy otrzymać od banku, nie wpływa na ocenę. Trudność pokazujemy czterostopniowym wskaźnikiem, od „Bardzo łatwej” do „Trudnej”: im więcej pól jest wypełnionych, tym więcej trzeba zrobić, aby dostać premię. Pokazujemy promocje, które przeanalizowaliśmy, a nie cały rynek, i nie jest to doradztwo finansowe."
+      "Ocena serwisu to nasza ocena samej promocji, a nie banku. Porównujemy w niej m.in. wysokość premii, trudność jej zdobycia i czas potrzebny na spełnienie warunków z innymi aktualnymi ofertami. Trudność pokazujemy czterostopniowym wskaźnikiem, od „Bardzo łatwej” do „Trudnej”: im więcej pól jest wypełnionych, tym więcej trzeba zrobić, aby dostać premię. Pokazujemy promocje, które przeanalizowaliśmy, a nie cały rynek, i nie jest to doradztwo finansowe."
     ]
   }
 ];
@@ -81,15 +81,9 @@ export const LISTING_FAQ: readonly FaqEntry[] = [
     link: { label: "Jak zarabiamy", href: DISCLOSURE_LINKS.howWeEarn }
   },
   {
-    question: "Czy kolejność ofert zależy od prowizji?",
-    answer:
-      "Tak, ale tylko w sortowaniu „Polecane”, które jest ustawione domyślnie. Kolejność w nim zależy od oceny serwisu i od wynagrodzenia partnerskiego od banków, więc oferta o niższej ocenie może znaleźć się wyżej. Ocena serwisu jest liczona bez wynagrodzenia, a pozostałe sortowania, czyli „Najlepsza ocena”, „Najwyższa premia”, „Najłatwiejsze”, „Najnowsze” i „Kończące się wkrótce”, od niego nie zależą.",
-    link: { label: "Jak zarabiamy", href: DISCLOSURE_LINKS.howWeEarnRecommended }
-  },
-  {
     question: "Jak liczymy ocenę serwisu?",
     answer:
-      "To nasza ocena samej promocji, a nie banku. Porównujemy m.in. wysokość premii, trudność jej zdobycia i czas potrzebny na spełnienie warunków z innymi aktualnymi ofertami. Prowizja nie jest składnikiem oceny. Ocena serwisu nie jest poradą finansową.",
+      "To nasza ocena samej promocji, a nie banku. Porównujemy m.in. wysokość premii, trudność jej zdobycia i czas potrzebny na spełnienie warunków z innymi aktualnymi ofertami. Ocena serwisu nie jest poradą finansową.",
     link: { label: "Jak liczymy ocenę", href: ratingExplainerHref() }
   },
   {

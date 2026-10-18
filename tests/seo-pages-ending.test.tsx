@@ -184,7 +184,6 @@ test("page: H1 from the SEO library, lead, early-end note, one strip for a non-'
   assert.equal((out.match(/data-disclosure="strip"/g) ?? []).length, 1);
   assert.match(stripTag(out), /data-disclosure-sort="other"/, "deadline order: independent of the commission");
   assert.ok(text(out).includes(STRIP_OTHER.lead));
-  assert.ok(!text(out).includes(STRIP_RECOMMENDED.lead), "this list is not in the 'Polecane' order");
   assert.ok(out.indexOf('data-disclosure="strip"') < out.indexOf("<h2"), "strip above the first group");
   assert.doesNotMatch(out, /\/out\//);
 });

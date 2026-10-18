@@ -20,7 +20,6 @@ import type { HubKind } from "@/lib/seo";
 import {
   COMMON_RELATED_LINKS,
   countWords,
-  recommendedOrderFaq,
   type EditorialSection,
   type RelatedLink,
   type SeoFaqItem
@@ -122,7 +121,7 @@ const PERSONAL_SECTIONS: readonly EditorialSection[] = [
     id: "kolejnosc",
     heading: "Jak ułożona jest ta lista",
     paragraphs: [
-      "Lista jest ułożona w kolejności „Polecane”. Od czego ona zależy, piszemy nad listą i na stronie „Jak zarabiamy”. Jeśli wolisz inny porządek, na stronie wszystkich promocji możesz posortować oferty według oceny serwisu, wysokości premii, trudności albo terminu zapisów."
+      "Lista jest ułożona w kolejności „Polecane”. Jeśli wolisz inny porządek, na stronie wszystkich promocji możesz posortować oferty według oceny serwisu, wysokości premii, trudności albo terminu zapisów."
     ]
   }
 ];
@@ -160,7 +159,7 @@ const BUSINESS_SECTIONS: readonly EditorialSection[] = [
     id: "kolejnosc",
     heading: "Jak ułożone są oferty dla firm",
     paragraphs: [
-      "Oferty dla firm są ułożone w kolejności „Polecane”. Zasady tej kolejności opisujemy nad listą oraz na stronie „Jak zarabiamy”. Na stronie wszystkich promocji możesz przełączyć widok na konta firmowe i posortować oferty inaczej, na przykład według oceny serwisu albo wysokości premii."
+      "Oferty dla firm są ułożone w kolejności „Polecane”. Na stronie wszystkich promocji możesz przełączyć widok na konta firmowe i posortować oferty inaczej, na przykład według oceny serwisu albo wysokości premii."
     ]
   }
 ];
@@ -205,8 +204,7 @@ const PERSONAL_FAQ: readonly SeoFaqItem[] = [
     answer:
       "Przy każdej ofercie pokazujemy termin zapisów i datę ostatniej weryfikacji, a tam, gdzie znamy źródło, także link do regulaminu banku. Bank może jednak zakończyć lub zmienić promocję wcześniej, dlatego przed założeniem konta sprawdź warunki w regulaminie. Zasady weryfikacji opisujemy w metodologii.",
     link: { label: "Jak liczymy ocenę i weryfikujemy dane", href: "/metodologia" }
-  },
-  recommendedOrderFaq()
+  }
 ];
 
 const BUSINESS_FAQ: readonly SeoFaqItem[] = [
@@ -234,8 +232,7 @@ const BUSINESS_FAQ: readonly SeoFaqItem[] = [
     question: "Czy trzeba prowadzić firmę, żeby założyć konto firmowe?",
     answer:
       "Konto firmowe jest przeznaczone dla działalności gospodarczej, dlatego bank poprosi o dane firmy i dokumenty potwierdzające jej prowadzenie. Jakie dokładnie, podaje bank w procesie otwarcia rachunku."
-  },
-  recommendedOrderFaq()
+  }
 ];
 
 export const HUB_FAQ: Record<HubKind, readonly SeoFaqItem[]> = {

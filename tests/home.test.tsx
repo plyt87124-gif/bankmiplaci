@@ -236,8 +236,7 @@ test("ending soon: the cards with the nearest deadline first, none of the far on
   const section = FULL.slice(FULL.indexOf('aria-labelledby="konczace-title"'), FULL.indexOf('aria-labelledby="wysilek-title"'));
   assert.deepEqual([...section.matchAll(/data-slug="([^"]+)"/g)].map((m) => m[1]), ["p2", "p3"]);
   assert.match(text(section), /w ciągu 14 dni/);
-  assert.match(section, /data-disclosure="tag"/, "the order is by deadline: said so, with the link to 'Jak zarabiamy'");
-  assert.match(text(section), /Ta kolejność nie zależy od wynagrodzenia partnerskiego/);
+  assert.doesNotMatch(section, /data-disclosure="tag"/, "no sentence about what the order depends on");
 });
 
 test("ending soon: an empty list renders no block at all (no heading, no wrapper)", () => {
@@ -301,7 +300,7 @@ test("trust: three claims with their links, the commission wording from the one 
     assert.match(section, new RegExp(`<a [^>]*href="${href}"`), href);
   }
   const plain = text(section);
-  assert.ok(plain.includes(RATING_COMMISSION_RULE), "'Wysokość prowizji nie jest składnikiem oceny.'");
+  assert.doesNotMatch(plain, /Wysokość prowizji/, "no commission wording in the trust block");
   assert.doesNotMatch(plain, /Jak zarabiamy|Zarabiamy z prowizji/, "the owner removed the 'Jak zarabiamy' column");
   assert.doesNotMatch(plain, /BFG|gwarancj|Bankowy Fundusz/i, "the deposit guarantee needs an approved wording first");
   assert.equal(HOME_TRUST_COLUMNS.length, 2);

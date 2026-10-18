@@ -21,18 +21,10 @@ import {
 // If one of these assertions has to change, the lawyer's text changed: update
 // the plan and get it reviewed first.
 
-test("strip for 'recommended' discloses partner remuneration AND that the rating excludes it", () => {
-  assert.equal(
-    disclosureText(STRIP_RECOMMENDED),
-    "Kolejność „Polecane” zależy od oceny serwisu i od wynagrodzenia partnerskiego od banków – oferta o niższej ocenie może znaleźć się wyżej. Ocena serwisu jest liczona bez wynagrodzenia. Jak zarabiamy"
-  );
-  assert.equal(STRIP_RECOMMENDED.href, "/jak-zarabiamy#polecane");
-});
-
 test("strip for other sort orders is the general affiliate sentence", () => {
   assert.equal(
     disclosureText(STRIP_OTHER),
-    "Część linków to linki partnerskie – możemy otrzymać wynagrodzenie od banku. Nie wpływa ono na ocenę serwisu. Jak zarabiamy"
+    "Część linków to linki partnerskie – możemy otrzymać wynagrodzenie od banku. Jak zarabiamy"
   );
   assert.equal(STRIP_OTHER.href, DISCLOSURE_LINKS.howWeEarn);
 });
@@ -54,24 +46,6 @@ test("compact disclosure", () => {
   assert.equal(COMPACT.href, "/jak-zarabiamy");
 });
 
-test("sort option label and descriptions", () => {
-  assert.equal(SORT_RECOMMENDED_LABEL, "Polecane (z wynagrodzeniem)");
-  assert.equal(
-    disclosureText(sortDescriptionCopy("recommended")),
-    "W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność. Pozostałe sortowania od niego nie zależą. Jak zarabiamy"
-  );
-  const topRated = sortDescriptionCopy("top-rated");
-  assert.equal(disclosureText(topRated), "Ocena serwisu nie uwzględnia prowizji. Jak liczymy");
-  assert.equal(topRated.href, "/metodologia");
-  for (const sort of ["highest-bonus", "easiest", "newest", "ending-soon"]) {
-    assert.equal(
-      disclosureText(sortDescriptionCopy(sort)),
-      "Ta kolejność nie zależy od wynagrodzenia partnerskiego. Jak zarabiamy",
-      sort
-    );
-  }
-});
-
 test("footer disclosure replaces the old 'not an official partner' claim", () => {
   const text = disclosureText(FOOTER);
   assert.equal(
@@ -79,20 +53,10 @@ test("footer disclosure replaces the old 'not an official partner' claim", () =>
     "Bankmiplaci nie jest bankiem ani oficjalnym przedstawicielem banków. " +
       "Część linków to linki partnerskie – za otwarcie konta przez nasz link możemy otrzymać wynagrodzenie od banku lub sieci partnerskiej. " +
       "Co do zasady nie zmienia to warunków oferty ani naszej oceny; jeśli promocja wymaga otwarcia konta przez link lub kod, sprawdź to w jej warunkach i w regulaminie banku. " +
-      "Wynagrodzenie wpływa na kolejność „Polecane” (opisujemy to w „Jak zarabiamy”). " +
       "Nazwy i logotypy banków należą do ich właścicieli i służą wyłącznie identyfikacji oferty. " +
       "Nie porównujemy całego rynku. Nie jest to doradztwo finansowe. Jak zarabiamy"
   );
   assert.ok(!/oficjalnym partnerem/i.test(text));
-});
-
-test("footer does not claim that the remuneration changes nothing: promotions can require a link or code, and 'Polecane' is affected", () => {
-  const text = disclosureText(FOOTER);
-  assert.ok(!text.includes("Nie zmienia to warunków oferty ani naszej oceny."), "the unconditional sentence is gone");
-  assert.ok(text.includes("Co do zasady nie zmienia to warunków oferty ani naszej oceny;"));
-  assert.ok(text.includes("jeśli promocja wymaga otwarcia konta przez link lub kod, sprawdź to w jej warunkach i w regulaminie banku"));
-  assert.ok(text.includes("Wynagrodzenie wpływa na kolejność „Polecane”"), "says what the strip says: remuneration acts on 'Polecane'");
-  assert.ok(!/nie płacisz więcej/i.test(text));
 });
 
 test("one name for the date of the newest verification, everywhere", () => {

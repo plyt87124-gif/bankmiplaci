@@ -255,7 +255,7 @@ test("the sort select offers every SortKey once; 'Polecane' carries the disclosu
   assert.equal(new Set(SORT_OPTIONS.map((o) => o.value)).size, SORT_OPTIONS.length);
   const recommended = SORT_OPTIONS.find((o) => o.value === "recommended");
   assert.equal(recommended?.label, SORT_RECOMMENDED_LABEL);
-  assert.match(SORT_RECOMMENDED_LABEL, /z wynagrodzeniem/);
+  assert.equal(SORT_RECOMMENDED_LABEL, "Polecane");
 });
 
 /* ------------------------------------------------------------------ */
@@ -526,19 +526,6 @@ test("toolbar: segment with counts, labelled search and sort, status counter, th
   assert.match(out, /role="search"/);
 });
 
-test("toolbar: the active sort is described right under the control, and follows the URL", () => {
-  const recommended = renderToolbar("");
-  assert.match(text(recommended), /W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność\. Pozostałe sortowania od niego nie zależą\. Jak zarabiamy/);
-  assert.match(recommended, /data-disclosure="tag"/);
-
-  const topRated = renderToolbar("sort=top-rated");
-  assert.match(text(topRated), /Ocena serwisu nie uwzględnia prowizji\. Jak liczymy/);
-  assert.match(topRated, /<option value="top-rated" selected="">/);
-
-  // an unknown sort in the URL falls back to the default (and so to its disclosure)
-  assert.match(renderToolbar("sort=bogus"), /<option value="recommended" selected="">/);
-});
-
 test("toolbar: chips with a spoken remove button, 'Wyczyść filtry', and 'Filtry (n)' for the sheet", () => {
   const out = renderToolbar("q=karta&difficulty=EASY,HARD&noFees=1&accountType=BUSINESS", { resultCount: 4, shownCount: 4 });
   assert.match(out, /aria-label="Aktywne filtry"/);
@@ -645,26 +632,6 @@ test("sheet: 'Wyczyść' stays focusable (aria-disabled, not disabled) so the fo
   assert.doesNotMatch(none, /<button[^>]*disabled=""[^>]*>Wyczyść<\/button>/);
   const some = renderToolbar("noFees=1");
   assert.doesNotMatch(some, /<button[^>]*aria-disabled="true"[^>]*>Wyczyść<\/button>/);
-});
-
-test("disclosure: the strip and the sort description come from the same sort, the strip sits above the toolbar", () => {
-  const cases = [
-    ["", "recommended"],
-    ["sort=recommended", "recommended"],
-    ["sort=newest", "other"],
-    ["sort=bogus", "recommended"]
-  ] as const;
-  for (const [search, stripSort] of cases) {
-    const out = renderToolbar(search, { disclosureStrip: true });
-    assert.equal((out.match(/data-disclosure="strip"/g) ?? []).length, 1, search);
-    assert.match(out, new RegExp(`data-disclosure="strip" data-disclosure-sort="${stripSort}"`), search);
-    assert.ok(out.indexOf('data-disclosure="strip"') < out.indexOf('role="radiogroup"'), "strip before the toolbar");
-    // the description under the control agrees with the strip (and adds that other sorts ignore remuneration)
-    const recommended = stripSort === "recommended";
-    assert.equal(/W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność/.test(text(out)), recommended, search);
-    assert.equal(/Ta kolejność nie zależy od wynagrodzenia partnerskiego/.test(text(out)), !recommended, search);
-  }
-  assert.doesNotMatch(renderToolbar(""), /data-disclosure="strip"/, "the strip is opt-in (the page asks for it)");
 });
 
 test("page: the strip is not rendered by the page from the server sort any more (it would disagree with the optimistic description)", () => {

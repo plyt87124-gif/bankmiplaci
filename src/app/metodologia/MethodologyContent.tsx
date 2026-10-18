@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ACCOUNT_TYPE_LABEL, formatDatePL, formatPLN, pluralizePl } from "@/lib/format";
-import { LATEST_VERIFICATION_LABEL, RATING_COMMISSION_RULE, RATING_NOTE } from "@/lib/disclosureCopy";
+import { LATEST_VERIFICATION_LABEL, RATING_NOTE } from "@/lib/disclosureCopy";
 import { AGING_MAX_DAYS, FRESH_MAX_DAYS, STALE_SUFFIX } from "@/lib/freshness";
 import { Callout, TextPage, type TocEntry } from "../jak-to-dziala/TextPage";
 import type { MethodologyData, RatingExample } from "./loadMethodologyData";
@@ -154,9 +154,6 @@ function ExampleBlock({ example }: { example: RatingExample }) {
         Dokładnie tyle widać przy tej ofercie w serwisie. Wartości w tabeli są zaokrąglone, więc suma wkładów może
         różnić się w ostatnim miejscu.
       </p>
-      <p>
-        Zwróć uwagę, że w tym obliczeniu nie ma żadnej pozycji dotyczącej wynagrodzenia, które możemy otrzymać od banku.
-      </p>
     </>
   );
 }
@@ -184,7 +181,7 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
       lead={
         <p>
           Ocenę serwisu liczymy sami, według jawnych zasad opisanych niżej. Służy do porównania aktualnych promocji.{" "}
-          {RATING_NOTE} {RATING_COMMISSION_RULE}
+          {RATING_NOTE}
         </p>
       }
       toc={toc}
@@ -324,11 +321,6 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
 
       <h2 id="czego-nie-uzywamy">Czego nie używamy</h2>
       <ul>
-        <li>
-          <strong>Wynagrodzenia partnerskiego (prowizji).</strong> Wysokość prowizji nie jest składnikiem oceny. Wpływa
-          natomiast na domyślną kolejność „Polecane” i może ją wyraźnie zmienić – opisujemy to na stronie{" "}
-          <Link href="/jak-zarabiamy#polecane">Jak zarabiamy</Link>.
-        </li>
         <li>Opinii z for internetowych i mediów społecznościowych.</li>
         <li>Niezweryfikowanych opinii użytkowników, w tym komentarzy pod ofertami.</li>
         <li>Ocen i rankingów innych porównywarek.</li>
@@ -366,7 +358,7 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
 
       <Callout>
         <p>
-          Więcej o tym, jak się utrzymujemy i co to zmienia w kolejności ofert, przeczytasz w{" "}
+          Więcej o tym, jak się utrzymujemy, przeczytasz w{" "}
           <Link href="/jak-zarabiamy">Jak zarabiamy</Link>. O wydawcy serwisu i zasadach redakcyjnych – w{" "}
           <Link href="/o-nas">O nas</Link>.
         </p>

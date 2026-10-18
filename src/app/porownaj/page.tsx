@@ -69,7 +69,7 @@ export default async function ComparePage(props: { searchParams: SearchParams })
           : "Zestawiamy promocje w jednej tabeli: premia, termin, trudność, opłaty i ocena serwisu. "}
         {isDefault && k > 0
           ? `Domyślnie pokazujemy ${COMPARE_MAX} oferty o najwyższej ocenie serwisu; możesz wybrać inne.`
-          : "Ocena serwisu jest liczona bez uwzględnienia prowizji."}
+          : ""}
       </p>
 
       <div className="mt-6">

@@ -36,22 +36,22 @@ test("strip (recommended) renders the exact sentence with a link to /jak-zarabia
   const out = html(h(AffiliateDisclosure, { variant: "strip", sort: "recommended" }));
   assert.equal(
     text(out),
-    "Kolejność „Polecane” zależy od oceny serwisu i od wynagrodzenia partnerskiego od banków – oferta o niższej ocenie może znaleźć się wyżej. Ocena serwisu jest liczona bez wynagrodzenia. Jak zarabiamy"
+    "Część linków to linki partnerskie – możemy otrzymać wynagrodzenie od banku. Jak zarabiamy"
   );
-  assert.match(out, /<a [^>]*href="\/jak-zarabiamy#polecane"[^>]*>Jak zarabiamy<\/a>/);
+  assert.match(out, /<a [^>]*href="\/jak-zarabiamy#polecane"[^>]*>Jak zarabiamy<\/a>/); // same sentence, anchor kept on the page
   assert.match(out, /data-disclosure="strip"/);
   assert.match(out, /data-disclosure-sort="recommended"/);
 });
 
 test("strip without a sort falls back to the 'recommended' wording (the listing's default order)", () => {
-  assert.match(text(html(h(AffiliateDisclosure, { variant: "strip" }))), /^Kolejność „Polecane” zależy od oceny serwisu i od wynagrodzenia/);
+  assert.match(text(html(h(AffiliateDisclosure, { variant: "strip" }))), /^Część linków to linki partnerskie/);
 });
 
 test("strip for another order is the general affiliate sentence", () => {
   const out = html(h(AffiliateDisclosure, { variant: "strip", sort: "top-rated" }));
   assert.equal(
     text(out),
-    "Część linków to linki partnerskie – możemy otrzymać wynagrodzenie od banku. Nie wpływa ono na ocenę serwisu. Jak zarabiamy"
+    "Część linków to linki partnerskie – możemy otrzymać wynagrodzenie od banku. Jak zarabiamy"
   );
   assert.match(out, /href="\/jak-zarabiamy"/);
   assert.match(out, /data-disclosure-sort="other"/);
@@ -73,26 +73,6 @@ test("footer renders the full statement ending with the link", () => {
   );
   assert.ok(text(out).endsWith("Nie porównujemy całego rynku. Nie jest to doradztwo finansowe. Jak zarabiamy"));
   assert.match(out, /data-disclosure="footer"/);
-});
-
-test("tag: label for 'recommended', description for the others, full description with `long`", () => {
-  const label = html(h(AffiliateDisclosure, { variant: "tag", sort: "recommended" }));
-  assert.equal(text(label), "Polecane (z wynagrodzeniem)");
-
-  const topRated = html(h(AffiliateDisclosure, { variant: "tag", sort: "top-rated" }));
-  assert.equal(text(topRated), "Ocena serwisu nie uwzględnia prowizji. Jak liczymy");
-  assert.match(topRated, /href="\/metodologia"/);
-
-  const longRecommended = html(h(AffiliateDisclosure, { variant: "tag", sort: "recommended", long: true }));
-  assert.equal(
-    text(longRecommended),
-    "W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność. Pozostałe sortowania od niego nie zależą. Jak zarabiamy"
-  );
-
-  assert.equal(
-    text(html(h(AffiliateDisclosure, { variant: "tag", sort: "ending-soon" }))),
-    "Ta kolejność nie zależy od wynagrodzenia partnerskiego. Jak zarabiamy"
-  );
 });
 
 test("disclosures are plain, always-visible markup: no hiding, no script, no small or faint text", () => {

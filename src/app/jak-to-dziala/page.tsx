@@ -119,7 +119,7 @@ export default function HowItWorksPage() {
         </dd>
         <dt>Ocena serwisu</dt>
         <dd>
-          Nasz wewnętrzny wskaźnik do szybkiego porównania aktualnych ofert, liczony bez uwzględnienia prowizji.
+          Nasz wewnętrzny wskaźnik do szybkiego porównania aktualnych ofert.
           Wyjaśniamy go w <Link href="/metodologia">metodologii</Link>.
         </dd>
         <dt>Link partnerski</dt>

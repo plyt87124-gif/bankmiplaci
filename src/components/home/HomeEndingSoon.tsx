@@ -39,7 +39,6 @@ export function HomeEndingSoon({
           Terminy zapisów, które upływają w ciągu {ENDING_SOON_DAYS} {pluralizePl(ENDING_SOON_DAYS, "dnia", "dni", "dni")}.
           Najpierw te z najbliższym terminem.
         </p>
-        <AffiliateDisclosure variant="tag" sort="ending-soon" className="mt-1 max-w-2xl" />
 
         <ul role="list" className={`mt-6 ${CARD_GRID}`}>
           {cards.map((card) => (

@@ -49,14 +49,13 @@ export const HOME_TRUST_COLUMNS: readonly HomeTrustColumn[] = [
     id: "ocena",
     title: "Jak liczymy ocenę",
     text:
-      "Ocenę serwisu liczymy z parametrów oferty według jawnych zasad (w wyjątkowych przypadkach ustawiamy ją ręcznie, a przy ofercie może być podane uzasadnienie). " +
-      RATING_COMMISSION_RULE,
+      "Ocenę serwisu liczymy z parametrów oferty według jawnych zasad (w wyjątkowych przypadkach ustawiamy ją ręcznie, a przy ofercie może być podane uzasadnienie).",
     link: { href: "/metodologia", label: "Jak liczymy ocenę" }
   }
 ];
 
 /** The three questions of the shortcut, picked from the /faq content by id. */
-export const HOME_FAQ_IDS = ["kolejnosc-a-prowizja", "aktualnosc", "karencja"] as const;
+export const HOME_FAQ_IDS = ["jak-zarabiacie", "aktualnosc", "karencja"] as const;
 
 /**
  * The shortcut's items, taken from the /faq source (never copied), in the

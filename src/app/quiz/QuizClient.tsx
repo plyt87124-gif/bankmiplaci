@@ -211,7 +211,7 @@ export function QuizResult({
             </p>
           ) : null}
           <p className="mt-3 text-ui text-ink-700">
-            Ułożyliśmy oferty według Twoich odpowiedzi. Kolejność nie zależy od prowizji, którą możemy otrzymać od banku.
+            Ułożyliśmy oferty według Twoich odpowiedzi.
           </p>
           <AffiliateDisclosure variant="strip" sort="quiz" className="mt-5" />
           <ol className="mt-6 space-y-4">

@@ -176,17 +176,6 @@ test("FAQ: 4-6 questions per hub, each with an answer, no repeated question, adv
   for (const item of taxAnswers) assert.match(item.answer, /Może podlegać[\s\S]*To nie jest porada podatkowa/);
 });
 
-test("FAQ: the ordering answer is the disclosure strip's own sentence (one source of truth), and admits the influence", () => {
-  const faq = recommendedOrderFaq();
-  assert.ok(faq.answer.startsWith("Tak."), "answers yes, not 'only slightly'");
-  assert.ok(faq.answer.includes(stripCopy("recommended").lead));
-  assert.match(faq.answer, /wynagrodzenia partnerskiego/);
-  for (const kind of ALL_KINDS) {
-    assert.ok(HUB_FAQ[kind].some((f) => f.answer === faq.answer), `${kind} has the ordering question`);
-  }
-  assert.equal(faq.link?.href, "/jak-zarabiamy#polecane");
-});
-
 test("related links: tools, trust pages, the other hub, banks, ending soon, the full list - all site paths", () => {
   for (const kind of ALL_KINDS) {
     const links = hubRelatedLinks(kind);
@@ -345,9 +334,4 @@ test("SeoEditorial: every part is optional; ids can be prefixed when a page show
   );
   assert.match(faqOnly, /<h2 id="x-najczestsze-pytania">Pytania<\/h2>/);
   assert.doesNotMatch(faqOnly, /Zobacz także/);
-});
-
-test("the strip is the one for the 'Polecane' order, not the general sentence", () => {
-  const out = render("personal", [card(1)]);
-  assert.ok(!text(out).includes(STRIP_OTHER.lead));
 });

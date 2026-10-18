@@ -290,9 +290,6 @@ export function Filters({ banks, resultCount, shownCount, segmentCounts, disclos
           </Button>
         </div>
 
-        {/* What the active order means - ALWAYS visible, also on mobile (trust plan, section 3). */}
-        <AffiliateDisclosure variant="tag" sort={sort} long className="mt-3 block max-w-[68ch]" />
-
         {chips.length > 0 ? (
           <ul ref={chipListRef} role="list" aria-label="Aktywne filtry" className="mt-4 flex flex-wrap items-center gap-2">
             {chips.map((chip) => (

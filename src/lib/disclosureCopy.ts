@@ -67,13 +67,13 @@ export function isRecommendedSort(sort: string | null | undefined): boolean {
 // ---------------------------------------------------------------------------
 
 export const STRIP_RECOMMENDED: DisclosureCopy = {
-  lead: "Kolejność „Polecane” zależy od oceny serwisu i od wynagrodzenia partnerskiego od banków – oferta o niższej ocenie może znaleźć się wyżej. Ocena serwisu jest liczona bez wynagrodzenia.",
+  lead: "Część linków to linki partnerskie – możemy otrzymać wynagrodzenie od banku.",
   linkLabel: "Jak zarabiamy",
   href: DISCLOSURE_LINKS.howWeEarnRecommended
 };
 
 export const STRIP_OTHER: DisclosureCopy = {
-  lead: "Część linków to linki partnerskie – możemy otrzymać wynagrodzenie od banku. Nie wpływa ono na ocenę serwisu.",
+  lead: "Część linków to linki partnerskie – możemy otrzymać wynagrodzenie od banku.",
   linkLabel: "Jak zarabiamy",
   href: DISCLOSURE_LINKS.howWeEarn
 };
@@ -105,7 +105,7 @@ export const AFFILIATE_BADGE_LABEL = "Link partnerski";
  * a native <select> cuts long option text on a phone. The full sentence stands right above
  * (strip) and right below (tag description) the control.
  */
-export const SORT_RECOMMENDED_LABEL = "Polecane (z wynagrodzeniem)";
+export const SORT_RECOMMENDED_LABEL = "Polecane";
 
 /**
  * Description shown under the sort control while "Polecane" is active. The
@@ -154,7 +154,6 @@ export const FOOTER: DisclosureCopy = {
     "Bankmiplaci nie jest bankiem ani oficjalnym przedstawicielem banków. " +
     "Część linków to linki partnerskie – za otwarcie konta przez nasz link możemy otrzymać wynagrodzenie od banku lub sieci partnerskiej. " +
     "Co do zasady nie zmienia to warunków oferty ani naszej oceny; jeśli promocja wymaga otwarcia konta przez link lub kod, sprawdź to w jej warunkach i w regulaminie banku. " +
-    "Wynagrodzenie wpływa na kolejność „Polecane” (opisujemy to w „Jak zarabiamy”). " +
     "Nazwy i logotypy banków należą do ich właścicieli i służą wyłącznie identyfikacji oferty. " +
     "Nie porównujemy całego rynku. Nie jest to doradztwo finansowe.",
   linkLabel: "Jak zarabiamy",

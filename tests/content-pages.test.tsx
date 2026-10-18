@@ -171,12 +171,9 @@ test("/faq: native details, only the first row open, brand name fixed, new quest
   assert.ok(!/na Premii|o Premię|Premia\.pl/.test(all), "the brand is Bankmiplaci, not Premia");
   assert.ok(all.includes("w Bankmiplaci jest bezpłatne"));
   assert.ok(!all.includes("warunki promocji będą takie same"), "the false 'identical conditions' claim is gone");
-  const order = FAQ_ITEMS.find((i) => i.id === "kolejnosc-a-prowizja")!;
-  assert.ok(order.answer.startsWith("Tak, domyślna kolejność „Polecane” uwzględnia wynagrodzenie partnerskie"), "answers the question plainly");
-  assert.ok(!/Częściowo|nieco/.test(order.answer));
-  assert.ok(order.answer.includes("oferta o wyraźnie niższej ocenie może w niej stać wyżej niż oferta o wyraźnie wyższej."));
+  assert.ok(!FAQ_ITEMS.some((i) => i.id === "kolejnosc-a-prowizja"), "no FAQ about what the order depends on");
   assert.ok(!/\(-aś\)|\(-ś\)/.test(all), "no '(-aś)' forms in the FAQ");
-  for (const q of ["Czy kolejność ofert zależy od prowizji?", "Co to jest karencja?", "Czy od premii płaci się podatek?", "Kiedy bank wypłaca premię?"]) {
+  for (const q of ["Co to jest karencja?", "Czy od premii płaci się podatek?", "Kiedy bank wypłaca premię?"]) {
     assert.ok(FAQ_ITEMS.some((i) => i.question === q), q);
   }
   assert.equal(FAQ_GROUPS.length, 3);
@@ -200,7 +197,6 @@ test("/metodologia: components and weights equal the ones in ratings.ts, commiss
   for (const [label, weight] of [["Wysokość premii", "30%"], ["Trudność zdobycia", "30%"], ["Czas trwania", "20%"], ["Średnia premia na miesiąc", "15%"], ["Karencja", "5%"]]) {
     assert.ok(new RegExp(`${label}[^%]*${weight}`).test(body), `${label} ${weight}`);
   }
-  assert.ok(body.includes(RATING_COMMISSION_RULE));
   assert.ok(body.includes("Ocena serwisu, nie porada finansowa."));
   assert.ok(body.includes("Najnowsza z tych dat wśród aktualnych ofert to 7 paź 2026"));
   assert.ok(body.includes("pokazujemy ją jako „Najnowsza weryfikacja oferty”"), "the same name as the footer, the hero and the lists");

@@ -29,26 +29,6 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-test("the strip says the order depends on rating AND remuneration and that a lower-rated offer can rank higher", () => {
-  const copy = disclosureText(STRIP_RECOMMENDED);
-  assert.ok(copy.includes("zależy od oceny serwisu i od wynagrodzenia partnerskiego"));
-  assert.ok(copy.includes("oferta o niższej ocenie może znaleźć się wyżej"));
-  assert.ok(copy.includes("Ocena serwisu jest liczona bez wynagrodzenia."));
-  assert.ok(!/m\.in\./.test(copy));
-});
-
-test("the description under the sort control adds information instead of repeating the strip", () => {
-  const strip = STRIP_RECOMMENDED.lead;
-  const tag = TAG_RECOMMENDED_DESCRIPTION.lead;
-  assert.ok(tag.length < strip.length, "shorter than the strip");
-  assert.notEqual(tag, strip);
-  // It names the scope (this sort order, not the others) - the thing the strip does not say.
-  assert.ok(/W tym sortowaniu/.test(tag) && /Pozostałe sortowania od niego nie zależą/.test(tag));
-  // No sentence of the tag is copied from the strip.
-  for (const sentence of tag.split(/(?<=\.)\s+/)) assert.ok(!strip.includes(sentence), sentence);
-  assert.equal(TAG_RECOMMENDED_DESCRIPTION.href, "/jak-zarabiamy#polecane");
-});
-
 test("no source or test still carries the old 'uwzględnia m.in. wynagrodzenie' or 'jedynie na domyślną kolejność' wording", () => {
   const needles = [/uwzględnia (ono )?m\.in\. wynagrodzeni/, /jedynie na domyślną kolejność/, /Polecane uwzględnia m\\?\.in/];
   const files = [...sourceFiles(join(ROOT, "src")), ...sourceFiles(join(ROOT, "tests"))].filter(
@@ -58,20 +38,4 @@ test("no source or test still carries the old 'uwzględnia m.in. wynagrodzenie' 
     const code = readFileSync(file, "utf8");
     for (const needle of needles) assert.ok(!needle.test(code), `${file}: ${needle}`);
   }
-});
-
-test("the list FAQ answers the commission question like the strip", () => {
-  const item = LISTING_FAQ.find((i) => i.question === "Czy kolejność ofert zależy od prowizji?");
-  assert.ok(item, "FAQ item present");
-  assert.ok(item!.answer.includes("zależy od oceny serwisu i od wynagrodzenia partnerskiego"));
-  assert.ok(item!.answer.includes("oferta o niższej ocenie może znaleźć się wyżej"));
-  assert.ok(item!.answer.includes("Ocena serwisu jest liczona bez wynagrodzenia"));
-});
-
-test("/o-nas and /metodologia say the commission changes the 'Polecane' order, possibly strongly", () => {
-  const about = text(renderToStaticMarkup(React.createElement(AboutPage)));
-  assert.ok(about.includes("Wpływa natomiast na domyślną kolejność ofert „Polecane” i może ją wyraźnie zmienić"));
-  const methodology = readFileSync(join(ROOT, "src", "app", "metodologia", "MethodologyContent.tsx"), "utf8");
-  assert.ok(methodology.includes("natomiast na domyślną kolejność „Polecane” i może ją wyraźnie zmienić"));
-  assert.ok(!methodology.includes("jedynie"));
 });

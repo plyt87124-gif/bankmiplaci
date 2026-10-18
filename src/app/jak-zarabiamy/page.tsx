@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { RATING_COMMISSION_RULE } from "@/lib/disclosureCopy";
 import { staticPageMetadata } from "@/lib/seo";
 import { TextPage, type TocEntry } from "../jak-to-dziala/TextPage";
 
@@ -37,8 +35,7 @@ export default function HowWeEarnPage() {
 
       <h2 id="ocena">Jak liczymy ocenę</h2>
       <p>
-        Ocena serwisu (np. 9,4/10) to nasz wewnętrzny wskaźnik do szybkiego porównania ofert, a nie porada finansowa.{" "}
-        <strong>{RATING_COMMISSION_RULE}</strong> Zasady opisujemy w <Link href="/metodologia">metodologii</Link>.
+        Ocena serwisu (np. 9,4/10) to nasz wewnętrzny wskaźnik do szybkiego porównania ofert, a nie porada finansowa.
       </p>
 
       <h2 id="czego-nie-robimy">Czego nie robimy</h2>
