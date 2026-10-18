@@ -229,3 +229,72 @@ details[open] > summary .acc-chevron,
   .pending-bar { animation: none !important; transform: scaleX(0.9); }
   [data-reveal] { opacity: 1 !important; transform: none !important; animation: none !important; }
 }
+
+/* ------------------------------------------------------------------ */
+/* Hero spotlight: a light sweep over the card that has just appeared */
+/* ------------------------------------------------------------------ */
+
+@keyframes spotlight-sweep {
+  0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateX(260%) skewX(-18deg); opacity: 0; }
+}
+
+.spotlight-shine {
+  display: none;
+}
+
+.motion-ok .spotlight-shine {
+  display: block;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.32), transparent);
+  animation: spotlight-sweep 1.1s var(--ease-in-out) 0.5s 1 both;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Card -> offer page (View Transitions, see lib/cardTransition.ts)   */
+/* The card and its tagged parts fly to their places on the offer     */
+/* page; the rest of the page rises in behind them. Only runs when    */
+/* the browser supports it and reduced motion is off (JS decides).    */
+/* ------------------------------------------------------------------ */
+
+@keyframes vt-fade-out {
+  to { opacity: 0; }
+}
+@keyframes vt-rise {
+  from { opacity: 0; transform: translateY(28px); }
+}
+
+::view-transition-group(*) {
+  animation-duration: 720ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::view-transition-old(root) {
+  animation: vt-fade-out 240ms var(--ease-in-out) both;
+}
+::view-transition-new(root) {
+  animation: vt-rise 640ms cubic-bezier(0.16, 1, 0.3, 1) 140ms both;
+}
+::view-transition-group(root) {
+  animation-duration: 0.01s;
+}
+
+/* The card frame stretches; its content is separate named layers. */
+::view-transition-old(vt-card),
+::view-transition-new(vt-card) {
+  height: 100%;
+  width: 100%;
+  object-fit: fill;
+}
+
+/* Text parts: crossfade while they move, no ghosting. */
+::view-transition-old(vt-title),
+::view-transition-new(vt-title),
+::view-transition-old(vt-amount),
+::view-transition-new(vt-amount) {
+  height: 100%;
+  object-fit: cover;
+  object-position: left top;
+}

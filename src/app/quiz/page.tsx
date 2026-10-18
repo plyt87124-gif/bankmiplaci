@@ -49,7 +49,6 @@ export default async function QuizPage() {
           <QuizClient offers={offers} />
         </div>
 
-        <TrustNote kind="scope" className="mt-10" />
       </div>
     </div>
   );

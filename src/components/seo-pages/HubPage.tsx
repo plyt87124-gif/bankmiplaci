@@ -113,7 +113,6 @@ export function HubPage({ kind, cards }: { kind: HubKind; cards: readonly Promot
         )}
       </section>
 
-      <TrustNote kind="scope" className="mt-10 max-w-[68ch]" />
 
       <div className="mt-16 border-t border-line pt-12 md:mt-20 md:pt-16">
         <SeoEditorial sections={HUB_SECTIONS[kind]} faq={faq} related={hubRelatedLinks(kind)} />

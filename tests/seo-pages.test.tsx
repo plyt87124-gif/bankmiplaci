@@ -284,7 +284,6 @@ test("page: editorial block, the shown FAQ and the 'Zobacz także' links are all
     assert.equal((out.match(/<details /g) ?? []).length, HUB_FAQ[kind].length);
     assert.match(out, /<summary [^>]*>/);
     // the scope note under the list ("Nie obejmujemy całego rynku ...")
-    assert.match(out, /data-trust-note="scope"/);
     for (const link of hubRelatedLinks(kind)) assert.match(out, new RegExp(`href="${link.href.replace(/\//g, "\\/")}"`), link.href);
     // heading outline: one h1, then h2 sections, cards are h3
     assert.equal((out.match(/<h1[ >]/g) ?? []).length, 1);
@@ -319,7 +318,6 @@ test("empty hub: an honest message and a way out, no strip and no ItemList, the 
     assert.equal(byType(nodes, "ItemList"), undefined, "an empty list is not a list");
     assert.equal((out.match(/<details /g) ?? []).length, HUB_FAQ[kind].length);
     assert.match(out, new RegExp(`<h2 id="${HUB_SECTIONS[kind][0]!.id}">`));
-    assert.match(out, /data-trust-note="scope"/);
   }
 });
 

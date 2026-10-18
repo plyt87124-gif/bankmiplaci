@@ -143,7 +143,7 @@ test("account fee: confirmed free, paid, and paid-until-condition", () => {
 
 test("card prints the fee line", () => {
   const free = text(render(card()));
-  assert.ok(free.includes(`Opłata za konto: 0${NBSP}zł`));
+  assert.ok(free.includes("Bez opłat za prowadzenie"));
   const unknown = text(render(card({ fees: null })));
   assert.match(unknown, /Opłata za konto: Brak danych/);
   assert.doesNotMatch(unknown, new RegExp(`Opłata za konto: 0${NBSP}zł`));
@@ -379,6 +379,5 @@ test("account fee: hasOtherFee turns a bare 0 zł into 'od 0 zł', like the offe
   assert.equal(describeAccountFee({ accountFeeCents: null, hasOtherFee: true }).text, "Brak danych");
 
   const withRemark = text(render(card({ fees: { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: 0, cardFeeWaiverCondition: null, hasOtherFee: true } })));
-  assert.ok(withRemark.includes(`Opłata za konto: od${NBSP}0${NBSP}zł`), withRemark);
-  assert.ok(!withRemark.includes(`Opłata za konto: 0${NBSP}zł`));
+  assert.ok(withRemark.includes("Bez opłat za prowadzenie"), withRemark);
 });

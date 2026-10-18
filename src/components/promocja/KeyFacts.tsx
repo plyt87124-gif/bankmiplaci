@@ -71,10 +71,15 @@ export function KeyFacts({
       <h2 id="w-skrocie" className="type-label mb-2 text-ink-500">
         W skrócie
       </h2>
-      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line md:grid-cols-[minmax(0,1.25fr)_repeat(4,minmax(0,1fr))]">
+      <dl
+        data-vt-dest="card"
+        style={{ viewTransitionName: "vt-card" }}
+        className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line md:grid-cols-[minmax(0,1.25fr)_repeat(4,minmax(0,1fr))]">
         <Fact label={hasBonus ? "Premia do" : "Premia"} className="col-span-2 md:col-span-1">
           {hasBonus ? (
-            <Amount cents={maxBonusCents} variant="card" className="block text-[2.5rem] leading-[2.75rem]" />
+            <span style={{ viewTransitionName: "vt-amount" }} className="block">
+              <Amount cents={maxBonusCents} variant="card" className="block text-[2.5rem] leading-[2.75rem]" />
+            </span>
           ) : (
             <span className="block font-display text-h3 text-ink-900">Bez premii gotówkowej</span>
           )}
@@ -96,7 +101,9 @@ export function KeyFacts({
         </Fact>
 
         <Fact label="Trudność">
-          <EffortMeter difficulty={difficulty} className="max-w-full flex-wrap gap-y-1" />
+          <span style={{ viewTransitionName: "vt-effort" }} className="inline-flex max-w-full">
+            <EffortMeter difficulty={difficulty} className="max-w-full flex-wrap gap-y-1" />
+          </span>
         </Fact>
 
         <Fact label="Opłata za konto">

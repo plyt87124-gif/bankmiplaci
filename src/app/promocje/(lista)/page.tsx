@@ -173,7 +173,6 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
         </Filters>
       </section>
 
-      <TrustNote kind="scope" className="mt-10 max-w-[68ch]" />
 
       <div className="mt-16 border-t border-line pt-12 md:mt-20 md:pt-16">
         <ListingEditorial />

@@ -54,7 +54,7 @@ export function HomeView({
       <JsonLd data={structuredData} />
 
       <HomeSegmentProvider options={segmentOptions} initial={model?.defaultSegment ?? null}>
-        <HomeHero model={model} />
+        <HomeHero model={model} now={now} />
         <HomeFeatured model={model} now={now} />
       </HomeSegmentProvider>
 

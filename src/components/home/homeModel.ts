@@ -52,6 +52,8 @@ export const HOME_SEGMENT_LABEL: Record<HomeSegment, string> = {
 
 /** Cards in "Polecane promocje" (per segment). */
 export const FEATURED_COUNT = 3;
+/** Offers in the hero spotlight (the first of the "Polecane" order, both segments mixed). */
+export const SPOTLIGHT_COUNT = 5;
 /** "Kończą się wkrótce" = at most this many days to the last sign-up day. */
 export const ENDING_SOON_DAYS = 14;
 /** Cards in "Kończą się wkrótce". */
@@ -95,6 +97,8 @@ export interface HomeModel {
   latestVerifiedAt: Date | null;
   /** Only segments that have at least one offer, in HOME_SEGMENTS order. */
   segments: HomeSegmentModel[];
+  /** The most recommended offers of the whole pool, for the hero. */
+  spotlight: PromotionCardData[];
   /** The segment shown first: Osobiste when it has offers, otherwise Firmowe. */
   defaultSegment: HomeSegment | null;
   endingSoon: PromotionCardData[];
@@ -200,6 +204,7 @@ export function buildHomeModel(
     total,
     latestVerifiedAt: latestVerification(pool),
     segments,
+    spotlight: pool.slice(0, SPOTLIGHT_COUNT),
     defaultSegment: segments[0]?.value ?? null,
     endingSoon: pickEndingSoon(pool, now),
     effortExamples: pickEffortExamples(pool)

@@ -89,6 +89,7 @@ const TEXT_PAIRS: Pair[] = [
   { fg: "on-coral", bg: ["coral-600"], use: "danger button label" },
   { fg: "success", bg: ["success-100", ...NEUTRAL_BG], use: "success badge, saved / confirmation message" },
   { fg: "info", bg: ["info-100", ...NEUTRAL_BG], use: "info badge, hint message" },
+  { fg: "ember-600", bg: ["ember-100", ...NEUTRAL_BG], use: "hard-difficulty label and meter segments" },
   { fg: "gold-600", bg: ["gold-100", ...NEUTRAL_BG], use: "warn badge (deadline <= 14 days), reward amount, warning message" },
   { fg: "coral-600", bg: ["coral-100", "ink-100", ...NEUTRAL_BG], use: "error text, expired banner, danger badge, liked heart on hover" },
   { fg: "#white", bg: ["ink-solid"], use: "LEGACY admin buttons: literal white text on the fixed plate" }

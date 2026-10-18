@@ -53,7 +53,6 @@ export function HomeFeatured({ model, now }: { model: HomeModel | null; now?: Da
           <div className="mt-8">
             <HomeSeeAllLink />
           </div>
-          <TrustNote kind="scope" className="mt-6 max-w-[68ch]" />
         </>
       ) : (
         <div className="mt-6 max-w-2xl rounded-card border border-line bg-surface p-5 sm:p-6">

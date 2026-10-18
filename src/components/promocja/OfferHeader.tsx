@@ -40,23 +40,31 @@ export function OfferHeader({
   return (
     <header className="mt-5 md:mt-6">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <BankLogo name={bank.name} logoUrl={bank.logoUrl} size="lg" grayscale={ended} priority />
+        <span style={{ viewTransitionName: "vt-logo" }} className="inline-flex">
+          <BankLogo name={bank.name} logoUrl={bank.logoUrl} size="lg" grayscale={ended} priority />
+        </span>
         <p className="type-label text-ink-500">{bank.name}</p>
       </div>
 
-      <h1 className="mt-4 max-w-3xl break-words">{name}</h1>
+      <h1 style={{ viewTransitionName: "vt-title" }} className="mt-4 max-w-3xl break-words">
+        {name}
+      </h1>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Badge variant="neutral">{ACCOUNT_TYPE_LABEL[accountType]}</Badge>
+        <span style={{ viewTransitionName: "vt-type" }} className="inline-flex">
+          <Badge variant="neutral">{ACCOUNT_TYPE_LABEL[accountType]}</Badge>
+        </span>
         {/* The badge variant lays its text, date and suffix out as separate flex items, which breaks a long
             "dane mogą być nieaktualne" line into three islands on a phone; the arbitrary variants below make
             the badge's content flow as one inline run. */}
-        <VerifiedLine
-          lastVerifiedAt={lastVerifiedAt}
-          now={now}
-          badge
-          className="max-w-full [&>span]:inline-block [&>span>svg]:mr-1.5 [&>span>svg]:inline [&>span>svg]:align-text-bottom"
-        />
+        <span style={{ viewTransitionName: "vt-verified" }} className="inline-flex max-w-full">
+          <VerifiedLine
+            lastVerifiedAt={lastVerifiedAt}
+            now={now}
+            badge
+            className="max-w-full [&>span]:inline-block [&>span>svg]:mr-1.5 [&>span>svg]:inline [&>span>svg]:align-text-bottom"
+          />
+        </span>
         {ended ? <Badge variant="danger">Zakończona</Badge> : null}
         {draft ? <Badge variant="info">Roboczy</Badge> : null}
       </div>

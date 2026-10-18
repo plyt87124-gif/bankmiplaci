@@ -83,7 +83,6 @@ export function BankIndexPage({ banks }: { banks: readonly BankIndexRow[] }) {
         )}
       </section>
 
-      <TrustNote kind="scope" className="mt-10 max-w-[68ch]" />
 
       <div className="mt-16 border-t border-line pt-12 md:mt-20 md:pt-16">
         <SeoEditorial sections={BANK_INDEX_SECTIONS} faq={BANK_INDEX_FAQ} related={BANK_INDEX_RELATED} />

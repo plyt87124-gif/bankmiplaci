@@ -667,7 +667,7 @@ test("Segment size sm: 36 px pill with a 44 px hit area; md stays 44 px; the lis
   const md = renderToStaticMarkup(h(Segment, { label: "Typ konta", options, value: "", onChange: noop }));
   assert.match(md, /h-11/);
   assert.doesNotMatch(md, /h-9/);
-  assert.match(renderToolbar(""), /role="radio"[^>]*class="[^"]*h-9/);
+  assert.match(renderToolbar(""), /<span class="[^"]*h-9[^"]*"><button[^>]*role="radio"/);
 });
 
 test("listing FAQ promises nothing the data does not back (no requires-referral flag, no payout date field)", () => {

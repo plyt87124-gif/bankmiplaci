@@ -353,7 +353,6 @@ test("bank page with current offers: H1, logo, strip above the cards, cards, FAQ
   assert.doesNotMatch(text(out), /Zakończone promocje banku/, "nothing ended: no empty section");
   assert.equal((out.match(/<details /g) ?? []).length, 2, "two data-based questions");
   assert.match(text(out), /Najczęstsze pytania o promocje: Bank Testowy/);
-  assert.match(out, /data-trust-note="scope"/);
 });
 
 test("bank page: a summary paragraph of the data sits under the lead; none without current offers", () => {
@@ -493,7 +492,6 @@ test("/banki: banks in the given (alphabetical) order, each with its count and a
   assert.match(out, /<span aria-hidden="true"><span [^>]*>/, "the logo is hidden from assistive technology (the name is text)");
   assert.doesNotMatch(out, /\/out\//);
   assert.doesNotMatch(out, /data-disclosure/, "a list of banks, not offers: no strip, no compact");
-  assert.match(out, /data-trust-note="scope"/);
 });
 
 test("/banki: BreadcrumbList + ItemList of the bank pages + FAQPage; the FAQ is on the page", () => {

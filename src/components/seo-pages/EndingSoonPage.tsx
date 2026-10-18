@@ -109,7 +109,6 @@ export function EndingSoonPage({ cards, now }: { cards: readonly PromotionCardDa
         )}
       </div>
 
-      <TrustNote kind="scope" className="mt-10 max-w-[68ch]" />
 
       <div className="mt-16 border-t border-line pt-12 md:mt-20 md:pt-16">
         <SeoEditorial sections={ENDING_SOON_SECTIONS} faq={ENDING_SOON_FAQ} related={ENDING_SOON_RELATED} />

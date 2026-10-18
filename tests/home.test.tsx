@@ -148,7 +148,7 @@ test("hero: kicker with the newest verification date, lead, segment control, but
 
   assert.match(text(hero), /6 aktualnych promocji/, "the counter: the end value is in the server HTML (CountUp)");
   assert.match(text(hero), /Przy każdej ofercie pokazujemy datę weryfikacji/, "a true statement (VerifiedLine on every card), not a second copy of the date");
-  assert.equal((text(hero).match(/7 paź 2026/g) ?? []).length, 1, "the date appears once in the hero");
+  assert.equal((text(hero).match(/Najnowsza weryfikacja oferty/g) ?? []).length, 1, "the newest-verification kicker appears once in the hero (the cards carry their own dates)");
   assert.doesNotMatch(hero, /Ocena serwisu bez prowizji|Jak zarabiamy/, "the owner removed this fact from the hero");
 });
 
@@ -194,7 +194,6 @@ test("Polecane: three cards per segment in the pool's order, the other segment i
   assert.deepEqual(slugsIn(business![2]!), ["b1", "b2"]);
 
   assert.match(section, /<a [^>]*href="\/promocje\?accountType=PERSONAL"[^>]*><span>Zobacz wszystkie \(4\)<\/span><\/a>/);
-  assert.match(text(section), /Nie obejmujemy całego rynku/);
   assert.match(section, /<p role="status" class="sr-only">Polecane promocje: konta osobiste<\/p>/);
 });
 

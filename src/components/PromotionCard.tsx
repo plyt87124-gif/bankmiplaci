@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ChevronRight, XCircle } from "lucide-react";
+import { CardLink } from "@/components/CardLink";
+import { Check, ChevronRight, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { BankLogo } from "@/components/ui/BankLogo";
 import { EffortMeter } from "@/components/ui/EffortMeter";
@@ -113,6 +114,7 @@ export function PromotionCard({
   return (
     <article
       data-card="promotion"
+      data-vt="card"
       data-slug={promotion.slug}
       className={cn(
         "group relative flex h-full flex-col rounded-card border border-line bg-surface p-4 sm:p-5",
@@ -128,22 +130,28 @@ export function PromotionCard({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <BankLogo name={bank.name} logoUrl={bank.logoUrl} size="sm" grayscale={ended} priority={prioritizeLogo} />
+        <span data-vt="logo" className="inline-flex">
+          <BankLogo name={bank.name} logoUrl={bank.logoUrl} size="sm" grayscale={ended} priority={prioritizeLogo} />
+        </span>
         <div className="flex flex-wrap items-center gap-1.5">
           {draft ? <Badge variant="info">Roboczy</Badge> : null}
-          <Badge variant="neutral">{ACCOUNT_TYPE_LABEL[promotion.accountType]}</Badge>
+          <span data-vt="type" className="inline-flex">
+            <Badge variant="neutral">{ACCOUNT_TYPE_LABEL[promotion.accountType]}</Badge>
+          </span>
         </div>
       </div>
 
       {hasLogo ? null : <p className="type-label mt-3 text-ink-500">{bank.name}</p>}
 
       <Heading
+        data-vt="title"
         className={cn(
           "line-clamp-2 min-h-[3rem] text-h4 leading-6 [overflow-wrap:anywhere] [text-wrap:balance]",
           hasLogo ? "mt-3" : "mt-1"
         )}
       >
-        <Link
+        <CardLink
+          slug={promotion.slug}
           href={`/promocje/${promotion.slug}`}
           className={cn(
             "rounded-sm outline-none after:absolute after:inset-0 after:rounded-card after:content-['']",
@@ -152,10 +160,10 @@ export function PromotionCard({
         >
           {bankSaysItself ? null : <span className="sr-only">{bank.name}: </span>}
           {promotion.name}
-        </Link>
+        </CardLink>
       </Heading>
 
-      <div className="mt-3 min-h-[3.5rem]">
+      <div data-vt="amount" className="mt-3 min-h-[3.5rem]">
         {hasBonus ? (
           <>
             <p className="type-label text-ink-500">Premia do</p>
@@ -169,17 +177,28 @@ export function PromotionCard({
       {/* Two fixed rows at every width, so cards of one grid row line up whatever the label lengths
           (the list grid is 1 / 2 / 3 columns, a card is never wide enough for both labels on one line). */}
       <div className="mt-4 flex flex-col items-start gap-2">
-        <EffortMeter difficulty={promotion.difficulty} />
+        <span data-vt="effort" className="inline-flex">
+          <EffortMeter difficulty={promotion.difficulty} />
+        </span>
         {ended ? null : <DeadlineBadge endDate={promotion.endDate} now={now} />}
       </div>
-      <p className="mt-2 text-small text-ink-700">
-        Opłata za konto:{" "}
-        <span className={cn("num font-semibold", fee.kind === "unknown" ? "text-ink-500" : "text-ink-900")}>
-          {fee.text}
-        </span>
-        {fee.note ? <span className="whitespace-nowrap text-ink-700"> ({fee.note})</span> : null}
-      </p>
-      <VerifiedLine lastVerifiedAt={promotion.lastVerifiedAt} now={now} className="mt-2" />
+      {fee.kind === "free" ? (
+        <p className="mt-2 flex items-center gap-1.5 text-small font-semibold text-success">
+          <Check size={16} aria-hidden="true" className="shrink-0" />
+          Bez opłat za prowadzenie
+        </p>
+      ) : (
+        <p className="mt-2 text-small text-ink-700">
+          Opłata za konto:{" "}
+          <span className={cn("num font-semibold", fee.kind === "unknown" ? "text-ink-500" : "text-ink-900")}>
+            {fee.text}
+          </span>
+          {fee.note ? <span className="whitespace-nowrap text-ink-700"> ({fee.note})</span> : null}
+        </p>
+      )}
+      <span data-vt="verified" className="mt-2 flex">
+        <VerifiedLine lastVerifiedAt={promotion.lastVerifiedAt} now={now} badge />
+      </span>
 
       <div className="mt-auto pt-4">
         <div className="flex items-end justify-between gap-3 border-t border-line pt-3">

@@ -71,6 +71,7 @@ const config: Config = {
         // Text/icon colour on a solid coral-600 fill (danger button).
         "on-coral": rgb("on-coral"),
         success: { DEFAULT: rgb("success"), 100: rgb("success-100") },
+        ember: { 600: rgb("ember-600"), 100: rgb("ember-100") },
         info: { DEFAULT: rgb("info"), 100: rgb("info-100") }
       },
       // LEGACY alias: `border-ink-100` / `divide-ink-100` on not-yet-migrated

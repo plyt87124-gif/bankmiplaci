@@ -120,7 +120,6 @@ export default async function ComparePage(props: { searchParams: SearchParams })
         </>
       )}
 
-      <TrustNote kind="scope" className="mt-4" />
     </div>
   );
 }

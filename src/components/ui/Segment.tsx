@@ -13,9 +13,11 @@ export interface SegmentOption<T extends string> {
 export type SegmentSize = "md" | "sm";
 
 const SIZE_CLASSES: Record<SegmentSize, string> = {
-  md: "h-11 px-5 text-ui [--seg-pad:1.25rem]",
-  sm: "relative h-9 px-3 text-small [--seg-pad:0.75rem] before:absolute before:inset-x-0 before:-inset-y-[4px] before:content-[''] sm:px-4 sm:[--seg-pad:1rem]"
+  md: "px-5 text-ui [--seg-pad:1.25rem]",
+  sm: "relative px-3 text-small [--seg-pad:0.75rem] before:absolute before:inset-x-0 before:-inset-y-[4px] before:content-[''] sm:px-4 sm:[--seg-pad:1rem]"
 };
+
+const HEIGHT: Record<SegmentSize, string> = { md: "h-11", sm: "h-9" };
 
 /**
  * Pill-shaped single-choice control (Wszystkie / Osobiste / Firmowe,
@@ -98,7 +100,7 @@ export function Segment<T extends string>({
         const checked = option.value === value;
         const isFirst = index === 0;
         const isLast = index === last;
-        return (
+        const button = (
           <button
             key={option.value}
             ref={(node) => {
@@ -114,8 +116,9 @@ export function Segment<T extends string>({
               "inline-flex items-center justify-center gap-1.5 whitespace-nowrap border font-semibold",
               joined
                 ? cn(
-                    "relative focus-visible:z-20",
-                    isFirst ? "rounded-l-full" : "-ml-[calc(var(--slant)-2px)]",
+                    "relative",
+                    checked ? "h-full" : "h-[calc(100%-5px)] shadow-[inset_0_3px_5px_rgb(0_0_0/0.14)]",
+                    isFirst && "rounded-l-full",
                     isLast && "rounded-r-full",
                     !isFirst && "pl-[calc(var(--seg-pad)+var(--slant))]",
                     !isLast && "pr-[calc(var(--seg-pad)+var(--slant))]",
@@ -125,23 +128,39 @@ export function Segment<T extends string>({
                         ? "[clip-path:polygon(var(--slant)_0,100%_0,100%_100%,0_100%)]"
                         : "[clip-path:polygon(var(--slant)_0,100%_0,calc(100%-var(--slant))_100%,0_100%)]"
                   )
-                : "rounded-full",
+                : cn("rounded-full", HEIGHT[size]),
               SIZE_CLASSES[size],
               "[transition:background-color_150ms_var(--ease-out,ease),border-color_150ms_var(--ease-out,ease),background-size_260ms_var(--ease-out,ease),transform_120ms_var(--ease-out,ease)]",
               joined && "motion-safe:active:scale-[0.97]",
               checked
                 ? cn("border-action bg-action text-on-action", joined && "z-10")
                 : cn(
-                    "border-line-strong bg-surface text-ink-700",
+                    "border-line-strong text-ink-700",
                     joined
-                      ? "bg-[linear-gradient(rgb(var(--color-action)/0.16),rgb(var(--color-action)/0.16))] bg-[length:0%_100%] bg-left bg-no-repeat hover:z-10 hover:border-action hover:bg-[length:100%_100%] hover:text-ink-900 motion-reduce:hover:bg-action/15"
-                      : "hover:bg-sunken"
+                      ? "bg-sunken bg-[linear-gradient(rgb(var(--color-action)/0.16),rgb(var(--color-action)/0.16))] bg-[length:0%_100%] bg-left bg-no-repeat hover:border-action hover:bg-[length:100%_100%] hover:text-ink-900 motion-reduce:hover:bg-action/15"
+                      : "bg-surface hover:bg-sunken"
                   )
             )}
           >
             {option.label}
             {option.count != null ? <span className="num font-medium">({option.count})</span> : null}
           </button>
+        );
+        if (!joined) return button;
+        // Joined: the selected option stands ABOVE its neighbours (taller, with a soft shadow that a clip-path on the
+        // button itself would cut off, hence the wrapper), the others sit a little lower and recessed, behind it.
+        return (
+          <span
+            key={option.value}
+            className={cn(
+              "relative inline-flex items-end focus-within:z-30 hover:z-20",
+              HEIGHT[size],
+              !isFirst && "-ml-[calc(var(--slant)-2px)]",
+              checked ? "z-10 [filter:drop-shadow(0_3px_4px_rgb(0_0_0/0.28))]" : "z-0"
+            )}
+          >
+            {button}
+          </span>
         );
       })}
     </div>
