@@ -122,7 +122,7 @@ async function main() {
         await assert.doesNotReject(() => observed.page.getByText(/Autor testowy CI.*01\.10\.2026/).waitFor());
       }
       if (route === "/blog/ci-article-unknown") {
-        await assert.doesNotReject(() => observed.page.getByText(/Data publikacji nieustalona/).waitFor());
+        await assert.doesNotReject(() => observed.page.getByText(/Brak daty publikacji/).waitFor());
       }
       await observed.page.close();
     }
