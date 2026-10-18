@@ -83,18 +83,34 @@ export function findVisibleCard(slug: string): HTMLElement | null {
   return cards.find((el) => el.getBoundingClientRect().width > 0 && !el.closest("[inert]")) ?? null;
 }
 
-/** Card -> offer page. The caller's link starts the (client-side) navigation; this waits for the new page. */
-export function morphForward(card: HTMLElement): void {
+/**
+ * Card -> offer page. `navigate` is called INSIDE the transition callback, i.e. only after the browser has taken the
+ * picture of the old page; starting the navigation earlier lets a prefetched page replace the DOM before that picture
+ * and the animation silently disappears.
+ */
+export function morphForward(card: HTMLElement, navigate: () => void): void {
   const doc = document as TransitionDoc;
   nameCard(card);
+  let navigated = false;
+  const go = () => {
+    if (navigated) return;
+    navigated = true;
+    navigate();
+  };
+  // Safety net: a tab that is not painting frames (hidden, throttled) never runs the callback; the click must still work.
+  const fallback = window.setTimeout(go, 500);
   try {
     const transition = doc.startViewTransition!(async () => {
-      await waitFor(() => document.querySelector(`[data-vt-dest="${VT_CARD}"]`));
+      window.clearTimeout(fallback);
+      go();
+      await waitFor(() => document.querySelector(`[data-vt-dest="${VT_CARD}"]`), 4000);
       window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     });
     whenDone(transition, () => clearCard(card));
   } catch {
+    window.clearTimeout(fallback);
     clearCard(card);
+    go();
   }
 }
 

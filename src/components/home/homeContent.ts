@@ -55,7 +55,7 @@ export const HOME_TRUST_COLUMNS: readonly HomeTrustColumn[] = [
 ];
 
 /** The three questions of the shortcut, picked from the /faq content by id. */
-export const HOME_FAQ_IDS = ["jak-zarabiacie", "aktualnosc", "karencja"] as const;
+export const HOME_FAQ_IDS = ["podatek", "aktualnosc", "karencja"] as const;
 
 /**
  * The shortcut's items, taken from the /faq source (never copied), in the
