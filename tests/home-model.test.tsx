@@ -11,6 +11,7 @@ import {
   hubSeeAllLabel,
   latestVerification,
   pickEffortExamples,
+  pickSpotlight,
   pickEndingSoon,
   readHomeModel
 } from "../src/components/home/homeModel";
@@ -320,4 +321,18 @@ test("readHomeModel: a working read builds the model from one call", async () =>
   );
   assert.equal(calls, 1, "ONE read feeds every block");
   assert.equal(model?.total, 2);
+});
+
+test("spotlight: 6 cards, usually 4 personal + 2 business; 3 + 3 when a third business offer outranks the fourth personal one", () => {
+  const P = (n: number) => card(`p${n}`);
+  const B = (n: number) => card(`b${n}`, { accountType: "BUSINESS" });
+  const usual = [P(1), P(2), B(1), P(3), P(4), P(5), B(2), B(3), P(6)];
+  assert.deepEqual(slugs(pickSpotlight(usual)), ["p1", "p2", "b1", "p3", "p4", "b2"]);
+  const threeThree = [P(1), B(1), P(2), B(2), P(3), B(3), P(4), P(5)];
+  assert.deepEqual(slugs(pickSpotlight(threeThree)), ["p1", "b1", "p2", "b2", "p3", "b3"]);
+  // business offers far down the pool are still brought in (at least 2), replacing the weakest personal picks
+  const lateBusiness = [P(1), P(2), P(3), P(4), P(5), P(6), B(1), B(2)];
+  assert.deepEqual(slugs(pickSpotlight(lateBusiness)), ["p1", "p2", "p3", "p4", "b1", "b2"]);
+  // a pool without business offers just gives its first personal ones
+  assert.deepEqual(slugs(pickSpotlight([P(1), P(2), P(3)])), ["p1", "p2", "p3"]);
 });

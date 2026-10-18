@@ -31,7 +31,7 @@
 import { EMPTY_STATE, listingHref } from "@/components/filters/filterParams";
 import { applyAccountType } from "@/components/promocje/listing";
 import { HUBS, type HubKind } from "@/components/seo-pages/hubs";
-import { ACCOUNT_SEGMENTS, type AccountSegment } from "@/lib/accountTypes";
+import { ACCOUNT_SEGMENTS, isBusinessType, type AccountSegment } from "@/lib/accountTypes";
 import { DIFFICULTY_LEVEL, daysUntil } from "@/lib/format";
 import { isRouteLive } from "@/lib/seo/routes";
 import type { PromotionCardData } from "@/lib/services/promotionCards";
@@ -52,8 +52,46 @@ export const HOME_SEGMENT_LABEL: Record<HomeSegment, string> = {
 
 /** Cards in "Polecane promocje" (per segment). */
 export const FEATURED_COUNT = 3;
-/** Offers in the hero spotlight (the first of the "Polecane" order, both segments mixed). */
-export const SPOTLIGHT_COUNT = 5;
+/**
+ * Offers in the hero spotlight: 6 cards in "Polecane" order, usually 4 personal + 2 business, 3 + 3 when a third
+ * business offer outranks the fourth personal one. Never fewer than 2 business offers while the pool has them.
+ */
+export const SPOTLIGHT_COUNT = 6;
+const SPOTLIGHT_MAX_PERSONAL = 4;
+const SPOTLIGHT_MAX_BUSINESS = 3;
+const SPOTLIGHT_MIN_BUSINESS = 2;
+
+export function pickSpotlight(pool: readonly PromotionCardData[]): PromotionCardData[] {
+  const picked = new Set<PromotionCardData>();
+  let personal = 0;
+  let business = 0;
+  for (const card of pool) {
+    if (picked.size >= SPOTLIGHT_COUNT) break;
+    if (isBusinessType(card.accountType)) {
+      if (business < SPOTLIGHT_MAX_BUSINESS) {
+        picked.add(card);
+        business++;
+      }
+    } else if (personal < SPOTLIGHT_MAX_PERSONAL) {
+      picked.add(card);
+      personal++;
+    }
+  }
+  // Too few business offers near the top of the pool: bring the best remaining ones in, replacing the weakest personal picks.
+  for (const card of pool) {
+    if (business >= SPOTLIGHT_MIN_BUSINESS) break;
+    if (picked.has(card) || !isBusinessType(card.accountType)) continue;
+    if (picked.size >= SPOTLIGHT_COUNT) {
+      const weakest = [...picked].reverse().find((c) => !isBusinessType(c.accountType));
+      if (!weakest) break;
+      picked.delete(weakest);
+      personal--;
+    }
+    picked.add(card);
+    business++;
+  }
+  return pool.filter((card) => picked.has(card));
+}
 /** "Kończą się wkrótce" = at most this many days to the last sign-up day. */
 export const ENDING_SOON_DAYS = 14;
 /** Cards in "Kończą się wkrótce". */
@@ -97,7 +135,7 @@ export interface HomeModel {
   latestVerifiedAt: Date | null;
   /** Only segments that have at least one offer, in HOME_SEGMENTS order. */
   segments: HomeSegmentModel[];
-  /** The most recommended offers of the whole pool, for the hero. */
+  /** The most recommended offers of the whole pool (see pickSpotlight), for the hero. */
   spotlight: PromotionCardData[];
   /** The segment shown first: Osobiste when it has offers, otherwise Firmowe. */
   defaultSegment: HomeSegment | null;
@@ -204,7 +242,7 @@ export function buildHomeModel(
     total,
     latestVerifiedAt: latestVerification(pool),
     segments,
-    spotlight: pool.slice(0, SPOTLIGHT_COUNT),
+    spotlight: pickSpotlight(pool),
     defaultSegment: segments[0]?.value ?? null,
     endingSoon: pickEndingSoon(pool, now),
     effortExamples: pickEffortExamples(pool)

@@ -100,7 +100,7 @@ function jsonLdBlocks(markup: string): Record<string, unknown>[] {
 test("home: one H1 with the planned wording, the blocks in the order of the layout spec", () => {
   assert.equal((FULL.match(/<h1[ >]/g) ?? []).length, 1);
   assert.match(FULL, new RegExp(`<h1[^>]*>${HOME_H1}</h1>`));
-  assert.equal(HOME_H1, "Promocje bankowe: znajdź konto z premią i sprawdź, co musisz zrobić");
+  assert.equal(HOME_H1, "Promocje bankowe w jednym miejscu – od wyboru konta do ostatniej złotówki premii");
 
   const order = [
     'id="home-title"',
@@ -137,7 +137,7 @@ test("hero: kicker with the newest verification date, lead, segment control, but
   assert.match(text(hero), /Najnowsza weryfikacja oferty: 7 paź 2026/, "the NEWEST lastVerifiedAt of the pool (p1), not today's date");
   assert.match(hero, /Najnowsza weryfikacja oferty: <time dateTime="2026-10-07">7 paź 2026<\/time>/);
   assert.doesNotMatch(text(hero), /Aktualizacja:|Ostatnia weryfikacja/, "one name for that date, said once");
-  assert.match(text(hero), /Pokazujemy, ile możesz zyskać, ile to kosztuje i co trzeba zrobić – ze ściągą krok po kroku\./);
+  assert.match(text(hero), /Sprawdź warunki, wybierz konto z premią i odhaczaj kolejne kroki w ściądze, żeby wycisnąć z każdej promocji jak najwięcej\./);
 
   assert.match(hero, /role="radiogroup" aria-label="Typ konta"/);
   assert.equal((hero.match(/role="radio"/g) ?? []).length, 2);
@@ -356,7 +356,7 @@ test("JSON-LD: Organization + WebSite with the @ids the offer pages point to, an
 
 test("database failure: the page still renders its static blocks with a notice instead of the offers", () => {
   const html = render(null);
-  assert.match(html, /<h1[^>]*>Promocje bankowe: znajdź konto/);
+  assert.match(html, /<h1[^>]*>Promocje bankowe w jednym miejscu/);
   assert.match(text(html), /Nie udało się teraz wczytać promocji/);
   assert.match(html, /<a [^>]*href="\/promocje"[^>]*>Przejdź do listy promocji/);
   assert.doesNotMatch(html, /data-card=|role="radiogroup"|Aktualizacja:|Najnowsza weryfikacja|data-disclosure="strip"/, "no offers, no control, no invented date");

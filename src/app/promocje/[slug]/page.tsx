@@ -257,6 +257,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
         fees={promotion.fees}
         cooldown={cooldown}
         hasEligibilityText={hasEligibilityText}
+        blocked={Boolean(cooldown) && eligibility.status === "not-eligible"}
         now={now}
       />
 

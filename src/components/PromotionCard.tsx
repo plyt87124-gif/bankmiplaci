@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CardBlockedMark } from "@/components/BlockedOffers";
 import { CardLink } from "@/components/CardLink";
 import { Check, ChevronRight, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
@@ -106,6 +107,8 @@ export function PromotionCard({
   const draft = promotion.status === "DRAFT";
   const hasBonus = promotion.maxBonusCents > 0;
   const fee = describeAccountFee(promotion.fees);
+  // "0 zł" that depends on something: a waiver condition (e.g. a number of card payments) or an "Inne opłaty" remark.
+  const feeHasConditions = fee.kind === "conditional" || (fee.kind === "free" && fee.text.startsWith("od"));
   const hasLogo = hasShowableLogo(bank.logoUrl);
   const prioritizeLogo = priority ?? (index != null && index < PRIORITY_CARD_COUNT);
   const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
@@ -122,6 +125,7 @@ export function PromotionCard({
         className
       )}
     >
+      <CardBlockedMark slug={promotion.slug} />
       {ended ? (
         <p className="mb-4 flex items-center gap-2 rounded-md bg-coral-100 px-3 py-1.5 text-small font-semibold text-coral-600">
           <XCircle size={16} aria-hidden="true" className="shrink-0" />
@@ -182,10 +186,18 @@ export function PromotionCard({
         </span>
         {ended ? null : <DeadlineBadge endDate={promotion.endDate} now={now} />}
       </div>
-      {fee.kind === "free" ? (
+      {fee.kind === "free" || fee.kind === "conditional" ? (
         <p className="mt-2 flex items-center gap-1.5 text-small font-semibold text-success">
           <Check size={16} aria-hidden="true" className="shrink-0" />
-          Bez opłat za prowadzenie
+          <span>
+            Bez opłat za prowadzenie
+            {feeHasConditions ? (
+              <>
+                <span aria-hidden="true">*</span>
+                <span className="sr-only"> (pod warunkami)</span>
+              </>
+            ) : null}
+          </span>
         </p>
       ) : (
         <p className="mt-2 text-small text-ink-700">
@@ -196,7 +208,7 @@ export function PromotionCard({
           {fee.note ? <span className="whitespace-nowrap text-ink-700"> ({fee.note})</span> : null}
         </p>
       )}
-      <span data-vt="verified" className="mt-2 flex">
+      <span data-vt="verified" className="mt-5 flex">
         <VerifiedLine lastVerifiedAt={promotion.lastVerifiedAt} now={now} badge />
       </span>
 

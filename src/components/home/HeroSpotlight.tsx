@@ -1,7 +1,22 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+
+/** Where and when the soft glows appear on a card: irregular but fixed per slide (no randomness during render). */
+function glowsFor(index: number): CSSProperties[] {
+  const seed = (n: number) => {
+    const x = Math.sin((index + 1) * 12.9898 + n * 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  return [0, 1, 2].map((n) => ({
+    left: `${Math.round(seed(n * 3 + 1) * 80)}%`,
+    top: `${Math.round(seed(n * 3 + 2) * 80)}%`,
+    width: `${60 + Math.round(seed(n * 3 + 3) * 70)}px`,
+    animationDelay: `${Math.round((0.8 + n * 1.9 + seed(n + 9) * 1.5) * 100) / 100}s`,
+    animationDuration: `${Math.round((3.2 + seed(n + 5) * 2) * 100) / 100}s`
+  }));
+}
 
 /** How long one offer stays on screen before the next one takes its place. */
 export const SPOTLIGHT_INTERVAL_MS = 5000;
@@ -64,8 +79,8 @@ export function HeroSpotlight({ header, slides, labels }: { header: ReactNode; s
                 inert={active ? undefined : true}
                 aria-label={labels[i]}
                 className={cn(
-                  "col-start-1 row-start-1 flex min-w-0 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none",
-                  active ? "translate-x-0 scale-100 opacity-100" : "pointer-events-none translate-x-6 scale-[0.97] opacity-0"
+                  "col-start-1 row-start-1 flex min-w-0 transition-[opacity,transform,filter] duration-[1400ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] motion-reduce:transition-none",
+                  active ? "translate-y-0 scale-100 opacity-100 blur-0" : "pointer-events-none translate-y-4 scale-[0.985] opacity-0 blur-[3px]"
                 )}
               >
                 {slide}
@@ -73,7 +88,11 @@ export function HeroSpotlight({ header, slides, labels }: { header: ReactNode; s
             );
           })}
           {/* key = index: the sweep restarts with every new card */}
-          <span key={index} aria-hidden="true" className="spotlight-shine pointer-events-none col-start-1 row-start-1" />
+          <span key={index} aria-hidden="true" className="pointer-events-none relative col-start-1 row-start-1">
+            {glowsFor(index).map((glow, i) => (
+              <span key={i} className="spotlight-glow" style={glow} />
+            ))}
+          </span>
         </div>
       </div>
 

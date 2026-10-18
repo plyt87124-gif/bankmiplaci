@@ -13,10 +13,10 @@ import type { FaqAccordionItem } from "@/components/FaqAccordion";
 import { RATING_COMMISSION_RULE, STRIP_RECOMMENDED } from "@/lib/disclosureCopy";
 import { isRouteLive } from "@/lib/seo/routes";
 
-export const HOME_H1 = "Promocje bankowe: znajdź konto z premią i sprawdź, co musisz zrobić";
+export const HOME_H1 = "Promocje bankowe w jednym miejscu – od wyboru konta do ostatniej złotówki premii";
 
 export const HOME_LEAD =
-  "Pokazujemy, ile możesz zyskać, ile to kosztuje i co trzeba zrobić – ze ściągą krok po kroku.";
+  "Sprawdź warunki, wybierz konto z premią i odhaczaj kolejne kroki w ściądze, żeby wycisnąć z każdej promocji jak najwięcej.";
 
 /** Where "Ocena serwisu bez prowizji" leads: the section that explains the rating on /jak-zarabiamy. */
 export const HOME_RATING_HREF = "/jak-zarabiamy#ocena";

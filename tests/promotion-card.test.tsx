@@ -148,7 +148,7 @@ test("card prints the fee line", () => {
   assert.match(unknown, /Opłata za konto: Brak danych/);
   assert.doesNotMatch(unknown, new RegExp(`Opłata za konto: 0${NBSP}zł`));
   const conditional = text(render(card({ fees: { accountFeeCents: 1500, accountFeeWaiverCondition: "x", cardFeeCents: null, cardFeeWaiverCondition: null } })));
-  assert.ok(conditional.includes(`15${NBSP}zł (0${NBSP}zł po spełnieniu warunku)`), conditional);
+  assert.ok(conditional.includes("Bez opłat za prowadzenie* (pod warunkami)"), conditional);
 });
 
 /* ------------------------------------------------------------------ */

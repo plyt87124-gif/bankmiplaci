@@ -51,6 +51,7 @@ export function KeyFacts({
   fees,
   cooldown,
   hasEligibilityText,
+  blocked = false,
   now
 }: {
   maxBonusCents: number;
@@ -60,6 +61,8 @@ export function KeyFacts({
   cooldown: CooldownRule | null;
   /** eligibleFor / notEligibleFor exist, so the "Dla kogo jest promocja?" section is on the page. */
   hasEligibilityText: boolean;
+  /** The visitor's karencja rules them out: the bar gets the red glow. */
+  blocked?: boolean;
   now?: Date;
 }) {
   const term = termFact(endDate, now);
@@ -73,6 +76,7 @@ export function KeyFacts({
       </h2>
       <dl
         data-vt-dest="card"
+        data-blocked={blocked ? "true" : undefined}
         style={{ viewTransitionName: "vt-card" }}
         className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line md:grid-cols-[minmax(0,1.25fr)_repeat(4,minmax(0,1fr))]">
         <Fact label={hasBonus ? "Premia do" : "Premia"} className="col-span-2 md:col-span-1">

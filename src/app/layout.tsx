@@ -5,6 +5,7 @@ import "@/styles/motion.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AuthModalProvider } from "@/components/AuthModalProvider";
+import { BlockedOffersProvider } from "@/components/BlockedOffers";
 import { CardTransitionBridge } from "@/components/CardTransitionBridge";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/components/ui/theme";
@@ -80,11 +81,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <PageViewTracker />
         <CardTransitionBridge />
         <AuthModalProvider user={user ? { id: user.id, name: user.name } : null}>
-          <Header />
-          <main id="tresc" tabIndex={-1} className="flex-1 focus:outline-none">
-            {children}
-          </main>
-          <Footer />
+          <BlockedOffersProvider>
+            <Header />
+            <main id="tresc" tabIndex={-1} className="flex-1 focus:outline-none">
+              {children}
+            </main>
+            <Footer />
+          </BlockedOffersProvider>
         </AuthModalProvider>
       </body>
     </html>

@@ -234,21 +234,25 @@ details[open] > summary .acc-chevron,
 /* Hero spotlight: a light sweep over the card that has just appeared */
 /* ------------------------------------------------------------------ */
 
-@keyframes spotlight-sweep {
-  0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
-  15% { opacity: 1; }
-  100% { transform: translateX(260%) skewX(-18deg); opacity: 0; }
+@keyframes spotlight-glow {
+  0%, 100% { opacity: 0; transform: scale(0.7); }
+  50% { opacity: 1; transform: scale(1.15); }
 }
 
-.spotlight-shine {
+.spotlight-glow {
   display: none;
 }
 
-.motion-ok .spotlight-shine {
+/* Several soft glows that fade in and out at uneven places and times (no sweep, no diagonal). */
+.motion-ok .spotlight-glow {
   display: block;
-  width: 35%;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.32), transparent);
-  animation: spotlight-sweep 1.1s var(--ease-in-out) 0.5s 1 both;
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.3), transparent 65%);
+  filter: blur(6px);
+  opacity: 0;
+  animation: spotlight-glow 4s ease-in-out 1 both;
 }
 
 
@@ -267,15 +271,15 @@ details[open] > summary .acc-chevron,
 }
 
 ::view-transition-group(*) {
-  animation-duration: 720ms;
-  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-duration: 1100ms;
+  animation-timing-function: cubic-bezier(0.22, 0.8, 0.24, 1);
 }
 
 ::view-transition-old(root) {
-  animation: vt-fade-out 240ms var(--ease-in-out) both;
+  animation: vt-fade-out 420ms var(--ease-in-out) both;
 }
 ::view-transition-new(root) {
-  animation: vt-rise 640ms cubic-bezier(0.16, 1, 0.3, 1) 140ms both;
+  animation: vt-rise 900ms cubic-bezier(0.22, 0.8, 0.24, 1) 260ms both;
 }
 ::view-transition-group(root) {
   animation-duration: 0.01s;
@@ -297,4 +301,16 @@ details[open] > summary .acc-chevron,
   height: 100%;
   object-fit: cover;
   object-position: left top;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Red glow: an offer the signed-in visitor cannot take part in        */
+/* (karencja). Set by CardBlockedMark on cards and by KeyFacts.        */
+/* ------------------------------------------------------------------ */
+
+article[data-card][data-blocked="true"],
+dl[data-blocked="true"] {
+  border-color: rgb(var(--color-coral-600) / 0.7);
+  box-shadow: 0 0 0 1px rgb(var(--color-coral-600) / 0.35), 0 0 28px -2px rgb(var(--color-coral-600) / 0.42);
 }
