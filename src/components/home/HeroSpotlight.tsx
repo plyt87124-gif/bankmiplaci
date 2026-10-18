@@ -9,13 +9,29 @@ function glowsFor(index: number): CSSProperties[] {
     const x = Math.sin((index + 1) * 12.9898 + n * 78.233) * 43758.5453;
     return x - Math.floor(x);
   };
-  return [0, 1, 2].map((n) => ({
-    left: `${Math.round(seed(n * 3 + 1) * 80)}%`,
-    top: `${Math.round(seed(n * 3 + 2) * 80)}%`,
-    width: `${60 + Math.round(seed(n * 3 + 3) * 70)}px`,
-    animationDelay: `${Math.round((0.8 + n * 1.9 + seed(n + 9) * 1.5) * 100) / 100}s`,
-    animationDuration: `${Math.round((3.2 + seed(n + 5) * 2) * 100) / 100}s`
-  }));
+  const r2 = (value: number) => Math.round(value * 100) / 100;
+  // Each glint starts on its own side of the card (top, right, bottom, left, anywhere), has its own size, shape,
+  // strength, period and delay, and keeps coming back, so the card never repeats one pattern.
+  return [0, 1, 2, 3, 4].map((n) => {
+    const side = (Math.floor(seed(n * 7 + 1) * 4) + n) % 4;
+    const along = Math.round(seed(n * 7 + 2) * 90);
+    const edge = Math.round(-12 + seed(n * 7 + 3) * 30);
+    const position: CSSProperties =
+      side === 0 ? { left: `${along}%`, top: `${edge}%` }
+      : side === 1 ? { top: `${along}%`, right: `${edge}%` }
+      : side === 2 ? { left: `${along}%`, bottom: `${edge}%` }
+      : { top: `${along}%`, left: `${edge}%` };
+    const size = 36 + Math.round(seed(n * 7 + 4) * seed(n * 7 + 6) * 190);
+    return {
+      ...position,
+      width: `${size}px`,
+      height: `${Math.round(size * (0.35 + seed(n * 7 + 5) * 0.9))}px`,
+      transform: `rotate(${Math.round(seed(n * 7 + 8) * 180)}deg)`,
+      ["--glow-peak" as string]: String(r2(0.16 + seed(n * 7 + 9) * 0.34)),
+      animationDelay: `${r2(seed(n * 7 + 10) * 6)}s`,
+      animationDuration: `${r2(4.5 + seed(n * 7 + 11) * 6.5)}s`
+    };
+  });
 }
 
 /** How long one offer stays on screen before the next one takes its place. */

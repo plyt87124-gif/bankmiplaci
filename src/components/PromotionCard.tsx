@@ -184,7 +184,6 @@ export function PromotionCard({
         <span data-vt="effort" className="inline-flex">
           <EffortMeter difficulty={promotion.difficulty} />
         </span>
-        {ended ? null : <DeadlineBadge endDate={promotion.endDate} now={now} />}
       </div>
       {fee.kind === "free" || fee.kind === "conditional" ? (
         <p className="mt-2 flex items-center gap-1.5 text-small font-semibold text-success">
@@ -208,9 +207,13 @@ export function PromotionCard({
           {fee.note ? <span className="whitespace-nowrap text-ink-700"> ({fee.note})</span> : null}
         </p>
       )}
-      <span data-vt="verified" className="mt-5 flex">
-        <VerifiedLine lastVerifiedAt={promotion.lastVerifiedAt} now={now} badge />
-      </span>
+      {/* Deadline and verification sit together, apart from the coloured difficulty + fee pair, right above the divider. */}
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        {ended ? null : <DeadlineBadge endDate={promotion.endDate} now={now} />}
+        <span data-vt="verified" className="inline-flex">
+          <VerifiedLine lastVerifiedAt={promotion.lastVerifiedAt} now={now} badge />
+        </span>
+      </div>
 
       <div className="mt-auto pt-4">
         <div className="flex items-end justify-between gap-3 border-t border-line pt-3">

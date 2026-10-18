@@ -235,24 +235,25 @@ details[open] > summary .acc-chevron,
 /* ------------------------------------------------------------------ */
 
 @keyframes spotlight-glow {
-  0%, 100% { opacity: 0; transform: scale(0.7); }
-  50% { opacity: 1; transform: scale(1.15); }
+  0%, 55%, 100% { opacity: 0; scale: 0.6; }
+  70% { opacity: var(--glow-peak, 0.3); scale: 1.1; }
+  85% { opacity: calc(var(--glow-peak, 0.3) * 0.4); scale: 1.25; }
 }
 
 .spotlight-glow {
   display: none;
 }
 
-/* Several soft glows that fade in and out at uneven places and times (no sweep, no diagonal). */
+/* Soft glints at uneven places, sizes, strengths and rhythms; each one has its own period, so they drift apart. */
 .motion-ok .spotlight-glow {
   display: block;
   position: absolute;
-  aspect-ratio: 1;
   border-radius: 9999px;
-  background: radial-gradient(circle, rgb(255 255 255 / 0.3), transparent 65%);
-  filter: blur(6px);
+  background: radial-gradient(ellipse at center, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0) 68%);
+  filter: blur(7px);
   opacity: 0;
-  animation: spotlight-glow 4s ease-in-out 1 both;
+  mix-blend-mode: soft-light;
+  animation: spotlight-glow 7s ease-in-out infinite both;
 }
 
 
