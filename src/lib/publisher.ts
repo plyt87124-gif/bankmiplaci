@@ -9,15 +9,11 @@
  * Pure data, no React and no server-only imports.
  */
 export const PUBLISHER = {
-  /** Natural person running the business. */
+  /** Natural person operating the service. */
   name: "Michał Kamiński",
-  /** Legal form, as written in the Regulamin ("JDG" = jednoosobowa działalność gospodarcza). */
-  legalForm: "JDG",
   street: "Stawiszyn 7a",
   postalCode: "26-800",
   city: "Białobrzegi",
-  nip: "7981482892",
-  regon: "388504613",
   email: "pomoc@bankmiplaci.pl"
 } as const;
 

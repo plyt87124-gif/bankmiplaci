@@ -26,13 +26,7 @@ export default function Regulamin() {
           <br />
           Michał Kamiński
           <br />
-          JDG
-          <br />
           Stawiszyn 7a, 26-800 Białobrzegi
-          <br />
-          NIP: 7981482892
-          <br />
-          REGON: 388504613
           <br />
           E-mail: <a href="mailto:pomoc@bankmiplaci.pl">pomoc@bankmiplaci.pl</a>
           <br />

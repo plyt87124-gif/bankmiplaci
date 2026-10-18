@@ -153,20 +153,17 @@ test("publisher data equals what the Regulamin and the privacy policy already pu
     ["polityka prywatności", privacy]
   ] as const) {
     assert.ok(source.includes(PUBLISHER.name), `${name}: ${PUBLISHER.name}`);
-    assert.ok(source.includes(`NIP: ${PUBLISHER.nip}`), `${name}: NIP`);
+    assert.ok(!/NIP|REGON|JDG/.test(source), `${name}: no NIP, REGON or legal form (owner decision)`);
     assert.ok(source.includes(PUBLISHER.email), `${name}: e-mail`);
   }
   assert.ok(regulamin.includes(PUBLISHER.street), "regulamin: street");
   assert.ok(regulamin.includes(`${PUBLISHER.postalCode} ${PUBLISHER.city}`), "regulamin: postcode and city");
-  assert.ok(regulamin.includes(`REGON: ${PUBLISHER.regon}`), "regulamin: REGON");
-  assert.ok(regulamin.includes(PUBLISHER.legalForm), "regulamin: legal form");
   assert.equal(publisherAddress(), "Stawiszyn 7a, 26-800 Białobrzegi");
 });
 
 test("only the publisher module holds the company data (no copy in the header or footer)", () => {
   for (const file of ["src/components/Footer.tsx", "src/components/Header.tsx", "src/components/MobileNav.tsx"]) {
     const source = read(file);
-    assert.ok(!source.includes(PUBLISHER.nip) && !source.includes(PUBLISHER.regon), file);
     assert.ok(!source.includes("Stawiszyn") && !source.includes("pomoc@bankmiplaci.pl"), file);
   }
 });

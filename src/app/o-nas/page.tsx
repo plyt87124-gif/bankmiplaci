@@ -49,11 +49,9 @@ export default function AboutPage() {
       <h2 id="wydawca">Kto prowadzi serwis</h2>
       <p>Operatorem serwisu, zgodnie z Regulaminem, jest:</p>
       <p>
-        {PUBLISHER.name}, {PUBLISHER.legalForm}
+        {PUBLISHER.name}
         <br />
         {publisherAddress()}
-        <br />
-        NIP: {PUBLISHER.nip}, REGON: {PUBLISHER.regon}
         <br />
         E-mail: <a href={`mailto:${PUBLISHER.email}`}>{PUBLISHER.email}</a>
       </p>

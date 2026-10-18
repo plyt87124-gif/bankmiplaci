@@ -242,11 +242,11 @@ test("/o-nas: publisher data are exactly those already public in the Regulamin; 
   const pages = await renderAll();
   const about = text(pages["/o-nas"]!);
   const regulamin = readFileSync(join(ROOT, "src", "app", "regulamin", "page.tsx"), "utf8");
-  for (const value of [PUBLISHER.name, publisherAddress(), PUBLISHER.nip, PUBLISHER.regon, PUBLISHER.email]) {
+  for (const value of [PUBLISHER.name, publisherAddress(), PUBLISHER.email]) {
     assert.ok(regulamin.includes(value), `Regulamin does not contain ${value}`);
     assert.ok(about.includes(value), `/o-nas does not show ${value}`);
   }
-  assert.ok(/JDG/.test(regulamin));
+  assert.ok(!/JDG|NIP|REGON/.test(regulamin) && !/JDG|NIP|REGON/.test(about), "no business data (owner decision)");
   const invented = /zespół|ekspert|założon|\bnagrod|doświadczen|redaktor/i.exec(about);
   assert.equal(invented, null, `invented team/expert/award wording: ${invented?.[0]}`);
   for (const id of ["wydawca", "weryfikacja", "finansowanie", "zasady", "korekty", "kontakt"]) assert.match(pages["/o-nas"]!, new RegExp(`<h2 id="${id}"`));
