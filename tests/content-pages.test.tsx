@@ -134,80 +134,6 @@ test("every internal link on my pages leads to an existing page, and #fragments 
 // /jak-zarabiamy
 // ---------------------------------------------------------------------------
 
-test("/jak-zarabiamy keeps #ocena and #polecane, opens with the plan's sentence and states the rule", async () => {
-  const page = (await renderAll())["/jak-zarabiamy"]!;
-  assert.match(page, /<h2 id="ocena"/);
-  assert.match(page, /<h2 id="polecane"/);
-  const body = text(page);
-  assert.ok(body.includes("Zarabiamy z prowizji od banków za polecenie."));
-  assert.ok(body.indexOf("Zarabiamy z prowizji od banków za polecenie.") < body.indexOf("Czym jest afiliacja"), "the sentence comes first");
-  assert.ok(body.includes(RATING_COMMISSION_RULE));
-  assert.ok(body.includes("Czego nie robimy"));
-  assert.ok(body.includes("Oferta, na której nie zarabiamy, nadal jest na liście"));
-  assert.match(page, /href="\/metodologia"/);
-});
-
-test("/jak-zarabiamy describes the 'Polecane' formula with the factors that recommendedScores really produces", async () => {
-  const body = text((await renderAll())["/jak-zarabiamy"]!);
-  const fmt = new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 2 });
-  // Same account type, same rating 10, so the score IS the commission factor.
-  const scores = recommendedScores([
-    { accountType: "PERSONAL", rating: 10, maxBonusCents: 1, commissionCents: 10000 }, // best-paying
-    { accountType: "PERSONAL", rating: 10, maxBonusCents: 1, commissionCents: 0 }, //   pays nothing
-    { accountType: "PERSONAL", rating: 10, maxBonusCents: 1, commissionCents: null } // unknown
-  ]);
-  const [best, zero, unknown] = scores.map((s) => fmt.format(Math.round(s! * 100) / 100));
-  assert.equal(best, "1,0");
-  assert.equal(zero, fmt.format(Math.round((1 - COMMISSION_WEIGHT) * 100) / 100));
-  assert.ok(body.includes(`liczba od ${zero} do ${best}`), "range of the factor");
-  assert.ok(body.includes(`dostaje ${best} – jej ocena nie jest pomniejszana`));
-  assert.ok(body.includes(`nie mniejszą jednak niż ${zero}`));
-  assert.ok(
-    body.includes(
-      `Oferta bez danych o wynagrodzeniu jest traktowana tak, jakby bank płacił połowę najwyższej stawki w grupie (współczynnik ${unknown}) – czyli wyżej niż oferta, za którą nie dostajemy nic (${zero}).`
-    ),
-    "unknown commission = a stand-in for HALF of the best (0,8), above zero (0,6)"
-  );
-  assert.ok(body.includes(`najniższą wartość – ${zero}`));
-  // The sentence is only true if the code really maps unknown to half of the best and zero to the floor.
-  assert.ok(Math.abs(scores[2]! - 0.8) < 1e-12 && Math.abs(scores[1]! - 0.6) < 1e-12 && Math.abs(scores[0]! - 1) < 1e-12);
-  // A partial commission is proportional: half of the best pays 1 - W/2.
-  const half = recommendedScores([
-    { accountType: "PERSONAL", rating: 10, maxBonusCents: 1, commissionCents: 10000 },
-    { accountType: "PERSONAL", rating: 10, maxBonusCents: 1, commissionCents: 5000 }
-  ])[1]!;
-  assert.ok(Math.abs(half - (1 - COMMISSION_WEIGHT / 2)) < 1e-12);
-});
-
-test("/jak-zarabiamy does not understate the commission's influence (no 'nieco'), and the claim holds in the formula", async () => {
-  const page = (await renderAll())["/jak-zarabiamy"]!;
-  const body = text(page);
-  assert.ok(!/nieco (niższ|wyższ)/i.test(body), "the 'nieco niższej ocenie' wording is gone");
-  assert.ok(body.includes("Współczynnik wynagrodzenia zmienia wynik silniej niż różnice między ocenami serwisu"));
-  assert.ok(body.includes("oferta o wyraźnie niższej ocenie"));
-  // The page says the factor can outweigh rating differences. Prove it in the code the page describes:
-  // 8.3 with the best commission beats 9.8 with the lowest, and even the lowest automatic rating
-  // with the best commission beats a perfect 10 for which the bank pays nothing.
-  const pair = sortRecommended([
-    { accountType: "PERSONAL", rating: 9.8, maxBonusCents: 1, commissionCents: 1000 },
-    { accountType: "PERSONAL", rating: 8.3, maxBonusCents: 1, commissionCents: 10000 }
-  ]);
-  assert.equal(pair[0]!.rating, 8.3);
-  const extreme = sortRecommended([
-    { accountType: "PERSONAL", rating: 10, maxBonusCents: 1, commissionCents: 0 },
-    { accountType: "PERSONAL", rating: RATING_FLOOR, maxBonusCents: 1, commissionCents: 10000 }
-  ]);
-  assert.equal(extreme[0]!.rating, RATING_FLOOR);
-});
-
-test("/jak-zarabiamy#polecane says the comparison covers offers of one account type that are currently displayed", async () => {
-  const page = (await renderAll())["/jak-zarabiamy"]!;
-  const section = text(page.slice(page.indexOf('<h2 id="polecane"'), page.indexOf('<h2 id="ocena"')));
-  assert.ok(section.includes("Porównanie dotyczy ofert tego samego typu konta, które są aktualnie wyświetlane."));
-  assert.ok(section.includes("kolejność „Polecane” może wyglądać inaczej niż bez filtrów"));
-  assert.ok(section.includes("które są w tej chwili wyświetlane na liście"));
-});
-
 test("/jak-zarabiamy lists exactly the sorts whose database ordering ignores the commission", () => {
   const source = readFileSync(join(ROOT, "src", "lib", "services", "promotions.ts"), "utf8").replace(/\r\n/g, "\n");
   const start = source.indexOf("export function sortToOrderBy");
@@ -441,33 +367,6 @@ test("none of the WP-13 sources reads the commission or the affiliate URL", () =
 // F2A: wording corrected after the content audit
 // ---------------------------------------------------------------------------
 
-test("/jak-zarabiamy: title says it affects the order, defines the term once, no self-praise, 'Polecane' is not a recommendation", async () => {
-  const page = (await renderAll())["/jak-zarabiamy"]!;
-  const body = text(page);
-  assert.match(page, /<h1[^>]*>Jak zarabiamy – afiliacja i wpływ na kolejność ofert<\/h1>/);
-  assert.ok(!body.includes("niezależność oceny"));
-  assert.ok(body.includes("Wynagrodzenie partnerskie (w skrócie: prowizja) to kwota, którą płaci nam bank lub sieć partnerska."));
-  assert.ok(body.includes("Wpływa ono na domyślną kolejność „Polecane” (szczegóły niżej), ale nie na ocenę serwisu."));
-  assert.equal((body.match(/w skrócie: prowizja/g) ?? []).length, 1, "the definition appears once");
-  assert.ok(body.indexOf("w skrócie: prowizja") < body.indexOf("Czym jest afiliacja"), "defined at first use, in the lead");
-  assert.ok(!body.includes("To częsty model finansowania porównywarek"));
-  assert.ok(
-    body.includes("To nie jest indywidualna rekomendacja ani porada. „Polecane” to domyślna kolejność, w której uwzględniamy wynagrodzenie partnerskie, więc nie oznacza „najlepszej oferty dla Ciebie”.")
-  );
-  assert.match(page, /<h2 id="rekomendacja"/);
-  assert.match(page, /<h2 id="ocena"/);
-  assert.match(page, /<h2 id="polecane"/);
-});
-
-test("/jak-zarabiamy: the 6,5-10 range carries the manual-exception caveat and links to the methodology", async () => {
-  const page = (await renderAll())["/jak-zarabiamy"]!;
-  const body = text(page);
-  assert.ok(body.includes("w wyjątkowych przypadkach ustawiana ręcznie, także spoza tego przedziału – zob. metodologia"));
-  assert.match(page, /href="\/metodologia#czym-jest-ocena"/);
-  const methodology = (await renderAll())["/metodologia"]!;
-  assert.match(methodology, /<h2 id="czym-jest-ocena"/, "the link target exists");
-});
-
 test("the manual-rating wording follows the code: the reason is optional in the admin form, so no page promises one", () => {
   const validation = readFileSync(join(ROOT, "src", "lib", "validation", "promotion.ts"), "utf8");
   assert.match(validation, /ratingReason: z\.string\(\)\.max\(280\)\.optional\(\)/, "if this becomes required, the pages may say 'zawsze podajemy uzasadnienie'");
@@ -521,4 +420,13 @@ test("/faq: 'Czy muszę mieć konto', 'Jak działa ściąga' and 'Co znaczy Zwer
     const hits = readdirSync(dir).filter((f) => /\.(ts|tsx)$/.test(f) && /getCurrentUser|useOptionalSession/.test(readFileSync(join(dir, f), "utf8")));
     assert.deepEqual(hits, [], `/${path} needs no account`);
   }
+});
+
+test("/jak-zarabiamy is short: one statement that we may receive remuneration, no explanation of the order of offers", async () => {
+  const page = text((await renderAll())["/jak-zarabiamy"]!);
+  assert.match(page, /Możemy otrzymywać wynagrodzenie od banków lub sieci partnerskich za polecenie ich ofert\./);
+  assert.match(page, /Korzystanie z Bankmiplaci jest bezpłatne dla użytkowników\./);
+  assert.doesNotMatch(page, /kolejno|Polecane|współczynnik/i, "the owner asked not to explain the ordering here");
+  const html = (await renderAll())["/jak-zarabiamy"]!;
+  for (const id of ["afiliacja", "ocena", "polecane", "czego-nie-robimy"]) assert.ok(html.includes(`id="${id}"`), id);
 });

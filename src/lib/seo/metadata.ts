@@ -750,9 +750,9 @@ export const STATIC_PAGE_META = {
   },
   jakZarabiamy: {
     path: "/jak-zarabiamy",
-    title: "Jak zarabiamy – afiliacja i wpływ na kolejność ofert",
+    title: "Jak zarabiamy",
     description:
-      "Jak zarabia Bankmiplaci: linki partnerskie, wpływ wynagrodzenia partnerskiego na kolejność „Polecane” oraz to, że ocena serwisu jest liczona bez niego."
+      "Korzystanie z Bankmiplaci jest bezpłatne. Możemy otrzymywać wynagrodzenie od banków lub sieci partnerskich za polecenie ich ofert."
   },
   metodologia: {
     path: "/metodologia",

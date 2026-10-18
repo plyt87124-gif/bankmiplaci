@@ -68,14 +68,6 @@ test("the list FAQ answers the commission question like the strip", () => {
   assert.ok(item!.answer.includes("Ocena serwisu jest liczona bez wynagrodzenia"));
 });
 
-test("/jak-zarabiamy gives the rating scale as the real floor, not 0", () => {
-  const body = text(renderToStaticMarkup(React.createElement(HowWeEarnPage)));
-  const floor = new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(RATING_FLOOR);
-  assert.equal(floor, "6,5");
-  assert.ok(body.includes(`Ocena serwisu (od ${floor} do 10, liczona bez prowizji`));
-  assert.ok(!body.includes("od 0 do 10"));
-});
-
 test("/o-nas and /metodologia say the commission changes the 'Polecane' order, possibly strongly", () => {
   const about = text(renderToStaticMarkup(React.createElement(AboutPage)));
   assert.ok(about.includes("Wpływa natomiast na domyślną kolejność ofert „Polecane” i może ją wyraźnie zmienić"));
