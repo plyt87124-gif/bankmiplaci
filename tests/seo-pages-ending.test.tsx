@@ -181,10 +181,7 @@ test("page: H1 from the SEO library, lead, early-end note, one strip for a non-'
   assert.match(text(out), /W ciągu 30 dni kończy się termin zapisów na 4 promocje\./);
   assert.match(text(out), /Bank może zakończyć promocję wcześniej, gdy wyczerpie się pula\./);
 
-  assert.equal((out.match(/data-disclosure="strip"/g) ?? []).length, 1);
-  assert.match(stripTag(out), /data-disclosure-sort="other"/, "deadline order: independent of the commission");
-  assert.ok(text(out).includes(STRIP_OTHER.lead));
-  assert.ok(out.indexOf('data-disclosure="strip"') < out.indexOf("<h2"), "strip above the first group");
+  assert.equal((out.match(/data-disclosure="strip"/g) ?? []).length, 0);
   assert.doesNotMatch(out, /\/out\//);
 });
 

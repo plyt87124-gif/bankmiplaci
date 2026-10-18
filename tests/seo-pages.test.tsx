@@ -206,10 +206,7 @@ test("page: H1 from the SEO library, lead, 'Najnowsza weryfikacja oferty', one s
   assert.match(text(out), /Zestawiamy 3 oferty na konta dla osób fizycznych/);
   assert.match(text(out), /Najnowsza weryfikacja oferty: 9 paź 2026/);
 
-  assert.equal((out.match(/data-disclosure="strip"/g) ?? []).length, 1);
-  assert.match(stripTag(out), /data-disclosure-sort="recommended"/);
-  assert.ok(text(out).includes(stripCopy("recommended").lead), "the strip says what the order depends on");
-  assert.ok(out.indexOf('data-disclosure="strip"') < out.indexOf('data-card="promotion"'), "strip above the first card");
+  assert.equal((out.match(/data-disclosure="strip"/g) ?? []).length, 0);
   assert.equal((out.match(/data-card="promotion"/g) ?? []).length, 3);
   assert.match(text(out), /Aktualne promocje \(3\)/);
 

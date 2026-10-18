@@ -347,8 +347,6 @@ test("bank page with current offers: H1, logo, strip above the cards, cards, FAQ
   assert.match(out, new RegExp(`<h1[^>]*>${bankHeading("Bank Testowy")}</h1>`));
   assert.match(text(out), /Bank Testowy: 2 aktualne promocje\./);
   assert.match(text(out), /Aktualne promocje \(2\)/);
-  assert.match(stripTag(out), /data-disclosure-sort="recommended"/);
-  assert.ok(out.indexOf('data-disclosure="strip"') < out.indexOf('data-card="promotion"'));
   assert.equal((out.match(/data-card="promotion"/g) ?? []).length, 2);
   assert.doesNotMatch(out, /\/out\//);
   assert.doesNotMatch(out, /data-empty-state/);

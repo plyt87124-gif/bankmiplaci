@@ -11,7 +11,6 @@ import { deadlineState } from "@/lib/freshness";
 import { ACCOUNT_TYPE_LABEL, formatRatingOutOf10 } from "@/lib/format";
 import { nameMentionsBank } from "@/lib/seo/metadata";
 import {
-  cardLeadLine,
   describeAccountFee,
   hasShowableLogo,
   ratingExplainerHref
@@ -107,7 +106,6 @@ export function PromotionCard({
   const draft = promotion.status === "DRAFT";
   const hasBonus = promotion.maxBonusCents > 0;
   const fee = describeAccountFee(promotion.fees);
-  const lead = cardLeadLine(promotion.conditions, promotion.summary);
   const hasLogo = hasShowableLogo(bank.logoUrl);
   const prioritizeLogo = priority ?? (index != null && index < PRIORITY_CARD_COUNT);
   const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
@@ -168,7 +166,6 @@ export function PromotionCard({
           <p className="pt-3 text-h4 font-semibold text-ink-700">Bez premii gotówkowej</p>
         )}
       </div>
-      {lead ? <p className="mt-1 line-clamp-1 text-small text-ink-500">{lead}</p> : null}
 
       {/* Two fixed rows at every width, so cards of one grid row line up whatever the label lengths
           (the list grid is 1 / 2 / 3 columns, a card is never wide enough for both labels on one line). */}

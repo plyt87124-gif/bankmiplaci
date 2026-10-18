@@ -59,7 +59,13 @@ function CopyWithLink({ copy }: { copy: DisclosureCopy }) {
   );
 }
 
+/** Switch for all on-page affiliate notices (off by the owner's decision). */
+export const SHOW_AFFILIATE_NOTICES = false;
+
 export function AffiliateDisclosure({ variant, sort, long = false, className }: AffiliateDisclosureProps) {
+  // The owner removed every on-page affiliate notice (strip, compact, tag, footer). The variants below are kept
+  // so that restoring them is a one-line change; rel="sponsored" on the links itself stays.
+  if (!SHOW_AFFILIATE_NOTICES) return null;
   switch (variant) {
     case "strip":
       return (

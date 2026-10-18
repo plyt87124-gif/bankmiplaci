@@ -60,10 +60,7 @@ export default function HowItWorksPage() {
         <section aria-labelledby="krok-3">
           <h3 id="krok-3">3. {STEP_TITLES[2]}</h3>
           <p>
-            Przycisk „Przejdź do promocji” prowadzi na stronę banku. To zwykle link partnerski: jeśli założysz konto tą
-            drogą i spełnisz warunki, bank lub sieć partnerska może wypłacić nam wynagrodzenie za polecenie. Piszemy o
-            tym pod każdym takim przyciskiem, a szczegóły wyjaśniamy na stronie <Link href="/jak-zarabiamy">Jak zarabiamy</Link>.
-            Niektóre promocje są dostępne wyłącznie przez link lub kod – jeśli o tym wiemy, zaznaczamy to w warunkach oferty.
+            Przycisk „Przejdź do promocji” prowadzi na stronę banku. Niektóre promocje są dostępne wyłącznie przez link lub kod – jeśli o tym wiemy, zaznaczamy to w warunkach oferty.
           </p>
           <p>
             Konto zakładasz w banku, na jego stronie lub w aplikacji. Bank poprosi o potwierdzenie tożsamości (KYC, patrz
@@ -121,11 +118,6 @@ export default function HowItWorksPage() {
         <dd>
           Nasz wewnętrzny wskaźnik do szybkiego porównania aktualnych ofert.
           Wyjaśniamy go w <Link href="/metodologia">metodologii</Link>.
-        </dd>
-        <dt>Link partnerski</dt>
-        <dd>
-          Link do strony banku, za który możemy otrzymać wynagrodzenie, jeśli otworzysz konto i spełnisz warunki.
-          Zawsze jest oznaczony – zob. <Link href="/jak-zarabiamy">Jak zarabiamy</Link>.
         </dd>
       </dl>
 

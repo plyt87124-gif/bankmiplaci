@@ -58,8 +58,7 @@ test("CTA (live): one tracked sponsored link, ONE arrow, and the compact disclos
   assert.equal(count(out, /lucide-arrow-right/g), 1);
   // The disclosure follows the link directly.
   const afterLink = out.slice(out.indexOf("</a>"));
-  assert.match(afterLink, /^<\/a><p[^>]*data-disclosure="compact"/);
-  assert.match(text(out), /Link partnerski: możemy otrzymać wynagrodzenie od banku\. Jak zarabiamy/);
+  assert.doesNotMatch(afterLink, /data-disclosure/);
 });
 
 test("CTA (ended / not promoted): no /out/ link, a disabled button and a way to current offers", () => {
@@ -86,7 +85,7 @@ test("CTA (admin draft preview): the disclosure still follows the button directl
   assert.equal(DRAFT.ctaLive, true); // shown on purpose, so the preview looks like the final page
   const out = html(h(OfferCta, { state: DRAFT, id: "glowny-cta", ...ctaProps }));
   const afterLink = out.slice(out.indexOf("</a>"));
-  assert.match(afterLink, /^<\/a><p[^>]*data-disclosure="compact"/);
+  assert.doesNotMatch(afterLink, /data-disclosure/);
   assert.match(text(out), /Podgląd: link \/out jest nieaktywny dla wersji roboczej\./);
   assert.ok(out.indexOf("data-draft-cta-note") > out.indexOf('data-disclosure="compact"'), "the note comes after the disclosure");
   // the closing block shows it too; a published offer never does
@@ -101,7 +100,7 @@ test("CTA (admin draft preview): the disclosure still follows the button directl
 test("end CTA: own tracking source, disclosure under the button, standing 'not a bank' sentence", () => {
   const out = html(h(EndCta, { state: OPEN, bankName: "Alior Bank", href: "/out/x?src=detail-cta-bottom", moreOffersHref: "/promocje", moreOffersLabel: "x" }));
   assert.match(out, /href="\/out\/x\?src=detail-cta-bottom"/);
-  assert.match(out, /data-disclosure="compact"/);
+  assert.doesNotMatch(out, /data-disclosure/);
   assert.match(text(out), /Nie jesteśmy bankiem ani doradcą\. Warunki ustala bank\./);
   assert.match(text(out), /Przejdź bezpośrednio do wniosku na stronie Alior Bank/);
 
@@ -126,7 +125,7 @@ test("sticky bar: rendered hidden and inert, with the compact disclosure under t
   assert.match(out, /lg:hidden/);
   assert.match(out, /href="\/out\/x\?src=detail-cta-sticky"/);
   assert.match(out, /rel="sponsored nofollow noopener noreferrer"/);
-  assert.equal(count(out, /data-disclosure="compact"/g), 1);
+  assert.equal(count(out, /data-disclosure="compact"/g), 0);
   assert.match(out, /pb-\[max\(0\.625rem,env\(safe-area-inset-bottom\)\)\]/);
   assert.match(text(out), /do 800 zł Koniec za 4 dni Przejdź do promocji/);
 });
@@ -161,7 +160,7 @@ test("aside: amount, deadline, CTA with disclosure, ściąga link and the rating
   assert.match(t, /Ocena serwisu 9,4\/10/);
   assert.doesNotMatch(t, /9\.4/);
   assert.match(out, /href="\/metodologia"[^>]*>Jak liczymy\?/);
-  assert.equal(count(out, /data-disclosure="compact"/g), 1);
+  assert.equal(count(out, /data-disclosure="compact"/g), 0);
   assert.match(out, /lg:sticky/);
 });
 

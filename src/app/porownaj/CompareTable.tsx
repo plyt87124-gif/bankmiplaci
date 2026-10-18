@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Check, Info } from "lucide-react";
 import { AffiliateCtaLink } from "@/components/AffiliateCtaLink";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
-import { AffiliateLinkBadge } from "@/components/trust/TrustNote";
 import { DeadlineBadge } from "@/components/trust/DeadlineBadge";
 import { VerifiedLine } from "@/components/trust/VerifiedLine";
 import { BankLogo } from "@/components/ui/BankLogo";
@@ -148,7 +147,6 @@ function ActionCell({ card, extras }: CompareColumn) {
       </ButtonLink>
       {showCta ? (
         <div className="flex flex-col items-stretch gap-1.5">
-          <AffiliateLinkBadge className="h-auto min-h-6 self-start whitespace-normal px-1.5 py-0.5 sm:whitespace-nowrap sm:px-2.5" />
           {/* target="_self": the comparison does not open new tabs. */}
           <AffiliateCtaLink
             href={outboundHref(card.slug, { source: "compare-table" })}

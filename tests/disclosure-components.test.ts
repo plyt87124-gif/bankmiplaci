@@ -32,63 +32,12 @@ const attr = (markup: string, name: string, from = 0) => {
 // AffiliateDisclosure
 // ---------------------------------------------------------------------------
 
-test("strip (recommended) renders the exact sentence with a link to /jak-zarabiamy#polecane", () => {
-  const out = html(h(AffiliateDisclosure, { variant: "strip", sort: "recommended" }));
-  assert.equal(
-    text(out),
-    "Część linków to linki partnerskie – możemy otrzymać wynagrodzenie od banku. Jak zarabiamy"
-  );
-  assert.match(out, /<a [^>]*href="\/jak-zarabiamy#polecane"[^>]*>Jak zarabiamy<\/a>/); // same sentence, anchor kept on the page
-  assert.match(out, /data-disclosure="strip"/);
-  assert.match(out, /data-disclosure-sort="recommended"/);
-});
 
-test("strip without a sort falls back to the 'recommended' wording (the listing's default order)", () => {
-  assert.match(text(html(h(AffiliateDisclosure, { variant: "strip" }))), /^Część linków to linki partnerskie/);
-});
 
-test("strip for another order is the general affiliate sentence", () => {
-  const out = html(h(AffiliateDisclosure, { variant: "strip", sort: "top-rated" }));
-  assert.equal(
-    text(out),
-    "Część linków to linki partnerskie – możemy otrzymać wynagrodzenie od banku. Jak zarabiamy"
-  );
-  assert.match(out, /href="\/jak-zarabiamy"/);
-  assert.match(out, /data-disclosure-sort="other"/);
-});
 
-test("compact renders the exact sentence and link", () => {
-  const out = html(h(AffiliateDisclosure, { variant: "compact" }));
-  assert.equal(text(out), "Link partnerski: możemy otrzymać wynagrodzenie od banku. Jak zarabiamy");
-  assert.match(out, /href="\/jak-zarabiamy"/);
-  assert.match(out, /data-disclosure="compact"/);
-});
 
-test("footer renders the full statement ending with the link", () => {
-  const out = html(h(AffiliateDisclosure, { variant: "footer" }));
-  assert.ok(
-    text(out).startsWith(
-      "Bankmiplaci nie jest bankiem ani oficjalnym przedstawicielem banków. Część linków to linki partnerskie – za otwarcie konta przez nasz link"
-    )
-  );
-  assert.ok(text(out).endsWith("Nie porównujemy całego rynku. Nie jest to doradztwo finansowe. Jak zarabiamy"));
-  assert.match(out, /data-disclosure="footer"/);
-});
 
-test("disclosures are plain, always-visible markup: no hiding, no script, no small or faint text", () => {
-  for (const variant of ["strip", "compact", "footer", "tag"] as const) {
-    const out = html(h(AffiliateDisclosure, { variant, sort: "recommended", long: true }));
-    const withoutIcons = out.replace(/<svg[\s\S]*?<\/svg>/g, "");
-    assert.ok(!/<script|hidden|sr-only|display:\s*none/.test(withoutIcons), `${variant}: hidden or scripted`);
-    assert.ok(!/text-ink-300|text-\[1[01]px\]|text-xs|text-label/.test(out), `${variant}: faint or tiny text class`);
-    assert.ok(/text-(ink-700|ink-500)/.test(out), `${variant}: expected ink-700 / ink-500`);
-  }
-});
 
-test("the icon is decorative (aria-hidden), the sentence is the content", () => {
-  const out = html(h(AffiliateDisclosure, { variant: "strip" }));
-  assert.match(out, /<svg[^>]*aria-hidden="true"/);
-});
 
 // ---------------------------------------------------------------------------
 // TrustNote / AffiliateLinkBadge
@@ -295,4 +244,10 @@ test("DeadlineBadge: detailed wording, and nothing at all without a date", () =>
   );
   assert.equal(html(h(DeadlineBadge, { endDate: null, now: NOW })), "");
   assert.equal(html(h(DeadlineBadge, { endDate: "garbage", now: NOW })), "");
+});
+
+test("all on-page affiliate notices are switched off (owner decision); rel=sponsored on the links stays", () => {
+  assert.equal(html(h(AffiliateDisclosure, { variant: "strip" })), "");
+  assert.equal(html(h(AffiliateDisclosure, { variant: "compact" })), "");
+  assert.equal(html(h(AffiliateDisclosure, { variant: "footer" })), "");
 });

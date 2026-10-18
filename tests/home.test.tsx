@@ -178,16 +178,8 @@ test("hero: a static dot, no ping and no ornament; the LCP text is not revealed 
 /* Polecane promocje                                                   */
 /* ------------------------------------------------------------------ */
 
-test("Polecane: the disclosure strip is DIRECTLY under the heading and uses the one source of the wording", () => {
-  assert.match(
-    FULL,
-    /<h2 id="polecane-title">Polecane promocje<\/h2><div data-disclosure="strip" data-disclosure-sort="recommended"/,
-    "nothing between the h2 and the strip"
-  );
-  const strip = FULL.match(/<div data-disclosure="strip"[\s\S]*?<\/div>/)?.[0] ?? "";
-  assert.equal(text(strip), disclosureText(STRIP_RECOMMENDED));
-  // ... and it is above the cards.
-  assert.ok(FULL.indexOf('data-disclosure="strip"') < FULL.indexOf('data-card="promotion"'));
+test("Polecane: no affiliate strip (removed by the owner) - the heading is followed by the segment label", () => {
+  assert.doesNotMatch(FULL, /data-disclosure/);
 });
 
 test("Polecane: three cards per segment in the pool's order, the other segment is hidden, 'Zobacz wszystkie (N)' follows the segment", () => {

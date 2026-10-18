@@ -83,7 +83,6 @@ export default function AboutPage() {
       <h2 id="zasady">Zasady redakcyjne</h2>
       <ul>
         <li>Opieramy się na dokumentach banków, nie na opiniach z forów i mediów społecznościowych.</li>
-        <li>Oznaczamy linki partnerskie wszędzie tam, gdzie prowadzą do banku.</li>
         <li>Nie przyjmujemy płatności za wyższą ocenę serwisu.</li>
         <li>Nie ukrywamy ofert dlatego, że nie zarabiamy na nich.</li>
         <li>Nie porównujemy całego rynku – pokazujemy promocje, które przeanalizowaliśmy.</li>
