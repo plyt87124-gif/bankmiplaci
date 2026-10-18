@@ -100,7 +100,7 @@ function jsonLdBlocks(markup: string): Record<string, unknown>[] {
 test("home: one H1 with the planned wording, the blocks in the order of the layout spec", () => {
   assert.equal((FULL.match(/<h1[ >]/g) ?? []).length, 1);
   assert.match(FULL, new RegExp(`<h1[^>]*>${HOME_H1}</h1>`));
-  assert.equal(HOME_H1, "Promocje bankowe w jednym miejscu – od wyboru konta do ostatniej złotówki premii");
+  assert.equal(HOME_H1, "Promocje bankowe w jednym miejscu – ze ściągą krok po kroku");
 
   const order = [
     'id="home-title"',
@@ -137,7 +137,7 @@ test("hero: kicker with the newest verification date, lead, segment control, but
   assert.match(text(hero), /Najnowsza weryfikacja oferty: 7 paź 2026/, "the NEWEST lastVerifiedAt of the pool (p1), not today's date");
   assert.match(hero, /Najnowsza weryfikacja oferty: <time dateTime="2026-10-07">7 paź 2026<\/time>/);
   assert.doesNotMatch(text(hero), /Aktualizacja:|Ostatnia weryfikacja/, "one name for that date, said once");
-  assert.match(text(hero), /Sprawdź warunki, wybierz konto z premią i odhaczaj kolejne kroki w ściądze, żeby wycisnąć z każdej promocji jak najwięcej\./);
+  assert.doesNotMatch(text(hero), /Sprawdź warunki|wycisnąć/, "no lead under the headline (owner's decision)");
 
   assert.match(hero, /role="radiogroup" aria-label="Typ konta"/);
   assert.equal((hero.match(/role="radio"/g) ?? []).length, 2);
@@ -541,7 +541,7 @@ test("the link under 'Polecane' shows the label and target the model gives it (t
 
 test("HomeView passes the model's seeAll to the island: with live hubs the link under 'Polecane' is the indexable hub", () => {
   const html = renderToStaticMarkup(h(HomeView, { model: buildHomeModel(pool(), NOW, () => true), now: NOW }));
-  assert.match(html, /<a [^>]*href="\/konta-osobiste-z-premia"[^>]*><span>Wszystkie konta osobiste z premią \(\d+\)<\/span><\/a>/);
+  assert.match(html, /<a [^>]*href="\/promocje\?accountType=PERSONAL"[^>]*><span>Wszystkie konta osobiste z premią \(\d+\)<\/span><\/a>/);
   const offline = renderToStaticMarkup(h(HomeView, { model: buildHomeModel(pool(), NOW, () => false), now: NOW }));
   assert.match(offline, /href="\/promocje\?accountType=PERSONAL"[^>]*><span>Zobacz wszystkie \(\d+\)<\/span>/);
 });

@@ -125,9 +125,9 @@ test("model: 'Zobacz wszystkie' leads to the segment's hub while the hub is live
   const live = buildHomeModel(pool, NOW, () => true);
   const personal = live.segments.find((s) => s.value === "PERSONAL")!;
   const business = live.segments.find((s) => s.value === "BUSINESS")!;
-  assert.deepEqual(personal.seeAll, { href: "/konta-osobiste-z-premia", label: "Wszystkie konta osobiste z premią (3)" });
-  assert.deepEqual(business.seeAll, { href: "/konta-firmowe-z-premia", label: "Wszystkie konta firmowe z premią (2)" });
-  // The list link of the hero button is unchanged (the filtered list), only the link under "Polecane" moves to the hub.
+  assert.deepEqual(personal.seeAll, { href: "/promocje?accountType=PERSONAL", label: "Wszystkie konta osobiste z premią (3)" });
+  assert.deepEqual(business.seeAll, { href: "/promocje?accountType=BUSINESS", label: "Wszystkie konta firmowe z premią (2)" });
+  // Both links lead to the filtered /promocje list (owner's decision); only the text of the one under "Polecane" is the hub's.
   assert.equal(personal.href, "/promocje?accountType=PERSONAL");
   assert.equal(business.href, "/promocje?accountType=BUSINESS");
   assert.equal(personal.count, 3);
@@ -135,12 +135,12 @@ test("model: 'Zobacz wszystkie' leads to the segment's hub while the hub is live
   // The default liveness is the route registry: today both hubs are live.
   assert.equal(isRouteLive("/konta-osobiste-z-premia") && isRouteLive("/konta-firmowe-z-premia"), true);
   const byDefault = buildHomeModel(pool, NOW);
-  assert.equal(byDefault.segments.find((s) => s.value === "PERSONAL")!.seeAll.href, "/konta-osobiste-z-premia");
-  assert.equal(byDefault.segments.find((s) => s.value === "BUSINESS")!.seeAll.href, "/konta-firmowe-z-premia");
+  assert.equal(byDefault.segments.find((s) => s.value === "PERSONAL")!.seeAll.href, "/promocje?accountType=PERSONAL");
+  assert.equal(byDefault.segments.find((s) => s.value === "BUSINESS")!.seeAll.href, "/promocje?accountType=BUSINESS");
 
   // Only the page that is live is linked: with the business hub off, that segment keeps the link with the parameter.
   const half = buildHomeModel(pool, NOW, (path) => path === "/konta-osobiste-z-premia");
-  assert.equal(half.segments.find((s) => s.value === "PERSONAL")!.seeAll.href, "/konta-osobiste-z-premia");
+  assert.equal(half.segments.find((s) => s.value === "PERSONAL")!.seeAll.href, "/promocje?accountType=PERSONAL");
   assert.deepEqual(half.segments.find((s) => s.value === "BUSINESS")!.seeAll, {
     href: "/promocje?accountType=BUSINESS",
     label: "Zobacz wszystkie (2)"
@@ -151,9 +151,9 @@ test("model: 'Zobacz wszystkie' leads to the segment's hub while the hub is live
   assert.equal(hubSeeAllLabel("business", 7), "Wszystkie konta firmowe z premią (7)");
 });
 
-test("model: a single live segment still links to its own hub (the hub lists exactly that segment)", () => {
+test("model: a single live segment links to the whole list with the hub's wording", () => {
   const model = buildHomeModel([card("b1", { accountType: "BUSINESS" }), card("b2", { accountType: "BUSINESS" })], NOW, () => true);
-  assert.deepEqual(model.segments[0]!.seeAll, { href: "/konta-firmowe-z-premia", label: "Wszystkie konta firmowe z premią (2)" });
+  assert.deepEqual(model.segments[0]!.seeAll, { href: "/promocje", label: "Wszystkie konta firmowe z premią (2)" });
 });
 
 test("model: an empty pool gives an empty, honest model (no segments, no date, no examples)", () => {

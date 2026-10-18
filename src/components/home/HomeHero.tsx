@@ -7,7 +7,7 @@ import { formatDatePL, pluralizePl } from "@/lib/format";
 import { isoDatePL } from "@/lib/seo/dates";
 import { HeroSpotlight } from "./HeroSpotlight";
 import { HomeSegmentControl } from "./HomeSegment";
-import { HOME_H1, HOME_LEAD, HOME_RATING_HREF } from "./homeContent";
+import { HOME_H1 } from "./homeContent";
 import type { HomeModel } from "./homeModel";
 
 /**
@@ -58,7 +58,6 @@ export function HomeHero({
           >
             {HOME_H1}
           </h1>
-          <p className="type-lead mt-4 max-w-2xl text-ink-700">{HOME_LEAD}</p>
 
           <div className="mt-8 flex flex-col items-start gap-6">
             <HomeSegmentControl />

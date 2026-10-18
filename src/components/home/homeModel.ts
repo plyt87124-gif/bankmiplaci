@@ -116,10 +116,9 @@ export interface HomeSegmentModel {
   /** The number shown in "Zobacz wszystkie (N)" - what `href` lists. */
   count: number;
   /**
-   * The link under the "Polecane" list. While the segment's hub page is live
-   * (isRouteLive) it leads to the hub - an indexable page, unlike the filtered
-   * list, which is noindex - with the hub's own number; otherwise it is the
-   * filtered list: `{ href, label: "Zobacz wszystkie (count)" }`.
+   * The link under the "Polecane" list. It always leads to the /promocje list (filtered to the segment), the
+   * owner's decision; while the segment's hub page is live the text is the hub's ("Wszystkie konta osobiste
+   * z premią (N)"), otherwise `"Zobacz wszystkie (count)"`.
    */
   seeAll: HomeSeeAll;
 }
@@ -225,7 +224,7 @@ export function buildHomeModel(
     const count = choosable ? byType[value].length : total;
     const hub = HUBS[HUB_OF_SEGMENT[value]];
     const seeAll: HomeSeeAll = isLive(hub.path)
-      ? { href: hub.path, label: hubSeeAllLabel(hub.kind, byType[value].length) }
+      ? { href, label: hubSeeAllLabel(hub.kind, byType[value].length) }
       : { href, label: `Zobacz wszystkie (${count})` };
     return {
       value,
