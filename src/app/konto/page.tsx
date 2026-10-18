@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { upsertBankHistory, deleteBankHistoryEntry } from "./actions";
 import { LogoutButton } from "./LogoutButton";
 import { ACCOUNT_TYPE_LABEL, formatDatePL } from "@/lib/format";
+import { resolveFee } from "@/lib/feeModel";
 import { PromotionChecklist } from "@/components/PromotionChecklist";
 import { EarningsProvider } from "@/components/EarningsContext";
 import { EarningsCounter } from "@/components/EarningsCounter";
@@ -28,7 +29,7 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
     db.userBankHistory.findMany({ where: { userId: user.id } }),
     db.userPromotionTracking.findMany({
       where: { userId: user.id, completedAt: null },
-      include: { promotion: { include: { bank: true, checklistSteps: { orderBy: { order: "asc" } } } } }
+      include: { promotion: { include: { bank: true, fees: true, checklistSteps: { orderBy: { order: "asc" } } } } }
     }),
     // Completed trackings aren't shown as interactive cards anymore, but
     // their already-earned rewards still count toward the lifetime total.
@@ -49,6 +50,12 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
     bankLogoUrl: t.promotion.bank.logoUrl,
     accountTypeLabel: ACCOUNT_TYPE_LABEL[t.promotion.accountType],
     accountOpenedAt: t.accountOpenedAt ? t.accountOpenedAt.toISOString() : null,
+    fees: t.promotion.fees
+      ? {
+          account: resolveFee(t.promotion.fees.accountFeeCents, t.promotion.fees.accountFeeWaiverCondition, t.promotion.fees.otherFee).sentence,
+          card: resolveFee(t.promotion.fees.cardFeeCents, t.promotion.fees.cardFeeWaiverCondition, t.promotion.fees.otherFee).sentence
+        }
+      : null,
     steps: t.promotion.checklistSteps
   }));
   const initialChecked = checkedProgress.map((p) => p.stepId);
@@ -136,8 +143,17 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
         </form>
 
         {history.length > 0 && (
-          <ul role="list" className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {history.map((e) => {
+          <div className="mt-6 space-y-6">
+            {(["PERSONAL", "BUSINESS"] as const).map((type) => {
+              const entries = history.filter((e) => (type === "BUSINESS") === (e.accountType === "BUSINESS"));
+              return (
+                <div key={type}>
+                  <h3 className="text-h4 text-ink-900">{type === "BUSINESS" ? "Konta firmowe" : "Konta osobiste"}</h3>
+                  {entries.length === 0 ? (
+                    <p className="mt-2 text-small text-ink-500">Brak wpisów.</p>
+                  ) : (
+          <ul role="list" className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {entries.map((e) => {
               const entryBank = bankName.get(e.bankId) ?? "Nieznany bank";
               return (
                 <li
@@ -164,6 +180,11 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
               );
             })}
           </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 

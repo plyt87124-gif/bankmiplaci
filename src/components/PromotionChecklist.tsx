@@ -34,6 +34,8 @@ interface Tracking {
   bankLogoUrl: string | null;
   accountTypeLabel: string;
   accountOpenedAt: string | null;
+  /** Ready-made sentences about the account and card fee (see lib/feeModel.ts); null when the offer has no fee data. */
+  fees?: { account: string; card: string } | null;
   steps: Step[];
 }
 
@@ -356,6 +358,22 @@ function ChecklistCard({
           <ArrowRight size={16} aria-hidden="true" />
         </Link>
       </header>
+
+      {tracking.fees ? (
+        <section aria-label="Darmowe konto i karta" className="mt-5 rounded-field border border-line bg-sunken p-4">
+          <h3 className="text-small font-semibold text-ink-900">Darmowe konto i karta</h3>
+          <dl className="mt-2 grid gap-x-6 gap-y-2 text-small text-ink-700 sm:grid-cols-2">
+            <div>
+              <dt className="font-medium text-ink-900">Konto</dt>
+              <dd>{tracking.fees.account}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-ink-900">Karta</dt>
+              <dd>{tracking.fees.card}</dd>
+            </div>
+          </dl>
+        </section>
+      ) : null}
 
       {requiredSteps.length > 0 && (
         <div className="mt-5">
