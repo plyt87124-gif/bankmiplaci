@@ -1,3 +1,65 @@
 {
-  "extends": "next/core-web-vitals"
+  // Dostepnosc (jsx-a11y): zalecany zestaw jako "error" w calym kodzie publicznym.
+  // Panel v1 (src/app/admin) jest poza zakresem redesignu, wiec tam te same reguly sa tylko ostrzezeniami.
+  "extends": ["next/core-web-vitals", "plugin:jsx-a11y/recommended"],
+  "settings": {
+    // Nasze komponenty opakowujace natywne elementy sa sprawdzane jak one same.
+    // Celowo bez `Label` (w LoadMoreLink to lokalny komponent z innym znaczeniem)
+    // i bez `BankLogo` (alt generuje sam z nazwy banku).
+    "jsx-a11y": {
+      "components": { "Button": "button", "Input": "input", "Textarea": "textarea", "Select": "select", "Link": "a", "Image": "img" }
+    }
+  },
+  "rules": {
+    // `<ul role="list">` / `<ol role="list">` jest celowe: `list-style: none` (Tailwind `list-none`)
+    // odbiera liscie semantyke w Safari/VoiceOver, a jawna rola ja przywraca.
+    "jsx-a11y/no-redundant-roles": ["error", { "ul": ["list"], "ol": ["list"] }],
+    // Przewijane poziomo kontenery tabel/kodu to `role="region"` z `tabIndex={0}` i etykieta:
+    // bez fokusu uzytkownik klawiatury nie przewinie tabeli (WCAG 2.1.1).
+    "jsx-a11y/no-noninteractive-tabindex": [
+      "error",
+      { "tags": [], "roles": ["tabpanel", "region"], "allowExpressionValues": true }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/app/admin/**/*.{js,jsx,ts,tsx}"],
+      "rules": {
+        "jsx-a11y/alt-text": "warn",
+        "jsx-a11y/anchor-ambiguous-text": "warn",
+        "jsx-a11y/anchor-has-content": "warn",
+        "jsx-a11y/anchor-is-valid": "warn",
+        "jsx-a11y/aria-activedescendant-has-tabindex": "warn",
+        "jsx-a11y/aria-props": "warn",
+        "jsx-a11y/aria-proptypes": "warn",
+        "jsx-a11y/aria-role": "warn",
+        "jsx-a11y/aria-unsupported-elements": "warn",
+        "jsx-a11y/autocomplete-valid": "warn",
+        "jsx-a11y/click-events-have-key-events": "warn",
+        "jsx-a11y/control-has-associated-label": "warn",
+        "jsx-a11y/heading-has-content": "warn",
+        "jsx-a11y/html-has-lang": "warn",
+        "jsx-a11y/iframe-has-title": "warn",
+        "jsx-a11y/img-redundant-alt": "warn",
+        "jsx-a11y/interactive-supports-focus": "warn",
+        "jsx-a11y/label-has-associated-control": "warn",
+        "jsx-a11y/label-has-for": "warn",
+        "jsx-a11y/media-has-caption": "warn",
+        "jsx-a11y/mouse-events-have-key-events": "warn",
+        "jsx-a11y/no-access-key": "warn",
+        "jsx-a11y/no-autofocus": "warn",
+        "jsx-a11y/no-distracting-elements": "warn",
+        "jsx-a11y/no-interactive-element-to-noninteractive-role": "warn",
+        "jsx-a11y/no-noninteractive-element-interactions": "warn",
+        "jsx-a11y/no-noninteractive-element-to-interactive-role": "warn",
+        "jsx-a11y/no-noninteractive-tabindex": "warn",
+        "jsx-a11y/no-redundant-roles": "warn",
+        "jsx-a11y/no-static-element-interactions": "warn",
+        "jsx-a11y/role-has-required-aria-props": "warn",
+        "jsx-a11y/role-supports-aria-props": "warn",
+        "jsx-a11y/scope": "warn",
+        "jsx-a11y/tabindex-no-positive": "warn"
+      }
+    }
+  ]
 }

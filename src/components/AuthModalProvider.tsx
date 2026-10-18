@@ -1,11 +1,34 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+  type MouseEvent,
+  type ReactNode
+} from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { SessionProvider, useOptionalSession, useSession } from "@/components/SessionProvider";
+import { LoginForm } from "@/app/konto/logowanie/LoginForm";
+import { RegisterForm } from "@/app/konto/rejestracja/RegisterForm";
+import {
+  AUTH_INTROS,
+  AUTH_TITLES,
+  createBackdropCloseTracker,
+  isOutsideRect,
+  type AuthMode
+} from "@/app/konto/logowanie/authFlow";
 
-type AuthMode = "login" | "register";
+export type { AuthMode };
 
 interface OpenOptions {
   mode?: AuthMode;
@@ -24,259 +47,235 @@ export function useAuthModal() {
   return ctx;
 }
 
-export function AuthModalProvider({ children }: { children: React.ReactNode }) {
+type CloseOptions = {
+  /** Give the focus back to the element that opened the dialog (default). Off when the dialog closes because the page is navigating away. */
+  restoreFocus?: boolean;
+};
+
+/**
+ * Site-wide sign-in / sign-up dialog (opened through `useAuthModal().openAuth`).
+ *
+ * `user` is the server's answer from the root layout (getCurrentUser); it
+ * seeds the SessionProvider this component mounts, unless a SessionProvider
+ * already exists higher up. Omit it (WP-17) and the session is fetched from
+ * /api/account/me instead.
+ */
+export function AuthModalProvider({
+  children,
+  user
+}: {
+  children: ReactNode;
+  user?: { id: string; name: string | null } | null;
+}) {
+  const hasSession = useOptionalSession() !== null;
+  const inner = <AuthModalInner>{children}</AuthModalInner>;
+  return hasSession ? inner : <SessionProvider initialUser={user}>{inner}</SessionProvider>;
+}
+
+function AuthModalInner({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const session = useSession();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<AuthMode>("login");
   const onSuccessRef = useRef<(() => void) | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  const focusTargetRef = useRef<HTMLElement | null>(null);
+  const openRef = useRef(false);
+  const [isRefreshing, startRefresh] = useTransition();
+  const focusMainAfterRefresh = useRef(false);
 
   const openAuth = useCallback((options?: OpenOptions) => {
     setMode(options?.mode ?? "login");
     onSuccessRef.current = options?.onSuccess ?? null;
+    if (!openRef.current) {
+      // Remember who opened it, to give them the focus back on close.
+      const active = document.activeElement;
+      openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null;
+      openRef.current = true;
+    }
     setOpen(true);
   }, []);
 
-  function close() {
+  const close = useCallback(({ restoreFocus = true }: CloseOptions = {}) => {
+    if (!openRef.current) return; // already closed (the native `close` event follows our own close)
+    openRef.current = false;
+    focusTargetRef.current = restoreFocus ? openerRef.current : null;
+    openerRef.current = null;
     setOpen(false);
-  }
+  }, []);
 
-  function handleSuccess() {
-    setOpen(false);
-    router.refresh();
+  // Runs after the dialog has left the DOM (an inert/hidden opener cannot take
+  // focus before that): hand the focus back to whoever opened it.
+  useEffect(() => {
+    if (open) return;
+    const target = focusTargetRef.current;
+    focusTargetRef.current = null;
+    if (target?.isConnected) target.focus();
+  }, [open]);
+
+  const handleSuccess = useCallback(() => {
+    close();
+    void session.refresh();
+    // router.refresh() re-renders the layout (header, page) for the new user.
+    // Inside a transition so we know when it ends and can fix the focus if the
+    // element that had it (e.g. the header's "Zaloguj się") was swapped out.
+    focusMainAfterRefresh.current = true;
+    startRefresh(() => router.refresh());
     onSuccessRef.current?.();
-  }
+  }, [close, router, session]);
+
+  useEffect(() => {
+    if (isRefreshing || !focusMainAfterRefresh.current) return;
+    focusMainAfterRefresh.current = false;
+    const active = document.activeElement;
+    if (!active || active === document.body || !active.isConnected) {
+      document.getElementById("tresc")?.focus({ preventScroll: true });
+    }
+  }, [isRefreshing]);
+
+  const api = useMemo<AuthModalContextValue>(() => ({ openAuth }), [openAuth]);
 
   return (
-    <AuthModalContext.Provider value={{ openAuth }}>
+    <AuthModalContext.Provider value={api}>
       {children}
-      <AuthModal open={open} mode={mode} onModeChange={setMode} onClose={close} onSuccess={handleSuccess} />
+      {open ? <AuthDialog mode={mode} onModeChange={setMode} onClose={close} onSuccess={handleSuccess} /> : null}
     </AuthModalContext.Provider>
   );
 }
 
-function AuthModal({
-  open,
+/** Stops the page behind the modal from scrolling (without a layout jump when the scrollbar disappears). */
+function lockPageScroll(): () => void {
+  const html = document.documentElement;
+  const body = document.body;
+  const previous = { overflow: html.style.overflow, paddingRight: body.style.paddingRight };
+  const scrollbar = window.innerWidth - html.clientWidth;
+  html.style.overflow = "hidden";
+  if (scrollbar > 0) {
+    const current = parseFloat(getComputedStyle(body).paddingRight) || 0;
+    body.style.paddingRight = `${current + scrollbar}px`;
+  }
+  return () => {
+    html.style.overflow = previous.overflow;
+    body.style.paddingRight = previous.paddingRight;
+  };
+}
+
+function AuthDialog({
   mode,
   onModeChange,
   onClose,
   onSuccess
 }: {
-  open: boolean;
   mode: AuthMode;
   onModeChange: (mode: AuthMode) => void;
-  onClose: () => void;
+  onClose: (options?: CloseOptions) => void;
   onSuccess: () => void;
 }) {
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
+  const backdrop = useRef(createBackdropCloseTracker());
+  const titleId = useId();
+  const introId = useId();
 
+  // Native modal: the browser traps Tab inside, makes the rest of the page
+  // inert, handles Esc and draws ::backdrop. (No close() on cleanup: when the
+  // dialog unmounts the node leaves the DOM and with it the top layer; and in
+  // development StrictMode re-runs effects on the same, still open, node.)
   useEffect(() => {
-    if (!open) return;
-    setError(null);
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (!dialog.open) dialog.showModal();
+    return lockPageScroll();
+  }, []);
+
+  // First field gets the focus when the dialog opens and after switching
+  // between sign-in and sign-up (the control that was clicked disappears).
+  // Declared after the effect above, so the dialog is already open.
+  useEffect(() => {
     firstFieldRef.current?.focus();
+  }, [mode]);
 
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose, mode]);
-
-  if (!open) return null;
-
-  async function onLoginSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    const form = new FormData(e.currentTarget);
-
-    const res = await fetch("/api/account/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier: form.get("identifier"), password: form.get("password") })
-    });
-
-    setLoading(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      setError(data?.error ?? "Nie udało się zalogować.");
-      return;
-    }
-    onSuccess();
-  }
-
-  async function onRegisterSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    const form = new FormData(e.currentTarget);
-
-    if (String(form.get("password")).length < 8) {
-      setError("Hasło musi mieć min. 8 znaków.");
-      setLoading(false);
-      return;
-    }
-
-    const res = await fetch("/api/account/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: form.get("email"),
-        username: form.get("username"),
-        password: form.get("password"),
-        name: form.get("name")
-      })
-    });
-
-    setLoading(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      setError(data?.error ?? "Nie udało się założyć konta.");
-      return;
-    }
-    onSuccess();
+  function pressedOnBackdrop(e: MouseEvent<HTMLDialogElement>) {
+    // Clicks on the ::backdrop are dispatched to the <dialog> itself; the
+    // rectangle test separates them from clicks on its own padding.
+    return (
+      e.target === e.currentTarget &&
+      isOutsideRect({ x: e.clientX, y: e.clientY }, e.currentTarget.getBoundingClientRect())
+    );
   }
 
   return (
-    <div
-      // A fixed, theme-independent dark tint — using a token like ink-900
-      // (which flips to near-white in dark mode) here washed the backdrop
-      // out to a pale haze instead of dimming the page.
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-      onClick={onClose}
-      role="presentation"
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- natywny <dialog>: mouse down/up tylko wykrywa klik w tlo (backdrop); zamykanie z klawiatury (Esc) obsluguje onCancel.
+    <dialog
+      ref={dialogRef}
+      aria-labelledby={titleId}
+      aria-describedby={introId}
+      onCancel={(e) => {
+        // Esc: close through our state so there is one source of truth.
+        e.preventDefault();
+        onClose();
+      }}
+      onClose={(e) => {
+        // Closed by the browser without a cancel event (a second Esc). Ignore
+        // the stale event StrictMode's simulated remount can leave behind.
+        if (!e.currentTarget.open) onClose();
+      }}
+      onMouseDown={(e) => backdrop.current.down(pressedOnBackdrop(e))}
+      onMouseUp={(e) => {
+        if (backdrop.current.up(pressedOnBackdrop(e))) onClose();
+      }}
+      className="animate-dialog-in m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[27.5rem] scroll-pt-20 overflow-y-auto overscroll-contain rounded-2xl border border-line bg-surface p-0 text-ink-900 shadow-modal"
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={mode === "login" ? "Zaloguj się" : "Załóż konto"}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-xl2 border border-ink-100 bg-surface p-8 shadow-cardHover"
-      >
-        <div className="flex items-start justify-between">
-          <h2 className="text-xl font-semibold text-ink-900">{mode === "login" ? "Zaloguj się" : "Załóż konto"}</h2>
-          <button onClick={onClose} aria-label="Zamknij" className="text-ink-300 hover:text-ink-700">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+      {/* The title row sticks to the top while a tall form scrolls (small phones), so the X is always reachable. */}
+      <div className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-surface px-6 pb-2 pt-6 sm:px-8 sm:pt-8">
+        <h2 id={titleId} className="font-display text-h2">
+          {AUTH_TITLES[mode]}
+        </h2>
+        <Button
+          variant="ghost"
+          aria-label="Zamknij"
+          onClick={() => onClose()}
+          className="-mr-3 -mt-2 h-11 w-11 shrink-0 px-0"
+        >
+          <X size={24} aria-hidden="true" />
+        </Button>
+      </div>
+      <div className="px-6 pb-6 sm:px-8 sm:pb-8">
+        <p id={introId} className="text-small text-ink-700">
+          {AUTH_INTROS[mode]}
+        </p>
 
-        {mode === "login" ? (
-          <>
-            <p className="mt-1 text-sm text-ink-500">Zaloguj się, żeby dokończyć — zostaniesz tu, gdzie byłeś/aś.</p>
-            <form className="mt-6 space-y-4" onSubmit={onLoginSubmit}>
-              <div>
-                <label htmlFor="modal-identifier" className="text-sm font-medium text-ink-700">
-                  E-mail lub nazwa użytkownika
-                </label>
-                <input
-                  ref={firstFieldRef}
-                  id="modal-identifier"
-                  name="identifier"
-                  required
-                  className="mt-1.5 w-full rounded-lg border border-ink-100 bg-surface px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-teal-500"
-                />
-              </div>
-              <div>
-                <label htmlFor="modal-password" className="text-sm font-medium text-ink-700">
-                  Hasło
-                </label>
-                <input
-                  id="modal-password"
-                  name="password"
-                  type="password"
-                  required
-                  className="mt-1.5 w-full rounded-lg border border-ink-100 bg-surface px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-teal-500"
-                />
-              </div>
-              {error && <p className="text-sm text-coral-600">{error}</p>}
-              <button
-                disabled={loading}
-                className="w-full rounded-full bg-ink-solid py-2.5 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-60"
+        <div className="mt-6">
+          {mode === "login" ? (
+            <>
+              <LoginForm key="login" firstFieldRef={firstFieldRef} onSuccess={onSuccess} />
+              <Link
+                href="/konto/zapomniane-haslo"
+                onClick={() => onClose({ restoreFocus: false })}
+                className="link-inline mt-2 inline-flex min-h-11 items-center text-small"
               >
-                {loading ? "Logowanie..." : "Zaloguj się"}
-              </button>
-            </form>
-            <div className="mt-5 flex items-center justify-between text-sm">
-              <Link href="/konto/zapomniane-haslo" onClick={onClose} className="text-teal-700 hover:underline">
                 Nie pamiętam hasła
               </Link>
-              <button onClick={() => onModeChange("register")} className="text-teal-700 hover:underline">
-                Załóż darmowe konto
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="mt-1 text-sm text-ink-500">Darmowe konto pozwala komentować promocje i śledzić okresy karencji.</p>
-            <form className="mt-6 space-y-4" onSubmit={onRegisterSubmit}>
-              <div>
-                <label htmlFor="modal-name" className="text-sm font-medium text-ink-700">
-                  Imię (opcjonalnie)
-                </label>
-                <input
-                  ref={firstFieldRef}
-                  id="modal-name"
-                  name="name"
-                  className="mt-1.5 w-full rounded-lg border border-ink-100 bg-surface px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-teal-500"
-                />
+              <div className="mt-6 border-t border-line pt-5">
+                <p className="mb-3 text-small text-ink-700">Nie masz jeszcze konta?</p>
+                <Button variant="secondary" fullWidth onClick={() => onModeChange("register")}>
+                  Załóż darmowe konto
+                </Button>
               </div>
-              <div>
-                <label htmlFor="modal-username" className="text-sm font-medium text-ink-700">
-                  Nazwa użytkownika
-                </label>
-                <input
-                  id="modal-username"
-                  name="username"
-                  required
-                  minLength={3}
-                  maxLength={20}
-                  placeholder="np. jan_kowalski"
-                  className="mt-1.5 w-full rounded-lg border border-ink-100 bg-surface px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-teal-500"
-                />
+            </>
+          ) : (
+            <>
+              <RegisterForm key="register" firstFieldRef={firstFieldRef} onSuccess={onSuccess} />
+              <div className="mt-6 border-t border-line pt-5">
+                <p className="mb-3 text-small text-ink-700">Masz już konto?</p>
+                <Button variant="secondary" fullWidth onClick={() => onModeChange("login")}>
+                  Zaloguj się
+                </Button>
               </div>
-              <div>
-                <label htmlFor="modal-email" className="text-sm font-medium text-ink-700">
-                  E-mail
-                </label>
-                <input
-                  id="modal-email"
-                  name="email"
-                  type="email"
-                  required
-                  className="mt-1.5 w-full rounded-lg border border-ink-100 bg-surface px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-teal-500"
-                />
-              </div>
-              <div>
-                <label htmlFor="modal-reg-password" className="text-sm font-medium text-ink-700">
-                  Hasło (min. 8 znaków)
-                </label>
-                <input
-                  id="modal-reg-password"
-                  name="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  className="mt-1.5 w-full rounded-lg border border-ink-100 bg-surface px-3 py-2.5 text-sm text-ink-900 outline-none focus:border-teal-500"
-                />
-              </div>
-              {error && <p className="text-sm text-coral-600">{error}</p>}
-              <button
-                disabled={loading}
-                className="w-full rounded-full bg-ink-solid py-2.5 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-60"
-              >
-                {loading ? "Tworzenie konta..." : "Załóż konto"}
-              </button>
-            </form>
-            <p className="mt-5 text-center text-sm text-ink-500">
-              Masz już konto?{" "}
-              <button onClick={() => onModeChange("login")} className="text-teal-700 hover:underline">
-                Zaloguj się
-              </button>
-            </p>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </dialog>
   );
 }

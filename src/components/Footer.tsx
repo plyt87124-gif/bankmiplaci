@@ -1,60 +1,55 @@
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
+import { getFooterColumns } from "@/lib/navigation";
 
-const columns = [
-  {
-    title: "Serwis",
-    links: [
-      { href: "/promocje", label: "Wszystkie promocje" },
-      { href: "/blog", label: "Centrum wiedzy" },
-      { href: "/faq", label: "FAQ" },
-      { href: "/kontakt", label: "Kontakt" }
-    ]
-  },
-  {
-    title: "Zaufanie",
-    links: [
-      { href: "/jak-zarabiamy", label: "Jak zarabiamy" },
-      { href: "/regulamin", label: "Regulamin" },
-      { href: "/polityka-prywatnosci", label: "Polityka prywatności" },
-      { href: "/cookies", label: "Cookies" }
-    ]
-  }
-];
+const footerLinkClasses =
+  "inline-flex min-h-11 items-center py-1 text-small text-ink-700 hover:text-ink-900 hover:underline hover:underline-offset-[3px] md:min-h-8";
 
-export function Footer() {
+/**
+ * The presentational footer: brand line and the link columns from
+ * src/lib/navigation.ts. No database, no company data, no disclosure paragraph
+ * (the owner removed that block from the redesign).
+ */
+export function FooterView() {
+  const columns = getFooterColumns();
+
   return (
-    <footer className="border-t border-ink-100 bg-surface">
-      <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
-        <div>
-          <p className="font-display text-lg font-semibold text-ink-900">Bankmiplaci</p>
-          <p className="mt-3 max-w-sm text-sm text-ink-500">
-            Porównujemy aktualne promocje bankowe w Polsce i pokazujemy uczciwie, ile możesz otrzymać oraz co
-            musisz zrobić, aby zdobyć premię.
-          </p>
-        </div>
-
-        {columns.map((col) => (
-          <div key={col.title}>
-            <p className="text-sm font-semibold text-ink-900">{col.title}</p>
-            <ul className="mt-4 space-y-2.5">
-              {col.links.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-ink-500 hover:text-ink-900">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+    <footer className="border-t border-line bg-surface">
+      <div className="container-page py-12 lg:py-14">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
+          <div>
+            <p>
+              <Logo height={28} />
+            </p>
+            <p className="mt-3 max-w-sm text-small text-ink-500">
+              Porównujemy aktualne promocje bankowe w Polsce i pokazujemy, ile możesz otrzymać i co musisz zrobić, aby
+              zdobyć premię.
+            </p>
           </div>
-        ))}
-      </div>
 
-      <div className="border-t border-ink-100 py-6">
-        <div className="container-page flex flex-col gap-2 text-xs text-ink-300 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Bankmiplaci. Wszystkie prawa zastrzeżone.</p>
-          <p>Bankmiplaci nie jest oficjalnym partnerem żadnego z wymienionych banków, chyba że wskazano inaczej.</p>
+          <nav aria-label="Stopka" className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
+            {columns.map((column) => (
+              <div key={column.title}>
+                <h2 className="font-body text-small font-semibold tracking-normal text-ink-900">{column.title}</h2>
+                <ul className="mt-2">
+                  {column.links.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className={footerLinkClasses}>
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
         </div>
       </div>
     </footer>
   );
+}
+
+/** Site footer: brand line and the link columns (exactly one <footer> in the HTML). */
+export function Footer() {
+  return <FooterView />;
 }

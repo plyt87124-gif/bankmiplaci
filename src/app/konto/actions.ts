@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/userSession";
 import { db } from "@/lib/db";
+import { warsawTodayAsUtcMidnight } from "@/lib/promotionAvailability";
 import type { AccountType } from "@prisma/client";
 
 export async function upsertBankHistory(formData: FormData) {
@@ -13,6 +14,18 @@ export async function upsertBankHistory(formData: FormData) {
   const accountType = String(formData.get("accountType")) as AccountType;
   const untilRaw = formData.get("wasClientUntil");
   const untilValue = untilRaw ? String(untilRaw).trim() : "";
+
+  // "Jestem obecnie klientem": no closure date yet. Stored as a start date (today) without an end date.
+  if (formData.get("currentClient") === "on") {
+    const since = warsawTodayAsUtcMidnight();
+    await db.userBankHistory.upsert({
+      where: { userId_bankId_accountType: { userId: user.id, bankId, accountType } },
+      update: { wasClientFrom: since, wasClientUntil: null, eligibilityNotifiedAt: null },
+      create: { userId: user.id, bankId, accountType, wasClientFrom: since }
+    });
+    revalidatePath("/konto");
+    return;
+  }
 
   if (!untilValue) return;
 

@@ -157,11 +157,12 @@ async function verify() {
       assert.equal(ld.author.name, "Autor testowy CI");
       assert.equal(ld.datePublished, publishedAt);
       assert.equal(ld.dateModified, modifiedAt, "technical updatedAt is not a content edit");
-      const byline = result.text.match(/<article\b[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? "";
+      // v2: the byline is the paragraph with "Autor:" (the first paragraph of the article is the category link).
+      const byline = [...result.text.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)].map((m) => m[1]).find((p) => p.includes("Autor:")) ?? "";
       assert.ok(byline.includes(ld.author.name), "visible author matches structured data");
       if (publishedAt) assert.ok(byline.includes("01.10.2026"), "known publication date is visible");
-      else assert.ok(byline.includes("Data publikacji nieustalona"), "createdAt is not invented as publication date");
-      assert.equal(byline.includes("zaktualizowano"), Boolean(modifiedAt), "visible update matches structured data");
+      else assert.ok(byline.includes("Brak daty publikacji"), "createdAt is not invented as publication date");
+      assert.equal(byline.toLowerCase().includes("zaktualizowano"), Boolean(modifiedAt), "visible update matches structured data");
     }
     assert.equal((await get("/porownaj?typ=PERSONAL&liczba=4")).status, 200, "async searchParams on comparison page");
     assert.equal((await get("/api/promotions/ci-open/comments")).status, 200, "async params on comments route");
@@ -254,18 +255,21 @@ async function verify() {
     assert.match(off.location ?? "", /\/promocje\/ci-affoff$/);
     const offPage = await get("/promocje/ci-affoff");
     assert.equal(offPage.status, 200);
-    assert.ok(!offPage.text.includes("Przejdź do promocji"), "no CTA when the partner link is off");
+    // v2: the closing block carries aria-label="Przejdź do promocji", so look at link text, not any occurrence
+    assert.ok(!/<a [^>]*>[^<]*Przejdź do promocji/.test(offPage.text), "no CTA when the partner link is off");
     assert.ok(!offPage.text.includes('href="/out/'), "no /out/ link when the partner link is off");
-    assert.match(offPage.text, /nie udostępniamy obecnie naszego linku/);
+    assert.match(offPage.text, /Nie udostępniamy obecnie linku do tej oferty/);
     assert.equal(robots(offPage.text), "index, follow");
 
     // indexing is separate from availability
     assert.equal(robots((await get("/promocje/ci-pastdeadline")).text), "index, follow");
-    assert.equal(robots((await get("/promocje/ci-notpromoted")).text), "noindex, follow");
+    // v2 policy (robotsForStatus): an EXPIRED offer stays indexed for 90 days after its last sign-up day,
+    // and one closed early (end date still ahead) has nothing to age yet - so it is indexed too.
+    assert.equal(robots((await get("/promocje/ci-notpromoted")).text), "index, follow");
 
-    // cleared (NULL) fees show as "Nieustalone" on the page, never as a free "0 zł"
+    // cleared (NULL) fees show as "Brak danych" on the page (v2 wording), never as a free "0 zł"
     const nf = (await get("/promocje/ci-nullfees")).text;
-    assert.ok((nf.match(/Nieustalone/g) ?? []).length >= 3, "fee stat + both fee rows say Nieustalone");
+    assert.ok((nf.match(/Brak danych/g) ?? []).length >= 3, "fee stat + both fee rows say Brak danych");
     assert.ok(!nf.includes("0 zł*"), "no fake free marker");
 
     // closed bonus part is listed apart and not summed
@@ -276,11 +280,14 @@ async function verify() {
     // sitemap: open ones in, closed/not-promoted out; <lastmod> only where a real date is known
     const sm = (await get("/sitemap.xml")).text;
     for (const s of ["ci-open", "ci-lastday", "ci-affoff", "ci-closedpart"]) assert.ok(sm.includes(`/promocje/${s}<`), `${s} in sitemap`);
-    for (const s of ["ci-pastdeadline", "ci-notpromoted"]) assert.ok(!sm.includes(`/promocje/${s}<`), `${s} not in sitemap`);
+    // v2: ended offers inside the 90-day window are listed (same rule as robots); drafts and archived never are
+    for (const s of ["ci-pastdeadline", "ci-notpromoted"]) assert.ok(sm.includes(`/promocje/${s}<`), `${s} in sitemap (indexable ended offer)`);
+    for (const s of ["ci-draft", "ci-archived"]) assert.ok(!sm.includes(`/promocje/${s}<`), `${s} not in sitemap`);
     assert.ok(sm.includes("/jak-to-dziala<"));
     const entry = (slug) => (sm.match(new RegExp(`<url>\\s*<loc>[^<]*/promocje/${slug}</loc>([\\s\\S]*?)</url>`)) ?? [])[1] ?? "";
     assert.ok(entry("ci-open").includes("<lastmod>"), "known contentUpdatedAt -> lastmod");
-    assert.ok(!entry("ci-lastday").includes("<lastmod>"), "unknown date -> no lastmod");
+    // v2: lastmod falls back to the real verification date (lastVerifiedAt), which every fixture has
+    assert.ok(entry("ci-lastday").includes("<lastmod>"), "verified date -> lastmod");
 
     console.log("ci-smoke: all checks passed");
   } finally {

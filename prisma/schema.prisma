@@ -61,6 +61,12 @@ model User {
   // never shown as "last login" anywhere.
   lastActiveAt DateTime?
 
+  // Consent to the terms (regulamin) and the version accepted. Both stay NULL
+  // for accounts created before this was recorded: NULL means "no recorded
+  // acceptance", never "accepted".
+  termsAcceptedAt DateTime?
+  termsVersion    String?
+
   comments     Comment[]
   commentLikes CommentLike[]
   clicks       Click[]
@@ -178,6 +184,12 @@ enum AdminNotificationType {
   NEW_USER
   PROMOTION_CLICK
   PROMOTION_VIEW
+  EBROKER_NEW_CAMPAIGN
+  EBROKER_CAMPAIGN_CHANGED
+  EBROKER_CAMPAIGN_REMOVED
+  PROMOTION_CHECK_NEEDED
+  PROMOTION_AUTO_ADDED
+  PROMOTION_EXPIRED
 }
 
 // Lightweight in-app notification feed for the admin panel. No email
@@ -191,10 +203,47 @@ model AdminNotification {
   relatedUserId       String?
   relatedPromotionId  String?
   relatedBankId       String?
+  // Stable key for notifications raised by scheduled jobs, so a job that runs
+  // every day raises each event once. Null for event-style notifications.
+  dedupKey            String?                @unique
   createdAt           DateTime               @default(now())
 
   @@index([type, read])
   @@map("admin_notifications")
+}
+
+// Snapshot of one campaign from the public eBrokerPartner XML catalog, kept so
+// the daily watch can tell what is new, changed or gone. The catalog carries no
+// dates or statuses: presence here never proves a promotion is still valid and
+// absence never proves it ended — both only trigger a notification / a check.
+model EbrokerCampaign {
+  oid          String   @id
+  name         String
+  institution  String
+  category     String
+  subcategory  String
+  description  String
+  // Our partner tracking link exactly as published in the feed.
+  trackingUrl  String
+  // sha256 of name + description, to detect edits without diffing HTML.
+  contentHash  String
+  // Whether this category is one the site covers (personal / business accounts).
+  watched      Boolean  @default(false)
+  // The promotion on this site that corresponds to the campaign, if any.
+  promotionId  String?
+  firstSeenAt  DateTime @default(now())
+  lastSeenAt   DateTime @default(now())
+  // Set on the first run that did not find the campaign; cleared when it returns.
+  missingSince DateTime?
+  // Admin decision to stop tracking this campaign completely.
+  ignored      Boolean  @default(false)
+  // Why this campaign has no promotion of its own (e.g. "konto bez premii",
+  // "duplikat kanału kampanii 10857"). It leaves the "to add" queue but is still
+  // watched, so a bonus appearing later is noticed.
+  skipReason   String?
+
+  @@index([watched, promotionId])
+  @@map("ebroker_campaigns")
 }
 
 // ---------------------------------------------------------------------
@@ -282,6 +331,13 @@ model Promotion {
   // this on. Defaults to true so every existing and imported promotion
   // behaves exactly as before.
   affiliateLinkEnabled Boolean @default(true)
+
+  // What the bank pays us for one qualifying sign-up, in grosze (from the
+  // eBrokerPartner panel). ADMIN-ONLY: never selected into public pages or
+  // public API responses (see stripPrivateFields in services/promotions.ts).
+  // It feeds only the "Polecane" ordering (src/lib/recommended.ts), never the
+  // public "ocena serwisu", and that use is disclosed on /jak-zarabiamy.
+  affiliateCommissionCents Int?
 
   startDate DateTime
   endDate   DateTime

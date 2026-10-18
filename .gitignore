@@ -13,3 +13,6 @@ tsconfig.tsbuildinfo
 # one-off data-correction artifacts (contain row values; keep local)
 plan-*.json
 revert-*.json
+
+# Pobrane regulaminy i teksty z nich (robocze, cudze dokumenty) — tylko skrypty .py zostają
+data/candidates/_src/*/

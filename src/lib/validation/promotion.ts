@@ -73,6 +73,12 @@ export const promotionFormSchema = z
     affiliateUrl: z.string().url("Podaj poprawny adres URL"),
     // Whether our partner link is live for this offer (separate from status/dates).
     affiliateLinkEnabled: z.boolean().default(true),
+    // Partner commission per qualifying sign-up, in grosze. Blank = unknown (NULL).
+    // Admin-only: used for the "Polecane" ordering, never shown publicly.
+    affiliateCommissionCents: z.preprocess(
+      (v) => (v === undefined || v === "" || v === null || (typeof v === "number" && Number.isNaN(v)) ? null : v),
+      z.number().int().min(0).max(10_000_000).nullable().optional()
+    ),
     // Optional text/number/date fields the admin may deliberately clear. A blank
     // input is an explicit `null` (written as NULL); an ABSENT key stays `undefined`
     // (= "not sent", the stored value is kept). A typed 0 in cooldownMonths stays 0.

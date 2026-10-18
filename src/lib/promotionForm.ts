@@ -33,6 +33,7 @@ export function promotionToFormDefaults(promotion: PromotionForForm): Partial<Pr
     endDate: dateInput(promotion.endDate),
     affiliateUrl: promotion.affiliateUrl,
     affiliateLinkEnabled: promotion.affiliateLinkEnabled,
+    affiliateCommissionCents: promotion.affiliateCommissionCents ?? undefined,
     sourceUrl: promotion.sourceUrl ?? undefined,
     lastVerifiedAt: dateInput(promotion.lastVerifiedAt),
     eligibleFor: promotion.eligibleFor ?? undefined,
@@ -66,4 +67,26 @@ export function promotionToFormDefaults(promotion: PromotionForForm): Partial<Pr
         }
       : {}
   };
+}
+
+/**
+ * Soft editorial checks for the admin form. They only warn, never block a save.
+ */
+
+/** Longest summary that still fits a search-result snippet / a card without being cut. */
+export const SUMMARY_SOFT_LIMIT = 160;
+
+// Relative claims go stale the moment the set of offers changes (or when the
+// site-wide ranking is recomputed), so the rating reason should not make them.
+const RELATIVE_CLAIM = /najwyższ|najwyzsz|najniższ|najnizsz|w\s+tej\s+turze|w\s+tym\s+zestawieniu/i;
+
+export function ratingReasonWarning(reason: string | null | undefined): string | null {
+  if (!reason || !RELATIVE_CLAIM.test(reason)) return null;
+  return "Uzasadnienie oceny porównuje tę ofertę z innymi („najwyższa”, „najniższa”, „w tej turze”, „w tym zestawieniu”). Takie stwierdzenie przestaje być prawdziwe, gdy zmieni się zestaw ofert. Opisz raczej samą ofertę (premia, liczba i trudność warunków).";
+}
+
+export function summaryLengthWarning(summary: string | null | undefined): string | null {
+  const length = summary?.trim().length ?? 0;
+  if (length <= SUMMARY_SOFT_LIMIT) return null;
+  return `Krótki opis ma ${length} znaków. Powyżej ${SUMMARY_SOFT_LIMIT} wyszukiwarki i karty ucinają tekst. Skróć go, jeśli możesz (zapis nie jest blokowany).`;
 }

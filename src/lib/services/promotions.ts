@@ -2,16 +2,25 @@ import { db } from "@/lib/db";
 import { Prisma, PromotionStatus, Difficulty } from "@prisma/client";
 import { recomputeRatings } from "./ratings";
 import { signupCutoff } from "@/lib/promotionAvailability";
+import { sortRecommended } from "@/lib/recommended";
+import { accountTypeWhere } from "@/lib/accountTypes";
 
-export type SortKey = "top-rated" | "highest-bonus" | "easiest" | "newest" | "ending-soon";
+export type SortKey = "recommended" | "top-rated" | "highest-bonus" | "easiest" | "newest" | "ending-soon";
 
 export interface PromotionFilters {
   q?: string;
   bankSlug?: string;
+  /**
+   * "PERSONAL" = every non-business type (PERSONAL, SAVINGS, YOUNG, JOINT),
+   * "BUSINESS" = business only, any other AccountType = exactly that type
+   * (src/lib/accountTypes.ts, the single definition of osobiste/firmowe).
+   */
   accountType?: string;
   difficulty?: string[];
   minBonusCents?: number;
   maxAccountFeeCents?: number; // "bez opłat" style filter
+  /** true = the ended offers (sign-up closed) instead of the open ones. */
+  ended?: boolean;
   sort?: SortKey;
 }
 
@@ -22,14 +31,25 @@ export interface PromotionFilters {
  * anything whose end_date has already passed, even if a scheduled job
  * hasn't flipped its status yet (belt-and-braces against a missed cron).
  */
-function activeWhere(): Prisma.PromotionWhereInput {
+export function activeWhere(): Prisma.PromotionWhereInput {
   return {
     status: PromotionStatus.ACTIVE,
     endDate: { gte: signupCutoff() }
   };
 }
 
-function sortToOrderBy(sort?: SortKey): Prisma.PromotionOrderByWithRelationInput[] {
+/**
+ * Offers whose sign-up window has closed: status EXPIRED, or still ACTIVE
+ * with a deadline in the past (a missed cron). DRAFT and ARCHIVED never show.
+ */
+export function endedWhere(): Prisma.PromotionWhereInput {
+  return {
+    status: { in: [PromotionStatus.ACTIVE, PromotionStatus.EXPIRED] },
+    endDate: { lt: signupCutoff() }
+  };
+}
+
+export function sortToOrderBy(sort?: SortKey): Prisma.PromotionOrderByWithRelationInput[] {
   switch (sort) {
     case "highest-bonus":
       return [{ maxBonusCents: "desc" }];
@@ -40,16 +60,35 @@ function sortToOrderBy(sort?: SortKey): Prisma.PromotionOrderByWithRelationInput
     case "ending-soon":
       return [{ endDate: "asc" }];
     case "top-rated":
+    case "recommended": // re-ordered in code after the query, see listActivePromotions
     default:
       return [{ rating: "desc" }, { maxBonusCents: "desc" }];
   }
 }
 
-export async function listActivePromotions(filters: PromotionFilters = {}) {
-  const where: Prisma.PromotionWhereInput = {
-    ...activeWhere(),
+/**
+ * Fields that must never reach a public page, API response or client
+ * component. The partner commission is business-internal: it only feeds the
+ * "Polecane" ordering. Every public read path goes through this.
+ */
+export function stripPrivateFields<T extends { affiliateCommissionCents?: number | null }>(
+  row: T
+): Omit<T, "affiliateCommissionCents"> {
+  const { affiliateCommissionCents, ...rest } = row;
+  void affiliateCommissionCents; // intentionally dropped
+  return rest;
+}
+
+/**
+ * The public-listing WHERE shared by every read path that honours
+ * PromotionFilters (full rows here, slim cards in promotionCards.ts), so the
+ * two can never disagree about which offers a filter matches.
+ */
+export function buildActiveWhere(filters: PromotionFilters = {}): Prisma.PromotionWhereInput {
+  return {
+    ...(filters.ended ? endedWhere() : activeWhere()),
     ...(filters.bankSlug ? { bank: { slug: filters.bankSlug } } : {}),
-    ...(filters.accountType ? { accountType: filters.accountType as never } : {}),
+    ...accountTypeWhere(filters.accountType),
     ...(filters.difficulty?.length ? { difficulty: { in: filters.difficulty as never[] } } : {}),
     ...(filters.minBonusCents ? { maxBonusCents: { gte: filters.minBonusCents } } : {}),
     ...(filters.maxAccountFeeCents !== undefined
@@ -70,12 +109,33 @@ export async function listActivePromotions(filters: PromotionFilters = {}) {
         }
       : {})
   };
+}
 
-  return db.promotion.findMany({
+export async function listActivePromotions(filters: PromotionFilters = {}) {
+  const where = buildActiveWhere(filters);
+
+  const rows = await db.promotion.findMany({
     where,
     include: { bank: true, fees: true, conditions: { orderBy: { order: "asc" }, take: 1 } },
     orderBy: sortToOrderBy(filters.sort)
   });
+
+  // "Polecane" (the default listing order) blends the rating with the partner
+  // commission; the commission itself is removed from what callers receive.
+  const ordered =
+    filters.sort === "recommended" || filters.sort === undefined
+      ? sortRecommended(
+          rows.map((row) => ({
+            row,
+            accountType: row.accountType as string,
+            rating: Number(row.rating),
+            maxBonusCents: row.maxBonusCents,
+            commissionCents: row.affiliateCommissionCents,
+            slug: row.slug
+          }))
+        ).map((x) => x.row)
+      : rows;
+  return ordered.map(stripPrivateFields);
 }
 
 export async function getPromotionBySlug(slug: string) {
@@ -94,7 +154,7 @@ export async function getPromotionBySlug(slug: string) {
   // A DRAFT promotion is only reachable through the admin preview link,
   // never indexable/listed publicly. Callers on the public site should
   // treat this the same as "not found" unless previewing.
-  return promotion;
+  return stripPrivateFields(promotion);
 }
 
 export async function countActivePromotions(): Promise<number> {
@@ -112,7 +172,7 @@ export interface EffortShowcaseItem {
 const DIFFICULTY_RANK: Record<Difficulty, number> = { VERY_EASY: 0, EASY: 1, MEDIUM: 2, HARD: 3 };
 
 /**
- * Two real, currently-active PERSONAL-account promotions used on the
+ * Two real, currently-active personal-account promotions used on the
  * homepage "Ile wysiłku wymaga promocja?" section — the easiest-difficulty
  * example available and the hardest-difficulty example available, picking
  * the highest bonus within each tier. Restricted to personal accounts so
@@ -123,7 +183,7 @@ const DIFFICULTY_RANK: Record<Difficulty, number> = { VERY_EASY: 0, EASY: 1, MED
  */
 export async function getEffortShowcase(): Promise<EffortShowcaseItem[]> {
   const promos = await db.promotion.findMany({
-    where: { ...activeWhere(), accountType: "PERSONAL" },
+    where: { ...activeWhere(), ...accountTypeWhere("PERSONAL") },
     select: { slug: true, name: true, maxBonusCents: true, difficulty: true, bank: { select: { name: true } } }
   });
   if (promos.length === 0) return [];
@@ -155,10 +215,28 @@ export async function getEffortShowcase(): Promise<EffortShowcaseItem[]> {
  * itself immune to a missed run because it filters on end_date directly.
  */
 export async function expirePastPromotions(): Promise<number> {
-  const result = await db.promotion.updateMany({
-    where: { status: PromotionStatus.ACTIVE, endDate: { lt: signupCutoff() } },
-    data: { status: PromotionStatus.EXPIRED }
+  const where = { status: PromotionStatus.ACTIVE, endDate: { lt: signupCutoff() } };
+  const expiring = await db.promotion.findMany({
+    where,
+    select: { id: true, name: true, endDate: true, bank: { select: { name: true } } }
   });
+  const result = await db.promotion.updateMany({ where, data: { status: PromotionStatus.EXPIRED } });
+  // One notification per promotion (dedupKey makes a re-run harmless).
+  for (const p of expiring) {
+    await db.adminNotification
+      .create({
+        data: {
+          type: "PROMOTION_EXPIRED",
+          title: `Promocja wygasła: ${p.bank.name}`,
+          body: `„${p.name}” skończyła się ${p.endDate.toISOString().slice(0, 10)} i została oznaczona jako wygasła. Jeśli bank ją przedłużył, zmień datę końca.`,
+          relatedPromotionId: p.id,
+          dedupKey: `promo-expired:${p.id}:${p.endDate.toISOString().slice(0, 10)}`
+        }
+      })
+      .catch((e: { code?: string }) => {
+        if (e.code !== "P2002") throw e;
+      });
+  }
   // Promotions leaving the active set shift everyone else's relative score.
   if (result.count > 0) await recomputeRatings();
   return result.count;

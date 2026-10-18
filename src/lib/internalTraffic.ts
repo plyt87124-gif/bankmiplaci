@@ -1,3 +1,6 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
 /**
  * Site owner / test accounts whose activity should never count as real
  * traffic — see INTERNAL_TRAFFIC_EMAILS in .env. Checked wherever a
@@ -18,4 +21,18 @@ function internalEmails(): Set<string> {
 export function isInternalUser(email?: string | null): boolean {
   if (!email) return false;
   return internalEmails().has(email.toLowerCase());
+}
+
+/**
+ * The owner's own visits never count: an e-mail listed in INTERNAL_TRAFFIC_EMAILS,
+ * or ANY visit with an admin panel session open (the owner browsing the site
+ * while signed in to the admin, whichever visitor account is active).
+ */
+export async function isInternalVisitor(email?: string | null): Promise<boolean> {
+  if (isInternalUser(email)) return true;
+  try {
+    return Boolean(await getServerSession(authOptions));
+  } catch {
+    return false;
+  }
 }

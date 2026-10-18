@@ -4,8 +4,23 @@ const nextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "**" }]
   },
+  async redirects() {
+    return [
+      // /blog/kategoria has no content of its own; the categories are listed on /blog.
+      { source: "/blog/kategoria", destination: "/blog", permanent: true }
+    ];
+  },
   async headers() {
     return [
+      {
+        // Every route: no MIME sniffing, and only the origin (never the full URL, which can carry
+        // ?q= / ?ref= / tokens) goes to other sites.
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }
+        ]
+      },
       {
         // Homepage only. Allows the marketing page to be embedded in an
         // iframe exclusively by Kaminski Foundry (kaminskifoundry.pl), while

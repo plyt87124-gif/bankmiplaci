@@ -34,7 +34,7 @@ export function checklistDeadlineReminderEmailHtml({
       (i) => `
         <li style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
           <strong>${i.bankName} — ${i.promotionName}</strong><br />
-          <span style="color: #475569;">${i.monthLabel}: zostało ${i.daysLeft} ${i.daysLeft === 1 ? "dzień" : "dni"}, a nie masz jeszcze odznaczonych wszystkich kroków.</span>
+          <span style="color: #475569;">${i.monthLabel}: zostało ${i.daysLeft} ${i.daysLeft === 1 ? "dzień" : "dni"}, a nie masz jeszcze zaznaczonych wszystkich kroków.</span>
           ${i.rewardLabel ? `<br /><span style="color: #b45309;">Do zdobycia: ${i.rewardLabel}</span>` : ""}
         </li>`
     )

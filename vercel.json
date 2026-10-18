@@ -3,12 +3,14 @@
     "deploymentEnabled": {
       "fix/etap1-claude-code-poprawki": false,
       "fix/etap1-codex-readiness": false,
-      "fix/stats-sequential-queries": false
+      "fix/stats-sequential-queries": false,
+      "redesign/v2": false
     }
   },
   "crons": [
     { "path": "/api/cron/expire-promotions", "schedule": "0 3 * * *" },
     { "path": "/api/cron/check-eligibility", "schedule": "15 3 * * *" },
-    { "path": "/api/cron/checklist-deadline-reminders", "schedule": "45 3 * * *" }
+    { "path": "/api/cron/checklist-deadline-reminders", "schedule": "45 3 * * *" },
+    { "path": "/api/cron/ebroker-watch", "schedule": "30 4 * * *" }
   ]
 }

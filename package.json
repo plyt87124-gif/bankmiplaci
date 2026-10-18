@@ -9,7 +9,7 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
-    "test": "tsx --test tests/*.test.ts",
+    "test": "tsx --test tests/*.test.ts tests/*.test.tsx",
     "test:db": "tsx --test --test-concurrency=1 tests/db/*.test.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -20,7 +20,8 @@
     "import:promotions": "tsx scripts/import-promotions.ts",
     "recompute:ratings": "tsx scripts/recompute-ratings.ts",
     "checklist:reminders": "tsx scripts/checklist-deadline-reminders.ts",
-    "audit:fees": "tsx scripts/audit-unverified-fees.ts"
+    "audit:fees": "tsx scripts/audit-unverified-fees.ts",
+    "audit:a11y": "node scripts/a11y-audit.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -37,9 +38,11 @@
     "react-markdown": "^10.1.0",
     "recharts": "^3.10.1",
     "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
     "resend": "^6.22.0",
     "swr": "^2.2.5",
     "tailwind-merge": "^2.5.2",
+    "unified": "^11.0.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -50,6 +53,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "autoprefixer": "^10.4.20",
+    "axe-core": "^4.13.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "15.5.27",
     "postcss": "8.5.28",

@@ -71,14 +71,68 @@ export function isBonusPartOpen(part: { availableUntil?: Date | string | null },
   return part.availableUntil == null || !isDeadlinePassed(part.availableUntil, now);
 }
 
+/** How long (days after the last sign-up day) an ended offer stays indexable. */
+export const EXPIRED_INDEX_WINDOW_DAYS = 90;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /**
- * Search-engine policy, independent of sign-up availability: only ACTIVE
- * promotions are indexed (unchanged); everything else is noindex but keeps
- * `follow` so links from an archived page to current offers can still be
- * discovered. An ACTIVE promotion past its deadline stays indexable — its
- * sign-up is blocked elsewhere (isSignupOpen), not by dropping it from the
- * index. Affiliate-link rel attributes are handled separately on the links.
+ * Whole days since the offer's last sign-up day, counted on Poland's calendar:
+ * 0 = today IS the last day, 1 = it ended yesterday, negative = still ahead.
+ * Returns null when `endDate` is missing or not a valid date.
  */
-export function robotsForStatus(status: string): { index: boolean; follow: boolean } {
-  return status === "ACTIVE" ? { index: true, follow: true } : { index: false, follow: true };
+export function daysSinceDeadline(endDate: Date | string | null | undefined, now: Date = new Date()): number | null {
+  if (endDate == null) return null;
+  const end = new Date(endDate).getTime();
+  if (Number.isNaN(end)) return null;
+  return Math.floor((signupCutoff(now).getTime() - end) / DAY_MS);
+}
+
+/**
+ * Smallest `endDate` of an ended offer that is still inside the indexing
+ * window. Use as `endDate: { gte: expiredIndexWindowStart() }` (together with
+ * `lt: signupCutoff()`) so DB filters match `robotsForStatus` exactly.
+ */
+export function expiredIndexWindowStart(now: Date = new Date()): Date {
+  return new Date(signupCutoff(now).getTime() - EXPIRED_INDEX_WINDOW_DAYS * DAY_MS);
+}
+
+/** Deadline passed, but not longer than EXPIRED_INDEX_WINDOW_DAYS ago. */
+export function isInExpiredIndexWindow(endDate: Date | string | null | undefined, now: Date = new Date()): boolean {
+  const days = daysSinceDeadline(endDate, now);
+  return days != null && days > 0 && days <= EXPIRED_INDEX_WINDOW_DAYS;
+}
+
+/**
+ * Search-engine policy (docs/redesign-v2/03-content-and-seo-plan.md section D),
+ * independent of sign-up availability. `follow` is always true so links from
+ * a noindex page to current offers can still be discovered.
+ *
+ * - DRAFT, ARCHIVED (and any unknown status): always noindex.
+ * - ACTIVE: indexed while open. Past its deadline it behaves like an ended
+ *   offer (the expire cron may simply not have run yet).
+ * - EXPIRED / past deadline: indexed for EXPIRED_INDEX_WINDOW_DAYS (90) days
+ *   after the last sign-up day (the page shows an "ended" banner and no CTA),
+ *   noindex afterwards - it moves to the archive.
+ * - `endDate` omitted/invalid: the age cannot be judged. ACTIVE stays indexed
+ *   (the pre-redesign behaviour), EXPIRED is noindex (conservative).
+ *   Pass it - every caller that has the promotion has the date.
+ *
+ * `now` is injectable for tests; the day boundary is Europe/Warsaw.
+ */
+export function robotsForStatus(
+  status: string,
+  endDate?: Date | string | null,
+  now: Date = new Date()
+): { index: boolean; follow: boolean } {
+  const indexed = { index: true, follow: true };
+  const hidden = { index: false, follow: true };
+  if (status !== "ACTIVE" && status !== "EXPIRED") return hidden;
+
+  const days = daysSinceDeadline(endDate, now);
+  if (days == null) return status === "ACTIVE" ? indexed : hidden;
+  // Still open (days <= 0), or - for an EXPIRED row - an end date that is
+  // still ahead because the offer was closed early: nothing to age yet.
+  if (days <= 0) return indexed;
+  return days <= EXPIRED_INDEX_WINDOW_DAYS ? indexed : hidden;
 }

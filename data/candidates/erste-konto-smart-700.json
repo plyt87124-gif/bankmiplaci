@@ -1,0 +1,180 @@
+{
+  "_comment": "Erste Bank Polska — „Do 700 zł na dowolny cel” (Konto Smart). Źródło: regulamin promocji (1.10.2026–31.03.2027, przystąpienie do 30.11.2026) i strona oferty Konta Smart. Kampania eBroker 13722.",
+  "bankSlug": "erste",
+  "ebrokerOid": "13722",
+  "promotion": {
+    "slug": "erste-konto-smart-do-700-zl-na-dowolny-cel",
+    "name": "Konto Smart z premią do 700 zł na dowolny cel",
+    "accountType": "PERSONAL",
+    "maxBonusCents": 70000,
+    "difficulty": "MEDIUM",
+    "rating": 7.0,
+    "status": "DRAFT",
+    "startDate": "2026-10-01",
+    "endDate": "2026-11-30",
+    "affiliateLinkEnabled": true,
+    "sourceUrl": "https://www.erste.pl/_fileserver/item/1528989",
+    "additionalSourceUrls": [
+      "https://www.erste.pl/ws-konto-smart-all/"
+    ],
+    "lastVerifiedAt": "2026-10-07",
+    "eligibleFor": "Pełnoletnie osoby z polskim obywatelstwem, które od 1.10.2024 do dnia zawarcia umowy nie miały konta osobistego w złotych w Erste Bank Polska (dawniej Santander Bank Polska) jako posiadacz lub współposiadacz. Konto z kartą debetową i usługami Erste online zakładasz online na erste.pl albo w aplikacji Erste przez opcję „Załóż konto” (przed zalogowaniem).",
+    "notEligibleFor": "Osoby, które w okresie przystąpienia mają już usługi Erste online, zakładają konto po zalogowaniu albo w placówce lub u doradcy mobilnego, oraz osoby z kontem osobistym w złotych w tym banku od 1.10.2024. Promocja nie łączy się z „Odkryj Konto Erste Platinum z nagrodą do 1500 zł”. Nagroda przysługuje za jedno konto; przy koncie wspólnym tylko jedna.",
+    "cooldownMonths": null,
+    "cooldownCutoffDate": "2024-10-01",
+    "summary": "Do 700 zł: 3 × 200 zł za aktywność w trzech kolejnych miesiącach po założeniu konta i 100 zł bonusu, jeśli spełnisz warunki w każdym z nich. Wniosek do 30.11.2026.",
+    "conditions": [
+      {
+        "title": "Załóż Konto Smart z kartą i usługami Erste online do 30.11.2026",
+        "description": "Wniosek i umowę o konto wraz z kartą debetową oraz usługami Erste online składasz na erste.pl albo w aplikacji Erste przed zalogowaniem (opcja „Załóż konto”), między 1.10 a 30.11.2026. Konto założone po zalogowaniu lub w placówce nie bierze udziału w promocji.",
+        "type": "account_opening",
+        "order": 0
+      },
+      {
+        "title": "Przy składaniu wniosku wyraź zgody i zaakceptuj regulamin promocji",
+        "description": "Wyrażasz zgodę na kontakt telefoniczny i elektroniczny w celach marketingowych oraz na korespondencję elektroniczną (EKK), nie składasz sprzeciwu wobec marketingu, podajesz aktywny numer telefonu i adres e-mail, zgadzasz się na przystąpienie do promocji i akceptujesz regulamin. Zgody musisz utrzymać do dnia wypłaty nagrody.",
+        "type": "other",
+        "order": 1
+      },
+      {
+        "title": "Wpływ min. 1000 zł miesięcznie na konto otwarte w promocji",
+        "description": "W każdym z trzech miesięcy kalendarzowych po miesiącu złożenia wniosku. Nie liczą się wpłaty gotówki w oddziale i we wpłatomacie ani przelewy z innego konta w Erste Bank Polska.",
+        "type": "inflow",
+        "order": 2
+      },
+      {
+        "title": "Min. 7 płatności kartą debetową lub BLIKIEM miesięcznie",
+        "description": "Płatności kartą i BLIKIEM można łączyć. Nie liczą się: wypłaty z bankomatów, wpłaty do wpłatomatów kartą, przelewy na telefon BLIK, wypłaty kodem BLIK i czek BLIK.",
+        "type": "card_payments",
+        "order": 3
+      },
+      {
+        "title": "Dodaj cel oszczędnościowy w usłudze Moje Cele i zaloguj się do aplikacji",
+        "description": "Co miesiąc: min. jeden cel w „Moje Cele” (w aplikacji Erste lub bankowości internetowej) oraz min. jedno logowanie do aplikacji Erste. Cel musisz utrzymać do dnia wypłaty nagrody.",
+        "type": "other",
+        "order": 4
+      },
+      {
+        "title": "Nagrody: 3 × 200 zł oraz 100 zł bonusu",
+        "description": "Za każdy z trzech miesięcy, w którym spełnisz wszystkie warunki, dostajesz 200 zł. Dodatkowe 100 zł, jeśli spełnisz warunki w każdym z trzech miesięcy. Konto, karta i usługi Erste online muszą być aktywne w dniu wypłaty. Nagrody są zwolnione z podatku (sprzedaż premiowa).",
+        "type": "deadline",
+        "order": 5
+      }
+    ],
+    "bonusParts": [
+      {
+        "label": "Nagroda za 1. miesiąc po złożeniu wniosku — 200 zł",
+        "amountCents": 20000,
+        "order": 0
+      },
+      {
+        "label": "Nagroda za 2. miesiąc po złożeniu wniosku — 200 zł",
+        "amountCents": 20000,
+        "order": 1
+      },
+      {
+        "label": "Nagroda za 3. miesiąc po złożeniu wniosku — 200 zł",
+        "amountCents": 20000,
+        "order": 2
+      },
+      {
+        "label": "Bonus za spełnienie warunków we wszystkich trzech miesiącach — 100 zł",
+        "amountCents": 10000,
+        "order": 3
+      }
+    ],
+    "fees": {
+      "accountFeeCents": 600,
+      "accountFeeWaiverCondition": "co miesiąc płatności kartą lub BLIKIEM na łącznie min. 300 zł",
+      "cardFeeCents": 900,
+      "cardFeeWaiverCondition": "co miesiąc płatności kartą lub BLIKIEM na łącznie min. 300 zł",
+      "otherFee": "Opłaty odczytane ze strony oferty Konta Smart (erste.pl); przelewy natychmiastowe i zwykłe w internecie 0 zł. Przed założeniem konta sprawdź aktualną Taryfę opłat i prowizji banku.",
+      "sourceUrl": "https://www.erste.pl/ws-konto-smart-all/"
+    }
+  },
+  "checklistSteps": [
+    {
+      "order": 0,
+      "monthLabel": "Otwarcie konta",
+      "title": "Wejdź na erste.pl lub do aplikacji Erste i wybierz „Załóż konto” (przed zalogowaniem)"
+    },
+    {
+      "order": 1,
+      "monthLabel": "Otwarcie konta",
+      "title": "Złóż wniosek o Konto Smart z kartą debetową i usługami Erste online do 30.11.2026"
+    },
+    {
+      "order": 2,
+      "monthLabel": "Otwarcie konta",
+      "title": "Wyraź zgody marketingowe i na EKK, podaj aktywny telefon i e-mail"
+    },
+    {
+      "order": 3,
+      "monthLabel": "Otwarcie konta",
+      "title": "Zgódź się na przystąpienie do promocji i zaakceptuj jej regulamin we wniosku"
+    },
+    {
+      "order": 10,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zapewnij wpływ min. 1000 zł (bez wpłat gotówki i przelewów z Erste)"
+    },
+    {
+      "order": 11,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zapłać min. 7 razy kartą lub BLIKIEM"
+    },
+    {
+      "order": 12,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Dodaj cel oszczędnościowy w Moje Cele i zaloguj się do aplikacji Erste"
+    },
+    {
+      "order": 13,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Odbierz nagrodę: 200 zł (do końca następnego miesiąca)",
+      "rewardCents": 20000
+    },
+    {
+      "order": 20,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zapewnij wpływ min. 1000 zł (bez wpłat gotówki i przelewów z Erste)"
+    },
+    {
+      "order": 21,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zapłać min. 7 razy kartą lub BLIKIEM"
+    },
+    {
+      "order": 22,
+      "monthLabel": "Miesiąc 2",
+      "title": "Utrzymaj cel w Moje Cele i zaloguj się do aplikacji Erste"
+    },
+    {
+      "order": 23,
+      "monthLabel": "Miesiąc 2",
+      "title": "Odbierz nagrodę: 200 zł (do końca następnego miesiąca)",
+      "rewardCents": 20000
+    },
+    {
+      "order": 30,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zapewnij wpływ min. 1000 zł (bez wpłat gotówki i przelewów z Erste)"
+    },
+    {
+      "order": 31,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zapłać min. 7 razy kartą lub BLIKIEM"
+    },
+    {
+      "order": 32,
+      "monthLabel": "Miesiąc 3",
+      "title": "Utrzymaj cel w Moje Cele i zaloguj się do aplikacji Erste"
+    },
+    {
+      "order": 34,
+      "monthLabel": "Miesiąc 3",
+      "title": "Odbierz nagrody: 200 zł (do końca następnego miesiąca) + 100 zł za spełnienie warunków we wszystkich trzech miesiącach",
+      "rewardCents": 30000
+    }
+  ]
+}

@@ -1,53 +1,37 @@
-"use client";
-
-import { useState } from "react";
-import { CheckSquare, Square } from "lucide-react";
-
 interface Condition {
   id: string;
   title: string;
   description?: string | null;
 }
 
+/**
+ * Conditions of an offer as a numbered, static list (docs/redesign-v2/02-layout-spec.md,
+ * offer page 5a). The old in-memory checkboxes are gone on purpose: ticking
+ * lives in the real ściąga (PromotionChecklist), which saves progress; a
+ * second, throw-away tick list on the offer page only suggested the same.
+ * Server-compatible (no state). Same props as before, so callers keep working.
+ */
 export function ConditionsChecklist({ conditions }: { conditions: Condition[] }) {
-  const [checked, setChecked] = useState<Set<string>>(() => new Set());
-
-  const toggle = (id: string) => {
-    setChecked((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  if (conditions.length === 0) return null;
 
   return (
-    <div>
-      <ul className="space-y-2">
-        {conditions.map((c) => (
-          <li key={c.id}>
-            <button
-              onClick={() => toggle(c.id)}
-              className="flex w-full items-start gap-3 rounded-xl2 border border-ink-100 bg-surface p-4 text-left hover:border-teal-500"
-              aria-pressed={checked.has(c.id)}
-            >
-              {checked.has(c.id) ? (
-                <CheckSquare className="mt-0.5 h-5 w-5 shrink-0 text-teal-600" />
-              ) : (
-                <Square className="mt-0.5 h-5 w-5 shrink-0 text-ink-300" />
-              )}
-              <div>
-                <p className="font-medium text-ink-900">{c.title}</p>
-                {c.description && <p className="mt-1 text-sm text-ink-500">{c.description}</p>}
-              </div>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-3 text-xs text-ink-500">
-        Zaznaczanie kroków pomaga śledzić Twój postęp — nie jest przesyłane do banku ani do nas. Decydujące są
-        zawsze terminy podane w regulaminie promocji, nie zaznaczone przez Ciebie pola.
-      </p>
-    </div>
+    // role="list": list-style is reset by the base styles, and Safari/VoiceOver
+    // then stops announcing a list unless the role is explicit.
+    <ol role="list" className="space-y-5">
+      {conditions.map((c, index) => (
+        <li key={c.id} className="flex items-start gap-4">
+          <span
+            aria-hidden="true"
+            className="num flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line-strong bg-surface font-display text-h4 text-ink-900"
+          >
+            {index + 1}
+          </span>
+          <div className="min-w-0 pt-1">
+            <p className="text-h4 text-ink-900">{c.title}</p>
+            {c.description && <p className="mt-1 text-article text-ink-700">{c.description}</p>}
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }

@@ -110,18 +110,19 @@ async function main() {
       assert.deepEqual(observed.failedRequests, [], `${viewport.name} ${route}: failed requests`);
 
       if (route === "/promocje/ci-nullfees" || route === "/promocje/ci-conditional-legacy") {
-        const body = await observed.page.locator("body").innerText();
-        assert.match(body, /Nieustalone/, `${route}: unverified fee is explicit`);
-        assert.doesNotMatch(body, /Bez opłat za prowadzenie/, `${route}: no unconditional-free badge`);
+        // v2 wording: an unverified fee says "Brak danych" in the summary bar and never claims to be free.
+        const facts = await observed.page.locator('section[aria-labelledby="w-skrocie"]').innerText();
+        assert.match(facts, /Brak danych/, `${route}: unverified fee is explicit`);
+        assert.doesNotMatch(facts, /Bez opłat/, `${route}: no unconditional-free badge`);
       }
       if (route === "/promocje/ci-conditional-legacy") {
-        await assert.doesNotReject(() => observed.page.getByText(/Znany warunek zwolnienia: wpływ co najmniej 1000 zł miesięcznie/).waitFor());
+        await assert.doesNotReject(() => observed.page.getByText(/0\s*zł gdy wpływ co najmniej 1000 zł miesięcznie/).waitFor());
       }
       if (route === "/blog/ci-article-updated") {
         await assert.doesNotReject(() => observed.page.getByText(/Autor testowy CI.*01\.10\.2026/).waitFor());
       }
       if (route === "/blog/ci-article-unknown") {
-        await assert.doesNotReject(() => observed.page.getByText(/Data publikacji nieustalona/).waitFor());
+        await assert.doesNotReject(() => observed.page.getByText(/Brak daty publikacji/).waitFor());
       }
       await observed.page.close();
     }
@@ -129,10 +130,10 @@ async function main() {
     if (viewport.width === 360) {
       const observed = await isolatedPage(context);
       await observed.page.goto(BASE, { waitUntil: "networkidle" });
-      const button = observed.page.getByRole("button", { name: "Otwórz menu" });
+      const button = observed.page.getByRole("button", { name: "Menu", exact: true });
       assert.equal(await button.getAttribute("aria-expanded"), "false");
       await button.click();
-      assert.equal(await observed.page.getByRole("button", { name: "Zamknij menu" }).getAttribute("aria-expanded"), "true");
+      assert.equal(await observed.page.getByRole("button", { name: "Menu", exact: true }).getAttribute("aria-expanded"), "true");
       await observed.page.screenshot({ path: path.join(OUT, "360-menu-open.png"), fullPage: true });
       report.menu = { screenshot: "360-menu-open.png", consoleErrors: observed.consoleErrors, failedRequests: observed.failedRequests };
       assert.deepEqual(observed.consoleErrors, [], "mobile menu: console errors");

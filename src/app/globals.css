@@ -2,109 +2,326 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Bankmiplaci v2 "Papier i tusz" - tokens, base typography, shared control
+ * classes. Spec: docs/redesign-v2/01-design-spec.md (sections 2, 3, 4).
+ * All motion (keyframes, reveal, reduced-motion) lives in src/styles/motion.css.
+ *
+ * Typography classes (combine family + size + weight, responsive steps built in):
+ *   .type-stat  .type-amount  .type-h1  .type-h2  .type-h3  .type-h4
+ *   .type-lead  .type-article .type-label        + .num (lining+tabular digits)
+ * Layout helpers: .container-page (70rem), .container-reading (44rem).
+ * Controls: .input  .select  .checkbox (.checkbox-sm)  .link-inline
+ */
+
 @layer base {
   :root {
     color-scheme: light;
-    --color-paper: 246 247 245;
+
+    --color-paper: 249 247 242;
     --color-surface: 255 255 255;
-    --color-ink-900: 14 27 42;
-    /* Fixed — does NOT flip in .dark below. For solid dark button/pill
-       surfaces (paired with literal text-white) that must stay a dark,
-       high-contrast navy in both themes — ink-900 itself flips to
-       near-white in dark mode for body-text readability, which would
-       make a bg-ink-900 + text-white button invisible if reused there. */
-    --color-ink-solid: 14 27 42;
-    --color-ink-700: 36 52 71;
-    --color-ink-500: 81 97 118;
-    --color-ink-300: 139 152 168;
-    --color-ink-100: 228 232 236;
-    --color-teal-700: 11 94 82;
-    --color-teal-600: 15 123 108;
-    --color-teal-500: 21 150 131;
-    --color-teal-100: 220 239 234;
-    --color-gold-600: 169 130 42;
-    --color-gold-100: 244 234 210;
-    --color-coral-600: 194 76 58;
-    --color-coral-100: 247 226 221;
+    --color-sunken: 241 238 231;
+
+    --color-ink-900: 26 28 32;
+    --color-ink-700: 55 59 66;
+    --color-ink-500: 88 93 102;
+    --color-ink-400: 104 108 116;
+    /* icons / decoration ONLY - never text */
+    --color-ink-300: 156 158 162;
+    /* fills (chips, skeleton, checkbox bg) - NOT borders */
+    --color-ink-100: 238 234 226;
+    /* LEGACY: fixed dark plate (paired with literal white text); does not flip. */
+    --color-ink-solid: 26 28 32;
+
+    --color-line: 226 222 213;
+    /* borders of form controls (>= 3:1, WCAG 1.4.11) */
+    --color-line-strong: 128 128 126;
+
+    --color-action: 2 37 83;
+    --color-action-hover: 1 26 62;
+    --color-on-action: 255 255 255;
+    --color-focus-ring: 3 121 246;
+    /* The "mi" of the wordmark: decorative, never text on its own. */
+    --color-brand-soft: 3 121 246;
+
+    --color-teal-700: 2 37 83;
+    --color-teal-600: 20 78 170;
+    --color-teal-500: 3 121 246;
+    --color-teal-100: 226 238 253;
+
+    --color-gold-600: 130 92 10;
+    /* Spec value was 176 129 30 (2.94:1 on gold-100, below the 3:1 graphics
+       threshold); darkened slightly - see the WP-01 report. */
+    --color-gold-500: 172 125 24;
+    --color-gold-100: 246 235 205;
+
+    --color-coral-600: 160 45 32;
+    --color-coral-100: 248 225 220;
+    /* text/icons on a solid coral-600 fill (danger button) */
+    --color-on-coral: 255 255 255;
+
+    --color-success: 22 101 62;
+    --color-success-100: 223 240 229;
+    --color-ember-600: 176 76 8;
+    --color-ember-100: 252 233 214;
+    --color-info: 42 82 130;
+    --color-info-100: 226 234 244;
+
+    /* bank-logo tile stays white in both themes */
+    --color-logo-tile: 255 255 255;
+
+    /* Big amounts (offer card, offer hero). To move every amount to Inter,
+       change this single line to `var(--font-body)`. */
+    --font-amount: var(--font-brand);
+
+    /* Native checkboxes/radios/progress follow the action colour. */
+    accent-color: rgb(var(--color-action));
+
+    /* Only floating layers cast a shadow (popover/select menu, modal, sticky mobile bar). */
+    --shadow-pop: 0 6px 20px -6px rgb(26 28 32 / 0.18);
+    --shadow-modal: 0 12px 40px -12px rgb(26 28 32 / 0.28);
   }
+
   .dark {
     color-scheme: dark;
+
     --color-paper: 11 20 32;
     --color-surface: 21 32 46;
+    --color-sunken: 8 16 26;
+
     --color-ink-900: 242 244 246;
     --color-ink-700: 199 207 216;
     --color-ink-500: 147 160 175;
+    --color-ink-400: 132 146 162;
     --color-ink-300: 90 107 125;
     --color-ink-100: 38 50 68;
-    --color-teal-700: 43 168 148;
-    --color-teal-600: 34 199 174;
-    --color-teal-500: 28 179 156;
-    --color-teal-100: 18 53 47;
-    --color-gold-600: 214 169 74;
-    --color-gold-100: 58 47 23;
-    --color-coral-600: 224 107 86;
-    --color-coral-100: 58 33 28;
+    /* LEGACY: visible slate plate (10:1 with white text) so admin buttons stay readable. */
+    --color-ink-solid: 56 72 92;
+
+    --color-line: 40 54 72;
+    --color-line-strong: 105 122 142;
+
+    --color-action: 120 178 255;
+    --color-action-hover: 164 204 255;
+    --color-on-action: 5 18 44;
+    --color-focus-ring: 120 178 255;
+    --color-brand-soft: 70 160 255;
+
+    --color-teal-700: 120 178 255;
+    --color-teal-600: 90 152 240;
+    --color-teal-500: 62 130 225;
+    --color-teal-100: 24 44 82;
+
+    --color-gold-600: 230 190 100;
+    --color-gold-500: 190 145 45;
+    --color-gold-100: 54 44 22;
+
+    --color-coral-600: 240 128 110;
+    --color-coral-100: 58 30 26;
+    --color-on-coral: 26 12 10;
+
+    --color-success: 110 200 150;
+    --color-success-100: 24 50 36;
+    --color-ember-600: 255 163 92;
+    --color-ember-100: 62 38 20;
+    --color-info: 130 170 225;
+    --color-info-100: 26 38 56;
+
+    --color-logo-tile: 255 255 255;
+
+    --shadow-modal: 0 12px 40px -12px rgb(0 0 0 / 0.55);
   }
+
   html {
-    @apply scroll-smooth;
+    -webkit-text-size-adjust: 100%;
+    /* Room for the sticky header when jumping to an anchor / focusing a target. */
+    scroll-padding-top: 5rem;
   }
+  section[id],
+  h2[id],
+  h3[id] {
+    scroll-margin-top: 5rem;
+  }
+
   body {
-    @apply bg-paper text-ink-900 font-body antialiased transition-colors;
+    @apply bg-paper font-body text-ui text-ink-900 antialiased;
+    font-optical-sizing: auto;
+    /* Polish compounds and URLs must not overflow narrow cards; never break mid-word otherwise. */
+    overflow-wrap: break-word;
+    hyphens: manual;
   }
-  h1, h2, h3, h4 {
-    @apply font-display text-ink-900;
+
+  h1 {
+    @apply font-display font-semibold text-ink-900;
+    letter-spacing: -0.015em;
   }
+  h2 {
+    @apply font-brand font-semibold text-ink-900;
+  }
+  h3,
+  h4 {
+    @apply font-body font-semibold text-ink-900;
+  }
+  h1 {
+    @apply text-h1 md:text-h1-lg;
+    text-wrap: balance;
+  }
+  h2 {
+    @apply text-h2 md:text-h2-lg;
+    text-wrap: balance;
+  }
+  h3 {
+    @apply text-h3;
+  }
+  h4 {
+    @apply text-h4;
+  }
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Icons: one stroke weight everywhere (override per icon with --icon-stroke). */
+  svg.lucide {
+    stroke-width: var(--icon-stroke, 1.5);
+  }
+
   :focus-visible {
-    @apply outline outline-2 outline-offset-2 outline-teal-600;
+    outline: 2px solid rgb(var(--color-focus-ring));
+    outline-offset: 2px;
   }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
+
+  /* Native <dialog> (AuthModal, mobile filter sheet): follow the tokens, dim the page without blur. */
+  dialog {
+    @apply bg-surface text-ink-900;
+  }
+  dialog::backdrop {
+    background-color: rgb(17 19 23 / 0.55);
   }
 }
 
 @layer components {
   .container-page {
-    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-[70rem] px-4 sm:px-6 lg:px-8;
   }
-  /* Fired once when a month's reward becomes unlocked, for a small
-     gamified payoff — see RewardRow in PromotionChecklist.tsx. */
-  @keyframes reward-pop {
-    0% { transform: scale(1); }
-    35% { transform: scale(1.08); }
-    100% { transform: scale(1); }
+  /* Reading column (articles, legal and text pages): 44rem, about 68ch at 17 px. */
+  .container-reading {
+    @apply mx-auto w-full max-w-[44rem];
   }
-  .animate-reward-pop {
-    animation: reward-pop 0.6s ease-out;
+
+  /* Surfaces that stay WHITE in the dark theme too (bank-logo tile): inside
+     them the ink/line tokens keep their LIGHT-theme values, so the monogram
+     and ring look the same in both themes. */
+  .tile-scope {
+    --color-ink-100: 238 234 226;
+    --color-ink-700: 55 59 66;
+    --color-ink-900: 26 28 32;
+    --color-line: 226 222 213;
   }
-  /* Fired once the lifetime earnings badge (EarningsCounter, next to
-     "Moje konto") finishes counting up to its new ceiling after a
-     checklist box is checked — a spring-style overshoot/settle on the
-     number itself, paired with a small radial spark burst below. */
-  @keyframes earnings-pop {
-    0% { transform: scale(1); }
-    25% { transform: scale(1.4); }
-    50% { transform: scale(0.92); }
-    75% { transform: scale(1.08); }
-    100% { transform: scale(1); }
+
+  /* Lining + tabular digits for every number that is compared or aligned. */
+  .num {
+    font-variant-numeric: lining-nums tabular-nums;
   }
-  .animate-earnings-pop {
-    animation: earnings-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ---- Typography presets (family + size + weight + responsive step) ---- */
+  .type-stat {
+    @apply font-amount text-stat md:text-stat-lg;
+    font-variant-numeric: lining-nums tabular-nums;
   }
-  @keyframes earnings-firework {
-    0% { transform: translate(-50%, -50%) rotate(var(--earnings-angle)) translateY(0) scale(1); opacity: 1; }
-    100% { transform: translate(-50%, -50%) rotate(var(--earnings-angle)) translateY(-22px) scale(0); opacity: 0; }
+  .type-amount {
+    @apply font-amount text-amount;
+    font-variant-numeric: lining-nums tabular-nums;
   }
-  .animate-earnings-firework {
-    animation: earnings-firework 0.7s ease-out forwards;
+  .type-h1 {
+    @apply font-display text-h1 md:text-h1-lg;
+    text-wrap: balance;
   }
-  /* Shared native form-control styling — explicit bg/text so selects,
-     inputs and textareas never fall back to the browser's own default
-     field appearance, which doesn't track our light/dark theme. */
-  .input {
-    @apply w-full rounded-lg border border-ink-100 bg-surface px-3 py-2 text-sm text-ink-900 outline-none focus:border-teal-500;
+  .type-h2 {
+    @apply font-brand text-h2 md:text-h2-lg;
+  }
+  .type-h3 {
+    @apply font-body text-h3;
+  }
+  .type-h4 {
+    @apply font-body text-h4;
+  }
+  .type-lead {
+    @apply font-body text-lead md:text-lead-lg;
+  }
+  .type-article {
+    @apply font-body text-article lg:text-article-lg;
+  }
+  /* Small uppercase caption such as "PREMIA DO", "TERMIN". */
+  .type-label {
+    @apply font-brand text-label uppercase;
+  }
+
+  /* Body links in running text: underlined, offset 3 px, action colour. */
+  .link-inline {
+    @apply text-action underline decoration-1 underline-offset-[3px] hover:text-action-hover;
+  }
+
+  /* ---- Form controls: ONE class for every field on the site ---- */
+  .input,
+  .select {
+    @apply h-12 w-full rounded-field border border-line-strong bg-surface px-3.5 text-ui text-ink-900 outline-none transition-colors duration-150 ease-out;
+  }
+  .input::placeholder {
+    @apply text-ink-500;
+  }
+  .input:focus,
+  .select:focus {
+    @apply border-action ring-2 ring-action/25;
+  }
+  .input[aria-invalid="true"],
+  .select[aria-invalid="true"] {
+    @apply border-coral-600;
+  }
+  .input[aria-invalid="true"]:focus,
+  .select[aria-invalid="true"]:focus {
+    @apply ring-coral-600/25;
+  }
+  .input:disabled,
+  .select:disabled {
+    @apply cursor-not-allowed border-line bg-ink-100 text-ink-500;
+  }
+  textarea.input {
+    @apply h-auto min-h-[7rem] py-3;
+  }
+  /* Custom chevron so selects look like the rest of the form on every browser. */
+  .select {
+    @apply appearance-none pr-11;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23585d66' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.25rem 1.25rem;
+  }
+  .dark .select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2393a0af' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  /* Styled native checkbox: 24 px square (wrap it in a >= 44 px label for the
+     touch target). `.checkbox-sm` = 20 px (filters). Tick colour = on-action. */
+  .checkbox {
+    @apply inline-block h-6 w-6 shrink-0 cursor-pointer appearance-none rounded-md border-2 border-line-strong bg-surface align-middle transition-colors duration-150 ease-out;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% 100%;
+  }
+  .checkbox-sm {
+    @apply h-5 w-5;
+  }
+  .checkbox:checked {
+    @apply border-action bg-action;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12.5 4 4 8-9'/%3E%3C/svg%3E");
+  }
+  .dark .checkbox:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2305122c' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12.5 4 4 8-9'/%3E%3C/svg%3E");
+  }
+  .checkbox:disabled {
+    @apply cursor-not-allowed border-line bg-ink-100;
+  }
+  .checkbox:checked:disabled {
+    @apply border-ink-300 bg-ink-300;
   }
 }
