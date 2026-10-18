@@ -150,15 +150,15 @@ const asideProps = {
   now: NOW
 };
 
-test("aside: amount, deadline, CTA, share button, ściąga as its own tile and the rating with a comma", () => {
+test("aside: amount, CTA, share button, the rating with a comma and the ściąga inside the same panel", () => {
   const out = html(h(OfferAside, asideProps));
   const t = text(out);
   assert.match(t, /Premia do 800 zł/);
-  assert.match(t, /Koniec za 4 dni \(do 13\.10\.2026\)/);
+  assert.doesNotMatch(t, /Koniec za|do 13\.10\.2026/, "the deadline is in the summary bar, not repeated here");
   assert.match(t, /Przejdź do promocji/);
   assert.match(t, /Poleć znajomemu/);
   assert.match(out, /<div id="sciaga"[^>]*><div data-card="sciaga">karta<\/div><\/div>/);
-  assert.ok(out.indexOf('id="sciaga"') > out.indexOf("Poleć znajomemu"), "the ściąga tile is below the main one");
+  assert.ok(out.indexOf('id="sciaga"') > out.indexOf("Ocena serwisu"), "the ściąga sits below the rating, in the same panel");
   assert.match(t, /Ocena serwisu 9,4\/10/);
   assert.doesNotMatch(t, /9\.4/);
   assert.match(out, /href="\/metodologia"[^>]*>Jak liczymy\?/);
@@ -180,7 +180,6 @@ test("aside: an ended offer has no /out/ link", () => {
   const out = html(h(OfferAside, { ...asideProps, state: ENDED, endDate: day("2026-09-30"), checklist: null }));
   assert.doesNotMatch(out, /\/out\//);
   assert.doesNotMatch(out, /data-disclosure="compact"/);
-  assert.match(text(out), /Zakończona 30\.09\.2026/);
 });
 
 /* ------------------------------------------------------------------ */

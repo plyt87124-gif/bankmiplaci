@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ShareButton } from "@/components/ShareButton";
-import { DeadlineBadge } from "@/components/trust/DeadlineBadge";
 import { Money } from "@/components/ui/Money";
 import { formatRatingOutOf10 } from "@/lib/format";
 import { OfferCta } from "./OfferCta";
@@ -19,7 +18,6 @@ import type { OfferState } from "./offerModel";
 export function OfferAside({
   state,
   maxBonusCents,
-  endDate,
   rating,
   ctaHref,
   moreOffersHref,
@@ -28,12 +26,11 @@ export function OfferAside({
   shareUrl,
   shareTitle,
   checklist,
-  mainCtaId,
-  now
+  mainCtaId
 }: {
   state: OfferState;
   maxBonusCents: number;
-  endDate: Date | string;
+  endDate?: Date | string;
   rating: number | string | { toNumber(): number };
   ctaHref: string;
   moreOffersHref: string;
@@ -51,9 +48,9 @@ export function OfferAside({
   return (
     <aside
       aria-label="Premia, termin i przejście do promocji"
-      className="min-w-0 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-[5.5rem]"
+      className="min-w-0 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100vh-6.5rem)] lg:overflow-y-auto"
     >
-      <div className="rounded-card border border-line bg-surface p-4 sm:p-6">
+      <div className="rounded-card border border-line bg-surface p-4 sm:p-5">
         <div className="hidden lg:block">
           <p className="type-label text-ink-500">{hasBonus ? "Premia do" : "Premia"}</p>
           {hasBonus ? (
@@ -61,9 +58,6 @@ export function OfferAside({
           ) : (
             <p className="mt-1 text-h3 font-semibold text-ink-900">Bez premii gotówkowej</p>
           )}
-          {/* The deadline badge states the date AND the days left; its colour (warning <= 14 days, red <= 3 /
-              ended) only supports the words and the icon. */}
-          <DeadlineBadge endDate={endDate} now={now} detailed className="mt-3 max-w-full" />
         </div>
 
         <OfferCta
@@ -77,21 +71,22 @@ export function OfferAside({
 
         <ShareButton url={shareUrl} title={shareTitle} fullWidth className="mt-3" />
 
-        <div className="mt-5 border-t border-line pt-4 text-small">
-          <p className="text-ink-700">
+        <p className="mt-4 flex flex-wrap items-center gap-x-2 border-t border-line pt-3 text-small text-ink-700">
+          <span>
             Ocena serwisu <span className="num font-semibold text-ink-900">{formatRatingOutOf10(rating)}</span>
-          </p>
-          <Link href={ratingHref} className="link-inline -my-2 inline-flex min-h-11 items-center font-medium">
+          </span>
+          <Link href={ratingHref} className="link-inline font-medium">
             Jak liczymy?
           </Link>
-        </div>
-      </div>
+        </p>
 
-      {checklist ? (
-        <div id="sciaga" className="mt-4 scroll-mt-20">
-          {checklist}
-        </div>
-      ) : null}
+        {/* The ściąga is part of the same panel (one tile fits a laptop screen); subtle, below the rating. */}
+        {checklist ? (
+          <div id="sciaga" className="mt-3 scroll-mt-20 border-t border-line pt-3">
+            {checklist}
+          </div>
+        ) : null}
+      </div>
     </aside>
   );
 }

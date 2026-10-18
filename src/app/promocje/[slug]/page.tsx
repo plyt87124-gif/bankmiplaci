@@ -299,6 +299,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
                 // let them start a fresh round instead.
                 alreadyJoined={Boolean(tracking) && !tracking?.completedAt}
                 locked={isChecklistRestartLocked(tracking?.completedAt, eligibility)}
+                bare
               />
             ) : null
           }

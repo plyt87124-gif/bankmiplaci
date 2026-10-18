@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { cn } from "@/lib/cn";
 
 // Today's calendar date in Poland (the clock the server validates against), not the
 // UTC date: right after midnight in Poland the UTC date is still yesterday.
@@ -18,12 +19,15 @@ export function JoinChecklistButton({
   promotionId,
   loggedIn,
   alreadyJoined,
-  locked
+  locked,
+  bare = false
 }: {
   promotionId: string;
   loggedIn: boolean;
   alreadyJoined: boolean;
   locked: boolean;
+  /** Drawn inside another panel (the offer aside): no box of its own, smaller and quieter text. */
+  bare?: boolean;
 }) {
   const router = useRouter();
   const { openAuth } = useAuthModal();
@@ -33,7 +37,6 @@ export function JoinChecklistButton({
   const [error, setError] = useState<string | null>(null);
   const baseId = useId();
   const dateId = `${baseId}-date`;
-  const hintId = `${baseId}-hint`;
   const errorId = `${baseId}-error`;
   // Joining removes the button the visitor just pressed, so focus would fall back to <body>.
   // After a join made on this page it moves to the "Otwórz ściągę" link (not on first render
@@ -74,7 +77,7 @@ export function JoinChecklistButton({
 
   if (locked) {
     return (
-      <div className="rounded-card border border-line bg-sunken p-5">
+      <div className={bare ? "" : "rounded-card border border-line bg-sunken p-5"}>
         <p className="flex items-start gap-2 text-ui font-semibold text-ink-900">
           <CheckCircle2 size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-success" />
           Promocja ukończona
@@ -88,7 +91,7 @@ export function JoinChecklistButton({
   }
 
   return (
-    <div className="rounded-card border border-line bg-surface p-5" data-state={joined ? "joined" : undefined}>
+    <div className={bare ? "" : "rounded-card border border-line bg-surface p-5"} data-state={joined ? "joined" : undefined}>
       {/*
         One live region for the whole card, present from the first render and only filled
         later: a role="status" node inserted together with its text is often not announced.
@@ -112,16 +115,15 @@ export function JoinChecklistButton({
         </>
       ) : (
         <>
-          <p className="flex items-start gap-2 text-ui font-semibold text-ink-900">
-            <ListChecks size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-500" />
+          <p className={cn("flex items-start gap-2 font-semibold text-ink-900", bare ? "text-small" : "text-ui")}>
+            <ListChecks size={bare ? 16 : 20} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-500" />
             Czy konto zostało już otwarte?
           </p>
-          <p className="mt-1.5 text-small text-ink-700">
-            Zbudujemy Ci szczegółową, interaktywną ściągę w „Moje konto” — z krokami rozbitymi na miesiące, do
-            zaznaczania w miarę spełniania warunków.
+          <p className={cn("mt-1 text-ink-700", bare ? "text-caption" : "text-small")}>
+            Zbudujemy Ci ściągę w „Moje konto”: kroki rozpisane na miesiące, do odhaczania.
           </p>
 
-          <div className="mt-4">
+          <div className={bare ? "mt-2.5" : "mt-4"}>
             <Label htmlFor={dateId}>Kiedy konto zostało otwarte?</Label>
             <Input
               id={dateId}
@@ -130,17 +132,15 @@ export function JoinChecklistButton({
               max={today()}
               onChange={(e) => setAccountOpenedAt(e.target.value)}
               invalid={Boolean(error)}
-              aria-describedby={error ? `${hintId} ${errorId}` : hintId}
+              aria-describedby={error ? errorId : undefined}
             />
-            <p id={hintId} className="mt-1.5 text-caption text-ink-500">
-              Na tej podstawie odblokujemy kolejne miesiące ściągi dopiero, gdy faktycznie nadejdą.
-            </p>
           </div>
 
           <Button
             variant="secondary"
             fullWidth
-            className="mt-4"
+            size={bare ? "sm" : "md"}
+            className={bare ? "mt-2.5" : "mt-4"}
             onClick={onButtonClick}
             loading={loading}
             disabled={!accountOpenedAt}
