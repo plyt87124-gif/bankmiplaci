@@ -70,7 +70,7 @@
 
     /* Big amounts (offer card, offer hero). To move every amount to Inter,
        change this single line to `var(--font-body)`. */
-    --font-amount: var(--font-display);
+    --font-amount: var(--font-brand);
 
     /* Native checkboxes/radios/progress follow the action colour. */
     accent-color: rgb(var(--color-action));
@@ -147,9 +147,11 @@
     hyphens: manual;
   }
 
-  h1,
-  h2 {
+  h1 {
     @apply font-display font-semibold text-ink-900;
+  }
+  h2 {
+    @apply font-brand font-semibold text-ink-900;
   }
   h3,
   h4 {
@@ -230,7 +232,7 @@
     text-wrap: balance;
   }
   .type-h2 {
-    @apply font-display text-h2 md:text-h2-lg;
+    @apply font-brand text-h2 md:text-h2-lg;
   }
   .type-h3 {
     @apply font-body text-h3;
@@ -246,7 +248,7 @@
   }
   /* Small uppercase caption such as "PREMIA DO", "TERMIN". */
   .type-label {
-    @apply font-body text-label uppercase;
+    @apply font-brand text-label uppercase;
   }
 
   /* Body links in running text: underlined, offset 3 px, action colour. */

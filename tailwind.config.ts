@@ -83,6 +83,8 @@ const config: Config = {
         // next/font variable is missing (global-error.tsx renders no layout).
         display: ["var(--font-display, Georgia)", "Georgia", "serif"],
         body: ["var(--font-body, system-ui)", "system-ui", "sans-serif"],
+        // The "brand" voice (Exo 2, like the wordmark): amounts, buttons, menu, small labels, h2.
+        brand: ["var(--font-brand, system-ui)", "system-ui", "sans-serif"],
         // Big amounts (card, offer hero). One token: switch it in globals.css
         // (`--font-amount: var(--font-body)`) to move all amounts to Inter.
         amount: ["var(--font-amount, Georgia)", "Georgia", "serif"],

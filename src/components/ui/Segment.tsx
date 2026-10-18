@@ -13,8 +13,8 @@ export interface SegmentOption<T extends string> {
 export type SegmentSize = "md" | "sm";
 
 const SIZE_CLASSES: Record<SegmentSize, string> = {
-  md: "h-11 px-5 text-ui",
-  sm: "relative h-9 px-3 text-small before:absolute before:inset-x-0 before:-inset-y-[4px] before:content-[''] sm:px-4"
+  md: "h-11 px-5 text-ui [--seg-pad:1.25rem]",
+  sm: "relative h-9 px-3 text-small [--seg-pad:0.75rem] before:absolute before:inset-x-0 before:-inset-y-[4px] before:content-[''] sm:px-4 sm:[--seg-pad:1rem]"
 };
 
 /**
@@ -83,10 +83,21 @@ export function Segment<T extends string>({
     }
   }
 
+  // Two or more options are drawn as ONE joined pill: the outer ends are rounded, every shared edge is a
+  // slanted cut (the middle options are parallelograms), the selected one sits on top of its neighbours.
+  const joined = options.length >= 2;
+  const last = options.length - 1;
+
   return (
-    <div role="radiogroup" aria-label={label} className={cn("inline-flex max-w-full flex-wrap gap-2", className)}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={cn("inline-flex max-w-full", joined ? "flex-nowrap [--slant:12px]" : "flex-wrap gap-2", className)}
+    >
       {options.map((option, index) => {
         const checked = option.value === value;
+        const isFirst = index === 0;
+        const isLast = index === last;
         return (
           <button
             key={option.value}
@@ -100,12 +111,32 @@ export function Segment<T extends string>({
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => onKeyDown(event, index)}
             className={cn(
-              "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full border font-semibold",
+              "inline-flex items-center justify-center gap-1.5 whitespace-nowrap border font-semibold",
+              joined
+                ? cn(
+                    "relative focus-visible:z-20",
+                    isFirst ? "rounded-l-full" : "-ml-[calc(var(--slant)-2px)]",
+                    isLast && "rounded-r-full",
+                    !isFirst && "pl-[calc(var(--seg-pad)+var(--slant))]",
+                    !isLast && "pr-[calc(var(--seg-pad)+var(--slant))]",
+                    isFirst
+                      ? "[clip-path:polygon(0_0,100%_0,calc(100%-var(--slant))_100%,0_100%)]"
+                      : isLast
+                        ? "[clip-path:polygon(var(--slant)_0,100%_0,100%_100%,0_100%)]"
+                        : "[clip-path:polygon(var(--slant)_0,100%_0,calc(100%-var(--slant))_100%,0_100%)]"
+                  )
+                : "rounded-full",
               SIZE_CLASSES[size],
-              "[transition:background-color_150ms_var(--ease-out,ease),border-color_150ms_var(--ease-out,ease)]",
+              "[transition:background-color_150ms_var(--ease-out,ease),border-color_150ms_var(--ease-out,ease),background-size_260ms_var(--ease-out,ease),transform_120ms_var(--ease-out,ease)]",
+              joined && "motion-safe:active:scale-[0.97]",
               checked
-                ? "border-action bg-action text-on-action"
-                : "border-line-strong bg-surface text-ink-700 hover:bg-sunken"
+                ? cn("border-action bg-action text-on-action", joined && "z-10")
+                : cn(
+                    "border-line-strong bg-surface text-ink-700",
+                    joined
+                      ? "bg-[linear-gradient(rgb(var(--color-action)/0.16),rgb(var(--color-action)/0.16))] bg-[length:0%_100%] bg-left bg-no-repeat hover:z-10 hover:border-action hover:bg-[length:100%_100%] hover:text-ink-900 motion-reduce:hover:bg-action/15"
+                      : "hover:bg-sunken"
+                  )
             )}
           >
             {option.label}

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Source_Serif_4 } from "next/font/google";
+import { Exo_2, Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import "@/styles/motion.css";
 import { Header } from "@/components/Header";
@@ -20,6 +20,9 @@ const sourceSerif = Source_Serif_4({
   display: "swap"
 });
 const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-body", display: "swap" });
+// Exo 2: the geometric, rounded-square face closest to the wordmark. Used for amounts, buttons, the menu,
+// small labels and h2 headings (the "brand" voice); body text stays Inter, h1 and lead stay Source Serif.
+const exo2 = Exo_2({ subsets: ["latin", "latin-ext"], variable: "--font-brand", weight: ["500", "600", "700"], display: "swap" });
 
 // The origin and brand name come from the single SEO source (src/lib/seo/siteUrl.ts).
 const siteName = resolveSiteName();
@@ -54,7 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const user = await getCurrentUser();
 
   return (
-    <html lang="pl" className={`${sourceSerif.variable} ${inter.variable}`} suppressHydrationWarning>
+    <html lang="pl" className={`${sourceSerif.variable} ${inter.variable} ${exo2.variable}`} suppressHydrationWarning>
       <head>
         {/* Blocking, runs before first paint: applies the saved theme (`dark`
             class) and enables entrance motion (`motion-ok`) unless the user

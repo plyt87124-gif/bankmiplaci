@@ -86,7 +86,7 @@ export function Header() {
                     href={link.href}
                     aria-current={current}
                     className={cn(
-                      "relative inline-flex min-h-11 items-center whitespace-nowrap px-3 text-ui font-medium transition-colors duration-150 ease-out",
+                      "relative inline-flex min-h-11 items-center whitespace-nowrap px-3 font-brand text-ui font-medium transition-colors duration-150 ease-out",
                       current ? "text-ink-900" : "text-ink-700 hover:text-ink-900"
                     )}
                   >
