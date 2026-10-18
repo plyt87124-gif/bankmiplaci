@@ -21,7 +21,7 @@ export function Breadcrumbs({ items, className }: { items: BreadcrumbItem[]; cla
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           return (
-            <li key={`${item.label}-${index}`} className="flex items-center gap-2">
+            <li key={`${item.label}-${index}`} className="flex min-w-0 max-w-full items-center gap-2">
               {item.href && !isLast ? (
                 <Link
                   href={item.href}
@@ -30,7 +30,7 @@ export function Breadcrumbs({ items, className }: { items: BreadcrumbItem[]; cla
                   {item.label}
                 </Link>
               ) : (
-                <span aria-current={isLast ? "page" : undefined} className={cn(isLast && "font-medium text-ink-900")}>
+                <span aria-current={isLast ? "page" : undefined} className={cn("min-w-0 break-words [overflow-wrap:anywhere]", isLast && "font-medium text-ink-900")}>
                   {item.label}
                 </span>
               )}
