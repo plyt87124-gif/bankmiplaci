@@ -4,12 +4,16 @@ import "./globals.css";
 import "@/styles/motion.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { AdminSwitcher } from "@/components/AdminSwitcher";
 import { AuthModalProvider } from "@/components/AuthModalProvider";
 import { BlockedOffersProvider } from "@/components/BlockedOffers";
 import { CardTransitionBridge } from "@/components/CardTransitionBridge";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/components/ui/theme";
 import { siteName as resolveSiteName, siteUrl } from "@/lib/seo/siteUrl";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { getSwitchAccounts } from "@/lib/adminAccounts";
 import { getCurrentUser } from "@/lib/userSession";
 
 // Source Serif 4 (variable, optical-size axis): only h1/h2, big amounts, lead
@@ -56,7 +60,9 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
+  const [user, adminSession] = await Promise.all([getCurrentUser(), getServerSession(authOptions).catch(() => null)]);
+  const switchAccounts = adminSession ? getSwitchAccounts() : [];
+  const switchCurrent = switchAccounts.find((a) => a.email === user?.email.toLowerCase())?.key ?? null;
 
   return (
     <html lang="pl" className={`${sourceSerif.variable} ${inter.variable} ${exo2.variable}`} suppressHydrationWarning>
@@ -88,6 +94,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </main>
             <Footer />
           </BlockedOffersProvider>
+          {adminSession ? (
+            <AdminSwitcher options={switchAccounts.map(({ key, label }) => ({ key, label }))} current={switchCurrent} />
+          ) : null}
         </AuthModalProvider>
       </body>
     </html>
