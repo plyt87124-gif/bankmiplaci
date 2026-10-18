@@ -108,11 +108,16 @@ export function SourceSection({
               <ExternalSource href={feesDoc}>{describeFeesSource(feesDoc)}</ExternalSource>
             </li>
           ) : null}
-          {extra.map((url, index) => (
-            <li key={url}>
-              <ExternalSource href={url}>{describeAdditionalSource(url, index)}</ExternalSource>
-            </li>
-          ))}
+          {extra.map((url, index) => {
+            const label = describeAdditionalSource(url, index);
+            // A plain bank page is "the promotion page": when the partner link to it is shown below, do not list it twice.
+            if (promoHref && label.startsWith("strona promocyjna")) return null;
+            return (
+              <li key={url}>
+                <ExternalSource href={url}>{label.charAt(0).toUpperCase() + label.slice(1)}</ExternalSource>
+              </li>
+            );
+          })}
           {promoHref ? (
             <li>
               <a

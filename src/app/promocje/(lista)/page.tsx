@@ -168,7 +168,7 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
               hasFilters={filtersOn && activeCount > 0}
               relaxations={emptyHelp?.relaxations}
               suggestions={emptyHelp?.suggestions}
-              clearHref={listingHref({ ...state, q: "", bank: "", accountType: "", difficulty: [], minBonus: null, noFees: false, eligibleOnly: false })}
+              clearHref={listingHref({ ...state, q: "", bank: "", accountType: "", difficulty: [], minBonus: null, noFees: false, eligibleOnly: false, ended: false })}
             />
           ) : (
             <ListingGrid

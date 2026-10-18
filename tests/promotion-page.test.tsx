@@ -137,12 +137,9 @@ test("sticky bar: rendered hidden and inert, with the compact disclosure under t
 const asideProps = {
   state: OPEN,
   maxBonusCents: 80000,
-  endDate: day("2026-10-13"),
-  rating: 9.4,
   ctaHref: "/out/x?src=detail-cta",
   moreOffersHref: "/promocje",
   moreOffersLabel: "Zobacz inne promocje",
-  ratingHref: "/metodologia",
   shareUrl: "https://bankmiplaci.pl/promocje/x",
   shareTitle: "X",
   checklist: h("div", { "data-card": "sciaga" }, "karta"),
@@ -150,7 +147,7 @@ const asideProps = {
   now: NOW
 };
 
-test("aside: amount, CTA, share button, the rating with a comma and the ściąga inside the same panel", () => {
+test("aside: amount, CTA, share button, the ściąga inside the same panel, no rating", () => {
   const out = html(h(OfferAside, asideProps));
   const t = text(out);
   assert.match(t, /Premia do 800 zł/);
@@ -158,10 +155,8 @@ test("aside: amount, CTA, share button, the rating with a comma and the ściąga
   assert.match(t, /Przejdź do promocji/);
   assert.match(t, /Poleć znajomemu/);
   assert.match(out, /<div id="sciaga"[^>]*><div data-card="sciaga">karta<\/div><\/div>/);
-  assert.ok(out.indexOf('id="sciaga"') > out.indexOf("Ocena serwisu"), "the ściąga sits below the rating, in the same panel");
-  assert.match(t, /Ocena serwisu 9,4\/10/);
-  assert.doesNotMatch(t, /9\.4/);
-  assert.match(out, /href="\/metodologia"[^>]*>Jak liczymy\?/);
+  assert.ok(out.indexOf('id="sciaga"') > out.indexOf("Poleć znajomemu"), "the ściąga sits below the buttons, in the same panel");
+  assert.doesNotMatch(t, /Ocena serwisu|Jak liczymy/, "the rating is in the source section only");
   assert.equal(count(out, /data-disclosure="compact"/g), 0);
   assert.match(out, /lg:sticky/);
 });
@@ -177,7 +172,7 @@ test("aside: an offer without a cash premium never prints 0 zł as the premium",
 });
 
 test("aside: an ended offer has no /out/ link", () => {
-  const out = html(h(OfferAside, { ...asideProps, state: ENDED, endDate: day("2026-09-30"), checklist: null }));
+  const out = html(h(OfferAside, { ...asideProps, state: ENDED, checklist: null }));
   assert.doesNotMatch(out, /\/out\//);
   assert.doesNotMatch(out, /data-disclosure="compact"/);
 });

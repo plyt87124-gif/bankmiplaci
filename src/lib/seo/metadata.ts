@@ -165,6 +165,7 @@ export const INDEX_BLOCKING_PARAMS = [
   "minBonus",
   "noFees",
   "dostepne",
+  "zakonczone",
   "sort",
   "niedostepna",
   "typ",

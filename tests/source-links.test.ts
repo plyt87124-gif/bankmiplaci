@@ -17,7 +17,7 @@ test("labels fee documents by what they are", () => {
 test("labels offer pages and regulamins", () => {
   assert.equal(
     describeAdditionalSource("https://www.aliorbank.pl/klienci-indywidualni/konta-osobiste/alior-konto-18-25-lat.html", 0),
-    "strona oferty w banku (aliorbank.pl)"
+    "strona promocyjna banku (aliorbank.pl)"
   );
   assert.equal(
     describeAdditionalSource(

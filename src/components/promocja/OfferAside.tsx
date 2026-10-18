@@ -1,15 +1,14 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { ShareButton } from "@/components/ShareButton";
 import { Money } from "@/components/ui/Money";
-import { formatRatingOutOf10 } from "@/lib/format";
 import { OfferCta } from "./OfferCta";
 import type { OfferState } from "./offerModel";
 
 /**
  * The panel next to the offer (sticky from lg, 22.5 rem wide): the amount (Inter
- * 600, tabular), the deadline, the main call to action with its compact
- * disclosure directly beneath, "Poleć znajomemu", the ściąga card as its own tile and the site rating with "Jak liczymy?".
+ * 600, tabular), the main call to action with its compact disclosure
+ * directly beneath, "Poleć znajomemu" and the ściąga card (subtle, below a divider).
+ * The rating and the deadline live elsewhere on the page (source section, summary bar).
  *
  * Below lg the amount and deadline are not repeated here (the summary bar sits
  * right above): the panel is then just the button, its disclosure and the
@@ -18,11 +17,9 @@ import type { OfferState } from "./offerModel";
 export function OfferAside({
   state,
   maxBonusCents,
-  rating,
   ctaHref,
   moreOffersHref,
   moreOffersLabel,
-  ratingHref,
   shareUrl,
   shareTitle,
   checklist,
@@ -30,12 +27,9 @@ export function OfferAside({
 }: {
   state: OfferState;
   maxBonusCents: number;
-  endDate?: Date | string;
-  rating: number | string | { toNumber(): number };
   ctaHref: string;
   moreOffersHref: string;
   moreOffersLabel: string;
-  ratingHref: string;
   shareUrl: string;
   shareTitle: string;
   /** The ściąga card (JoinChecklistButton): its own tile under the main one; null when the offer has no ściąga. */
@@ -71,18 +65,9 @@ export function OfferAside({
 
         <ShareButton url={shareUrl} title={shareTitle} fullWidth className="mt-3" />
 
-        <p className="mt-4 flex flex-wrap items-center gap-x-2 border-t border-line pt-3 text-small text-ink-700">
-          <span>
-            Ocena serwisu <span className="num font-semibold text-ink-900">{formatRatingOutOf10(rating)}</span>
-          </span>
-          <Link href={ratingHref} className="link-inline font-medium">
-            Jak liczymy?
-          </Link>
-        </p>
-
-        {/* The ściąga is part of the same panel (one tile fits a laptop screen); subtle, below the rating. */}
+        {/* The ściąga is part of the same panel (one tile fits a laptop screen); subtle, below the buttons. */}
         {checklist ? (
-          <div id="sciaga" className="mt-3 scroll-mt-20 border-t border-line pt-3">
+          <div id="sciaga" className="mt-4 scroll-mt-20 border-t border-line pt-3">
             {checklist}
           </div>
         ) : null}

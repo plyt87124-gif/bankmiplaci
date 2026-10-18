@@ -274,12 +274,9 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
         <OfferAside
           state={state}
           maxBonusCents={promotion.maxBonusCents}
-          endDate={promotion.endDate}
-          rating={promotion.rating}
           ctaHref={mainCtaHref}
           moreOffersHref={moreOffersHref}
           moreOffersLabel={moreOffersLabel}
-          ratingHref={ratingHref}
           shareUrl={absoluteUrl(`/promocje/${promotion.slug}`)}
           shareTitle={promotionTitle({
             name: promotion.name,

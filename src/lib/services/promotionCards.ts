@@ -153,12 +153,13 @@ export function finalizeCards(rows: CardRow[], sort?: PromotionFilters["sort"]):
  * YOUNG, JOINT), `"BUSINESS"` only business accounts (src/lib/accountTypes.ts).
  */
 export async function listPromotionCards(filters: PromotionFilters = {}): Promise<PromotionCardData[]> {
+  // Ended offers have no "Polecane" order: the most recently closed come first.
   const rows = await db.promotion.findMany({
     where: buildActiveWhere(filters),
     select: PROMOTION_CARD_SELECT,
-    orderBy: sortToOrderBy(filters.sort)
+    orderBy: filters.ended ? [{ endDate: "desc" }, { rating: "desc" }] : sortToOrderBy(filters.sort)
   });
-  return finalizeCards(rows, filters.sort);
+  return finalizeCards(rows, filters.ended ? "newest" : filters.sort);
 }
 
 /** Active offers of one bank, in the default "Polecane" order. */

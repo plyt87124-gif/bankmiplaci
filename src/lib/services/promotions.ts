@@ -19,6 +19,8 @@ export interface PromotionFilters {
   difficulty?: string[];
   minBonusCents?: number;
   maxAccountFeeCents?: number; // "bez opłat" style filter
+  /** true = the ended offers (sign-up closed) instead of the open ones. */
+  ended?: boolean;
   sort?: SortKey;
 }
 
@@ -33,6 +35,17 @@ export function activeWhere(): Prisma.PromotionWhereInput {
   return {
     status: PromotionStatus.ACTIVE,
     endDate: { gte: signupCutoff() }
+  };
+}
+
+/**
+ * Offers whose sign-up window has closed: status EXPIRED, or still ACTIVE
+ * with a deadline in the past (a missed cron). DRAFT and ARCHIVED never show.
+ */
+export function endedWhere(): Prisma.PromotionWhereInput {
+  return {
+    status: { in: [PromotionStatus.ACTIVE, PromotionStatus.EXPIRED] },
+    endDate: { lt: signupCutoff() }
   };
 }
 
@@ -73,7 +86,7 @@ export function stripPrivateFields<T extends { affiliateCommissionCents?: number
  */
 export function buildActiveWhere(filters: PromotionFilters = {}): Prisma.PromotionWhereInput {
   return {
-    ...activeWhere(),
+    ...(filters.ended ? endedWhere() : activeWhere()),
     ...(filters.bankSlug ? { bank: { slug: filters.bankSlug } } : {}),
     ...accountTypeWhere(filters.accountType),
     ...(filters.difficulty?.length ? { difficulty: { in: filters.difficulty as never[] } } : {}),

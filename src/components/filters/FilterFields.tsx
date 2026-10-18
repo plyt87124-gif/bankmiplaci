@@ -33,6 +33,7 @@ export function FilterFields({
   const minBonusId = `${idPrefix}-min-bonus`;
   const signedIn = Boolean(useOptionalSession()?.user);
   const eligibleId = `${idPrefix}-eligible`;
+  const endedId = `${idPrefix}-ended`;
   const noFeesId = `${idPrefix}-no-fees`;
   const noFeesHintId = `${idPrefix}-no-fees-hint`;
 
@@ -128,6 +129,20 @@ export function FilterFields({
         <p id={noFeesHintId} className="ml-8 text-caption text-ink-500">
           Pokazujemy oferty z potwierdzoną opłatą 0 zł, bez warunków.
         </p>
+      </div>
+
+      <div>
+        <label htmlFor={endedId} className="flex min-h-11 cursor-pointer items-start gap-3 py-2">
+          <input
+            id={endedId}
+            type="checkbox"
+            checked={state.ended}
+            onChange={(event) => onChange({ ended: event.target.checked })}
+            className="checkbox checkbox-sm mt-0.5"
+          />
+          <span className="text-small font-semibold text-ink-900">Pokaż zakończone promocje</span>
+        </label>
+        <p className="ml-8 text-caption text-ink-500">Zamiast aktualnych: promocje, których zapisy już się zamknęły.</p>
       </div>
 
       {signedIn ? (

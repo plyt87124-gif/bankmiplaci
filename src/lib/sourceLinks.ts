@@ -56,7 +56,7 @@ export function describeAdditionalSource(url: string, index: number): string {
     return topic ? `regulamin: ${topic}` : "regulamin";
   }
 
-  if (!isPdf) return `strona oferty w banku${host ? ` (${host})` : ""}`;
+  if (!isPdf) return `strona promocyjna banku${host ? ` (${host})` : ""}`;
   if (slug && !UUID_LIKE.test(slug)) return `dokument: ${slug.replace(/[-_]+/g, " ")}`;
   return `dodatkowy dokument ${index + 1}${host ? ` (${host})` : ""}`;
 }

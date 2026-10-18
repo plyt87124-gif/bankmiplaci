@@ -100,6 +100,8 @@ export interface ListingState {
   noFees: boolean;
   /** Signed-in visitors only: hide offers their karencja / current-client data rules out ("dostepne=1"). */
   eligibleOnly: boolean;
+  /** Show the ended offers (sign-up closed) instead of the open ones ("zakonczone=1"). */
+  ended: boolean;
   /** The sort order named in the URL; "" = not named (= DEFAULT_SORT). */
   sort: ListingSort | "";
 }
@@ -112,6 +114,7 @@ export const EMPTY_STATE: ListingState = {
   minBonus: null,
   noFees: false,
   eligibleOnly: false,
+  ended: false,
   sort: ""
 };
 
@@ -155,7 +158,7 @@ export function parseListingParams(input: RawSearchParams): ListingState {
 
   const sort = oneOf(SORT_VALUES, get("sort")) ?? "";
 
-  return { q, bank, accountType, difficulty: [...difficulty], minBonus, noFees: get("noFees") === "1", eligibleOnly: get("dostepne") === "1", sort };
+  return { q, bank, accountType, difficulty: [...difficulty], minBonus, noFees: get("noFees") === "1", eligibleOnly: get("dostepne") === "1", ended: get("zakonczone") === "1", sort };
 }
 
 /** Page number from `strona`: 1 when missing or junk, capped at MAX_PAGE. */
@@ -183,6 +186,7 @@ export function toQueryString(state: ListingState, page = 1): string {
   if (state.minBonus) params.set("minBonus", String(state.minBonus));
   if (state.noFees) params.set("noFees", "1");
   if (state.eligibleOnly) params.set("dostepne", "1");
+  if (state.ended) params.set("zakonczone", "1");
   if (state.sort && state.sort !== DEFAULT_SORT) params.set("sort", state.sort);
   if (page > 1) params.set("strona", String(Math.min(Math.trunc(page), MAX_PAGE)));
   // A comma needs no escaping in a query and keeps the long-standing look of
@@ -199,7 +203,7 @@ export function listingHref(state: ListingState, page = 1, basePath = "/promocje
 /** True when the state narrows the list in any way (the sort does not count). */
 export function hasActiveFilters(state: ListingState): boolean {
   return Boolean(
-    state.q || state.bank || state.accountType || state.difficulty.length || state.minBonus || state.noFees || state.eligibleOnly
+    state.q || state.bank || state.accountType || state.difficulty.length || state.minBonus || state.noFees || state.eligibleOnly || state.ended
   );
 }
 
@@ -270,6 +274,7 @@ export function buildChips(state: ListingState, banks: readonly { slug: string; 
     add({ id: "minBonus", label: `Premia od ${formatPLN(state.minBonus)}`, clear: { minBonus: null }, inPanel: true });
   }
   if (state.noFees) add({ id: "noFees", label: "Bez opłaty za konto", clear: { noFees: false }, inPanel: true });
+  if (state.ended) add({ id: "ended", label: "Zakończone promocje", clear: { ended: false }, inPanel: true });
   if (state.eligibleOnly) {
     add({ id: "eligibleOnly", label: "Tylko te, w których mogę wziąć udział", clear: { eligibleOnly: false }, inPanel: true });
   }
@@ -283,7 +288,7 @@ export function panelFilterCount(chips: readonly FilterChip[]): number {
 
 /** The state with every chip removed (segment and sort stay). */
 export function clearChips(state: ListingState): ListingState {
-  return { ...state, q: "", bank: "", difficulty: [], minBonus: null, noFees: false, eligibleOnly: false, accountType: segmentOf(state) };
+  return { ...state, q: "", bank: "", difficulty: [], minBonus: null, noFees: false, eligibleOnly: false, ended: false, accountType: segmentOf(state) };
 }
 
 /**
@@ -306,6 +311,7 @@ export interface ServiceFilters {
   difficulty?: string[];
   minBonusCents?: number;
   maxAccountFeeCents?: number;
+  ended?: boolean;
   sort?: SortKey;
 }
 
@@ -319,6 +325,7 @@ export function toServiceFilters(state: ListingState, omit: readonly (keyof List
   if (state.difficulty.length && !skip.has("difficulty")) filters.difficulty = [...state.difficulty];
   if (state.minBonus && !skip.has("minBonus")) filters.minBonusCents = state.minBonus;
   if (state.noFees && !skip.has("noFees")) filters.maxAccountFeeCents = 0;
+  if (state.ended && !skip.has("ended")) filters.ended = true;
   if (state.sort && !skip.has("sort")) filters.sort = state.sort;
   return filters;
 }
