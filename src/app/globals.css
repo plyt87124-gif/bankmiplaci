@@ -37,15 +37,17 @@
     /* borders of form controls (>= 3:1, WCAG 1.4.11) */
     --color-line-strong: 128 128 126;
 
-    --color-action: 11 94 82;
-    --color-action-hover: 8 74 65;
+    --color-action: 107 20 45;
+    --color-action-hover: 82 12 34;
     --color-on-action: 255 255 255;
-    --color-focus-ring: 15 123 108;
+    --color-focus-ring: 168 55 90;
+    /* The "mi" of the wordmark: decorative, never text on its own. */
+    --color-brand-soft: 199 118 128;
 
-    --color-teal-700: 11 94 82;
-    --color-teal-600: 15 123 108;
-    --color-teal-500: 21 150 131;
-    --color-teal-100: 224 240 235;
+    --color-teal-700: 107 20 45;
+    --color-teal-600: 140 36 68;
+    --color-teal-500: 178 80 108;
+    --color-teal-100: 246 230 233;
 
     --color-gold-600: 130 92 10;
     /* Spec value was 176 129 30 (2.94:1 on gold-100, below the 3:1 graphics
@@ -97,15 +99,16 @@
     --color-line: 40 54 72;
     --color-line-strong: 105 122 142;
 
-    --color-action: 94 207 184;
-    --color-action-hover: 124 224 202;
-    --color-on-action: 10 26 22;
-    --color-focus-ring: 94 207 184;
+    --color-action: 236 160 172;
+    --color-action-hover: 245 186 195;
+    --color-on-action: 40 8 18;
+    --color-focus-ring: 236 160 172;
+    --color-brand-soft: 214 128 142;
 
-    --color-teal-700: 94 207 184;
-    --color-teal-600: 62 184 160;
-    --color-teal-500: 48 160 138;
-    --color-teal-100: 22 52 47;
+    --color-teal-700: 236 160 172;
+    --color-teal-600: 214 124 140;
+    --color-teal-500: 190 98 118;
+    --color-teal-100: 58 28 40;
 
     --color-gold-600: 230 190 100;
     --color-gold-500: 190 145 45;
@@ -306,7 +309,7 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12.5 4 4 8-9'/%3E%3C/svg%3E");
   }
   .dark .checkbox:checked {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230a1a16' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12.5 4 4 8-9'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23280812' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12.5 4 4 8-9'/%3E%3C/svg%3E");
   }
   .checkbox:disabled {
     @apply cursor-not-allowed border-line bg-ink-100;

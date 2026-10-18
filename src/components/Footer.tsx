@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { getFooterColumns } from "@/lib/navigation";
 
 const footerLinkClasses =
@@ -17,7 +18,9 @@ export function FooterView() {
       <div className="container-page py-12 lg:py-14">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
           <div>
-            <p className="font-display text-[22px] font-semibold leading-none text-ink-900">Bankmiplaci</p>
+            <p>
+              <Logo className="text-[24px]" />
+            </p>
             <p className="mt-3 max-w-sm text-small text-ink-500">
               Porównujemy aktualne promocje bankowe w Polsce i pokazujemy, ile możesz otrzymać i co musisz zrobić, aby
               zdobyć premię.

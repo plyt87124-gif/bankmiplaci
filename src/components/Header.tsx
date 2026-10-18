@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { User } from "lucide-react";
@@ -71,9 +72,9 @@ export function Header() {
             <Link
               href="/"
               aria-current={pathname === "/" ? "page" : undefined}
-              className="-mx-1 inline-flex min-h-11 items-center rounded-field px-1 font-display text-[22px] font-semibold leading-none tracking-tight text-ink-900"
+              className="-mx-1 inline-flex min-h-11 items-center rounded-field px-1"
             >
-              Bankmiplaci
+              <Logo className="text-[24px]" />
             </Link>
 
             <nav aria-label="Menu główne" className="hidden items-center gap-1 lg:flex">

@@ -109,7 +109,8 @@ const DECORATIVE_ONLY: Record<string, string> = {
   line: "card borders and separators - decoration; the meaning is carried by text/headings and, for controls, by line-strong",
   "ink-100": "fill only (chips, skeleton, checkbox background) - no text-on-it pair other than those asserted above",
   "ink-solid": "LEGACY fill of the v1 admin panel, always paired with literal white text (asserted above)",
-  "logo-tile": "constant white tile for bank logos in both themes"
+  "logo-tile": "constant white tile for bank logos in both themes",
+  "brand-soft": "the lighter \"mi\" of the wordmark: a logo letter pair, exempt from text contrast (the word as a whole is read in action colour)"
 };
 
 // ------------------------------------------------------------------ evaluation
@@ -148,11 +149,11 @@ test("contrast: the formula matches known WCAG values", () => {
   assert.equal(ratioOf(WHITE, WHITE).toFixed(2), "1.00");
   // #767676 on white is the textbook 4.54:1 pass.
   assert.equal(ratioOf([118, 118, 118], WHITE).toFixed(2), "4.54");
-  // Spec section 2 quotes: ink-900/paper ~15.9, action/paper ~7.2 (light).
+  // Spec section 2 quotes: ink-900/paper ~15.9; the burgundy action colour on paper is >= 10 (light).
   const inkOnPaper = ratioOf(colour("light", "ink-900"), colour("light", "paper"));
   assert.ok(inkOnPaper > 15.5 && inkOnPaper < 16.5, `ink-900/paper light = ${inkOnPaper.toFixed(2)}`);
   const actionOnPaper = ratioOf(colour("light", "action"), colour("light", "paper"));
-  assert.ok(actionOnPaper > 7 && actionOnPaper < 8, `action/paper light = ${actionOnPaper.toFixed(2)}`);
+  assert.ok(actionOnPaper > 10 && actionOnPaper < 16, `action/paper light = ${actionOnPaper.toFixed(2)}`);
 });
 
 test("contrast: globals.css defines the same token set in both themes", () => {
