@@ -153,6 +153,7 @@
 
   h1 {
     @apply font-display font-semibold text-ink-900;
+    letter-spacing: -0.015em;
   }
   h2 {
     @apply font-brand font-semibold text-ink-900;
@@ -245,7 +246,7 @@
     @apply font-body text-h4;
   }
   .type-lead {
-    @apply font-display text-lead md:text-lead-lg;
+    @apply font-body text-lead md:text-lead-lg;
   }
   .type-article {
     @apply font-body text-article lg:text-article-lg;

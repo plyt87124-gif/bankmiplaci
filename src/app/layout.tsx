@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Exo_2, Inter, Source_Serif_4 } from "next/font/google";
+import { Exo_2, Inter } from "next/font/google";
 import "./globals.css";
 import "@/styles/motion.css";
 import { Header } from "@/components/Header";
@@ -16,18 +16,11 @@ import { authOptions } from "@/lib/auth";
 import { getSwitchAccounts } from "@/lib/adminAccounts";
 import { getCurrentUser } from "@/lib/userSession";
 
-// Source Serif 4 (variable, optical-size axis): only h1/h2, big amounts, lead
-// text and the wordmark. Inter (variable): everything else. Both need the
+// Inter (variable): body text and the lead. Exo 2 (below): headlines, amounts, buttons. Both need the
 // latin AND latin-ext subsets - ASCII lives in latin, Polish letters in latin-ext.
-const sourceSerif = Source_Serif_4({
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-display",
-  axes: ["opsz"],
-  display: "swap"
-});
 const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-body", display: "swap" });
 // Exo 2: the geometric, rounded-square face closest to the wordmark. Used for amounts, buttons, the menu,
-// small labels and h2 headings (the "brand" voice); body text stays Inter, h1 and lead stay Source Serif.
+// small labels and all headings (the "brand" voice); body text and the lead stay Inter.
 const exo2 = Exo_2({ subsets: ["latin", "latin-ext"], variable: "--font-brand", weight: ["500", "600", "700"], display: "swap" });
 
 // The origin and brand name come from the single SEO source (src/lib/seo/siteUrl.ts).
@@ -65,7 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const switchCurrent = switchAccounts.find((a) => a.email === user?.email.toLowerCase())?.key ?? null;
 
   return (
-    <html lang="pl" className={`${sourceSerif.variable} ${inter.variable} ${exo2.variable}`} suppressHydrationWarning>
+    <html lang="pl" className={`${inter.variable} ${exo2.variable}`} suppressHydrationWarning>
       <head>
         {/* Blocking, runs before first paint: applies the saved theme (`dark`
             class) and enables entrance motion (`motion-ok`) unless the user

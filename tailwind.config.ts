@@ -82,7 +82,9 @@ const config: Config = {
       fontFamily: {
         // The inline fallback inside var() keeps text styled even where the
         // next/font variable is missing (global-error.tsx renders no layout).
-        display: ["var(--font-display, Georgia)", "Georgia", "serif"],
+        // Headlines use the brand face (Exo 2): the serif they used before fell back to Times when the web font
+        // did not load, which looked bad. Exo 2 is already on the site, so there is nothing extra to load.
+        display: ["var(--font-brand, system-ui)", "system-ui", "sans-serif"],
         body: ["var(--font-body, system-ui)", "system-ui", "sans-serif"],
         // The "brand" voice (Exo 2, like the wordmark): amounts, buttons, menu, small labels, h2.
         brand: ["var(--font-brand, system-ui)", "system-ui", "sans-serif"],
@@ -167,7 +169,7 @@ const config: Config = {
             // Reading text: 17/28, links underlined (offset 3 px, action colour).
             fontSize: "1.0625rem",
             lineHeight: "1.65",
-            "h1, h2": { fontFamily: "var(--font-display, Georgia), Georgia, serif", fontWeight: "600" },
+            "h1, h2": { fontFamily: "var(--font-brand, system-ui), system-ui, sans-serif", fontWeight: "600" },
             "h3, h4": { fontFamily: "var(--font-body, system-ui), system-ui, sans-serif", fontWeight: "600" },
             a: { textDecorationLine: "underline", textUnderlineOffset: "3px", fontWeight: "500" },
             blockquote: {
