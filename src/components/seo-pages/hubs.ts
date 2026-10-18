@@ -226,7 +226,7 @@ const BUSINESS_FAQ: readonly SeoFaqItem[] = [
   {
     question: "Czy premia dla firmy podlega opodatkowaniu?",
     answer:
-      "Może podlegać. Sposób rozliczenia zależy od formy działalności i rodzaju nagrody, a informacje o nim znajdziesz w regulaminie promocji. W razie wątpliwości skonsultuj się z księgowym lub doradcą podatkowym. To nie jest porada podatkowa."
+      "Tak. Dla firm premia jest przychodem firmy, więc podlega opodatkowaniu na zasadach właściwych dla wybranej formy rozliczania. Szczegóły rozliczenia zależą od formy działalności, a informacje o promocji znajdziesz w jej regulaminie. W razie wątpliwości skonsultuj się z księgowym lub doradcą podatkowym. To nie jest porada podatkowa."
   },
   {
     question: "Czy trzeba prowadzić firmę, żeby założyć konto firmowe?",

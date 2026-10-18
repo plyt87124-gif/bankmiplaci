@@ -171,9 +171,9 @@ test("FAQ: 4-6 questions per hub, each with an answer, no repeated question, adv
       assert.ok(item.answer.length > 60, item.question);
     }
   }
-  // tax is only mentioned as "may", with a pointer to an adviser (never as advice)
+  // tax answers state the general rule (owner decision) and always end with a pointer to an adviser (never as advice)
   const taxAnswers = [...HUB_FAQ.personal, ...HUB_FAQ.business].filter((f) => /opodatk/i.test(f.question));
-  for (const item of taxAnswers) assert.match(item.answer, /Może podlegać[\s\S]*To nie jest porada podatkowa/);
+  for (const item of taxAnswers) assert.match(item.answer, /podlega opodatkowaniu[\s\S]*To nie jest porada podatkowa/);
 });
 
 test("related links: tools, trust pages, the other hub, banks, ending soon, the full list - all site paths", () => {

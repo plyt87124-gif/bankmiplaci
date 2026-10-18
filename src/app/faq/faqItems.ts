@@ -147,7 +147,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
         id: "podatek",
         question: "Czy od premii płaci się podatek?",
         answer:
-          "Premia może podlegać opodatkowaniu, a sposób rozliczenia zależy od jej rodzaju i od tego, jak ją traktuje bank. Informacje o tym podaje regulamin promocji, a ogólne zasady znajdziesz na stronie podatki.gov.pl. To informacja ogólna, nie porada podatkowa – w razie wątpliwości zapytaj doradcę podatkowego."
+          "Dla osób fizycznych premia za założenie konta zwykle nie jest opodatkowana: bank traktuje ją jako sprzedaż premiową, zwolnioną z podatku do określonego limitu wartości pojedynczej nagrody, a powyżej tego limitu może powstać podatek. Dla firm premia jest przychodem firmy, więc podlega opodatkowaniu na zasadach właściwych dla wybranej formy rozliczania. Szczegóły podaje regulamin promocji, a ogólne zasady znajdziesz na stronie podatki.gov.pl. To informacja ogólna, nie porada podatkowa – w razie wątpliwości zapytaj doradcę podatkowego."
       },
       {
         id: "zdolnosc-kredytowa",

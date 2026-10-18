@@ -94,7 +94,7 @@ export const LISTING_FAQ: readonly FaqEntry[] = [
   {
     question: "Czy premia bankowa podlega opodatkowaniu?",
     answer:
-      "Może podlegać. Sposób rozliczenia zależy od rodzaju nagrody i Twojej sytuacji, a informacje o nim znajdziesz w regulaminie promocji. W razie wątpliwości skonsultuj się z doradcą podatkowym lub urzędem skarbowym. To nie jest porada podatkowa."
+      "Dla osób fizycznych premia za założenie konta zwykle nie jest opodatkowana: bank traktuje ją jako sprzedaż premiową, zwolnioną z podatku do określonego limitu wartości pojedynczej nagrody, a powyżej tego limitu może powstać podatek. Dla firm premia jest przychodem firmy, więc podlega opodatkowaniu na zasadach właściwych dla wybranej formy rozliczania. Szczegóły znajdziesz w regulaminie promocji. W razie wątpliwości skonsultuj się z doradcą podatkowym lub urzędem skarbowym. To nie jest porada podatkowa."
   }
 ];
 
