@@ -26,6 +26,9 @@ import { DESCRIPTION_MAX } from "../src/lib/seo/metadata";
 import { DYNAMIC_ROUTE_FLAGS, SITE_ROUTES, isRouteLive, liveRoutes } from "../src/lib/seo/routes";
 import { buildSitemapEntries, type SitemapInput, type SitemapPromotionRow } from "../src/lib/seo/sitemapEntries";
 
+// The expected titles end with the site name; CI sets NEXT_PUBLIC_SITE_NAME="Bankmiplaci CI".
+process.env.NEXT_PUBLIC_SITE_NAME = "Bankmiplaci";
+
 (globalThis as { React?: unknown }).React = React;
 (process.env as Record<string, string | undefined>).NODE_ENV = "test";
 process.env.NEXT_PUBLIC_SITE_URL = "https://bankmiplaci.example";

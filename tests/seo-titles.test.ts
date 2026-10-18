@@ -31,6 +31,9 @@ import {
 import { formatDatePL, warsawMonthYear, warsawYear } from "../src/lib/seo/dates";
 import { pluralForm, truncateAtWord } from "../src/lib/seo/text";
 
+// The expected titles end with the site name; CI sets NEXT_PUBLIC_SITE_NAME="Bankmiplaci CI".
+process.env.NEXT_PUBLIC_SITE_NAME = "Bankmiplaci";
+
 /**
  * Offers of the real catalogue (names, banks, account types and maximum
  * bonuses exactly as they are in the database on 2026-10-08), used as the
