@@ -3,7 +3,9 @@
  * ThemeToggle.tsx (client). No React, no side effects at import time.
  *
  * Preference model: localStorage["theme"] = "light" | "dark" | "system".
- * A missing or unknown value means LIGHT (the site's default). "system"
+ * A missing or unknown value means DARK (the site's default since the v2 redesign; the
+ * previous default was light - restore it by returning "light" below, in
+ * readThemePreference and in THEME_INIT_SCRIPT). "system"
  * follows prefers-color-scheme live.
  */
 
@@ -28,14 +30,14 @@ export function nextThemePreference(current: ThemePreference): ThemePreference {
 }
 
 export function parseThemePreference(value: string | null | undefined): ThemePreference {
-  return value === "dark" || value === "system" ? value : "light";
+  return value === "light" || value === "system" ? value : "dark";
 }
 
 export function readThemePreference(): ThemePreference {
   try {
     return parseThemePreference(window.localStorage.getItem(THEME_STORAGE_KEY));
   } catch {
-    return "light";
+    return "dark";
   }
 }
 
@@ -75,4 +77,4 @@ export function applyTheme(preference: ThemePreference): boolean {
  * asked for reduced motion (see src/styles/motion.css). Plain ES5 on purpose;
  * both blocks are wrapped in try/catch because storage and matchMedia can throw.
  */
-export const THEME_INIT_SCRIPT = `(function(){var d=document.documentElement;var dark=false;try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");dark=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches)}catch(e){}if(dark)d.classList.add("dark");try{var m=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<m.length;i++)m[i].setAttribute("content",dark?"${THEME_COLORS.dark}":"${THEME_COLORS.light}");if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches)d.classList.add("motion-ok")}catch(e){}})();`;
+export const THEME_INIT_SCRIPT = `(function(){var d=document.documentElement;var dark=true;try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t)dark=t!=="light"&&(t!=="system"||window.matchMedia("(prefers-color-scheme: dark)").matches)}catch(e){}if(dark)d.classList.add("dark");try{var m=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<m.length;i++)m[i].setAttribute("content",dark?"${THEME_COLORS.dark}":"${THEME_COLORS.light}");if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches)d.classList.add("motion-ok")}catch(e){}})();`;
