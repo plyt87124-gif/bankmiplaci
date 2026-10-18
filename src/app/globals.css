@@ -325,3 +325,8 @@
     @apply border-ink-300 bg-ink-300;
   }
 }
+
+/* Comparison variant "Exo 2 + Lexend" (development-only switch, components/FontSwitch.tsx): body text in Lexend. */
+html[data-font="lexend"] {
+  --font-body: var(--font-lexend);
+}

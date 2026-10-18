@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Exo_2, Inter } from "next/font/google";
+import { Exo_2, Inter, Lexend } from "next/font/google";
 import "./globals.css";
 import "@/styles/motion.css";
 import { Header } from "@/components/Header";
@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { AdminSwitcher } from "@/components/AdminSwitcher";
 import { AuthModalProvider } from "@/components/AuthModalProvider";
 import { BlockedOffersProvider } from "@/components/BlockedOffers";
+import { FontSwitch } from "@/components/FontSwitch";
 import { CardTransitionBridge } from "@/components/CardTransitionBridge";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/components/ui/theme";
@@ -18,6 +19,8 @@ import { getCurrentUser } from "@/lib/userSession";
 
 // Inter (variable): body text and the lead. Exo 2 (below): headlines, amounts, buttons. Both need the
 // latin AND latin-ext subsets - ASCII lives in latin, Polish letters in latin-ext.
+// Lexend: only for the (development-only) comparison switch - loaded lazily, used when <html data-font="lexend">.
+const lexend = Lexend({ subsets: ["latin", "latin-ext"], variable: "--font-lexend", display: "swap", preload: false });
 const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-body", display: "swap" });
 // Exo 2: the geometric, rounded-square face closest to the wordmark. Used for amounts, buttons, the menu,
 // small labels and all headings (the "brand" voice); body text and the lead stay Inter.
@@ -58,7 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const switchCurrent = switchAccounts.find((a) => a.email === user?.email.toLowerCase())?.key ?? null;
 
   return (
-    <html lang="pl" className={`${inter.variable} ${exo2.variable}`} suppressHydrationWarning>
+    <html lang="pl" className={`${inter.variable} ${exo2.variable} ${lexend.variable}`} suppressHydrationWarning>
       <head>
         {/* Blocking, runs before first paint: applies the saved theme (`dark`
             class) and enables entrance motion (`motion-ok`) unless the user
@@ -87,6 +90,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </main>
             <Footer />
           </BlockedOffersProvider>
+          {process.env.NODE_ENV !== "production" ? <FontSwitch /> : null}
           {adminSession ? (
             <AdminSwitcher options={switchAccounts.map(({ key, label }) => ({ key, label }))} current={switchCurrent} />
           ) : null}
