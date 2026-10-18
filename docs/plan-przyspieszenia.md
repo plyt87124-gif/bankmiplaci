@@ -22,6 +22,14 @@ Wnioski:
 
 Nie mam dostępu do konsoli Neon ani Vercela (nie jestem tam zalogowany), więc **przyczyny po stronie bazy trzeba potwierdzić** (krok 0).
 
+## 1a. Potwierdzone w konsolach (2026-10-18, odczyt)
+
+- **Neon:** region **AWS Europe Central 1 (Frankfurt)**, plan Free, compute 0,25-2 CU, w chwili sprawdzenia „ENDPOINT INACTIVE" (baza uśpiona).
+- **Vercel:** **Function Region = `iad1` (Waszyngton)**, Hobby (tylko 1 region), Fluid Compute włączone.
+- **Wniosek:** funkcje chodzą w USA, a baza w Europie. Każde zapytanie to przelot przez Atlantyk (ok. 90-100 ms w obie strony), a otwarcie połączenia (TCP + TLS + logowanie) kosztuje kilka takich przelotów. Strona oferty robi kilka rund zapytań, stąd 3-7 s. Do tego baza zasypia na darmowym planie.
+- **Najtańsza naprawa:** zmienić Function Region na Europę (Frankfurt, `fra1`) i wdrożyć ponownie. Wymaga zgody właściciela i nowego wdrożenia.
+- Do potwierdzenia: czy `DATABASE_URL` w Vercelu ma `-pooler` (wartości zmiennych nie czytam).
+
 ## 2. Hipotezy, od najbardziej prawdopodobnej
 
 1. **Odległość między funkcją a bazą.** Jeśli region funkcji Vercela (domyślnie Waszyngton, `iad1`) jest inny niż region Neon (Europa), to każde zapytanie to kilkaset ms w obie strony, a strona ofert robi kilka rund po kilka zapytań. Wystarczy 6 rund po 0,5-1 s, żeby wyjść 3-7 s.
