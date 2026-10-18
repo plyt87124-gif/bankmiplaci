@@ -46,7 +46,7 @@ import {
   promotionTitle,
   DYNAMIC_ROUTE_FLAGS
 } from "@/lib/seo";
-import { computeEligibility, isChecklistRestartLocked } from "@/lib/services/eligibility";
+import { computeEligibility, isChecklistRestartLocked, isCurrentClient } from "@/lib/services/eligibility";
 import {
   countChecklistSteps,
   getBankHistory,
@@ -136,7 +136,9 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
   const eligibility = computeEligibility(
     promotion.cooldownMonths,
     promotion.cooldownCutoffDate,
-    bankHistory?.wasClientUntil
+    bankHistory?.wasClientUntil,
+    now,
+    isCurrentClient(bankHistory)
   );
 
   // Rewards from a sub-offer whose own sign-up window has closed stay in the

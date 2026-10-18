@@ -100,5 +100,6 @@ export function relaxationCandidates(
   }
   if (state.minBonus) out.push({ label: `Premia od ${formatPLN(state.minBonus)}`, patch: { minBonus: null } });
   if (state.noFees) out.push({ label: "Bez opłaty za konto", patch: { noFees: false } });
+  if (state.eligibleOnly) out.push({ label: "Tylko te, w których mogę wziąć udział", patch: { eligibleOnly: false } });
   return out;
 }

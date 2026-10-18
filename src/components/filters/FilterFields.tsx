@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useOptionalSession } from "@/components/SessionProvider";
 import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
 import { cn } from "@/lib/cn";
@@ -30,6 +31,8 @@ export function FilterFields({
 }) {
   const bankId = `${idPrefix}-bank`;
   const minBonusId = `${idPrefix}-min-bonus`;
+  const signedIn = Boolean(useOptionalSession()?.user);
+  const eligibleId = `${idPrefix}-eligible`;
   const noFeesId = `${idPrefix}-no-fees`;
   const noFeesHintId = `${idPrefix}-no-fees-hint`;
 
@@ -126,6 +129,24 @@ export function FilterFields({
           Pokazujemy oferty z potwierdzoną opłatą 0 zł, bez warunków.
         </p>
       </div>
+
+      {signedIn ? (
+        <div>
+          <label htmlFor={eligibleId} className="flex min-h-11 cursor-pointer items-start gap-3 py-2">
+            <input
+              id={eligibleId}
+              type="checkbox"
+              checked={state.eligibleOnly}
+              onChange={(event) => onChange({ eligibleOnly: event.target.checked })}
+              className="checkbox checkbox-sm mt-0.5"
+            />
+            <span className="text-small font-semibold text-ink-900">Tylko te, w których mogę wziąć udział</span>
+          </label>
+          <p className="ml-8 text-caption text-ink-500">
+            Na podstawie karencji i banków, w których jesteś klientem (zakładka „Moje konto”).
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }

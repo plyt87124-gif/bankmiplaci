@@ -72,6 +72,18 @@ export function EligibilityBanner({
     );
   }
 
+  if (result.currentClient) {
+    return (
+      <Shell state="not-eligible" className={className} title="Jesteś obecnie klientem tego banku">
+        <p>
+          Zaznaczyłeś/aś w swoim koncie, że masz teraz konto w {bankName} (typ „{accountLabel}”). Ta promocja ma okres
+          karencji, więc prawdopodobnie nie możesz z niej skorzystać, dopóki nie zamkniesz konta i nie wpiszesz daty
+          zamknięcia w „Moje konto”.
+        </p>
+      </Shell>
+    );
+  }
+
   // not-eligible: a fixed cut-off date never resolves by waiting; a cooldown does.
   if (!result.cutoffFailed && from) {
     return (

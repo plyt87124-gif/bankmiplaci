@@ -10,6 +10,9 @@ export interface EligibilityResult {
   // for ineligibility — this rule doesn't resolve itself over time,
   // so the banner phrases it differently from eligibleFromDate.
   cutoffFailed?: boolean;
+  // True when the user said they are a CURRENT client of that bank (no closure date): the offer is for new
+  // clients, so they do not qualify until they close the account and enter the date.
+  currentClient?: boolean;
 }
 
 const hasMonths = (m: number | null | undefined): m is number => typeof m === "number" && Number.isFinite(m);
@@ -19,6 +22,14 @@ export function eligibleFromDate(wasClientUntil: Date, cooldownMonths: number): 
   const d = new Date(wasClientUntil);
   d.setUTCMonth(d.getUTCMonth() + cooldownMonths);
   return d;
+}
+
+/**
+ * "Jestem obecnie klientem": a bank-history row with a start (wasClientFrom) and no closure date. Stored this way so
+ * no schema change is needed; a row with neither date is "no data", not a current client.
+ */
+export function isCurrentClient(row: { wasClientFrom?: Date | null; wasClientUntil?: Date | null } | null | undefined): boolean {
+  return Boolean(row?.wasClientFrom) && !row?.wasClientUntil;
 }
 
 const dayKey = (d: Date) => d.toISOString().slice(0, 10);
@@ -52,10 +63,12 @@ export function computeEligibility(
   cooldownMonths: number | null | undefined,
   cooldownCutoffDate: Date | null | undefined,
   wasClientUntil: Date | null | undefined,
-  now: Date = new Date()
+  now: Date = new Date(),
+  currentClient = false
 ): EligibilityResult {
   const monthRule = hasMonths(cooldownMonths);
   if (!monthRule && !cooldownCutoffDate) return { status: "unknown" };
+  if (currentClient && !wasClientUntil) return { status: "not-eligible", currentClient: true };
   if (!wasClientUntil) return { status: "unknown" };
 
   const today = dayKey(warsawTodayAsUtcMidnight(now));

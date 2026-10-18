@@ -70,6 +70,7 @@ test("empty URL = empty state, default sort in force", () => {
     difficulty: [],
     minBonus: null,
     noFees: false,
+    eligibleOnly: false,
     sort: ""
   });
   assert.equal(effectiveSort(EMPTY), DEFAULT_SORT);
@@ -168,6 +169,7 @@ test("a state survives a trip through the URL", () => {
     difficulty: ["EASY", "MEDIUM"],
     minBonus: 100000,
     noFees: true,
+    eligibleOnly: true,
     sort: "highest-bonus"
   };
   assert.deepEqual(parseListingParams(new URLSearchParams(toQueryString(state))), state);

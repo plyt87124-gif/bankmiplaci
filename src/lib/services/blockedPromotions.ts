@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { computeEligibility } from "@/lib/services/eligibility";
+import { computeEligibility, isCurrentClient } from "@/lib/services/eligibility";
 import { activeWhere } from "@/lib/services/promotions";
 
 /**
@@ -7,12 +7,14 @@ import { activeWhere } from "@/lib/services/promotions";
  * the closure date the user gave for that bank + account type fails the
  * offer's karencja rule (computeEligibility says "not-eligible"). Offers
  * whose rules are unknown, or for banks the user gave no date for, are never
- * listed - "no data" is not "blocked". Feeds the red glow of the offer cards.
+ * listed - "no data" is not "blocked". A bank the user marked as "jestem obecnie klientem"
+ * blocks that bank's offers that have a karencja rule. Feeds the red glow of the cards and
+ * the "only those I can join" filter.
  */
 export async function listBlockedPromotionSlugs(userId: string, now: Date = new Date()): Promise<string[]> {
   const history = await db.userBankHistory.findMany({
-    where: { userId, wasClientUntil: { not: null } },
-    select: { bankId: true, accountType: true, wasClientUntil: true }
+    where: { userId, OR: [{ wasClientUntil: { not: null } }, { wasClientFrom: { not: null } }] },
+    select: { bankId: true, accountType: true, wasClientFrom: true, wasClientUntil: true }
   });
   if (history.length === 0) return [];
 
@@ -29,7 +31,13 @@ export async function listBlockedPromotionSlugs(userId: string, now: Date = new 
   for (const promotion of promotions) {
     const row = history.find((h) => h.bankId === promotion.bankId && h.accountType === promotion.accountType);
     if (!row) continue;
-    const result = computeEligibility(promotion.cooldownMonths, promotion.cooldownCutoffDate, row.wasClientUntil, now);
+    const result = computeEligibility(
+      promotion.cooldownMonths,
+      promotion.cooldownCutoffDate,
+      row.wasClientUntil,
+      now,
+      isCurrentClient(row)
+    );
     if (result.status === "not-eligible") blocked.push(promotion.slug);
   }
   return blocked;

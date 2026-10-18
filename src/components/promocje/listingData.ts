@@ -71,8 +71,10 @@ export interface ListingResult {
  * dozen offers); move the paging (and the segment counts) into the database
  * query when the list grows - WP-17 owns that change.
  */
-export async function loadListing(state: ListingState): Promise<ListingResult> {
-  const everyType = await listPromotionCards(toServiceFilters(state, ["accountType"]));
+export async function loadListing(state: ListingState, excludeSlugs: ReadonlySet<string> = new Set()): Promise<ListingResult> {
+  const all = await listPromotionCards(toServiceFilters(state, ["accountType"]));
+  // `excludeSlugs`: offers a signed-in visitor chose to hide ("tylko te, w których mogę wziąć udział").
+  const everyType = excludeSlugs.size > 0 ? all.filter((card) => !excludeSlugs.has(card.slug)) : all;
   return { cards: applyAccountType(everyType, state.accountType), counts: segmentCounts(everyType) };
 }
 

@@ -367,7 +367,7 @@ export function Filters({ banks, resultCount, shownCount, segmentCounts, disclos
               aria-disabled={panelCount === 0 || undefined}
               onClick={() => {
                 if (panelCount === 0) return;
-                navigate({ bank: "", difficulty: [], minBonus: null, noFees: false });
+                navigate({ bank: "", difficulty: [], minBonus: null, noFees: false, eligibleOnly: false });
               }}
             >
               Wyczyść

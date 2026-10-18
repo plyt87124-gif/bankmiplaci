@@ -41,6 +41,9 @@ import {
   promotionsListTitle
 } from "@/lib/seo";
 
+import { getCurrentUser } from "@/lib/userSession";
+import { listBlockedPromotionSlugs } from "@/lib/services/blockedPromotions";
+
 type SearchParams = Record<string, string | string[] | undefined>;
 
 interface PageProps {
@@ -70,8 +73,12 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
   const page = parsePage(params);
   const now = new Date();
 
+  // "Tylko te, w których mogę wziąć udział": only for a signed-in visitor; their blocked offers are left out.
+  const viewer = state.eligibleOnly ? await getCurrentUser() : null;
+  const blocked = viewer ? new Set(await listBlockedPromotionSlugs(viewer.id)) : new Set<string>();
+
   const [listing, banks, latestVerification, activeCount] = await Promise.all([
-    loadListing(state),
+    loadListing(state, blocked),
     getBanksWithOffers(),
     getLatestVerification(),
     getActiveCount()
@@ -161,7 +168,7 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
               hasFilters={filtersOn && activeCount > 0}
               relaxations={emptyHelp?.relaxations}
               suggestions={emptyHelp?.suggestions}
-              clearHref={listingHref({ ...state, q: "", bank: "", accountType: "", difficulty: [], minBonus: null, noFees: false })}
+              clearHref={listingHref({ ...state, q: "", bank: "", accountType: "", difficulty: [], minBonus: null, noFees: false, eligibleOnly: false })}
             />
           ) : (
             <ListingGrid

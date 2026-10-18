@@ -132,11 +132,17 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
           </Field>
           <Field
             label="Data zamknięcia"
-            required
-            hint="Jeśli obowiązywał okres wypowiedzenia, wpisz datę faktycznego zamknięcia."
+            hint="Jeśli obowiązywał okres wypowiedzenia, wpisz datę faktycznego zamknięcia. Wymagana, chyba że jesteś tam obecnie klientem."
           >
             {(control) => <Input type="date" name="wasClientUntil" {...control} />}
           </Field>
+          <label className="flex min-h-11 cursor-pointer items-start gap-3 py-2 sm:col-span-2">
+            <input type="checkbox" name="currentClient" className="checkbox checkbox-sm mt-0.5" />
+            <span className="text-small text-ink-900">
+              <span className="font-semibold">Jestem obecnie klientem tego banku</span> (to konto jest nadal czynne) -
+              oznaczymy jego promocje jako niedostępne dla Ciebie.
+            </span>
+          </label>
           <div className="sm:col-span-2">
             <Button type="submit">Dodaj do historii</Button>
           </div>
@@ -163,7 +169,7 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
                   <div className="min-w-0">
                     <p className="break-words text-ui font-semibold text-ink-900">{entryBank}</p>
                     <p className="text-small text-ink-500">
-                      {ACCOUNT_TYPE_LABEL[e.accountType]} · do {e.wasClientUntil ? formatDatePL(e.wasClientUntil) : "Brak danych"}
+                      {ACCOUNT_TYPE_LABEL[e.accountType]} · {e.wasClientUntil ? `do ${formatDatePL(e.wasClientUntil)}` : e.wasClientFrom ? "obecnie klient" : "Brak danych"}
                     </p>
                   </div>
                   <form action={deleteBankHistoryEntry.bind(null, e.id)}>
