@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { ChevronUp, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -84,6 +85,14 @@ export function AdminSwitcher({
           <Link href="/admin" role="menuitem" className={item}>
             Panel admina
           </Link>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className={cn(item, "text-coral-600")}
+          >
+            Wyloguj z panelu admina
+          </button>
           {options.length === 0 ? (
             <p className="px-3 py-2 text-caption text-ink-500">
               Ustaw ADMIN_TEST_USER_EMAIL i ADMIN_OWN_USER_EMAIL w .env.local, by przełączać konta.
