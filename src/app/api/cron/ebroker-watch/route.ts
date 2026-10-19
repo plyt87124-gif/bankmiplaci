@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
-import { runEbrokerWatch, watchDigestEmail } from "@/lib/services/ebrokerWatch";
+import { runEbrokerWatch, watchDailyReport } from "@/lib/services/ebrokerWatch";
 
 export const dynamic = "force-dynamic";
 
@@ -32,10 +32,11 @@ async function handler(request: NextRequest) {
   try {
     const { result, notifications } = await runEbrokerWatch(db, fetchCatalogXml);
 
-    const adminEmail = process.env.ADMIN_EMAIL;
-    if (adminEmail && notifications.length > 0) {
+    // Every day, also when nothing changed (so the owner knows the check ran). ADMIN_EMAIL, else SUPPORT_EMAIL.
+    const adminEmail = process.env.ADMIN_EMAIL ?? process.env.SUPPORT_EMAIL;
+    if (adminEmail) {
       const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-      const mail = watchDigestEmail(notifications, `${site}/admin`);
+      const mail = watchDailyReport(result, notifications, `${site}/admin`);
       await sendEmail({ to: adminEmail, subject: mail.subject, html: mail.html });
     }
     return NextResponse.json(result);

@@ -259,12 +259,12 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
         fees={promotion.fees}
         cooldown={cooldown}
         hasEligibilityText={hasEligibilityText}
-        blocked={Boolean(cooldown) && eligibility.status === "not-eligible"}
+        blocked={eligibility.status === "not-eligible"}
         now={now}
       />
 
       {/* Only offers with a cooldown rule can say anything about eligibility, and an ended offer has nothing to join. */}
-      {cooldown && !state.expired ? (
+      {(cooldown || eligibility.currentClient) && !state.expired ? (
         <EligibilityBanner result={eligibility} bankName={bank.name} accountType={promotion.accountType} className="mt-6" />
       ) : null}
 

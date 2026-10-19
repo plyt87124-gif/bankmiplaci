@@ -58,18 +58,24 @@ export function clearCard(card: Element | null): void {
   });
 }
 
-/** Resolves when `find` returns something (checked every frame) or after `timeoutMs`. */
+/**
+ * Resolves when `find` returns something (polled with timers) or after `timeoutMs`.
+ *
+ * Timers on purpose, NOT requestAnimationFrame: while a view transition waits for its update callback the browser
+ * suppresses rendering, so rAF callbacks do not run - waiting on them would hang until the browser gives up on the
+ * transition after ~4 s (no animation, a frozen page, and a click that "takes 3 seconds").
+ */
 export function waitFor<T>(find: () => T | null, timeoutMs = 2500): Promise<T | null> {
   return new Promise((resolve) => {
     const started = performance.now();
     const tick = () => {
       const found = find();
       if (found || performance.now() - started > timeoutMs) {
-        // one more frame, so the new page has really been laid out
-        requestAnimationFrame(() => resolve(found));
+        // a short beat, so the new page has really been laid out
+        window.setTimeout(() => resolve(found), 60);
         return;
       }
-      requestAnimationFrame(tick);
+      window.setTimeout(tick, 16);
     };
     tick();
   });
