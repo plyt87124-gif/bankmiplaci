@@ -8,7 +8,7 @@ import { activeWhere } from "@/lib/services/promotions";
  * offer's karencja rule (computeEligibility says "not-eligible"). Offers
  * whose rules are unknown, or for banks the user gave no date for, are never
  * listed - "no data" is not "blocked". A bank the user marked as "jestem obecnie klientem"
- * blocks that bank's offers that have a karencja rule. Feeds the red glow of the cards and
+ * blocks ALL of that bank's open offers of the same account type (rule or not). Feeds the red glow of the cards and
  * the "only those I can join" filter.
  */
 export async function listBlockedPromotionSlugs(userId: string, now: Date = new Date()): Promise<string[]> {
@@ -21,8 +21,7 @@ export async function listBlockedPromotionSlugs(userId: string, now: Date = new 
   const promotions = await db.promotion.findMany({
     where: {
       ...activeWhere(),
-      bankId: { in: [...new Set(history.map((h) => h.bankId))] },
-      OR: [{ cooldownMonths: { not: null } }, { cooldownCutoffDate: { not: null } }]
+      bankId: { in: [...new Set(history.map((h) => h.bankId))] }
     },
     select: { slug: true, bankId: true, accountType: true, cooldownMonths: true, cooldownCutoffDate: true }
   });

@@ -189,6 +189,29 @@ export async function runEbrokerWatch(
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+/**
+ * The e-mail of EVERY daily run: what was checked and what was found, also when nothing changed ("bez zmian"),
+ * so the owner can tell that the check ran. With findings it lists them like watchDigestEmail.
+ */
+export function watchDailyReport(
+  result: Pick<WatchResult, "baseline" | "offers" | "watched" | "added" | "changed" | "newlyMissing" | "returned" | "checkNeeded">,
+  items: NewNotification[],
+  adminUrl: string
+): { subject: string; html: string } {
+  const quiet = items.length === 0;
+  const subject = quiet
+    ? "Bankmiplaci: dzienna kontrola eBroker - bez zmian"
+    : `Bankmiplaci: dzienna kontrola eBroker - ${items.length} ${items.length === 1 ? "zmiana" : "zmian(y)"}`;
+  const summary = `<p>Sprawdzono katalog eBrokerPartner: ${result.offers} ofert, z czego ${result.watched} to konta (osobiste i firmowe).${
+    result.baseline ? " To pierwsze uruchomienie - zapisano stan wyjściowy, zmiany będą wykrywane od następnego dnia." : ""
+  }</p>`;
+  const counts = `<p style="color:#444">Nowe: ${result.added.length} · zmienione: ${result.changed.length} · zniknęły: ${result.newlyMissing.length} · wróciły: ${result.returned.length} · do sprawdzenia po terminie: ${result.checkNeeded.length}</p>`;
+  const rows = items.map((n) => `<li><strong>${esc(n.title)}</strong><br>${esc(n.body)}</li>`).join("");
+  const body = quiet ? "<p>Nic się nie zmieniło od poprzedniej kontroli.</p>" : `<p>Co ustalono:</p><ul>${rows}</ul>`;
+  const html = `${summary}${counts}${body}<p><a href="${esc(adminUrl)}">Otwórz panel admina</a></p><p style="color:#666;font-size:12px">Katalog eBroker nie zawiera dat ani edycji promocji - każda zmiana wymaga sprawdzenia regulaminu banku.</p>`;
+  return { subject, html };
+}
+
 /** One digest e-mail for everything raised in a run. */
 export function watchDigestEmail(items: NewNotification[], adminUrl: string): { subject: string; html: string } {
   const subject =

@@ -67,8 +67,9 @@ export function computeEligibility(
   currentClient = false
 ): EligibilityResult {
   const monthRule = hasMonths(cooldownMonths);
-  if (!monthRule && !cooldownCutoffDate) return { status: "unknown" };
+  // A current client cannot join an offer for new clients of their own bank, whether or not it names a karencja rule.
   if (currentClient && !wasClientUntil) return { status: "not-eligible", currentClient: true };
+  if (!monthRule && !cooldownCutoffDate) return { status: "unknown" };
   if (!wasClientUntil) return { status: "unknown" };
 
   const today = dayKey(warsawTodayAsUtcMidnight(now));
