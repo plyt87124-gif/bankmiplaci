@@ -214,10 +214,10 @@ const RULES: Rule[] = [
   },
   {
     id: "forbidden-shadow-and-lift",
-    description: "karty bez cieni i bez uniesienia na hover (spec sekcja 1.2, 5): dozwolone tylko shadow-pop i shadow-modal; zakaz shadow-sm|md|lg|xl|2xl|card, hover:shadow, hover:translate, hover:scale",
-    pattern: /(?<![\w-])(?:shadow-(?:sm|md|lg|xl|2xl|inner|card|cardHover)|hover:shadow-[\w-]+|hover:-?translate-[xy]-[\w.]+|hover:scale-[\w.]+)(?![\w-])/g,
-    bad: ['className="shadow-md"', "shadow-card", "hover:shadow-pop", "hover:-translate-y-0.5", "hover:scale-105", "shadow-cardHover"],
-    good: ["shadow-pop", "shadow-modal", "shadow-none", "group-hover:translate-x-0.5", "--shadow-pop: 0 6px;"]
+    description: "bez uniesienia na hover (spec sekcja 1.2, 5): zakaz hover:translate i hover:scale. Cienie kart (shadow-sm|md|lg) sa dozwolone od 2026-10-20 (decyzja wlasciciela: kafle maja byc nad plaszczyzna strony); nadal zakazane: shadow-xl|2xl|inner|card|cardHover",
+    pattern: /(?<![\w-])(?:shadow-(?:xl|2xl|inner|card|cardHover)|hover:-?translate-[xy]-[\w.]+|hover:scale-[\w.]+)(?![\w-])/g,
+    bad: ["shadow-xl", "shadow-card", "hover:-translate-y-0.5", "hover:scale-105", "shadow-cardHover"],
+    good: ["shadow-pop", "shadow-modal", "shadow-none", "shadow-md", "shadow-lg", "hover:shadow-lg", "group-hover:translate-x-0.5", "--shadow-pop: 0 6px;"]
   },
   {
     id: "blur-and-smooth-scroll",
