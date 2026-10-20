@@ -1,64 +1,85 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { Clock, ListChecks, Lock, type LucideIcon } from "lucide-react";
 import { useOptionalSession } from "@/components/SessionProvider";
+import { formatDatePL } from "@/lib/format";
 
-const BlockedContext = createContext<ReadonlySet<string>>(new Set());
+export type ClientMark =
+  | { slug: string; reason: "client" }
+  | { slug: string; reason: "karencja"; until: string | null }
+  | { slug: string; reason: "joined" };
+
+const MarksContext = createContext<ReadonlyMap<string, ClientMark>>(new Map());
 
 /**
- * Knows which offers the signed-in visitor cannot take part in (karencja) and
- * hands the slugs to the cards (CardBlockedMark). One small request per
- * session user, only for signed-in visitors; failures mean "none blocked".
+ * Knows what the signed-in visitor should be told on top of each offer (client of that bank, karencja, ściąga
+ * already open) and hands it to the cards (CardBlockedMark). One small request per session user, only for
+ * signed-in visitors; failures mean "no marks".
  */
 export function BlockedOffersProvider({ children }: { children: ReactNode }) {
   const session = useOptionalSession();
   const userId = session?.user?.id ?? null;
-  const [blocked, setBlocked] = useState<ReadonlySet<string>>(new Set());
+  const [marks, setMarks] = useState<ReadonlyMap<string, ClientMark>>(new Map());
 
   useEffect(() => {
     if (!userId) {
-      setBlocked(new Set());
+      setMarks(new Map());
       return;
     }
     let cancelled = false;
     fetch("/api/eligibility/blocked", { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : { slugs: [] }))
-      .then((data: { slugs?: unknown }) => {
+      .then((res) => (res.ok ? res.json() : { items: [] }))
+      .then((data: { items?: unknown }) => {
         if (cancelled) return;
-        const slugs = Array.isArray(data.slugs) ? data.slugs.filter((s): s is string => typeof s === "string") : [];
-        setBlocked(new Set(slugs));
+        const items = Array.isArray(data.items) ? (data.items as ClientMark[]) : [];
+        setMarks(new Map(items.filter((m) => m && typeof m.slug === "string").map((m) => [m.slug, m])));
       })
       .catch(() => {
-        if (!cancelled) setBlocked(new Set());
+        if (!cancelled) setMarks(new Map());
       });
     return () => {
       cancelled = true;
     };
   }, [userId]);
 
-  return <BlockedContext.Provider value={blocked}>{children}</BlockedContext.Provider>;
+  return <MarksContext.Provider value={marks}>{children}</MarksContext.Provider>;
+}
+
+const COPY: Record<ClientMark["reason"], { icon: LucideIcon; title: string }> = {
+  client: { icon: Lock, title: "Już jesteś klientem" },
+  karencja: { icon: Clock, title: "Karencja trwa" },
+  joined: { icon: ListChecks, title: "Masz tę ściągę" }
+};
+
+function detail(mark: ClientMark): string {
+  if (mark.reason === "client") return "Promocja tylko dla nowych klientów";
+  if (mark.reason === "karencja") return mark.until ? `Dołączysz od ${formatDatePL(mark.until)}` : "Nie spełniasz warunku banku";
+  return "Postęp w „Moje konto”";
 }
 
 /**
- * Rendered inside an offer card: when the visitor is blocked from this offer
- * it marks the card (`data-blocked`, the red glow in motion.css) and says so
- * in words for screen readers. Renders nothing otherwise.
+ * Rendered inside an offer card: when the visitor cannot join (client of the bank, karencja) or already has the
+ * ściąga open, a frosted veil with a short message sits IN FRONT of the card (the card underneath is untouched).
+ * The veil lets clicks through and fades away on hover so the card can be read. Renders nothing otherwise.
  */
 export function CardBlockedMark({ slug }: { slug: string }) {
-  const blocked = useContext(BlockedContext).has(slug);
-  const [anchor, setAnchor] = useState<HTMLSpanElement | null>(null);
-
-  useEffect(() => {
-    const card = anchor?.closest<HTMLElement>("[data-card]");
-    if (!card) return;
-    if (blocked) card.setAttribute("data-blocked", "true");
-    else card.removeAttribute("data-blocked");
-    return () => card.removeAttribute("data-blocked");
-  }, [anchor, blocked]);
-
+  const mark = useContext(MarksContext).get(slug);
+  if (!mark) return null;
+  const { icon: Icon, title } = COPY[mark.reason];
+  const tone = mark.reason === "joined" ? "ring-action/40 text-action" : "ring-coral-600/45 text-coral-600";
   return (
-    <span ref={setAnchor} className="sr-only">
-      {blocked ? "Prawdopodobnie nie kwalifikujesz się – karencja." : null}
-    </span>
+    <div
+      data-card-mark={mark.reason}
+      className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center rounded-card bg-paper/70 p-3 transition-opacity duration-300 group-hover:opacity-0"
+    >
+      <div className={`flex max-w-[85%] items-center gap-3 rounded-field bg-surface px-4 py-2.5 shadow-lg ring-1 ${tone}`}>
+        <Icon size={22} aria-hidden="true" className="shrink-0" />
+        <p className="text-small leading-snug">
+          <span className="block font-semibold text-ink-900">{title}</span>
+          <span className="block text-ink-700">{detail(mark)}</span>
+        </p>
+      </div>
+    </div>
   );
 }

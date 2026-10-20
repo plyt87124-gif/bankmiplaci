@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { AdminSwitcher } from "@/components/AdminSwitcher";
 import { AuthModalProvider } from "@/components/AuthModalProvider";
 import { BlockedOffersProvider } from "@/components/BlockedOffers";
+import { TileStyleSwitch } from "@/components/TileStyleSwitch";
 import { CardTransitionBridge } from "@/components/CardTransitionBridge";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/components/ui/theme";
@@ -88,6 +89,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </main>
             <Footer />
           </BlockedOffersProvider>
+          {process.env.NODE_ENV !== "production" ? <TileStyleSwitch /> : null}
           {adminSession ? (
             <AdminSwitcher options={switchAccounts.map(({ key, label }) => ({ key, label }))} current={switchCurrent} />
           ) : null}

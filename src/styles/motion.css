@@ -310,8 +310,73 @@ details[open] > summary .acc-chevron,
 /* (karencja). Set by CardBlockedMark on cards and by KeyFacts.        */
 /* ------------------------------------------------------------------ */
 
-article[data-card][data-blocked="true"],
 dl[data-blocked="true"] {
   border-color: rgb(var(--color-coral-600) / 0.7);
   box-shadow: 0 0 0 1px rgb(var(--color-coral-600) / 0.35), 0 0 28px -2px rgb(var(--color-coral-600) / 0.42);
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Offer tiles above the page plane - comparison variants A-D          */
+/* (development switch components/TileStyleSwitch.tsx sets data-tile   */
+/* on <html>; the chosen variant becomes the default and the switch    */
+/* goes away). No lift on hover: only the shadow deepens.              */
+/* ------------------------------------------------------------------ */
+
+article[data-card="promotion"] {
+  transition: box-shadow 220ms var(--ease-out), border-color 150ms var(--ease-out), background-color 150ms var(--ease-out);
+}
+
+/* A: raised - contact shadow + soft far shadow, light top edge */
+html[data-tile="a"] article[data-card="promotion"] {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 10px 26px -8px rgb(0 0 0 / 0.30);
+}
+html[data-tile="a"] article[data-card="promotion"]:hover {
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.14), 0 18px 36px -10px rgb(0 0 0 / 0.42);
+}
+html.dark[data-tile="a"] article[data-card="promotion"] {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 12px 30px -8px rgb(0 0 0 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+
+/* B: glass - lighter top, inner highlight, deep shadow and a faint accent glow underneath */
+html[data-tile="b"] article[data-card="promotion"] {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0) 55%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 14px 30px -10px rgb(var(--color-action) / 0.28), 0 3px 8px -2px rgb(0 0 0 / 0.14);
+}
+html.dark[data-tile="b"] article[data-card="promotion"] {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0) 60%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 16px 34px -10px rgb(var(--color-action) / 0.30), 0 4px 10px -2px rgb(0 0 0 / 0.6);
+}
+html[data-tile="b"] article[data-card="promotion"]:hover {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 20px 40px -10px rgb(var(--color-action) / 0.4), 0 4px 10px -2px rgb(0 0 0 / 0.18);
+}
+
+/* C: stack - two cards peek out underneath */
+html[data-tile="c"] article[data-card="promotion"] {
+  box-shadow:
+    0 6px 0 -3px rgb(var(--color-line-strong) / 0.55),
+    0 12px 0 -6px rgb(var(--color-line) / 0.9),
+    0 18px 26px -12px rgb(0 0 0 / 0.38);
+  margin-bottom: 12px;
+}
+html[data-tile="c"] article[data-card="promotion"]:hover {
+  box-shadow:
+    0 8px 0 -3px rgb(var(--color-line-strong) / 0.65),
+    0 16px 0 -6px rgb(var(--color-line) / 1),
+    0 24px 34px -12px rgb(0 0 0 / 0.45);
+}
+
+/* D: bevel - light top edge, dark bottom edge, thick drop shadow */
+html[data-tile="d"] article[data-card="promotion"] {
+  border-top-color: rgb(255 255 255 / 0.85);
+  border-bottom-color: rgb(var(--color-line-strong) / 0.9);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), inset 0 -2px 0 rgb(0 0 0 / 0.06), 0 12px 22px -10px rgb(0 0 0 / 0.38);
+}
+html.dark[data-tile="d"] article[data-card="promotion"] {
+  border-top-color: rgb(255 255 255 / 0.22);
+  border-bottom-color: rgb(0 0 0 / 0.6);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.10), inset 0 -2px 0 rgb(0 0 0 / 0.35), 0 14px 26px -10px rgb(0 0 0 / 0.8);
+}
+html[data-tile="d"] article[data-card="promotion"]:hover {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), inset 0 -2px 0 rgb(0 0 0 / 0.06), 0 18px 30px -10px rgb(0 0 0 / 0.5);
 }
