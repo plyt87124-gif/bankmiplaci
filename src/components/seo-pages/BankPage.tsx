@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
+import { ViewerFilterNote } from "@/components/ViewerFilterNote";
 import { AttributionCapture } from "@/components/AttributionCapture";
 import { JsonLd } from "@/components/JsonLd";
 import type { PromotionCardData } from "@/components/PromotionCard";
@@ -107,6 +108,7 @@ export function BankPage({
         {cards.length > 0 ? (
           <>
             <AffiliateDisclosure variant="strip" sort="recommended" className="mt-4 max-w-3xl" />
+            <ViewerFilterNote />
             <div className="mt-6">
               <ListingGrid cards={cards} moreHref={null} remaining={0} />
             </div>

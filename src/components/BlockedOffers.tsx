@@ -11,6 +11,12 @@ export type ClientMark =
   | { slug: string; reason: "joined" };
 
 const MarksContext = createContext<ReadonlyMap<string, ClientMark>>(new Map());
+const FilterContext = createContext<{ onlyEligible: boolean; count: number }>({ onlyEligible: false, count: 0 });
+
+/** The "only offers I can join" setting of the signed-in visitor and how many offers it hides. */
+export function useViewerFilter() {
+  return useContext(FilterContext);
+}
 
 /**
  * Knows what the signed-in visitor should be told on top of each offer (client of that bank, karencja, ściąga
@@ -21,19 +27,22 @@ export function BlockedOffersProvider({ children }: { children: ReactNode }) {
   const session = useOptionalSession();
   const userId = session?.user?.id ?? null;
   const [marks, setMarks] = useState<ReadonlyMap<string, ClientMark>>(new Map());
+  const [onlyEligible, setOnlyEligible] = useState(false);
 
   useEffect(() => {
     if (!userId) {
       setMarks(new Map());
+      setOnlyEligible(false);
       return;
     }
     let cancelled = false;
     fetch("/api/eligibility/blocked", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : { items: [] }))
-      .then((data: { items?: unknown }) => {
+      .then((data: { items?: unknown; onlyEligible?: unknown }) => {
         if (cancelled) return;
         const items = Array.isArray(data.items) ? (data.items as ClientMark[]) : [];
         setMarks(new Map(items.filter((m) => m && typeof m.slug === "string").map((m) => [m.slug, m])));
+        setOnlyEligible(data.onlyEligible === true);
       })
       .catch(() => {
         if (!cancelled) setMarks(new Map());
@@ -43,7 +52,11 @@ export function BlockedOffersProvider({ children }: { children: ReactNode }) {
     };
   }, [userId]);
 
-  return <MarksContext.Provider value={marks}>{children}</MarksContext.Provider>;
+  return (
+    <FilterContext.Provider value={{ onlyEligible, count: marks.size }}>
+      <MarksContext.Provider value={marks}>{children}</MarksContext.Provider>
+    </FilterContext.Provider>
+  );
 }
 
 const COPY: Record<ClientMark["reason"], { icon: LucideIcon; title: string }> = {

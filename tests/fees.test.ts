@@ -43,11 +43,9 @@ test("a blank fee input becomes an explicit NULL (never undefined, never 0) - Pr
   assert.equal(parsed.accountFeeCents, null);
   assert.equal(parsed.cardFeeCents, null);
   assert.equal(parsed.atmFeeCents, null);
-  // an absent key is "not verified" too, and an entered 0 stays 0
-  assert.deepEqual(
-    [feesSchema.parse({}).accountFeeCents, feesSchema.parse({ cardFeeCents: 0 }).cardFeeCents],
-    [null, 0]
-  );
+  // an absent key is "not verified" too (zod 4 leaves it undefined here; the write path turns it into NULL), and an entered 0 stays 0
+  assert.equal(feesWriteData(feesSchema.parse({})).accountFeeCents, null);
+  assert.equal(feesWriteData(feesSchema.parse({ cardFeeCents: 0 })).cardFeeCents, 0);
 });
 
 test("feesWriteData: amounts are number|null, blank text is null, fees.sourceUrl is never in the payload", () => {

@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 
@@ -37,7 +38,7 @@ export async function clearUserSession() {
   (await cookies()).delete(COOKIE_NAME);
 }
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async function getCurrentUser() {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token) return null;
 
@@ -48,10 +49,10 @@ export async function getCurrentUser() {
 
     return await db.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, createdAt: true }
+      select: { id: true, email: true, name: true, createdAt: true, onlyEligible: true }
     });
   } catch {
     // Expired or tampered token — treat as logged out.
     return null;
   }
-}
+});

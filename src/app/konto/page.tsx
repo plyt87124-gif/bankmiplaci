@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { X } from "lucide-react";
 import { getCurrentUser } from "@/lib/userSession";
 import { db } from "@/lib/db";
-import { upsertBankHistory, deleteBankHistoryEntry } from "./actions";
+import { upsertBankHistory, deleteBankHistoryEntry, setOnlyEligible } from "./actions";
 import { LogoutButton } from "./LogoutButton";
 import { ACCOUNT_TYPE_LABEL, formatDatePL } from "@/lib/format";
 import { resolveFee } from "@/lib/feeModel";
@@ -96,6 +96,23 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
           emptyState={!isOnboarding}
         />
       </EarningsProvider>
+
+      <section id="ustawienia" aria-labelledby="ustawienia-h" className="mt-12 max-w-3xl scroll-mt-20">
+        <h2 id="ustawienia-h">Ustawienia</h2>
+        <form action={setOnlyEligible} className="mt-4 rounded-card border border-line bg-surface p-4 sm:p-5">
+          <label htmlFor="only-eligible" className="flex min-h-11 cursor-pointer items-start gap-3 py-1">
+            <input id="only-eligible" type="checkbox" name="onlyEligible" defaultChecked={user.onlyEligible} className="checkbox checkbox-sm mt-0.5" />
+            <span className="text-ui font-semibold text-ink-900">Pokazuj tylko oferty, w których mogę wziąć udział</span>
+          </label>
+          <p className="ml-8 text-small text-ink-700">
+            Na całej stronie (strona główna, lista, porównywarka, quiz) ukryjemy oferty banków, w których jesteś klientem, te z
+            trwającą karencją i te, które już masz w ściądze.
+          </p>
+          <Button type="submit" variant="secondary" className="mt-3">
+            Zapisz
+          </Button>
+        </form>
+      </section>
 
       <section aria-labelledby="historia-bankowa" className="mt-12 max-w-3xl">
         <h2 id="historia-bankowa">Twoja historia bankowa</h2>

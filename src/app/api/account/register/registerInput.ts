@@ -27,7 +27,7 @@ const REGISTER_FIELDS: readonly RegisterField[] = ["name", "username", "email", 
 export const registerRequestSchema = registerSchema.extend({
   name: z.string().trim().max(80, "Imię może mieć max. 80 znaków").optional(),
   // Exactly `true`: a missing, false or string value never counts as consent.
-  acceptTerms: z.literal(true, { errorMap: () => ({ message: ACCEPT_TERMS_MESSAGE }) })
+  acceptTerms: z.literal(true, { error: ACCEPT_TERMS_MESSAGE })
 });
 
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
@@ -39,7 +39,7 @@ function isRegisterField(value: unknown): value is RegisterField {
 }
 
 /** First message per field, in the order zod reported them. */
-export function fieldErrorsFromIssues(issues: readonly { path: readonly (string | number)[]; message: string }[]): RegisterFieldErrors {
+export function fieldErrorsFromIssues(issues: readonly { path: readonly PropertyKey[]; message: string }[]): RegisterFieldErrors {
   const errors: RegisterFieldErrors = {};
   for (const issue of issues) {
     const key = issue.path[0];
