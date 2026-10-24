@@ -12,12 +12,15 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   const headers = { "Cache-Control": "no-store", Vary: "Cookie" };
-  const empty = { slugs: [], items: [] };
+  const empty = { slugs: [], items: [], onlyEligible: false };
   const user = await getCurrentUser();
   if (!user) return NextResponse.json(empty, { headers });
   try {
     const items = await listEligibilityMarks(user.id);
-    return NextResponse.json({ items, slugs: items.filter((m) => m.reason !== "joined").map((m) => m.slug) }, { headers });
+    return NextResponse.json(
+      { items, slugs: items.filter((m) => m.reason !== "joined").map((m) => m.slug), onlyEligible: Boolean(user.onlyEligible) },
+      { headers }
+    );
   } catch (error) {
     console.error("[eligibility/blocked]", error instanceof Error ? error.message : error);
     return NextResponse.json(empty, { headers });

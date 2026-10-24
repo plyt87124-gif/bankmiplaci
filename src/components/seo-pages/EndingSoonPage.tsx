@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
+import { ViewerFilterNote } from "@/components/ViewerFilterNote";
 import { AttributionCapture } from "@/components/AttributionCapture";
 import { JsonLd } from "@/components/JsonLd";
 import { PromotionCard, type PromotionCardData } from "@/components/PromotionCard";
@@ -73,6 +74,7 @@ export function EndingSoonPage({ cards, now }: { cards: readonly PromotionCardDa
         {total > 0 ? (
           <>
             <AffiliateDisclosure variant="strip" sort="ending-soon" className="max-w-3xl" />
+            <ViewerFilterNote />
             {groups.map((group) => (
               <section key={group.id} aria-labelledby={`grupa-${group.id}`} className="mt-10">
                 <h2 id={`grupa-${group.id}`}>

@@ -41,6 +41,7 @@ import {
   promotionsListTitle
 } from "@/lib/seo";
 
+import { ViewerFilterNote } from "@/components/ViewerFilterNote";
 import { getCurrentUser } from "@/lib/userSession";
 import { listBlockedPromotionSlugs } from "@/lib/services/blockedPromotions";
 
@@ -178,6 +179,7 @@ export default async function PromotionsPage({ searchParams }: PageProps) {
             />
           )}
         </Filters>
+        <ViewerFilterNote />
       </section>
 
 

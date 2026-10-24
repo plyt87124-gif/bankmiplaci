@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
+import { ViewerFilterNote } from "@/components/ViewerFilterNote";
 import { PromotionCard } from "@/components/PromotionCard";
 import { TrustNote } from "@/components/trust/TrustNote";
 import { ButtonLink } from "@/components/ui/Button";
@@ -50,6 +51,7 @@ export function HomeFeatured({ model, now }: { model: HomeModel | null; now?: Da
         <>
           <AffiliateDisclosure variant="strip" sort="recommended" className="mt-4 max-w-3xl" />
           <HomeSegmentPanels panels={panels} className="mt-6" />
+          <ViewerFilterNote />
           <div className="mt-8">
             <HomeSeeAllLink />
           </div>

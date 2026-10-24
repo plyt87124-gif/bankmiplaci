@@ -3,6 +3,7 @@ import type { AccountType, Difficulty, Prisma } from "@prisma/client";
 import { hasFeeCaveat } from "@/lib/feeModel";
 import { sortRecommended } from "@/lib/recommended";
 import { signupCutoff } from "@/lib/promotionAvailability";
+import { applyViewerExclusions } from "@/lib/services/viewerFilter";
 import { activeWhere, buildActiveWhere, sortToOrderBy, type PromotionFilters } from "@/lib/services/promotions";
 
 /**
@@ -159,7 +160,7 @@ export async function listPromotionCards(filters: PromotionFilters = {}): Promis
     select: PROMOTION_CARD_SELECT,
     orderBy: filters.ended ? [{ endDate: "desc" }, { rating: "desc" }] : sortToOrderBy(filters.sort)
   });
-  return finalizeCards(rows, filters.ended ? "newest" : filters.sort);
+  return applyViewerExclusions(finalizeCards(rows, filters.ended ? "newest" : filters.sort));
 }
 
 /** Active offers of one bank, in the default "Polecane" order. */
@@ -179,7 +180,7 @@ export async function getEndingSoon(days: number, now: Date = new Date()): Promi
     select: PROMOTION_CARD_SELECT,
     orderBy: [{ endDate: "asc" }, { rating: "desc" }]
   });
-  return finalizeCards(rows, "ending-soon");
+  return applyViewerExclusions(finalizeCards(rows, "ending-soon"));
 }
 
 /** Number of offers on the public list, optionally narrowed by the same filters. */

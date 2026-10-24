@@ -43,6 +43,14 @@ export async function upsertBankHistory(formData: FormData) {
   revalidatePath("/konto");
 }
 
+export async function setOnlyEligible(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Musisz być zalogowany.");
+  await db.user.update({ where: { id: user.id }, data: { onlyEligible: formData.get("onlyEligible") === "on" } });
+  // the setting changes every list of the site
+  revalidatePath("/", "layout");
+}
+
 export async function deleteBankHistoryEntry(id: string) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Musisz być zalogowany.");

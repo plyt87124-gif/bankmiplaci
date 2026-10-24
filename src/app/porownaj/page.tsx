@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Check } from "lucide-react";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
+import { ViewerFilterNote } from "@/components/ViewerFilterNote";
 import { AttributionCapture } from "@/components/AttributionCapture";
 import { JsonLd } from "@/components/JsonLd";
 import { TrustNote } from "@/components/trust/TrustNote";
@@ -83,6 +84,7 @@ export default async function ComparePage(props: { searchParams: SearchParams })
       </div>
 
       <AffiliateDisclosure variant="strip" sort="top-rated" className="mt-6" />
+      <ViewerFilterNote />
 
       {columns.length === 0 ? (
         <div className="mt-6 rounded-card border border-line bg-sunken p-6" role="status">

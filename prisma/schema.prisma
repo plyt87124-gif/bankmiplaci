@@ -61,6 +61,10 @@ model User {
   // never shown as "last login" anywhere.
   lastActiveAt DateTime?
 
+  // "Pokazuj tylko oferty, w których mogę wziąć udział" (Moje konto): hides every offer that carries a front-layer mark
+  // for this user (current client, karencja, ściąga already open) from every list on the site.
+  onlyEligible Boolean @default(false)
+
   // Consent to the terms (regulamin) and the version accepted. Both stay NULL
   // for accounts created before this was recorded: NULL means "no recorded
   // acceptance", never "accepted".
