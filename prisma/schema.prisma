@@ -425,6 +425,15 @@ model ChecklistStep {
   // See src/lib/checklistAvailability.ts for the three outcomes (available /
   // unavailable / unknown date).
   availableUntil DateTime?
+  // Billing windows counted from the day the agreement was concluded, the way
+  // some regulaminy define them (PKO Konto Firmowe: 6.07-6.08, 7.08-6.09,
+  // 7.09-6.10 for an account opened 6.07). Null (the default) keeps the
+  // original schedule: the month group follows calendar months. When set, the
+  // window starts `periodStartMonths` whole months after the agreement date
+  // (0 = on that very day) and lasts `periodMonths` months. All steps of one
+  // month group carry the same values. See src/lib/checklistSchedule.ts.
+  periodStartMonths Int?
+  periodMonths      Int?
   title       String
   // Set only on the step representing "collect the reward for this
   // group" — most steps (the actual actions) leave this null.

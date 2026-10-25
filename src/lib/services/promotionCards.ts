@@ -46,8 +46,8 @@ export interface PromotionCardData {
     cardFeeCents: number | null;
     cardFeeWaiverCondition: string | null;
     /**
-     * Yes/no only: the offer has an "Inne opłaty" remark (Fees.otherFee), so a
-     * bare 0 zł is the best case and reads "od 0 zł" (src/lib/feeModel.ts).
+     * Yes/no only: the offer has an "Inne opłaty" remark (Fees.otherFee). It no
+     * longer changes a bare 0 zł ("od 0 zł" is retired, src/lib/feeModel.ts).
      * The remark's TEXT never reaches a card - it is shown on the offer page.
      * Always set by `toCard`; optional in the type only so that hand-written
      * fixtures without it keep compiling (missing = no remark).

@@ -40,8 +40,7 @@ function Fact({
  *
  * The premium is NOT repeated in a separate tile. An offer without a cash
  * premium (maxBonusCents = 0) says "Bez premii gotówkowej" instead of 0 zł. A
- * fee that is not verified says "Brak danych" - never 0 zł; a 0 zł fee next to
- * an "Inne opłaty" remark says "od 0 zł" (the shared fee model, the same words
+ * fee that is not verified says "Brak danych" - never 0 zł (the shared fee model, the same words
  * as the fees section, the FAQ and the JSON-LD).
  */
 export function KeyFacts({

@@ -379,22 +379,21 @@ test("no forbidden design patterns in the table markup", () => {
   assert.doesNotMatch(html, /text-ink-300|border-ink-100|bg-ink-solid|text-\[1[01]px\]|break-all|animate-ping/);
 });
 
-/* ---------------- "od 0 zł" and the karencja rule ---------------- */
+/* ---------------- a free fee and the karencja rule ---------------- */
 
-test("table: a free fee with an 'Inne opłaty' remark reads 'od 0 zł', is not marked best, and says why", () => {
+test("table: an 'Inne opłaty' remark no longer turns a free fee into 'od 0 zł' - it stays a plain 0 zł and the best of its row", () => {
   const free = { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: 0, cardFeeWaiverCondition: null };
   const html = render([
     { card: card("x", { fees: { ...free, hasOtherFee: true } }), extras: EXTRAS_ON },
     { card: card("y", { fees: { ...free, accountFeeCents: 1500 } }), extras: EXTRAS_ON }
   ]);
   const t = text(html);
-  assert.match(t, /od 0\s?zł/);
-  assert.ok(t.includes("Zależnie od warunków"));
-  // the remark qualifies the card fee as well (like FeesSection): neither fee row of column "x" is a winner
+  assert.doesNotMatch(t, /od 0\s?zł/);
+  assert.ok(!t.includes("Zależnie od warunków"));
   const accountRow = html.slice(html.indexOf("Opłata za konto"), html.indexOf("Opłata za kartę"));
-  assert.doesNotMatch(accountRow, /sr-only">[^<]*najlepsz/i);
-  assert.equal(describeFee(0, null, true).kind, "free");
-  assert.equal(feeRank(describeFee(0, null, true)), 1);
+  assert.match(accountRow, /sr-only">[^<]*najlepsz/i);
+  assert.deepEqual(describeFee(0, null, true), { kind: "free" });
+  assert.equal(feeRank(describeFee(0, null, true)), 0);
   assert.equal(feeRank(describeFee(0, null)), 0);
 });
 

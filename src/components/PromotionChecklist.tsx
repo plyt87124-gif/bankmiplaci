@@ -6,7 +6,7 @@ import Link from "next/link";
 import { AlertCircle, ArrowRight, CheckCircle2, Gift, ListChecks, Lock } from "lucide-react";
 import { formatPLN, formatDate, pluralizePl } from "@/lib/format";
 import { cn } from "@/lib/cn";
-import { isGroupUnlocked, monthGroupLabel, unlockDateForGroup } from "@/lib/checklistSchedule";
+import { isGroupUnlocked, monthGroupLabel, periodRuleOf, unlockDateForGroup, type PeriodRule } from "@/lib/checklistSchedule";
 import { resolveGroups, isRewardEarned, earnedCentsFor, type ResolvedGroup } from "@/lib/checklistAvailability";
 import { useEarningsContext } from "@/components/EarningsContext";
 import { BankLogo } from "@/components/ui/BankLogo";
@@ -23,6 +23,9 @@ interface Step {
   order: number;
   /** Deadline for joining the sub-offer this step belongs to; see checklistAvailability.ts. */
   availableUntil?: string | Date | null;
+  /** Window counted from the agreement date instead of calendar months; see checklistSchedule.ts. */
+  periodStartMonths?: number | null;
+  periodMonths?: number | null;
 }
 
 interface Tracking {
@@ -43,18 +46,25 @@ interface Group extends ResolvedGroup<Step> {
   label: string;
   unlocked: boolean;
   unlockDate: Date | null;
+  /** Set when the regulamin counts this group's window from the agreement date (a billing period or "within 3 months"), not calendar months. */
+  rule: PeriodRule | null;
 }
 
 function buildGroups(steps: Step[], accountOpenedAt: Date | null): Group[] {
   // Which steps/rewards this participant can use is decided by the date they
   // actually took up the offer (accountOpenedAt), not by when they registered
   // here - see src/lib/checklistAvailability.ts.
-  return resolveGroups(steps, accountOpenedAt).map((g) => ({
-    ...g,
-    label: monthGroupLabel(accountOpenedAt, g.groupIndex, steps.find((s) => Math.floor(s.order / 10) === g.groupIndex)?.monthLabel ?? ""),
-    unlocked: isGroupUnlocked(accountOpenedAt, g.groupIndex),
-    unlockDate: accountOpenedAt ? unlockDateForGroup(accountOpenedAt, g.groupIndex) : null
-  }));
+  return resolveGroups(steps, accountOpenedAt).map((g) => {
+    const groupSteps = steps.filter((s) => Math.floor(s.order / 10) === g.groupIndex);
+    const rule = periodRuleOf(groupSteps);
+    return {
+      ...g,
+      rule,
+      label: monthGroupLabel(accountOpenedAt, g.groupIndex, groupSteps[0]?.monthLabel ?? "", rule),
+      unlocked: isGroupUnlocked(accountOpenedAt, g.groupIndex, rule),
+      unlockDate: accountOpenedAt ? unlockDateForGroup(accountOpenedAt, g.groupIndex, rule) : null
+    };
+  });
 }
 
 function trackingEarnedCents(tracking: Tracking, checked: Set<string>): number {
@@ -522,7 +532,7 @@ function ChecklistCard({
                 )}
               </div>
 
-              {g.rewardStep && <RewardRow title={g.rewardStep.title} unlocked={rewardEarned} />}
+              {g.rewardStep && <RewardRow title={g.rewardStep.title} unlocked={rewardEarned} stage={g.rule !== null} />}
             </div>
           );
         })}
@@ -645,7 +655,8 @@ function OpenedAtPrompt({ trackingId }: { trackingId: string }) {
   );
 }
 
-function RewardRow({ title, unlocked }: { title: string; unlocked: boolean }) {
+/** `stage`: the group is a regulamin window counted from the agreement date, so "ten etap" instead of "ten miesiąc". */
+function RewardRow({ title, unlocked, stage = false }: { title: string; unlocked: boolean; stage?: boolean }) {
   const [pop, setPop] = useState(false);
   const prevUnlocked = useRef(unlocked);
 
@@ -672,7 +683,7 @@ function RewardRow({ title, unlocked }: { title: string; unlocked: boolean }) {
       <Gift size={20} aria-hidden="true" className={cn("mt-0.5 shrink-0", unlocked ? "text-gold-600" : "text-ink-400")} />
       <div className="min-w-0">
         <p className={cn("text-caption font-semibold", unlocked ? "text-gold-600" : "text-ink-700")}>
-          {unlocked ? "Nagroda zdobyta" : "Nagroda za ten miesiąc"}
+          {unlocked ? "Nagroda zdobyta" : stage ? "Nagroda za ten etap" : "Nagroda za ten miesiąc"}
         </p>
         <p
           className={cn(
@@ -683,7 +694,7 @@ function RewardRow({ title, unlocked }: { title: string; unlocked: boolean }) {
           {label}
         </p>
         {!unlocked && (
-          <p className="mt-0.5 text-caption text-ink-500">Odblokuje się po zaznaczeniu wszystkich kroków tego miesiąca.</p>
+          <p className="mt-0.5 text-caption text-ink-500">Odblokuje się po zaznaczeniu wszystkich kroków {stage ? "tego etapu" : "tego miesiąca"}.</p>
         )}
       </div>
     </div>

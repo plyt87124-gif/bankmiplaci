@@ -59,15 +59,15 @@ test("0 zł WITH a waiver condition is contradictory = unknown, and the conditio
   assert.equal(fee.hasCaveat, false);
 });
 
-test("a 0 zł fee next to a caveat (Fees.otherFee) is 'od 0 zł' - the number is the best case", () => {
+test("a 0 zł fee next to a caveat (Fees.otherFee) stays a plain 0 zł - 'od 0 zł' is retired", () => {
   for (const caveat of ["Karta 6 zł/mies., chyba że płatności min. 300 zł", true]) {
     const fee = resolveFee(0, null, caveat);
     assert.equal(fee.kind, "free");
-    assert.equal(fee.hasCaveat, true);
-    assert.equal(fee.label, `od${NBSP}0${NBSP}zł`);
-    assert.equal(nbsp(fee.sentence), "od 0 zł, zależnie od warunków opisanych w taryfie banku");
+    assert.equal(fee.hasCaveat, false);
+    assert.equal(fee.label, `0${NBSP}zł`);
+    assert.equal(nbsp(fee.sentence), "0 zł");
   }
-  // blank / false / absent caveats change nothing
+  // blank / false / absent caveats read the same
   for (const caveat of ["", "  \n ", false, null, undefined]) {
     const fee = resolveFee(0, null, caveat);
     assert.equal(fee.hasCaveat, false);
@@ -110,13 +110,13 @@ test("a very long condition is shortened in the sentence on a word boundary, nev
   assert.match(fee.sentence, /…\)$/);
 });
 
-test("the label is a bare '0 zł' only for a confirmed fee with no condition AND no caveat", () => {
+test("the label is a bare '0 zł' exactly for a confirmed fee with no condition (a caveat does not change it)", () => {
   const bare = `0${NBSP}zł`;
   for (const cents of [null, 0, 600]) {
     for (const waiver of [null, "warunek"]) {
       for (const caveat of [undefined, false, true, "uwaga"]) {
         const fee = resolveFee(cents, waiver, caveat);
-        const confirmedPlainFree = cents === 0 && !waiver && !caveat;
+        const confirmedPlainFree = cents === 0 && !waiver;
         assert.equal(fee.label === bare, confirmedPlainFree, JSON.stringify({ cents, waiver, caveat, label: fee.label }));
         assert.equal(fee.sentence === bare, confirmedPlainFree);
       }
@@ -216,7 +216,7 @@ test("every surface reads the same input the same way", () => {
   }
 });
 
-test("page: 'od 0 zł' in the table, a way to the conditions, no footnote and no other fees", () => {
+test("page: a free fee next to a remark is a plain 0 zł in the table and the key facts, with no footnote and no other fees", () => {
   const fees = {
     accountFeeCents: 0,
     accountFeeWaiverCondition: null,
@@ -228,7 +228,7 @@ test("page: 'od 0 zł' in the table, a way to the conditions, no footnote and no
   const table = html(h(FeesSection, { fees }));
   assert.match(table, /<section id="oplaty"/);
   assert.doesNotMatch(text(table), /najlepszym przypadku|Inne opłaty/);
-  assert.doesNotMatch(text(table), /Opłata za (konto|kartę) 0 zł/);
+  assert.match(text(table), /Opłata za konto 0 zł Opłata za kartę 0 zł/);
 
   const facts = html(
     h(KeyFacts, {
@@ -241,10 +241,10 @@ test("page: 'od 0 zł' in the table, a way to the conditions, no footnote and no
       now: NOW
     })
   );
-  assert.match(text(facts), /Opłata za konto od 0 zł Sprawdź warunki opłat/);
-  assert.match(facts, /href="#oplaty"/);
+  assert.match(text(facts), /Opłata za konto 0 zł/);
+  assert.doesNotMatch(text(facts), /od 0 zł|Sprawdź warunki opłat/);
 
-  // a plain 0 zł fee (no remark) needs neither
+  // the same without a remark
   const plain = html(h(FeesSection, { fees: { ...fees, otherFee: null } }));
   assert.doesNotMatch(text(plain), /Od 0 zł/);
   assert.match(text(plain), /Opłata za konto 0 zł Opłata za kartę 0 zł/);
@@ -254,23 +254,20 @@ test("page: 'od 0 zł' in the table, a way to the conditions, no footnote and no
 /* Comparison and card details                                         */
 /* ------------------------------------------------------------------ */
 
-test("comparison: a 0 zł fee with a remark never wins 'best in the row' over a plain 0 zł", () => {
-  assert.deepEqual(describeCompareFee(0, null), { kind: "free" }); // shape unchanged for existing callers
+test("comparison: a 0 zł fee with a remark ranks like a plain 0 zł and beats a paid fee", () => {
+  assert.deepEqual(describeCompareFee(0, null), { kind: "free" });
   assert.deepEqual(describeCompareFee(0, null, false), { kind: "free" });
-  assert.deepEqual(describeCompareFee(0, null, true), { kind: "free", hasCaveat: true });
-  assert.equal(feeRank(describeCompareFee(0, null, true)), 1);
+  assert.deepEqual(describeCompareFee(0, null, true), { kind: "free" });
+  assert.equal(feeRank(describeCompareFee(0, null, true)), 0);
   assert.equal(feeRank(describeCompareFee(0, null)), 0);
 
   const ranks = [describeCompareFee(0, null), describeCompareFee(0, null, true), describeCompareFee(600)].map(feeRank);
-  assert.deepEqual(bestFlags(ranks, "min"), [true, false, false]);
-  // two qualified zeros and a paid fee: nothing is promised as "best"
-  const qualified = [describeCompareFee(0, null, true), describeCompareFee(0, null, true), describeCompareFee(600)].map(feeRank);
-  assert.deepEqual(bestFlags(qualified, "min"), [false, false, false]);
+  assert.deepEqual(bestFlags(ranks, "min"), [true, true, false]);
 });
 
-test("card: the account fee line says 'od 0 zł' when the offer carries a remark, and is unchanged without the flag", () => {
+test("card: the account fee line is a plain 0 zł with or without a remark", () => {
   assert.deepEqual(describeAccountFee({ accountFeeCents: 0 }), { kind: "free", text: `0${NBSP}zł` });
-  assert.deepEqual(describeAccountFee({ accountFeeCents: 0, hasOtherFee: true }), { kind: "free", text: `od${NBSP}0${NBSP}zł` });
+  assert.deepEqual(describeAccountFee({ accountFeeCents: 0, hasOtherFee: true }), { kind: "free", text: `0${NBSP}zł` });
   assert.deepEqual(describeAccountFee({ accountFeeCents: null, hasOtherFee: true }), { kind: "unknown", text: "Brak danych" });
 });
 

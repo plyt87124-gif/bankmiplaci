@@ -23,7 +23,7 @@ export interface AccountFeeLine {
  *
  *   no Fees row / fee not verified (null)      -> "Brak danych"   (never 0 zł)
  *   0 zł and no condition                      -> "0 zł"          (confirmed free)
- *   ... with an "Inne opłaty" remark (hasOtherFee) -> "od 0 zł"   (0 zł is the best case)
+ *   ... with an "Inne opłaty" remark (hasOtherFee) -> still "0 zł" ("od 0 zł" is retired)
  *   0 zł WITH a condition (contradictory data) -> "Brak danych"   (the real rate is unknown)
  *   12 zł and no condition                     -> "12 zł"
  *   12 zł with a condition                     -> "12 zł" + note "0 zł po spełnieniu warunku"

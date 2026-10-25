@@ -62,7 +62,7 @@ function FeeCell({ fee, best }: { fee: FeeView; best: boolean }) {
     case "unknown":
       return <Missing />;
     case "free":
-      // "od 0 zł": the "Inne opłaty" remark qualifies the number, so it is never marked as the best value.
+      // A free fee is never qualified any more ("od 0 zł" is retired); the branch stays for a caller that passes hasCaveat itself.
       return fee.hasCaveat ? (
         <>
           <Value>{`od ${formatPLN(0)}`}</Value>

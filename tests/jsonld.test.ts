@@ -251,19 +251,17 @@ test("feesSpecificationText: otherFee text is never copied, only signals that mo
   const secret = "UWAGA ADMIN: sprawdzić w piątek, tajna notatka";
   const text = feesSpecificationText({ accountFeeCents: 0, otherFee: secret }) ?? "";
   assert.ok(!text.includes("tajna") && !text.includes("ADMIN"));
-  // 0 zł is the best case; with a caveat in otherFee the markup must not read as unconditional.
-  assert.match(text, /^Opłata za prowadzenie konta: od 0 zł, zależnie od warunków opisanych w taryfie banku\. Szczegółowe warunki i pozostałe opłaty: w taryfie/);
-  assert.ok(!text.includes("konta: 0 zł."));
+  // a remark adds the pointer to the bank's tariff; the fee itself is a plain 0 zł
+  assert.match(text, /^Opłata za prowadzenie konta: 0 zł\. Szczegółowe warunki i pozostałe opłaty: w taryfie/);
   // Without any verified fee, the remark alone produces no statement.
   assert.equal(feesSpecificationText({ otherFee: secret }), null);
 });
 
-test("feesSpecificationText: the card fee follows the same rule as the account fee (best case + remark, condition, plain spaces)", () => {
-  // 0 zł card next to a remark is "od 0 zł", exactly like the account fee
+test("feesSpecificationText: the card fee follows the same rule as the account fee (remark pointer, condition, plain spaces)", () => {
+  // 0 zł card next to a remark is a plain 0 zł, exactly like the account fee
   assert.equal(
     feesSpecificationText({ accountFeeCents: 0, cardFeeCents: 0, otherFee: "Karta 6 zł/mies. bez płatności." }),
-    "Opłata za prowadzenie konta: od 0 zł, zależnie od warunków opisanych w taryfie banku. " +
-      "Opłata za kartę: od 0 zł, zależnie od warunków opisanych w taryfie banku. " +
+    "Opłata za prowadzenie konta: 0 zł. Opłata za kartę: 0 zł. " +
       "Szczegółowe warunki i pozostałe opłaty: w taryfie opłat i prowizji banku."
   );
   // a blank remark is no remark

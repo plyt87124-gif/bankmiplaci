@@ -122,7 +122,7 @@ export function bestFlags(values: readonly (number | null)[], prefer: "max" | "m
 
 export type FeeView =
   | { kind: "unknown" }
-  /** Verified 0 zl, no condition. `hasCaveat`: the offer has an "Inne opłaty" remark, so 0 zl is the best case ("od 0 zl"). */
+  /** Verified 0 zl, no condition. `hasCaveat` is no longer produced ("od 0 zl" is retired in src/lib/feeModel.ts). */
   | { kind: "free"; hasCaveat?: true }
   /** A fee without a waiver condition. */
   | { kind: "paid"; cents: number }
