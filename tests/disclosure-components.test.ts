@@ -174,15 +174,15 @@ test("withAttribution without utm only adds traffic_source", () => {
 // ---------------------------------------------------------------------------
 
 test("VerifiedLine: fresh, aging, stale and missing dates", () => {
-  const fresh = html(h(VerifiedLine, { lastVerifiedAt: "2026-10-06T08:30:00Z", now: NOW }));
-  assert.equal(text(fresh), "Zweryfikowano 6 paź 2026");
-  assert.match(fresh, /<time dateTime="2026-10-06">6 paź 2026<\/time>/);
+  const fresh = html(h(VerifiedLine, { lastVerifiedAt: "2026-10-07T08:30:00Z", now: NOW }));
+  assert.equal(text(fresh), "Zweryfikowano 7 paź 2026");
+  assert.match(fresh, /<time dateTime="2026-10-07">7 paź 2026<\/time>/);
   assert.match(fresh, /data-freshness="fresh"/);
   assert.match(fresh, /lucide-shield-check/);
   assert.match(fresh, /text-action/);
 
-  const aging = html(h(VerifiedLine, { lastVerifiedAt: "2026-09-01T08:30:00Z", now: NOW }));
-  assert.equal(text(aging), "Zweryfikowano 1 wrz 2026");
+  const aging = html(h(VerifiedLine, { lastVerifiedAt: "2026-10-06T08:30:00Z", now: NOW }));
+  assert.equal(text(aging), "Zweryfikowano 6 paź 2026");
   assert.match(aging, /data-freshness="aging"/);
   assert.ok(!/text-action/.test(aging));
 
@@ -198,10 +198,10 @@ test("VerifiedLine: fresh, aging, stale and missing dates", () => {
 });
 
 test("VerifiedLine as a badge", () => {
-  const fresh = html(h(VerifiedLine, { lastVerifiedAt: "2026-10-06T08:30:00Z", now: NOW, badge: true }));
-  assert.equal(text(fresh), "Zweryfikowano 6 paź 2026");
+  const fresh = html(h(VerifiedLine, { lastVerifiedAt: "2026-10-07T08:30:00Z", now: NOW, badge: true }));
+  assert.equal(text(fresh), "Zweryfikowano 7 paź 2026");
   assert.match(fresh, /bg-teal-100/);
-  const aging = html(h(VerifiedLine, { lastVerifiedAt: "2026-09-01T08:30:00Z", now: NOW, badge: true }));
+  const aging = html(h(VerifiedLine, { lastVerifiedAt: "2026-10-06T08:30:00Z", now: NOW, badge: true }));
   assert.match(aging, /bg-ink-100/);
 });
 

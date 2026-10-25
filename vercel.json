@@ -11,6 +11,7 @@
     { "path": "/api/cron/expire-promotions", "schedule": "0 3 * * *" },
     { "path": "/api/cron/check-eligibility", "schedule": "15 3 * * *" },
     { "path": "/api/cron/checklist-deadline-reminders", "schedule": "45 3 * * *" },
-    { "path": "/api/cron/ebroker-watch", "schedule": "30 4 * * *" }
+    { "path": "/api/cron/ebroker-watch", "schedule": "30 4 * * *" },
+    { "path": "/api/cron/verification-watch", "schedule": "0 10 * * *" }
   ]
 }

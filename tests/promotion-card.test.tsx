@@ -173,8 +173,8 @@ test("no conditions and no summary: the lead line is simply absent", () => {
 /* ------------------------------------------------------------------ */
 
 test("verification line comes only from lastVerifiedAt: date, 'stale' note, or 'Brak daty weryfikacji'", () => {
-  const fresh = render(card());
-  assert.match(text(fresh), /Zweryfikowano 6 paź 2026/);
+  const fresh = render(card({ lastVerifiedAt: new Date("2026-10-08T10:00:00Z") }));
+  assert.match(text(fresh), /Zweryfikowano 8 paź 2026/);
   assert.match(fresh, /data-freshness="fresh"/);
 
   const stale = render(card({ lastVerifiedAt: new Date("2026-08-01T10:00:00Z") }));
