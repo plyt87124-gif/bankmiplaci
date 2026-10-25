@@ -7,6 +7,8 @@ import assert from "node:assert/strict";
 import {
   deadlineForGroup,
   isGroupUnlocked,
+  isMonthGroup,
+  isMonthLabel,
   monthGroupLabel,
   periodLastDay,
   periodRangeText,
@@ -95,6 +97,54 @@ test("etykiety: zakres dat z umowy; bez daty - sama etykieta z bazy", () => {
   assert.equal(monthGroupLabel(OPENED, 4, "Leasing PKO Leasing", THREE_MONTHS), "Leasing PKO Leasing (do 6.10.2026)");
   assert.equal(monthGroupLabel(null, 1, "Okres 1 – transakcje kartą", PERIOD_1), "Okres 1 – transakcje kartą");
   assert.equal(monthGroupLabel(OPENED, 0, "Otwarcie konta", null), "Otwarcie konta");
+});
+
+test("etykiety grup bez reguły: „Miesiąc N” dalej daje nazwę miesiąca kalendarzowego (oferty się nie zmieniają)", () => {
+  assert.equal(monthGroupLabel(OPENED, 1, "Miesiąc 1"), "Pierwszy miesiąc po otwarciu konta");
+  assert.equal(monthGroupLabel(OPENED, 1, "Miesiąc 1 (po otwarciu konta)"), "Pierwszy miesiąc po otwarciu konta");
+  assert.equal(monthGroupLabel(null, 1, "Miesiąc 1"), "Pierwszy miesiąc po otwarciu konta");
+  // otwarcie 6.07.2026: grupa 1 = sierpień, grupa 2 = wrzesień, grupa 7 = luty 2027
+  assert.equal(monthGroupLabel(OPENED, 2, "Miesiąc 2"), "Wrzesień 2026");
+  assert.equal(monthGroupLabel(OPENED, 7, "Miesiąc 7"), "Luty 2027");
+  assert.equal(monthGroupLabel(OPENED, 3, "miesiąc 3"), "Październik 2026", "wielkość liter nie ma znaczenia");
+  // bez daty otwarcia - etykieta z bazy
+  assert.equal(monthGroupLabel(null, 2, "Miesiąc 2"), "Miesiąc 2");
+  // pusta etykieta w bazie nie daje pustego nagłówka
+  assert.equal(monthGroupLabel(OPENED, 2, ""), "Wrzesień 2026");
+});
+
+test("etykiety grup bez reguły: zbiorcza grupa (np. „po 6 miesiącach”) pokazuje etykietę z bazy, a nie nazwę miesiąca", () => {
+  const mbank = "Nagrody zbiorcze (po 6 miesiącach)";
+  const erste = "Nagroda lojalnościowa (9 z 12 miesięcy)";
+  const nest = "Wymiana walut / Saldo EUR (podsumowanie po 3 mies.)";
+  assert.equal(monthGroupLabel(OPENED, 7, mbank), mbank);
+  assert.equal(monthGroupLabel(OPENED, 12, erste), erste);
+  assert.equal(monthGroupLabel(OPENED, 4, nest), nest);
+  assert.equal(monthGroupLabel(null, 7, mbank), mbank, "tak samo bez daty otwarcia");
+  // także grupa 1: zbiorcza etykieta nie zamienia się w „Pierwszy miesiąc po otwarciu konta”
+  assert.equal(monthGroupLabel(OPENED, 1, nest), nest);
+  // otwarcie konta i grupy z regułą - bez zmian
+  assert.equal(monthGroupLabel(OPENED, 0, "Otwarcie konta"), "Otwarcie konta");
+  assert.equal(monthGroupLabel(OPENED, 7, mbank, PERIOD_1), `${mbank} (6.07–6.08.2026)`);
+});
+
+test("etykiety grup nie ruszają odblokowania ani terminu - te zależą tylko od numeru grupy i reguły", () => {
+  // the calendar schedule works in local time (see the legacy check above), so compare local fields
+  const local = (d: Date) => [d.getFullYear(), d.getMonth() + 1, d.getDate()];
+  assert.deepEqual(local(unlockDateForGroup(OPENED, 7)), [2027, 2, 1]);
+  assert.deepEqual(local(deadlineForGroup(OPENED, 7)), [2027, 3, 1]);});
+
+test("isMonthLabel / isMonthGroup: tylko „Miesiąc N…” (i pusta etykieta) to miesiąc kalendarzowy", () => {
+  for (const label of ["Miesiąc 1", "Miesiąc 12", "miesiąc 3", "Miesiąc 1 (po otwarciu konta)", "  Miesiąc 2", ""]) {
+    assert.equal(isMonthLabel(label), true, label);
+  }
+  for (const label of ["Otwarcie konta", "Nagrody zbiorcze (po 6 miesiącach)", "Miesięczne zestawienie", "Okres 1 – transakcje kartą"]) {
+    assert.equal(isMonthLabel(label), false, label);
+  }
+  assert.equal(isMonthGroup(1, "Miesiąc 1"), true);
+  assert.equal(isMonthGroup(7, "Nagrody zbiorcze (po 6 miesiącach)"), false);
+  assert.equal(isMonthGroup(0, "Miesiąc 0"), false, "otwarcie konta to nigdy miesiąc");
+  assert.equal(isMonthGroup(1, "Miesiąc 1", PERIOD_1), false, "okno od dnia umowy to etap");
 });
 
 test("zakres w jednym roku ma rok raz, a przez przełom roku - przy obu datach", () => {
