@@ -6,7 +6,7 @@ import Link from "next/link";
 import { AlertCircle, ArrowRight, CheckCircle2, Gift, ListChecks, Lock } from "lucide-react";
 import { formatPLN, formatDate, pluralizePl } from "@/lib/format";
 import { cn } from "@/lib/cn";
-import { isGroupUnlocked, monthGroupLabel, periodRuleOf, unlockDateForGroup, type PeriodRule } from "@/lib/checklistSchedule";
+import { isGroupUnlocked, isMonthGroup, monthGroupLabel, periodRuleOf, unlockDateForGroup, type PeriodRule } from "@/lib/checklistSchedule";
 import { resolveGroups, isRewardEarned, earnedCentsFor, type ResolvedGroup } from "@/lib/checklistAvailability";
 import { useEarningsContext } from "@/components/EarningsContext";
 import { BankLogo } from "@/components/ui/BankLogo";
@@ -48,6 +48,8 @@ interface Group extends ResolvedGroup<Step> {
   unlockDate: Date | null;
   /** Set when the regulamin counts this group's window from the agreement date (a billing period or "within 3 months"), not calendar months. */
   rule: PeriodRule | null;
+  /** False for the opening group, windows from the agreement date and aggregate groups ("po 6 miesiącach"): the copy says "etap", not "miesiąc". */
+  isMonth: boolean;
 }
 
 function buildGroups(steps: Step[], accountOpenedAt: Date | null): Group[] {
@@ -57,10 +59,12 @@ function buildGroups(steps: Step[], accountOpenedAt: Date | null): Group[] {
   return resolveGroups(steps, accountOpenedAt).map((g) => {
     const groupSteps = steps.filter((s) => Math.floor(s.order / 10) === g.groupIndex);
     const rule = periodRuleOf(groupSteps);
+    const storedLabel = groupSteps[0]?.monthLabel ?? "";
     return {
       ...g,
       rule,
-      label: monthGroupLabel(accountOpenedAt, g.groupIndex, groupSteps[0]?.monthLabel ?? "", rule),
+      isMonth: isMonthGroup(g.groupIndex, storedLabel, rule),
+      label: monthGroupLabel(accountOpenedAt, g.groupIndex, storedLabel, rule),
       unlocked: isGroupUnlocked(accountOpenedAt, g.groupIndex, rule),
       unlockDate: accountOpenedAt ? unlockDateForGroup(accountOpenedAt, g.groupIndex, rule) : null
     };
@@ -532,7 +536,7 @@ function ChecklistCard({
                 )}
               </div>
 
-              {g.rewardStep && <RewardRow title={g.rewardStep.title} unlocked={rewardEarned} stage={g.rule !== null} />}
+              {g.rewardStep && <RewardRow title={g.rewardStep.title} unlocked={rewardEarned} stage={!g.isMonth} />}
             </div>
           );
         })}
@@ -655,7 +659,7 @@ function OpenedAtPrompt({ trackingId }: { trackingId: string }) {
   );
 }
 
-/** `stage`: the group is a regulamin window counted from the agreement date, so "ten etap" instead of "ten miesiąc". */
+/** `stage`: the group is not one calendar month (opening, a window from the agreement date, an aggregate reward), so "ten etap" instead of "ten miesiąc". */
 function RewardRow({ title, unlocked, stage = false }: { title: string; unlocked: boolean; stage?: boolean }) {
   const [pop, setPop] = useState(false);
   const prevUnlocked = useRef(unlocked);
