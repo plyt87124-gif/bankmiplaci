@@ -40,7 +40,7 @@ export interface OfferFaqInput {
     accountFeeWaiverCondition: string | null;
     cardFeeCents: number | null;
     cardFeeWaiverCondition: string | null;
-    /** Free text "Inne opłaty": its presence turns a bare "0 zł" into "od 0 zł" (the shared fee model). */
+    /** Free text "Inne opłaty"; no longer changes how a free fee reads (the shared fee model). */
     otherFee?: string | null;
   } | null;
   lastVerifiedAt: Date | string | null;

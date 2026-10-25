@@ -255,7 +255,7 @@ export interface FeesLdInput {
 
 /**
  * One fee as a sentence. The reading of the fee (not verified, "0 zł + a
- * condition" contradiction, "od 0 zł" next to a caveat, the waived rate) is
+ * condition" contradiction, the waived rate) is
  * the site's single fee model (src/lib/feeModel.ts), the same one the offer
  * page and its FAQ use, so the markup and the visible text cannot disagree.
  * Only the spaces differ: the JSON-LD gets plain ones.

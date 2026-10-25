@@ -365,10 +365,10 @@ test("WP-09 sources contain none of the banned patterns of the design spec", () 
   }
 });
 
-test("account fee: hasOtherFee turns a bare 0 zł into 'od 0 zł', like the offer page", () => {
+test("account fee: hasOtherFee no longer changes a bare 0 zł, like the offer page", () => {
   assert.deepEqual(describeAccountFee({ accountFeeCents: 0, accountFeeWaiverCondition: null, hasOtherFee: true }), {
     kind: "free",
-    text: `od${NBSP}0${NBSP}zł`
+    text: `0${NBSP}zł`
   });
   assert.deepEqual(describeAccountFee({ accountFeeCents: 0, accountFeeWaiverCondition: null, hasOtherFee: false }), {
     kind: "free",

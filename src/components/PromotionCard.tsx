@@ -45,7 +45,7 @@ export interface PromotionCardData {
   fees?: {
     accountFeeCents: number | null;
     accountFeeWaiverCondition?: string | null;
-    /** The offer has an "Inne opłaty" remark: a bare 0 zł reads "od 0 zł". Yes/no only, never the remark's text. */
+    /** The offer has an "Inne opłaty" remark (no longer changes a bare 0 zł). Yes/no only, never the remark's text. */
     hasOtherFee?: boolean;
   } | null;
   conditions?: { title: string }[];

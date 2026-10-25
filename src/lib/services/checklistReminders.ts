@@ -2,7 +2,7 @@ import { resolveGroups } from "@/lib/checklistAvailability";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { checklistDeadlineReminderEmailHtml } from "@/lib/emailTemplates";
-import { groupIndexFromOrder, isGroupUnlocked, monthGroupLabel, unlockDateForGroup } from "@/lib/checklistSchedule";
+import { deadlineForGroup, groupIndexFromOrder, isGroupUnlocked, monthGroupLabel, periodRuleOf } from "@/lib/checklistSchedule";
 
 const REMIND_WITHIN_DAYS = 7;
 
@@ -11,7 +11,7 @@ const REMIND_WITHIN_DAYS = 7;
  * with completedAt: null and an accountOpenedAt set), finds month groups
  * that are currently unlocked, not yet fully checked off, and within
  * REMIND_WITHIN_DAYS of their deadline (the day the next month group
- * unlocks) — then emails a single digest per user listing everything
+ * unlocks, or the end of the window for groups counted from the agreement date) — then emails a single digest per user listing everything
  * pending, and stamps remindedGroupIndexes so the same month is never
  * emailed twice.
  *
@@ -69,11 +69,12 @@ export async function sendChecklistDeadlineReminders(): Promise<number> {
       // real account-opening date) are worth a reminder.
       const actionSteps = resolveGroups(steps, accountOpenedAt)[0]?.requiredSteps ?? [];
       if (actionSteps.length === 0) continue;
-      if (!isGroupUnlocked(accountOpenedAt, groupIndex)) continue;
+      const rule = periodRuleOf(steps);
+      if (!isGroupUnlocked(accountOpenedAt, groupIndex, rule)) continue;
       if (actionSteps.every((s) => checked.has(s.id))) continue; // already done
       if (tracking.remindedGroupIndexes.includes(groupIndex)) continue; // already reminded
 
-      const deadline = unlockDateForGroup(accountOpenedAt, groupIndex + 1);
+      const deadline = deadlineForGroup(accountOpenedAt, groupIndex, rule);
       const daysLeft = Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
       if (daysLeft < 0 || daysLeft > REMIND_WITHIN_DAYS) continue;
 
@@ -83,7 +84,7 @@ export async function sendChecklistDeadlineReminders(): Promise<number> {
       entry.items.push({
         bankName: tracking.promotion.bank.name,
         promotionName: tracking.promotion.name,
-        monthLabel: monthGroupLabel(accountOpenedAt, groupIndex, steps[0]?.monthLabel ?? ""),
+        monthLabel: monthGroupLabel(accountOpenedAt, groupIndex, steps[0]?.monthLabel ?? "", rule),
         daysLeft,
         rewardLabel: rewardStep ? `${rewardStep.title.replace(/^Odbierz(?: nagrodę)?:?\s*/i, "")}` : null
       });

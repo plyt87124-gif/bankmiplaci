@@ -12,17 +12,20 @@
  *              there is none). NULL = not verified - never "free".
  *   waiver     the waiver condition (free text). The waived rate is always 0 by
  *              definition, so 0 zl together with a condition is contradictory.
- *   caveat     Fees.otherFee (free text) or a ready yes/no. The convention of
- *              the site: the number is the BEST case and the catch is described
- *              in otherFee. A bare "0 zl" next to such a remark would overstate
- *              it, so it reads "od 0 zl".
+ *   caveat     Fees.otherFee (free text) or a ready yes/no. It USED to turn a
+ *              bare "0 zl" into "od 0 zl". The offer page no longer prints the
+ *              "Inne opłaty" remark, so "od 0 zl" would be an unexplained hint
+ *              that data is missing. The real catch is now modelled as a base
+ *              fee plus a waiver condition (paid / conditional below), so a
+ *              "free" fee is always plain "0 zl". The argument is kept only so
+ *              callers need not change; it no longer alters the reading of a
+ *              free fee.
  *
  * Resulting kinds:
  *
  *   unknown      cents null / negative / not finite, or 0 zl WITH a condition
  *                (the real rate is not known)        label "Brak danych"
  *   free         0 zl, no condition                  label "0 zl"
- *                ... and a caveat exists             label "od 0 zl" (hasCaveat)
  *   paid         12 zl, no condition                 label "12 zl"
  *   conditional  12 zl, with a waiver condition      label "12 zl" + waiverNote
  *                                                    "0 zl po spelnieniu warunku"
@@ -44,18 +47,17 @@ export interface FeeModel {
   /** Waiver condition, whitespace collapsed; null when there is none. Kept for `unknown` too, to say what is known. */
   waiver: string | null;
   /**
-   * The number is the best case and Fees.otherFee describes the catch. Always
-   * false for `unknown` (there is no number to qualify).
+   * The fee comes with an Fees.otherFee remark. Never set for `unknown` (no
+   * number to qualify) nor for `free` (a free fee is plain "0 zł").
    */
   hasCaveat: boolean;
-  /** Short value: "Brak danych" / "0 zł" / "od 0 zł" / "12 zł". */
+  /** Short value: "Brak danych" / "0 zł" / "12 zł". */
   label: string;
   /** What follows the waived rate in a note: "0 zł po spełnieniu warunku" for `conditional`, else null. */
   waiverNote: string | null;
   /**
    * The value as a clause for prose (FAQ answer, fee specification of the
-   * JSON-LD): "0 zł", "od 0 zł, zależnie od warunków opisanych w taryfie
-   * banku", "12 zł (0 zł po spełnieniu warunku: ...)", or "brak danych –
+   * JSON-LD): "0 zł", "12 zł (0 zł po spełnieniu warunku: ...)", or "brak danych –
    * sprawdź tabelę opłat banku".
    */
   sentence: string;
@@ -95,16 +97,7 @@ export function resolveFee(
   if (cents === 0) {
     // 0 zl + a waiver condition contradicts itself (the condition would waive nothing).
     if (waiver) return unknownFee(waiver);
-    const caveated = hasFeeCaveat(caveat);
-    return {
-      kind: "free",
-      cents: 0,
-      waiver: null,
-      hasCaveat: caveated,
-      label: caveated ? `od${NBSP}${formatPLN(0)}` : formatPLN(0),
-      waiverNote: null,
-      sentence: caveated ? `od ${formatPLN(0)}, zależnie od warunków opisanych w taryfie banku` : formatPLN(0)
-    };
+    return { kind: "free", cents: 0, waiver: null, hasCaveat: false, label: formatPLN(0), waiverNote: null, sentence: formatPLN(0) };
   }
 
   const amount = formatPLN(cents);

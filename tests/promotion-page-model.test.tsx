@@ -429,7 +429,7 @@ test("FAQ: free-text eligibility lines become separate sentences", () => {
   assert.match(odd, /Kto może skorzystać: Czy masz 18 lat\? Tak\. Sprawdź/);
 });
 
-test("FAQ: a 0 zł fee next to an 'Inne opłaty' remark is 'od 0 zł', never a bare 0 zł", () => {
+test("FAQ: a 0 zł fee next to an 'Inne opłaty' remark is a plain 0 zł ('od 0 zł' is retired)", () => {
   const remark = "Karta 6 zł/mies., chyba że płatności min. 300 zł.";
   const answer = nbsp(
     buildOfferFaq({
@@ -437,11 +437,8 @@ test("FAQ: a 0 zł fee next to an 'Inne opłaty' remark is 'od 0 zł', never a b
       fees: { accountFeeCents: 0, accountFeeWaiverCondition: null, cardFeeCents: 0, cardFeeWaiverCondition: null, otherFee: remark }
     })[4]?.answer ?? ""
   );
-  assert.match(
-    answer,
-    /^Opłata za konto: od 0 zł, zależnie od warunków opisanych w taryfie banku\. Opłata za kartę: od 0 zł, zależnie od warunków opisanych w taryfie banku\./
-  );
-  assert.doesNotMatch(answer, /Opłata za (konto|kartę): 0 zł/);
+  assert.match(answer, /^Opłata za konto: 0 zł\. Opłata za kartę: 0 zł\./);
+  assert.doesNotMatch(answer, /od 0 zł/);
   // the remark itself is not copied into the answer (it is free text; the section shows it)
   assert.doesNotMatch(answer, /chyba że/);
   // without a remark the same fees are plainly free
@@ -525,11 +522,9 @@ test("structured data: the fee specification and the visible FAQ word the same f
       if (!sentence) continue;
       assert.ok(answer.includes(sentence), `${label}: "${sentence}" not in "${answer}"`);
     }
-    // a bare "0 zł" appears in neither when a remark qualifies it
-    if (fees.otherFee) {
-      assert.doesNotMatch(spec, /: 0 zł\./);
-      assert.doesNotMatch(answer, /: 0 zł\./);
-    }
+    // 'od 0 zł' is retired: a remark never changes how a free fee reads
+    assert.doesNotMatch(spec, /od 0 zł/);
+    assert.doesNotMatch(answer, /od 0 zł/);
   }
 });
 

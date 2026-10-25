@@ -120,6 +120,33 @@ test("ściąga: miesiące to nagłówki h3, jeden wiersz nagrody na miesiąc, pr
   assert.doesNotMatch(out, /Odznacz/);
 });
 
+test("ściąga: okresy liczone od dnia umowy mają zakres dat z umowy, są otwarte od tego dnia i mówią „etap”", () => {
+  const periodStep = (id: string, order: number, rewardCents: number | null, startMonths: number, months: number, label: string) => ({
+    id, monthLabel: label, title: rewardCents ? "Odbierz: do 1200 zł" : "Zrób płatności kartą", rewardCents, order,
+    periodStartMonths: startMonths, periodMonths: months
+  });
+  const pkoSteps = [
+    { id: "o", monthLabel: "Otwarcie konta", title: "Otwórz konto", rewardCents: null, order: 0 },
+    periodStep("p1a", 10, null, 0, 1, "Okres 1 – transakcje kartą"),
+    periodStep("p1r", 11, 120000, 0, 1, "Okres 1 – transakcje kartą"),
+    periodStep("p2a", 20, null, 1, 1, "Okres 2 – transakcje kartą"),
+    periodStep("p2r", 21, 120000, 1, 1, "Okres 2 – transakcje kartą"),
+    periodStep("l", 40, null, 0, 3, "Leasing PKO Leasing"),
+    periodStep("lr", 41, 50000, 0, 3, "Leasing PKO Leasing")
+  ];
+  // account opened today: period 1 and the 3-month task are open right away, period 2 is not
+  const out = checklist({ trackings: [tracking({ steps: pkoSteps })] });
+  const h3 = [...out.matchAll(/<h3[^>]*>([^<]+)<\/h3>/g)].map((m) => m[1]);
+  assert.match(h3[1]!, /^Okres 1 – transakcje kartą \(\d{1,2}\.\d{2}–\d{1,2}\.\d{2}\.\d{4}\)$/);
+  assert.match(h3[2]!, /^Okres 2 – transakcje kartą \(/);
+  assert.match(h3[3]!, /^Leasing PKO Leasing \(do \d{1,2}\.\d{2}\.\d{4}\)$/);
+  assert.equal((out.match(/data-unlocked="true"/g) ?? []).length, 3, "otwarcie, okres 1 i zadanie 3-miesięczne");
+  assert.equal((out.match(/data-unlocked="false"/g) ?? []).length, 1, "okres 2 jeszcze zamknięty");
+  assert.match(out, /Nagroda za ten etap/);
+  assert.doesNotMatch(out, /Nagroda za ten miesiąc/);
+  assert.match(out, /kroków tego etapu\./);
+});
+
 test("ściąga: zablokowany miesiąc = aria-disabled + ikona Lock + tekst „Odblokuje się dd.mm.rrrr”", () => {
   const out = checklist();
   const group1 = out.split('data-unlocked="false"')[1];

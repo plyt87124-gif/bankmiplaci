@@ -51,8 +51,7 @@ function FeeRow({ label, fee }: { label: string; fee: FeeModel }) {
  *
  *   Brak danych      the fee is not verified (no Fees row, or the field is empty).
  *                    NEVER shown as 0 zł.
- *   0 zł             confirmed 0 zł without a condition and without a remark.
- *   od 0 zł          0 zł is the best case: "Inne opłaty" describes the catch.
+ *   0 zł             confirmed 0 zł without a condition.
  *   12 zł + note     the rate WITHOUT the condition, with "0 zł po spełnieniu warunku: ...".
  *
  * ATM fees are not shown on purpose (owner's rule). Long conditions wrap
