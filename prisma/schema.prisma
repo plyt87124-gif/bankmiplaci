@@ -357,6 +357,9 @@ model Promotion {
   // these are shown as extra "Zobacz też" links.
   additionalSourceUrls String[] @default([])
 
+  // When the offer was last compared with the bank's own documents. It moves
+  // ONLY together with a CONFIRMED row in `verifications`
+  // (src/lib/services/verification.ts) or an admin edit/extension.
   lastVerifiedAt DateTime
 
   eligibleFor    String? // free text: "nowi klienci", "byli klienci po 12 mies. od zamknięcia konta"
@@ -400,6 +403,7 @@ model Promotion {
   trackings      UserPromotionTracking[]
   eligibilityHistories UserBankHistory[]
   articles       Article[]
+  verifications  PromotionVerification[]
 
   @@index([status, endDate])
   @@index([bankId])
@@ -527,6 +531,31 @@ model BonusPart {
 
   @@index([promotionId])
   @@map("bonus_parts")
+}
+
+// One row per check of an offer against the bank's official documents (regulamin,
+// tariff, promo page), written by scripts/verify-offers.ts. The date shown to
+// readers ("Zweryfikowano ...") is Promotion.lastVerifiedAt and is moved only
+// by a CONFIRMED row, so every displayed date has a record behind it.
+model PromotionVerification {
+  id          String    @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  checkedAt   DateTime  @default(now())
+
+  // CONFIRMED   offer data and every document agree -> lastVerifiedAt moved
+  // CHANGED     a document differs from the last confirmed version; NOT confirmed
+  // UNREACHABLE a document could not be read; NOT confirmed
+  result String
+  // SOURCE_UNCHANGED  every document reads exactly as in the last confirmed check
+  // REVIEW            a person/agent read the documents and compared them with the offer
+  method String
+  // [{ url, ok, status, sha256, chars, viaBrowser? }] - the baseline of the next check
+  sources Json
+  note    String?
+
+  @@index([promotionId, checkedAt])
+  @@map("promotion_verifications")
 }
 
 model Fees {

@@ -20,10 +20,15 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // Verification freshness
 // ---------------------------------------------------------------------------
 
-/** Verified at most this many calendar days ago = fresh. */
-export const FRESH_MAX_DAYS = 14;
-/** Up to this many days = aging; beyond it = stale. */
-export const AGING_MAX_DAYS = 45;
+/**
+ * Verified at most this many calendar days ago = fresh. This is the promise of
+ * the daily verification (src/lib/verification.ts): every active offer is
+ * compared with the bank's documents at least every two days. A day more is the
+ * margin for one failed daily run.
+ */
+export const FRESH_MAX_DAYS = 2;
+/** Up to this many days = aging; beyond it = stale (the daily verification did not manage to refresh it). */
+export const AGING_MAX_DAYS = 3;
 
 export type FreshnessState = "fresh" | "aging" | "stale" | "unknown";
 
@@ -51,7 +56,7 @@ export function daysSinceVerified(
   return Math.max(0, diff);
 }
 
-/** fresh (<= 14 days), aging (15-45), stale (> 45), unknown (no usable date). */
+/** fresh (<= 2 days), aging (3), stale (> 3), unknown (no usable date). */
 export function freshnessState(lastVerifiedAt: Date | string | null | undefined, now: Date = new Date()): FreshnessState {
   const days = daysSinceVerified(lastVerifiedAt, now);
   if (days === null) return "unknown";
@@ -82,9 +87,9 @@ export const STALE_SUFFIX = "dane mogą być nieaktualne";
 
 /**
  * Labels for the verification line (design spec, PromotionCard section 5):
- *   <= 14 days   "Zweryfikowano 6 paź 2026"
- *   15-45 days   "Zweryfikowano 6 paź 2026"
- *   > 45 days    "Zweryfikowano 6 paź 2026 – dane mogą być nieaktualne"
+ *   <= 2 days    "Zweryfikowano 6 paź 2026"
+ *   3 days       "Zweryfikowano 6 paź 2026"
+ *   > 3 days     "Zweryfikowano 6 paź 2026 – dane mogą być nieaktualne"
  *   no date      "Brak daty weryfikacji"
  */
 export function describeFreshness(lastVerifiedAt: Date | string | null | undefined, now: Date = new Date()): FreshnessInfo {
