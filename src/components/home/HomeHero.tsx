@@ -37,7 +37,7 @@ export function HomeHero({
       aria-labelledby="home-title"
       className="border-b border-line bg-surface"
     >
-      <div className="container-page grid items-center gap-10 py-14 md:py-[88px] lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-12">
+      <div className="container-page grid grid-cols-[minmax(0,1fr)] items-center gap-10 py-14 md:py-[88px] lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-12">
         <div className="min-w-0">
           {verifiedText ? (
             <p className="type-label flex items-center gap-2 text-ink-500">

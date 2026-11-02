@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
 import { PromotionCard, type PromotionCardData } from "@/components/PromotionCard";
+import { CardRail } from "@/components/ui/CardRail";
 
 /**
  * "Inne promocje {banku}" under a current offer, "Aktualne promocje {banku}"
@@ -10,7 +11,7 @@ import { PromotionCard, type PromotionCardData } from "@/components/PromotionCar
  * disclosure strip for that order sits above them like above every list.
  *
  * Several offers of one bank are common (Alior, PKO, mBank): each card links to
- * its own page. An ended offer whose bank has nothing current says so and sends
+ * its own page. On a phone they are a swipeable row (ui/CardRail.tsx). An ended offer whose bank has nothing current says so and sends
  * the reader to the list of all offers.
  */
 export function BankOffers({
@@ -43,13 +44,13 @@ export function BankOffers({
       {offers.length > 0 ? (
         <>
           <AffiliateDisclosure variant="strip" sort="recommended" className="mt-4" />
-          <ul role="list" className="mt-5 grid gap-4 sm:grid-cols-2">
+          <CardRail columns={2} className="mt-5">
             {offers.map((offer) => (
-              <li key={offer.slug} className="min-w-0">
-                <PromotionCard promotion={offer} priority={false} headingLevel={3} />
+              <li key={offer.slug} className="flex min-w-0">
+                <PromotionCard promotion={offer} priority={false} headingLevel={3} className="w-full" />
               </li>
             ))}
-          </ul>
+          </CardRail>
         </>
       ) : (
         <p className="mt-4 text-article text-ink-700">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 /** Where and when the soft glows appear on a card: irregular but fixed per slide (no randomness during render). */
@@ -48,11 +48,21 @@ export const SPOTLIGHT_INTERVAL_MS = 5000;
  * Auto-advance stops while the pointer or keyboard focus is inside, and does
  * not run at all with prefers-reduced-motion: then the dots are the only way
  * to change the card. `header` (the offer counter) sits above the card.
+ *
+ * On a phone (below `sm`) the same cards are NOT stacked: they are one row you
+ * swipe with a finger, snapping to the centre of the screen, with the
+ * neighbouring cards peeking out at both edges (the same pattern as
+ * ui/CardRail.tsx). There is no auto-advance then (it would fight the finger);
+ * the dots follow the scroll and a tap on a dot scrolls to that card. The
+ * layout switch is pure CSS (no flash); the script only follows the scroll.
  */
 export function HeroSpotlight({ header, slides, labels }: { header: ReactNode; slides: ReactNode[]; labels: string[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [canPlay, setCanPlay] = useState(false);
+  /** Below `sm`: a swipeable row instead of the stacked cross-fade. */
+  const [railMode, setRailMode] = useState(false);
+  const trackRef = useRef<HTMLDivElement>(null);
   const count = slides.length;
 
   useEffect(() => {
@@ -64,14 +74,67 @@ export function HeroSpotlight({ header, slides, labels }: { header: ReactNode; s
   }, []);
 
   useEffect(() => {
-    if (!canPlay || paused || count < 2) return;
+    try {
+      const query = window.matchMedia("(max-width: 639.98px)");
+      const sync = () => setRailMode(query.matches);
+      sync();
+      query.addEventListener("change", sync);
+      return () => query.removeEventListener("change", sync);
+    } catch {
+      setRailMode(false);
+    }
+  }, []);
+
+  // In the swipeable row the dots follow the finger: the card nearest to the middle of the row is the current one.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!railMode || !track) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const items = Array.from(track.children).filter(
+        (child): child is HTMLElement => child instanceof HTMLElement && child.hasAttribute("data-slide")
+      );
+      const middle = track.scrollLeft + track.clientWidth / 2;
+      let best = 0;
+      let bestDistance = Number.POSITIVE_INFINITY;
+      items.forEach((item, i) => {
+        const distance = Math.abs(item.offsetLeft + item.offsetWidth / 2 - middle);
+        if (distance < bestDistance) {
+          best = i;
+          bestDistance = distance;
+        }
+      });
+      setIndex(best);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    track.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      track.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [railMode]);
+
+  const showSlide = (i: number) => {
+    if (!railMode) {
+      setIndex(i);
+      return;
+    }
+    const slide = trackRef.current?.querySelectorAll<HTMLElement>("[data-slide]")[i];
+    slide?.scrollIntoView({ behavior: canPlay ? "smooth" : "auto", inline: "center", block: "nearest" });
+  };
+
+  useEffect(() => {
+    if (!canPlay || paused || railMode || count < 2) return;
     const timer = window.setTimeout(() => setIndex((i) => (i + 1) % count), SPOTLIGHT_INTERVAL_MS);
     return () => window.clearTimeout(timer);
-  }, [canPlay, paused, count, index]);
+  }, [canPlay, paused, railMode, count, index]);
 
   return (
     <div
-      className="w-full max-w-md justify-self-center lg:justify-self-end"
+      className="w-full min-w-0 max-w-md justify-self-center max-sm:max-w-none lg:justify-self-end"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -83,28 +146,43 @@ export function HeroSpotlight({ header, slides, labels }: { header: ReactNode; s
         role="group"
         aria-roledescription="karuzela"
         aria-label="Najbardziej polecane promocje"
-        className="relative rounded-card shadow-[0_18px_50px_-18px_rgb(var(--color-action)/0.45)] ring-1 ring-action/30"
+        className="relative rounded-card shadow-[0_18px_50px_-18px_rgb(var(--color-action)/0.45)] ring-1 ring-action/30 max-sm:rounded-none max-sm:shadow-none max-sm:ring-0"
       >
-        <div className="grid overflow-hidden rounded-card">
+        <div
+          ref={trackRef}
+          className={cn(
+            // phone: one row you swipe, snapping to the centre, the neighbours peek out at both edges
+            "-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            "before:w-[calc((100vw-min(80vw,22rem))/2-0.75rem)] before:shrink-0 before:content-[''] after:w-[calc((100vw-min(80vw,22rem))/2-0.75rem)] after:shrink-0 after:content-['']",
+            "[&>div]:w-[min(80vw,22rem)] [&>div]:shrink-0 [&>div]:snap-center",
+            // sm and up: the stacked cross-fade we always had
+            "sm:mx-0 sm:grid sm:snap-none sm:gap-0 sm:overflow-hidden sm:rounded-card sm:pb-0 sm:before:hidden sm:after:hidden sm:[&>div]:w-auto sm:[&>div]:shrink"
+          )}
+        >
           {slides.map((slide, i) => {
             const active = i === index;
+            // Only the stacked cross-fade hides the other cards; in the swipeable row they are all there to touch.
+            const hidden = !railMode && !active;
             return (
               <div
                 key={i}
-                aria-hidden={active ? undefined : true}
-                inert={active ? undefined : true}
+                data-slide=""
+                aria-hidden={hidden ? true : undefined}
+                inert={hidden ? true : undefined}
                 aria-label={labels[i]}
                 className={cn(
                   "col-start-1 row-start-1 flex min-w-0 transition-[opacity,transform,filter] duration-[1400ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] motion-reduce:transition-none",
-                  active ? "translate-y-0 scale-100 opacity-100 blur-0" : "pointer-events-none translate-y-4 scale-[0.985] opacity-0 blur-[3px]"
+                  active
+                    ? "sm:translate-y-0 sm:scale-100 sm:opacity-100 sm:blur-0"
+                    : "sm:pointer-events-none sm:translate-y-4 sm:scale-[0.985] sm:opacity-0 sm:blur-[3px]"
                 )}
               >
                 {slide}
               </div>
             );
           })}
-          {/* key = index: the sweep restarts with every new card */}
-          <span key={index} aria-hidden="true" className="pointer-events-none relative col-start-1 row-start-1">
+          {/* key = index: the sweep restarts with every new card (stacked layout only) */}
+          <span key={index} aria-hidden="true" className="pointer-events-none relative col-start-1 row-start-1 max-sm:hidden">
             {glowsFor(index).map((glow, i) => (
               <span key={i} className="spotlight-glow" style={glow} />
             ))}
@@ -120,7 +198,7 @@ export function HeroSpotlight({ header, slides, labels }: { header: ReactNode; s
               type="button"
               aria-label={`Pokaż promocję ${i + 1} z ${count}`}
               aria-current={i === index ? "true" : undefined}
-              onClick={() => setIndex(i)}
+              onClick={() => showSlide(i)}
               className="group/dot flex h-6 w-6 items-center justify-center rounded-full outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus-ring"
             >
               <span

@@ -52,7 +52,8 @@ export function VerifiedLine({
           icon={Icon}
           className="h-auto min-h-6 whitespace-normal py-1"
         >
-          {content}
+          {/* One span: the badge is a flex row, so loose text nodes would wrap as separate columns in a narrow card. */}
+          <span>{content}</span>
         </Badge>
       </span>
     );
