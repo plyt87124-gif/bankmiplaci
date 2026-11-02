@@ -158,6 +158,9 @@ test("only server-side data and admin code reference the commission field", () =
     [
       "app/admin/(dashboard)/promocje/PromotionForm.tsx",
       "app/admin/(dashboard)/promocje/actions.ts",
+      "app/admin/(dashboard)/prowizje/actions.ts",
+      "lib/affiliateNetworks.ts",
+      "lib/services/affiliateSync.ts",
       "lib/promotionForm.ts",
       "lib/recommended.ts",
       "lib/services/promotionCards.ts",
