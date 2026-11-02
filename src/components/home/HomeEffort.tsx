@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PromotionCard } from "@/components/PromotionCard";
+import { CardRail } from "@/components/ui/CardRail";
 import { EffortMeter } from "@/components/ui/EffortMeter";
 import { HOME_DIFFICULTY_HREF } from "./homeContent";
 import type { HomeModel } from "./homeModel";
@@ -21,7 +22,7 @@ export function HomeEffort({ model, now }: { model: HomeModel | null; now?: Date
   return (
     <section aria-labelledby="wysilek-title" className="border-y border-line bg-surface [&_[data-card=promotion]]:bg-paper">
       <div className="container-page py-12 md:py-[72px]">
-        <div className="grid gap-8 lg:grid-cols-3 lg:items-start lg:gap-6">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-3 lg:items-start lg:gap-6">
           <div className="lg:pr-6">
             <h2 id="wysilek-title">Ile wysiłku wymaga promocja?</h2>
             <p className="mt-3 text-article text-ink-700">
@@ -42,17 +43,17 @@ export function HomeEffort({ model, now }: { model: HomeModel | null; now?: Date
             </p>
           </div>
 
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             <p className="type-label mb-3 text-ink-500">
               {examples.length > 1 ? "Przykłady z aktualnej oferty" : "Przykład z aktualnej oferty"}
             </p>
-            <ul role="list" className="grid gap-4 sm:grid-cols-2 lg:gap-6">
+            <CardRail columns={2}>
               {examples.map((card) => (
                 <li key={card.slug} className="flex min-w-0">
                   <PromotionCard promotion={card} priority={false} now={now} className="w-full" />
                 </li>
               ))}
-            </ul>
+            </CardRail>
           </div>
         </div>
       </div>

@@ -2,9 +2,9 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
 import { PromotionCard } from "@/components/PromotionCard";
+import { CardRail } from "@/components/ui/CardRail";
 import { pluralizePl } from "@/lib/format";
 import { isRouteLive } from "@/lib/seo/routes";
-import { CARD_GRID } from "./HomeFeatured";
 import { ENDING_SOON_DAYS, type HomeModel } from "./homeModel";
 
 export const ENDING_SOON_PATH = "/promocje/konczace-sie";
@@ -40,13 +40,13 @@ export function HomeEndingSoon({
           Najpierw te z najbliższym terminem.
         </p>
 
-        <ul role="list" className={`mt-6 ${CARD_GRID}`}>
+        <CardRail className="mt-6">
           {cards.map((card) => (
             <li key={card.slug} className="flex min-w-0">
               <PromotionCard promotion={card} priority={false} now={now} className="w-full" />
             </li>
           ))}
-        </ul>
+        </CardRail>
 
         {isLive(ENDING_SOON_PATH) ? (
           <p className="mt-8">

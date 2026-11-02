@@ -4,11 +4,9 @@ import { ViewerFilterNote } from "@/components/ViewerFilterNote";
 import { PromotionCard } from "@/components/PromotionCard";
 import { TrustNote } from "@/components/trust/TrustNote";
 import { ButtonLink } from "@/components/ui/Button";
+import { CardRail } from "@/components/ui/CardRail";
 import { HomeSeeAllLink, HomeSegmentPanels, type HomePanel } from "./HomeSegment";
 import type { HomeModel } from "./homeModel";
-
-/** The 1 / 2 / 3 column grid of the offer lists (same as /promocje). */
-export const CARD_GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6";
 
 /**
  * "Polecane promocje" (layout spec, HOME block 2). The heading says "Polecane",
@@ -19,13 +17,15 @@ export const CARD_GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6";
  * standing note about the scope of the comparison.
  *
  * The cards of every segment are rendered here, on the server, and handed to
- * the client island as ready nodes; only the selected one is visible.
+ * the client island as ready nodes; only the selected one is visible. On a
+ * phone the cards are a swipeable row with the neighbours peeking out
+ * (ui/CardRail.tsx); from `sm` up they are the usual 2 / 3 column grid.
  */
 export function HomeFeatured({ model, now }: { model: HomeModel | null; now?: Date }) {
   const panels: HomePanel[] = (model?.segments ?? []).map((segment) => ({
     value: segment.value,
     content: (
-      <ul role="list" className={CARD_GRID}>
+      <CardRail>
         {segment.featured.map((card, index) => (
           <li key={card.slug} className="flex min-w-0">
             {/* Only the visible segment preloads its logos (the first cards are above the fold on large screens). */}
@@ -38,7 +38,7 @@ export function HomeFeatured({ model, now }: { model: HomeModel | null; now?: Da
             />
           </li>
         ))}
-      </ul>
+      </CardRail>
     )
   }));
   const hasOffers = panels.length > 0;
