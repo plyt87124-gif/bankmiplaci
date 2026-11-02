@@ -14,16 +14,16 @@ import {
 // "Today" in all tests: 9 Oct 2026, 12:00 in Warsaw (CEST, UTC+2).
 const NOW = new Date("2026-10-09T10:00:00Z");
 
-test("freshness thresholds: <=14 fresh, 15-45 aging, >45 stale", () => {
-  assert.equal(FRESH_MAX_DAYS, 14);
-  assert.equal(AGING_MAX_DAYS, 45);
+test("freshness thresholds: <=2 fresh (the daily verification promise), 3 aging, >3 stale", () => {
+  assert.equal(FRESH_MAX_DAYS, 2);
+  assert.equal(AGING_MAX_DAYS, 3);
 
   const at = (iso: string) => freshnessState(new Date(iso), NOW);
   assert.equal(at("2026-10-09T08:00:00Z"), "fresh"); // today, 0 days
-  assert.equal(at("2026-09-25T08:00:00Z"), "fresh"); // 14 days
-  assert.equal(at("2026-09-24T08:00:00Z"), "aging"); // 15 days
-  assert.equal(at("2026-08-25T08:00:00Z"), "aging"); // 45 days
-  assert.equal(at("2026-08-24T08:00:00Z"), "stale"); // 46 days
+  assert.equal(at("2026-10-08T08:00:00Z"), "fresh"); // 1 day
+  assert.equal(at("2026-10-07T08:00:00Z"), "fresh"); // 2 days
+  assert.equal(at("2026-10-06T08:00:00Z"), "aging"); // 3 days
+  assert.equal(at("2026-10-05T08:00:00Z"), "stale"); // 4 days
   assert.equal(at("2025-01-01T08:00:00Z"), "stale");
 });
 
@@ -37,10 +37,10 @@ test("freshness: missing or invalid date is unknown, never 'fresh'", () => {
 });
 
 test("freshness counts Warsaw calendar days, not UTC days or 24 h blocks", () => {
-  // 24 Sep 23:30 UTC is already 25 Sep in Warsaw: 14 days before 9 Oct -> fresh.
-  // (By UTC date it would be 15 days, i.e. aging.)
-  assert.equal(daysSinceVerified("2026-09-24T23:30:00Z", NOW), 14);
-  assert.equal(freshnessState("2026-09-24T23:30:00Z", NOW), "fresh");
+  // 6 Oct 23:30 UTC is already 7 Oct in Warsaw: 2 days before 9 Oct -> fresh.
+  // (By UTC date it would be 3 days, i.e. aging.)
+  assert.equal(daysSinceVerified("2026-10-06T23:30:00Z", NOW), 2);
+  assert.equal(freshnessState("2026-10-06T23:30:00Z", NOW), "fresh");
 
   // Just after midnight in Warsaw "today" starts: 22:30 UTC on 8 Oct = 00:30 on 9 Oct.
   assert.equal(daysSinceVerified("2026-10-08T22:30:00Z", NOW), 0);
@@ -63,16 +63,16 @@ test("freshness: a date up to a day ahead (clock skew) counts as 0 days; further
 });
 
 test("freshness labels are Polish and use the Warsaw date", () => {
-  const fresh = describeFreshness("2026-10-06T08:30:00Z", NOW);
+  const fresh = describeFreshness("2026-10-07T08:30:00Z", NOW);
   assert.equal(fresh.state, "fresh");
-  assert.equal(fresh.days, 3);
-  assert.equal(fresh.text, "Zweryfikowano 6 paź 2026");
-  assert.equal(fresh.iso, "2026-10-06");
+  assert.equal(fresh.days, 2);
+  assert.equal(fresh.text, "Zweryfikowano 7 paź 2026");
+  assert.equal(fresh.iso, "2026-10-07");
   assert.equal(fresh.suffix, null);
 
-  const aging = describeFreshness("2026-09-01T08:30:00Z", NOW);
+  const aging = describeFreshness("2026-10-06T08:30:00Z", NOW);
   assert.equal(aging.state, "aging");
-  assert.equal(aging.text, "Zweryfikowano 1 wrz 2026");
+  assert.equal(aging.text, "Zweryfikowano 6 paź 2026");
 
   const stale = describeFreshness("2026-06-01T08:30:00Z", NOW);
   assert.equal(stale.state, "stale");

@@ -330,17 +330,20 @@ export function MethodologyContent({ data }: { data: MethodologyData }) {
 
       <h2 id="weryfikacja">Co znaczy „Zweryfikowano”</h2>
       <p>
-        Data przy napisie „Zweryfikowano” to data zapisana przy ofercie, gdy ostatnio porównaliśmy jej warunki ze
-        źródłem, czyli z regulaminem banku.{" "}
+        Data przy napisie „Zweryfikowano” to dzień, w którym ostatnio porównaliśmy warunki oferty ze źródłami, czyli z
+        regulaminem promocji i tabelą opłat banku. Dokumenty banków sprawdzamy codziennie. Jeśli dokument jest taki
+        sam jak przy ostatnim porównaniu, data przesuwa się na dzień sprawdzenia. Jeśli się zmienił albo nie dało się go
+        odczytać, ktoś czyta go ponownie i porównuje z ofertą, a do tego czasu data się nie zmienia. Chcemy, żeby przy
+        żadnej aktywnej ofercie data nie była starsza niż 2 dni.{" "}
         {latestVerified
           ? `Najnowsza z tych dat wśród aktualnych ofert to ${latestVerified}; pokazujemy ją jako „${LATEST_VERIFICATION_LABEL}” w stopce i nad listami ofert, ale nie znaczy to, że wszystkie oferty sprawdzono tego dnia – każda ma własną datę. `
           : ""}
-        Data nie oznacza, że bank nie zmienił warunków po tym dniu. Nie ogłaszamy stałego harmonogramu weryfikacji.
+        Data nie oznacza, że bank nie zmienił warunków po tym dniu.
       </p>
       <p>
         Wygląd znacznika zależy od wieku daty: gdy weryfikacja ma do {FRESH_MAX_DAYS} dni, ikona tarczy jest wyróżniona
-        kolorem; od {FRESH_MAX_DAYS + 1} do {AGING_MAX_DAYS} dni jest stonowana; po {AGING_MAX_DAYS} dniach dopisujemy „
-        {STALE_SUFFIX}”. Gdy daty nie ma, piszemy „Brak daty weryfikacji”. Oferty, których termin zapisów minął,
+        kolorem; przy {AGING_MAX_DAYS} dniach jest stonowana; po {AGING_MAX_DAYS} dniach dopisujemy „{STALE_SUFFIX}”.
+        Tak strona sama pokazuje, że weryfikacja się opóźniła. Gdy daty nie ma, piszemy „Brak daty weryfikacji”. Oferty, których termin zapisów minął,
         oznaczamy jako zakończone.
       </p>
 
