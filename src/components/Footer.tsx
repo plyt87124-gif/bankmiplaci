@@ -14,7 +14,7 @@ export function FooterView() {
   const columns = getFooterColumns();
 
   return (
-    <footer className="border-t border-line bg-surface">
+    <footer className="footer-money border-t border-line bg-surface">
       <div className="container-page py-12 lg:py-14">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
           <div>
