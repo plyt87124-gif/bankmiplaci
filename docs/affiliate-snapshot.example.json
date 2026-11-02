@@ -1,0 +1,50 @@
+{
+  "network": "COMPERIA",
+  "readAt": "2026-11-03T09:45:00+01:00",
+  "complete": { "offers": true, "contests": true, "applications": true },
+  "offers": [
+    {
+      "externalId": "1564",
+      "name": "Nest Bank - konto osobiste za bezwarunkowe 0!",
+      "bankName": "Nest Bank",
+      "category": "konto osobiste",
+      "cpsCents": 14000,
+      "cpaCents": null,
+      "conditions": "Wynagrodzenie CPS za poprawny wniosek przysługuje za otworzenie konta, przy czym ... (dosłownie z panelu)",
+      "notes": "Prowizja naliczana tylko w przypadku nowego klienta. Z jednego adresu IP może zostać złożony tylko jeden, unikalny wniosek ... Zakaz wysyłania wniosków w imieniu klienta.",
+      "newClientOnly": true,
+      "ownApplicationsAllowed": null,
+      "ownApplicationsNote": "Zakaz wysyłania wniosków w imieniu klienta (o wnioskach własnych panel nie mówi wprost)",
+      "startDate": "2022-02-09",
+      "endDate": null,
+      "trackingUrl": "https://… link partnerski wygenerowany w panelu …",
+      "detailUrl": "https://www.comperialead.pl/kampania.html?oferta=1564&produkt=ko",
+      "promotionSlug": "nest-konto-osobiste-…"
+    }
+  ],
+  "contests": [
+    {
+      "externalId": "pekao-listopad-2026",
+      "title": "Pekao: 600 zł za każde 5 kont osobistych (listopad)",
+      "description": "streszczenie zasad z wpisu",
+      "startDate": "2026-11-01",
+      "endDate": "2026-11-30",
+      "tiers": [{ "everyN": 5, "bonusCents": 60000 }],
+      "offerExternalIds": ["1106"],
+      "sourceUrl": "https://blog.comperialead.pl/listopad-pod-znakiem-banku-pekao-s-a-zgarnij-az-600-zl-za-kazde-5-zalozonych-kont-osobistych/"
+    }
+  ],
+  "applications": [
+    {
+      "externalId": "12345678",
+      "openedAt": "2026-11-02T19:25:27+01:00",
+      "bankName": "mBank",
+      "productName": "eKonto do usług",
+      "commissionModel": "CPA",
+      "amountCents": 30000,
+      "status": "trwa weryfikacja",
+      "settledAt": null,
+      "paidAt": null
+    }
+  ]
+}

@@ -343,6 +343,14 @@ model Promotion {
   // public "ocena serwisu", and that use is disclosed on /jak-zarabiamy.
   affiliateCommissionCents Int?
 
+  // Which affiliate network affiliateUrl belongs to. Set by the daily
+  // affiliate sync (scripts/affiliate-sync.ts), which points the link at
+  // the network paying more for a new client unless affiliateNetworkPinned
+  // is on (admin choice on /admin/prowizje). Null = not known yet
+  // (promotions added before the sync existed, all eBroker links).
+  affiliateNetwork       AffiliateNetwork?
+  affiliateNetworkPinned Boolean           @default(false)
+
   startDate DateTime
   endDate   DateTime
 
@@ -400,6 +408,7 @@ model Promotion {
   trackings      UserPromotionTracking[]
   eligibilityHistories UserBankHistory[]
   articles       Article[]
+  affiliateOffers AffiliateOffer[]
 
   @@index([status, endDate])
   @@index([bankId])
@@ -617,6 +626,10 @@ model Click {
   userId      String?
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  // The network whose link this click was sent to (promotion.affiliateNetwork
+  // at click time), for the per-network click counts on /admin/prowizje.
+  affiliateNetwork AffiliateNetwork?
+
   @@index([promotionId, createdAt])
   @@index([userId])
   @@index([promotionId, ipHash, createdAt])
@@ -694,4 +707,133 @@ model Article {
 
   @@index([promotionId])
   @@map("articles")
+}
+
+// ---------------------------------------------------------------------
+// Affiliate networks (eBrokerPartner, ComperiaLead): what they pay us
+// ---------------------------------------------------------------------
+// Everything below is ADMIN-ONLY business data, written by the daily agent
+// through scripts/affiliate-sync.ts from what it read in the partner panels
+// (the owner's logged-in session). Never selected into public pages.
+
+enum AffiliateNetwork {
+  EBROKER
+  COMPERIA
+}
+
+// One campaign in a network's panel (a bank account offer we can promote).
+model AffiliateOffer {
+  id          String           @id @default(cuid())
+  network     AffiliateNetwork
+  // The network's own id: eBroker campaign oid, Comperia "oferta" number.
+  externalId  String
+  name        String
+  bankName    String
+  // Panel category as shown, e.g. "konto osobiste", "konto firmowe".
+  category    String
+  // What the network pays for one qualifying client, in grosze. A campaign
+  // can pay CPS (account opened), CPA (action done) or both; null = this
+  // model is not paid. Only like is compared with like (CPS with CPS).
+  cpsCents    Int?
+  cpaCents    Int?
+  // When the commission is due, as written in the panel (new client only,
+  // activity within N days ...). Copied, never paraphrased into new terms.
+  conditions  String?
+  // The panel's remarks (one application per IP, no applications on a
+  // client's behalf ...).
+  notes       String?
+  // From the panel/regulamin: commission only for clients new to the bank.
+  newClientOnly Boolean?
+  // Whether the partner may open the account for themselves through their
+  // own link. Null = the panel and regulamin say nothing.
+  ownApplicationsAllowed Boolean?
+  ownApplicationsNote    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  // Our partner link for this campaign, as generated in the panel.
+  trackingUrl String?
+  detailUrl   String?
+  // The promotion on this site the campaign is for, set by the agent (or
+  // via the eBroker catalog link). Drives the best-link choice.
+  promotionId String?
+  promotion   Promotion?       @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  contentHash String
+  firstSeenAt DateTime         @default(now())
+  lastSeenAt  DateTime         @default(now())
+  // Set on the first sync that did not find the campaign in the panel.
+  missingSince DateTime?
+
+  @@unique([network, externalId])
+  @@index([promotionId])
+  @@map("affiliate_offers")
+}
+
+// A network's sales contest / extra bonus ("1000 zł za każde 3 konta").
+model AffiliateContest {
+  id          String           @id @default(cuid())
+  network     AffiliateNetwork
+  externalId  String
+  title       String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  // Bonus rules, see src/lib/affiliateContests.ts (ContestTier):
+  // [{ "everyN": 3, "bonusCents": 100000 }] = 1000 zł for every 3 accounts,
+  // [{ "atLeast": 5, "bonusCents": 60000 }] = 600 zł once 5 are reached.
+  tiers       Json             @default("[]")
+  // externalIds of the AffiliateOffer rows the contest counts.
+  offerExternalIds String[]    @default([])
+  sourceUrl   String?
+  contentHash String
+  firstSeenAt DateTime         @default(now())
+  lastSeenAt  DateTime         @default(now())
+  missingSince DateTime?
+
+  @@unique([network, externalId])
+  @@map("affiliate_contests")
+}
+
+// One application (wniosek) as listed in a network's statistics. No visitor
+// IP or personal data is ever stored, only what the owner needs to follow
+// commissions.
+model AffiliateApplication {
+  id          String           @id @default(cuid())
+  network     AffiliateNetwork
+  externalId  String
+  openedAt    DateTime
+  bankName    String
+  productName String
+  commissionModel String?
+  // Expected commission in grosze, as the panel shows it.
+  amountCents Int?
+  // The panel's own status text, e.g. "zaakceptowany", "wypłacony".
+  status      String
+  // Normalised: CLICK, SENT, PENDING, ACCEPTED, PAID, REJECTED, DUPLICATE.
+  stage       String
+  settledAt   DateTime?
+  paidAt      DateTime?
+  firstSeenAt DateTime         @default(now())
+  stageChangedAt DateTime      @default(now())
+
+  @@unique([network, externalId])
+  @@index([stage])
+  @@map("affiliate_applications")
+}
+
+// Everything the sync noticed or did, newest first: the source of the daily
+// report and the undo trail for link switches (details holds the old link).
+model AffiliateChange {
+  id          String           @id @default(cuid())
+  network     AffiliateNetwork?
+  // OFFER_NEW, OFFER_GONE, OFFER_RETURNED, RATE_CHANGED, TERMS_CHANGED,
+  // CONTEST_NEW, CONTEST_CHANGED, CONTEST_GONE, APPLICATION_NEW,
+  // APPLICATION_STAGE, PAYOUT, LINK_SWITCHED, DECISION_NEEDED.
+  kind        String
+  title       String
+  details     Json             @default("{}")
+  promotionId String?
+  createdAt   DateTime         @default(now())
+
+  @@index([createdAt])
+  @@map("affiliate_changes")
 }

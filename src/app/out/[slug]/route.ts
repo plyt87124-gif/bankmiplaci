@@ -51,6 +51,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ slug:
       status: true,
       endDate: true,
       affiliateLinkEnabled: true,
+      affiliateNetwork: true,
       bank: { select: { name: true } }
     }
   });
@@ -136,7 +137,8 @@ export async function GET(request: NextRequest, props: { params: Promise<{ slug:
           utmContent: searchParams.get("utm_content") ?? undefined,
           utmTerm: searchParams.get("utm_term") ?? undefined,
           ipHash: visitorHash,
-          userId: currentUser?.id
+          userId: currentUser?.id,
+          affiliateNetwork: promotion.affiliateNetwork
         }
       });
 

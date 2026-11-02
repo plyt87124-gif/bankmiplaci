@@ -32,6 +32,11 @@ export default function HowWeEarnPage() {
         piszemy „Link partnerski”), a potem otwierasz konto i spełniasz warunki promocji, bank – bezpośrednio albo przez
         sieć partnerską – może wypłacić nam wynagrodzenie. Nie pochodzi ono od Ciebie. Warunki promocji ustala bank.
       </p>
+      <p>
+        Współpracujemy z sieciami partnerskimi eBrokerPartner i ComperiaLead. Gdy ta sama promocja jest dostępna w obu,
+        link prowadzi przez tę, która płaci nam więcej. Premia i warunki promocji są dla Ciebie takie same, bo ustala je
+        bank.
+      </p>
 
       <h2 id="ocena">Jak liczymy ocenę</h2>
       <p>

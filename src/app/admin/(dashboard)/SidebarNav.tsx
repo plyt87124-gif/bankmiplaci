@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Tag, Landmark, Users, MessageCircle, CalendarClock, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Tag, Landmark, Users, MessageCircle, CalendarClock, BarChart3, BadgePercent } from "lucide-react";
 
 type BadgeType = "NEW_COMMENT" | "NEW_USER" | "ELIGIBILITY_CLEARED";
 
@@ -21,6 +21,7 @@ const NAV: NavItem[] = [
   { href: "/admin", label: "Pulpit", icon: LayoutDashboard },
   { href: "/admin/statystyki", label: "Statystyki", icon: BarChart3 },
   { href: "/admin/promocje", label: "Promocje", icon: Tag },
+  { href: "/admin/prowizje", label: "Prowizje brokerów", icon: BadgePercent },
   { href: "/admin/banki", label: "Banki", icon: Landmark },
   { href: "/admin/uzytkownicy", label: "Użytkownicy", icon: Users },
   { href: "/admin/komentarze", label: "Komentarze", icon: MessageCircle, badgeType: "NEW_COMMENT" },
