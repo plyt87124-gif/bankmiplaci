@@ -27,7 +27,11 @@ export async function pinAffiliateNetwork(promotionId: string, network: Network 
     const offer = offers
       .filter((o) => isUsableOffer(o, new Date()))
       .sort((a, b) => (offerCommissionCents(b) ?? 0) - (offerCommissionCents(a) ?? 0))[0];
-    if (!offer?.trackingUrl) throw new Error("Ten broker nie ma dziś aktualnej kampanii z linkiem dla tej promocji.");
+    // eBroker also publishes a partner link in its public catalog, usable when the panel list has no rate for the campaign.
+    const catalog = !offer && network === "EBROKER" ? await db.ebrokerCampaign.findFirst({ where: { promotionId, missingSince: null } }) : null;
+    const linkUrl = offer?.trackingUrl ?? catalog?.trackingUrl;
+    if (!linkUrl) throw new Error("Ten broker nie ma dziś aktualnej kampanii z linkiem dla tej promocji.");
+    const commission = offer ? offerCommissionCents(offer) : null;
     const before = await db.promotion.findUniqueOrThrow({
       where: { id: promotionId },
       select: { affiliateUrl: true, affiliateNetwork: true, affiliateCommissionCents: true }
@@ -36,10 +40,10 @@ export async function pinAffiliateNetwork(promotionId: string, network: Network 
       db.promotion.update({
         where: { id: promotionId },
         data: {
-          affiliateUrl: offer.trackingUrl,
+          affiliateUrl: linkUrl,
           affiliateNetwork: network,
           affiliateNetworkPinned: true,
-          affiliateCommissionCents: offerCommissionCents(offer)
+          affiliateCommissionCents: commission
         }
       }),
       db.affiliateChange.create({
@@ -50,7 +54,7 @@ export async function pinAffiliateNetwork(promotionId: string, network: Network 
           details: {
             manual: true,
             before,
-            after: { affiliateUrl: offer.trackingUrl, affiliateNetwork: network, affiliateCommissionCents: offerCommissionCents(offer) }
+            after: { affiliateUrl: linkUrl, affiliateNetwork: network, affiliateCommissionCents: commission }
           },
           promotionId
         }
@@ -63,5 +67,29 @@ export async function pinAffiliateNetwork(promotionId: string, network: Network 
 export async function revertAffiliateLinkSwitch(changeId: string) {
   await requireAdmin();
   await revertLinkSwitch(db, changeId);
+  revalidatePath("/admin/prowizje");
+}
+
+/**
+ * Ties a broker campaign that has no promotion yet to a promotion on the site
+ * (panel offer or catalog campaign). From the next daily sync the campaign
+ * takes part in the best-link choice and its rate shows next to the promotion.
+ */
+export async function linkCampaignToPromotion(kind: "offer" | "catalog", id: string, promotionId: string) {
+  const session = await requireAdmin();
+  await db.promotion.findUniqueOrThrow({ where: { id: promotionId }, select: { id: true } });
+  if (kind === "offer") {
+    await db.affiliateOffer.update({ where: { id }, data: { promotionId } });
+  } else {
+    await db.ebrokerCampaign.update({ where: { oid: id }, data: { promotionId } });
+  }
+  await db.affiliateChange.create({
+    data: {
+      kind: "CAMPAIGN_LINKED",
+      title: `Kampania ${kind === "offer" ? "z panelu" : "z katalogu eBroker"} ${id} powiązana ręcznie z promocją (${session.user?.email ?? "admin"})`,
+      details: { kind, id },
+      promotionId
+    }
+  });
   revalidatePath("/admin/prowizje");
 }
