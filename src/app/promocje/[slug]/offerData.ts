@@ -67,7 +67,7 @@ export const getOffersOfBank = cache((bankSlug: string) => getBankCards(bankSlug
 export async function listIndexableSlugs(): Promise<string[]> {
   try {
     const rows = await db.promotion.findMany({
-      where: { status: { in: ["ACTIVE", "EXPIRED"] }, endDate: { gte: expiredIndexWindowStart() } },
+      where: { status: { in: ["ACTIVE", "EXPIRED"] }, adminOnly: false, endDate: { gte: expiredIndexWindowStart() } },
       select: { slug: true }
     });
     return rows.map((row) => row.slug);

@@ -1,3 +1,4 @@
+import { viewerIsAdmin } from "@/lib/services/viewerFilter";
 import { db } from "@/lib/db";
 import { Prisma, PromotionStatus, Difficulty } from "@prisma/client";
 import { recomputeRatings } from "./ratings";
@@ -21,6 +22,8 @@ export interface PromotionFilters {
   maxAccountFeeCents?: number; // "bez opłat" style filter
   /** true = the ended offers (sign-up closed) instead of the open ones. */
   ended?: boolean;
+  /** Also list admin-only offers (Promotion.adminOnly). Only for a signed-in admin. */
+  includeAdminOnly?: boolean;
   sort?: SortKey;
 }
 
@@ -31,10 +34,11 @@ export interface PromotionFilters {
  * anything whose end_date has already passed, even if a scheduled job
  * hasn't flipped its status yet (belt-and-braces against a missed cron).
  */
-export function activeWhere(): Prisma.PromotionWhereInput {
+export function activeWhere(opts: { includeAdminOnly?: boolean } = {}): Prisma.PromotionWhereInput {
   return {
     status: PromotionStatus.ACTIVE,
-    endDate: { gte: signupCutoff() }
+    endDate: { gte: signupCutoff() },
+    ...(opts.includeAdminOnly ? {} : { adminOnly: false })
   };
 }
 
@@ -42,10 +46,11 @@ export function activeWhere(): Prisma.PromotionWhereInput {
  * Offers whose sign-up window has closed: status EXPIRED, or still ACTIVE
  * with a deadline in the past (a missed cron). DRAFT and ARCHIVED never show.
  */
-export function endedWhere(): Prisma.PromotionWhereInput {
+export function endedWhere(opts: { includeAdminOnly?: boolean } = {}): Prisma.PromotionWhereInput {
   return {
     status: { in: [PromotionStatus.ACTIVE, PromotionStatus.EXPIRED] },
-    endDate: { lt: signupCutoff() }
+    endDate: { lt: signupCutoff() },
+    ...(opts.includeAdminOnly ? {} : { adminOnly: false })
   };
 }
 
@@ -86,7 +91,7 @@ export function stripPrivateFields<T extends { affiliateCommissionCents?: number
  */
 export function buildActiveWhere(filters: PromotionFilters = {}): Prisma.PromotionWhereInput {
   return {
-    ...(filters.ended ? endedWhere() : activeWhere()),
+    ...(filters.ended ? endedWhere({ includeAdminOnly: filters.includeAdminOnly }) : activeWhere({ includeAdminOnly: filters.includeAdminOnly })),
     ...(filters.bankSlug ? { bank: { slug: filters.bankSlug } } : {}),
     ...accountTypeWhere(filters.accountType),
     ...(filters.difficulty?.length ? { difficulty: { in: filters.difficulty as never[] } } : {}),
@@ -112,7 +117,7 @@ export function buildActiveWhere(filters: PromotionFilters = {}): Prisma.Promoti
 }
 
 export async function listActivePromotions(filters: PromotionFilters = {}) {
-  const where = buildActiveWhere(filters);
+  const where = buildActiveWhere({ ...filters, includeAdminOnly: filters.includeAdminOnly ?? (await viewerIsAdmin()) });
 
   const rows = await db.promotion.findMany({
     where,

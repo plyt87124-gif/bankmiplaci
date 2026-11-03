@@ -73,6 +73,8 @@ export const promotionFormSchema = z
     affiliateUrl: z.string().url("Podaj poprawny adres URL"),
     // Whether our partner link is live for this offer (separate from status/dates).
     affiliateLinkEnabled: z.boolean().default(true),
+    // Shown only to a signed-in admin, e.g. a campaign that forbids bank-promotion sites.
+    adminOnly: z.boolean().default(false),
     // Partner commission per qualifying sign-up, in grosze. Blank = unknown (NULL).
     // Admin-only: used for the "Polecane" ordering, never shown publicly.
     affiliateCommissionCents: z.preprocess(

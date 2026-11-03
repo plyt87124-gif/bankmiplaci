@@ -33,6 +33,7 @@ export function promotionToFormDefaults(promotion: PromotionForForm): Partial<Pr
     endDate: dateInput(promotion.endDate),
     affiliateUrl: promotion.affiliateUrl,
     affiliateLinkEnabled: promotion.affiliateLinkEnabled,
+    adminOnly: promotion.adminOnly,
     affiliateCommissionCents: promotion.affiliateCommissionCents ?? undefined,
     sourceUrl: promotion.sourceUrl ?? undefined,
     lastVerifiedAt: dateInput(promotion.lastVerifiedAt),

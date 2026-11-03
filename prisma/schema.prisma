@@ -327,6 +327,13 @@ model Promotion {
 
   status PromotionStatus @default(DRAFT)
 
+  // Shown only to a signed-in admin (listing, offer page, /out redirect),
+  // never to visitors, crawlers or the sitemap. For a live offer the owner
+  // may not promote publicly, e.g. an affiliate campaign that forbids
+  // bank-promotion sites. Separate from `status`, so the offer keeps working
+  // (ściąga, dates, ratings, link choice) as an ordinary ACTIVE one.
+  adminOnly Boolean @default(false)
+
   // Whether OUR partner link for this offer is live. Separate from `status`
   // and the dates, which describe the bank's offer: an ACTIVE, still-open
   // offer is shown (listing, page, sitemap) even while this is false, but

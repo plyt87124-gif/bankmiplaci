@@ -1,4 +1,6 @@
 import { cache } from "react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { listEligibilityMarks } from "@/lib/services/blockedPromotions";
 import { getCurrentUser } from "@/lib/userSession";
 
@@ -24,6 +26,19 @@ export const getViewerExclusions = cache(async (): Promise<ViewerExclusions> => 
     return { enabled: true, excluded: new Set(marks.map((m) => m.slug)) };
   } catch {
     return NONE;
+  }
+});
+
+/**
+ * Is an admin signed in to the panel in this browser? Then admin-only offers
+ * (Promotion.adminOnly) are listed too, whichever visitor account is active.
+ * No request context (build, scripts, sitemap) or any failure = false.
+ */
+export const viewerIsAdmin = cache(async (): Promise<boolean> => {
+  try {
+    return Boolean(await getServerSession(authOptions));
+  } catch {
+    return false;
   }
 });
 

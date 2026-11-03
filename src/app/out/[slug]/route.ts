@@ -8,6 +8,7 @@ import { isLikelyBot } from "@/lib/botDetection";
 import { advisoryLockKey } from "@/lib/dedup";
 import { touchUserActivity } from "@/lib/userActivity";
 import { isSignupOpen, isAffiliateLinkLive } from "@/lib/promotionAvailability";
+import { viewerIsAdmin } from "@/lib/services/viewerFilter";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ slug:
       slug: true,
       affiliateUrl: true,
       status: true,
+      adminOnly: true,
       endDate: true,
       affiliateLinkEnabled: true,
       affiliateNetwork: true,
@@ -71,6 +73,10 @@ export async function GET(request: NextRequest, props: { params: Promise<{ slug:
   // we currently promote the offer, so it is NOT restored just because
   // the bank's own sign-up window is open.
   if (!isSignupOpen(promotion)) {
+    return safeFallbackRedirect(request);
+  }
+  // An admin-only offer (Promotion.adminOnly) leads to the partner only for a signed-in admin.
+  if (promotion.adminOnly && !(await viewerIsAdmin())) {
     return safeFallbackRedirect(request);
   }
   // The offer is current but the affiliate campaign is not confirmed live:
