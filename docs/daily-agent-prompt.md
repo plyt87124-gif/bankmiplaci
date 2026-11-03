@@ -47,7 +47,7 @@ Katalog eBroker sprawdza cron Vercela o 4:30 (/api/cron/ebroker-watch) i zapisuj
 6. **Dwa etapy każdej zmiany w bazie:** dry-run, sprawdzenie wyniku, `--apply`.
    Log zmian zapisujesz do C:\Users\plyt8\Desktop\ProjektyKlaudia\bankmiplaci\bankmiplaci-materialy\agent-log\RRRR-MM-DD.json.
 7. **Panele partnerskie tylko czytasz.**
-   - NIGDY nie wpisujesz loginu ani hasła. Jeśli widzisz stronę logowania, pomijasz ten panel i dajesz na górze maila „⚠ Zaloguj się do <sieć> we wbudowanej przeglądarce aplikacji Claude, potem kliknij Uruchom teraz przy tym zadaniu”.
+   - NIGDY nie wpisujesz loginu ani hasła i nie przyjmujesz ich w czacie (nawet od właściciela). Jeśli widzisz stronę logowania, postępujesz według kroku F1 (logowanie z telefonu).
    - Nie klikasz: wyloguj, usuń konto, zmień dane, zapisz, wyślij, reklamacje, generuj faktury ani regulaminów akceptacji.
    - Wolno: przechodzić między stronami, filtrować listy, rozwijać „pokaż szczegóły” i „Zobacz szczegóły” oraz otwierać wpisy na blogu Comperii.
    - NIE zapisujesz adresów IP, domen odwiedzających ani danych osobowych z list wniosków.
@@ -89,6 +89,30 @@ Małym skryptem tsx tylko do odczytu odczytaj z produkcji:
 ### E. Zmiana albo zniknięcie kampanii w katalogu
 Sprawdzasz u banku, nic nie zmieniasz i dajesz rekomendację w raporcie.
 
+### F0. Kiedy czytasz panele prowizji (polecenie właściciela z 3.11.2026)
+
+Panele eBrokerPartner i ComperiaLead (kroki F i F2) czytasz tylko w te dni:
+- 1. dzień miesiąca,
+- 3. dzień miesiąca,
+- każdy poniedziałek.
+
+W pozostałe dni pomijasz F i F2. Nie otwierasz paneli i nie piszesz „zaloguj się”, nawet jeśli sesja wygasła. Kroki A–E (oferty banków, katalog eBroker, wygasłe promocje) robisz codziennie jak dotąd. Codziennie możesz też uruchomić `affiliate-sync.ts links` i `report`, bo czytają tylko bazę.
+
+W raporcie w dzień bez odczytu piszesz jedną linię: „Prowizje: bez odczytu paneli dziś, następny odczyt <data>”.
+
+### F1. Logowanie z telefonu
+
+Polecenie właściciela z 3.11.2026. Właściciel często jest z dala od komputera i loguje się z telefonu: Pulpitem zdalnym Chrome do tego komputera, a z Tobą rozmawia w aplikacji Claude na telefonie (Remote Control tej sesji).
+1. W dzień odczytu paneli (F0) zaczynasz od sprawdzenia sesji: otwierasz we wbudowanej przeglądarce https://ebrokerpartner.pl/wyszukiwarka-produktow i https://www.comperialead.pl/tabela-prowizji.html. Strona logowania albo przekierowanie na nią = sesja wygasła.
+2. Gdy któraś sesja wygasła, NATYCHMIAST (zanim zrobisz kroki A–E):
+   - wysyłasz powiadomienie narzędziem PushNotification (trafia na telefon): „Bankmiplaci: zaloguj się do <eBroker/Comperia> przez Pulpit zdalny, potem odpisz „gotowe” w tej sesji”;
+   - wysyłasz krótki e-mail przez Resend (do adresu z kroku A) z tematem „⚠ Bankmiplaci: zaloguj się do <sieć>” i instrukcją: 1) na telefonie otwórz Pulpit zdalny Chrome i połącz się z komputerem, 2) w aplikacji Claude w tej sesji otwórz panel przeglądarki i zaloguj się w karcie <sieć>, 3) w Comperii zamknij okno, które otwiera się po zalogowaniu, 4) w aplikacji Claude na telefonie odpisz w tej sesji „gotowe”.
+3. Potem robisz kroki A–E bez paneli i wysyłasz raport dzienny jak zwykle, z dopiskiem na górze „Prowizje czekają na Twoje logowanie”.
+4. Kończysz turę pytaniem do właściciela: „Zaloguj się do <sieć> i odpisz »gotowe«. Wtedy odczytam panele.” Nie czekasz w pętli i nie odpytujesz przeglądarki co chwilę.
+5. Gdy właściciel odpisze (np. „gotowe”, „zalogowany”), sprawdzasz sesje jeszcze raz. Zalogowany: robisz F i F2 i wysyłasz drugi, krótki e-mail „Bankmiplaci: prowizje RRRR-MM-DD” tylko z częściami raportu o prowizjach. Nadal wylogowany: piszesz, która sieć, i znów czekasz na odpowiedź.
+6. Właściciel może też z telefonu napisać w tej sesji inne polecenie (np. „pomiń Comperię”, „zrób tylko eBroker”). Wykonujesz je w granicach zasad tego promptu.
+7. Jeśli właściciel nie odpisze do końca dnia, nic więcej nie robisz. Następny dzień odczytu zaczyna się od kroku 1.
+
 ### F. Prowizje: odczyt paneli
 Używasz wbudowanej przeglądarki (narzędzia mcp__Claude_Browser__*; preview_start z url, potem get_page_text i find). Dla każdej sieci przygotowujesz jeden plik snapshot w formacie z docs/affiliate-snapshot.example.json:
 - kwoty w groszach, daty RRRR-MM-DD;
@@ -105,7 +129,7 @@ Używasz wbudowanej przeglądarki (narzędzia mcp__Claude_Browser__*; preview_st
 - `/konkursy`: każdy konkurs otwierasz („pokaż szczegóły”). Odczytujesz tytuł, okres, zasady premii zapisane jako tiers (everyN = premia za każde N kont, atLeast = jednorazowo po N) oraz listę kampanii (do offerExternalIds). Zasad, których nie da się jednoznacznie przeliczyć, nie zgadujesz: tiers = [] i opis w description.
 - `/statystyki`: bieżący i poprzedni miesiąc, wszystkie statusy, 200 wyników na stronę. Dla każdego wniosku: ID wniosku, data, instytucja, produkt, model, status (KLIK, Wysłane, Zaakceptowane, Odrzucone), kwota, jeśli jest podana.
 - `/rozliczenia/raporty`: wypłaty, czyli paidAt wniosków, jeśli raport je podaje.
-- Regulamin `/regulamin`: raz w tygodniu (w poniedziałek) sprawdź zapisy o wnioskach własnych partnera.
+- Regulamin `/regulamin`: 1. dnia miesiąca (patrz „Zakazy w promowaniu”).
 
 **ComperiaLead** (https://www.comperialead.pl):
 - `/tabela-prowizji.html`, filtry: Konto osobiste, Konto oszczędnościowe, Produkty dla firm (tylko konta firmowe). Każdą kampanię otwierasz (`kampania.html?oferta=N`, externalId = N) i odczytujesz:
@@ -116,7 +140,18 @@ Używasz wbudowanej przeglądarki (narzędzia mcp__Claude_Browser__*; preview_st
   - link partnerski, jeśli jest widoczny w sekcji „Link” bez zapisywania czegokolwiek; w przeciwnym razie null i informacja w raporcie.
 - Konkursy: wpisy „Dołącz do wybranej kampanii i zgarnij dodatkowe bonusy” w panelu i `/aktualnosci.html`, czyli posty na blog.comperialead.pl. Konkurs zapisujesz tylko z okresem i progami z treści.
 - `/wnioski.html` (wszystkie wnioski) oraz `/Wynagrodzenia.html`: status, kwota, data rozliczenia i data wypłaty.
-- `/regulamin`: zapisy o wnioskach własnych, sprawdzane raz w tygodniu.
+- `/regulamin`: 1. dnia miesiąca (patrz „Zakazy w promowaniu”).
+
+**Zakazy w promowaniu (polecenie właściciela z 3.11.2026, potrzebne do TikToków i reklam):**
+- Przy każdej kampanii przepisz do notes dosłownie każde zdanie o tym, czego nie wolno przy promowaniu:
+  - SEM i reklamy w wyszukiwarkach, licytowanie nazwy banku (brand bidding);
+  - własne grafiki lub kreacje z marką banku;
+  - mailing, SMS, skracacze linków, blogi, social media, wideo;
+  - wnioski w imieniu klienta, wnioski własne partnera.
+- Szukaj ich w „Uwagach”, w opisie, w warunkach i w regulaminie kampanii, a w eBroker także w zakładce OPIS.
+- Strona /admin/prowizje i komenda `npx.cmd tsx scripts/affiliate-sync.ts zasady [bank]` wyliczają z tego listę zakazów.
+- Nowy albo zmieniony zakaz wpisujesz do raportu (część 5).
+- Regulaminy całych sieci (/regulamin w eBroker i Comperii) czytasz 1. dnia miesiąca. Zasady ogólne są w NETWORK_RULES w src/lib/affiliateRules.ts (stan z 4.11.2026). Jeśli regulamin zmienił zapisy o wnioskach własnych, materiałach poza własną stroną lub social mediach, dajesz ❓ z cytatem.
 
 **Pola dla każdej kampanii:**
 - promotionSlug: tylko wtedy, gdy na pewno chodzi o tę samą promocję na stronie (ten sam bank, typ konta i ta sama edycja promocji; sprawdź w bazie produkcyjnej). W przeciwnym razie null.
@@ -169,7 +204,7 @@ Kolejność części:
    - kampanie kont bez promocji na stronie.
 3. ZROBIONE: dodane promocje (slug, kwota, daty, ACTIVE albo DRAFT, źródła), przedłużenia, zmiany linków (z kwotami i informacją, jak cofnąć: /admin/prowizje, przycisk „cofnij”), commit.
 4. WNIOSKI I PROWIZJE: nowe wnioski, zmiany statusu i wpływy z raportu prowizji.
-5. STAWKI, KONKURSY, TYLKO U JEDNEGO BROKERA, ZAKAZ WNIOSKÓW WŁASNYCH: z raportu prowizji.
+5. STAWKI, KONKURSY, TYLKO U JEDNEGO BROKERA, ZAKAZY W PROMOWANIU I WNIOSKÓW WŁASNYCH: z raportu prowizji i z odczytu (tylko w dni odczytu paneli).
 6. BEZ ZMIAN: jedna linia na obszar, np. „katalog eBroker: bez nowych kampanii; stawki Comperia: bez zmian”.
 
 W razie wątpliwości wybierasz bezpieczniejszą opcję (DRAFT zamiast ACTIVE, brak zmiany zamiast zmiany) i opisujesz to w raporcie.

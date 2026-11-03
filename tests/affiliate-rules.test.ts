@@ -5,8 +5,10 @@ import {
   commissionDeadline,
   commissionEligibility,
   describeNewClientRule,
+  groupOffSiteItems,
   normalizeBank,
   parseNewClientRule,
+  promoRestrictions,
   suggestPromotions
 } from "../src/lib/affiliateRules";
 
@@ -108,4 +110,53 @@ test("termin prowizji: okno nowego klienta to nie termin, a sama umowa nie ma te
   const open = d("2026-11-03");
   assert.equal(commissionDeadline("nie posiadał konta BNP Paribas w ciągu 12 poprzedzających miesięcy", open), null);
   assert.equal(commissionDeadline("Wynagrodzenie przyznane będzie za sprzedaż konta, czyli podpisanie umowy przez klienta.", open), null);
+});
+
+test("zakazy promowania z opisu kampanii", () => {
+  const erste =
+    "Całkowicie zakazane są działania w wyszukiwarkach internetowych (SEM) polegające na używaniu nazwy banku jako słów kluczowych. Zakazane jest tworzenie i wykorzystywanie własnych kreacji graficznych.";
+  assert.deepEqual(
+    promoRestrictions(erste).map((r) => r.key),
+    ["sem", "brand", "creatives"]
+  );
+  const alior =
+    "Z jednego adresu IP może zostać złożony tylko jeden, unikalny wniosek. Zakaz wysyłania wniosków w imieniu klienta. We wszystkich kampaniach na rzecz Alior Banku panuje bezwzględny zakaz stosowania mailingów.";
+  assert.deepEqual(
+    promoRestrictions(alior).map((r) => r.key),
+    ["mailing", "onBehalf", "ip"]
+  );
+  assert.deepEqual(
+    promoRestrictions("Obowiązuje zakaz wykorzystywania skracaczy linków.").map((r) => r.key),
+    ["shortener"]
+  );
+  assert.deepEqual(promoRestrictions(null), []);
+});
+
+test("to samo konto z dwóch sieci to jeden wiersz", () => {
+  const items = [
+    { network: "COMPERIA", bankName: "Erste", name: "ERSTE - Konto FIRMOWE ONLINE", category: "konto firmowe" },
+    { network: "EBROKER", bankName: "Erste", name: "Konto Firmowe", category: "konto firmowe" },
+    { network: "EBROKER", bankName: "VeloBank", name: "VeloKonto", category: "konto osobiste" },
+    { network: "EBROKER", bankName: "VeloBank", name: "VeloKonto Gold - 5% na lokatach do 420 tys. zł", category: "konto osobiste" },
+    { network: "EBROKER", bankName: "VeloBank", name: "VeloKonto dla młodych", category: "konto osobiste" },
+    { network: "COMPERIA", bankName: "VeloBank", name: "Velo Bank - VeloKonto dla Młodych", category: "konto osobiste" },
+    { network: "COMPERIA", bankName: "VeloBank", name: "Velo Bank - VeloKonto Firma", category: "konto firmowe" },
+    { network: "EBROKER", bankName: "VeloBank", name: "VeloKonto Firma", category: "konto firmowe" },
+    { network: "EBROKER", bankName: "PEKAO S.A", name: "Konto Przekorzystne - zyskaj do 300 zł", category: "konto osobiste" },
+    { network: "EBROKER", bankName: "PEKAO S.A", name: "Konto Przekorzystne - zyskaj do 300 zł", category: "konto osobiste" },
+    { network: "COMPERIA", bankName: "PEKAO S.A", name: "Pekao S.A. - Konto osobiste z bonusem", category: "konto osobiste" }
+  ];
+  const groups = groupOffSiteItems(items).map((g) => g.map((x) => `${x.network}:${x.name}`));
+  assert.deepEqual(groups, [
+    ["COMPERIA:ERSTE - Konto FIRMOWE ONLINE", "EBROKER:Konto Firmowe"],
+    ["EBROKER:VeloKonto"],
+    ["EBROKER:VeloKonto Gold - 5% na lokatach do 420 tys. zł"],
+    ["EBROKER:VeloKonto dla młodych", "COMPERIA:Velo Bank - VeloKonto dla Młodych"],
+    ["COMPERIA:Velo Bank - VeloKonto Firma", "EBROKER:VeloKonto Firma"],
+    [
+      "EBROKER:Konto Przekorzystne - zyskaj do 300 zł",
+      "EBROKER:Konto Przekorzystne - zyskaj do 300 zł",
+      "COMPERIA:Pekao S.A. - Konto osobiste z bonusem"
+    ]
+  ]);
 });

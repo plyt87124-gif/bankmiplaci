@@ -296,3 +296,118 @@ export function suggestPromotions(
   }
   return out.sort((a, b) => b.score - a.score);
 }
+
+// ---- promoting a campaign: what the network and the bank forbid ----
+
+export interface PromoRestriction {
+  key: string;
+  label: string;
+}
+
+const RESTRICTIONS: { key: string; label: string; re: RegExp }[] = [
+  { key: "sem", label: "zakaz reklam w wyszukiwarkach (SEM)", re: /\bSEM\b|AdWords|wyszukiwark\w* internetow/i },
+  { key: "brand", label: "zakaz licytowania nazwy banku (brand bidding)", re: /brand bidding|nazw\w* (marki|banku) (w kampaniach|jako słów)/i },
+  { key: "creatives", label: "zakaz własnych grafik z marką banku", re: /własnych kreacji|tworzenie grafik|materiałów wizualnych/i },
+  { key: "mailing", label: "zakaz mailingu", re: /mailing/i },
+  { key: "sms", label: "zakaz SMS", re: /\bSMS\b/ },
+  { key: "shortener", label: "zakaz skracaczy linków", re: /skracacz/i },
+  { key: "blogs", label: "zakaz na blogach o promocjach bankowych", re: /blogach opisujących promocje/i },
+  { key: "onBehalf", label: "zakaz wniosków w imieniu klienta", re: /w imieniu klienta|wypełniony samodzielnie przez osobę zainteresowaną/i },
+  { key: "incentive", label: "zakaz zachęt typu praca, testy, ruch motywowany", re: /ofert\w* zatrudnienia|ruchu motywowanego|tajemniczego klienta/i },
+  { key: "ip", label: "jeden wniosek z jednego adresu IP", re: /jednego adresu IP/i }
+];
+
+/** The promoting restrictions named in a campaign's panel text (notes + conditions), in a fixed order. */
+export function promoRestrictions(text: string | null | undefined): PromoRestriction[] {
+  if (!text) return [];
+  return RESTRICTIONS.filter((r) => r.re.test(text)).map(({ key, label }) => ({ key, label }));
+}
+
+/**
+ * Rules from the networks' own regulamins that hold for every campaign (read
+ * 4.11.2026: ebrokerpartner.pl/regulamin, comperialead.pl/regulamin.html).
+ * Neither forbids a partner's own application outright.
+ */
+export const NETWORK_RULES: Record<"EBROKER" | "COMPERIA", { own: string; promo: string[] }> = {
+  EBROKER: {
+    own: "Regulamin nie zakazuje wniosku na siebie. Zakazuje wniosków bez rzeczywistego zainteresowania produktem (tylko dla prowizji) i powtórnych wniosków z tego samego urządzenia.",
+    promo: [
+      "materiały reklamowe tylko na własnej stronie; poza nią (np. link afiliacyjny w opisie wideo) tylko za zgodą eBrokera",
+      "nie zmieniać materiałów reklamowych bez zgody",
+      "nie zakładać stron ani profili w social mediach z nazwą programu lub „Rankomat”",
+      "nie działać na profilach banku w social mediach",
+      "stawki prowizji są poufne"
+    ]
+  },
+  COMPERIA: {
+    own: "Regulamin nie zakazuje wniosku na siebie. Kampanie liczą jeden wniosek z jednego adresu IP.",
+    promo: ["nie używać znaku ani treści Comperia.pl bez zgody", "mailingi z narzędziami Comperii wymagają akceptacji (mailing@comperia.pl)", "zakaz nieuczciwego pozycjonowania i spamu"]
+  }
+};
+
+// ---- the same account offered by both networks ----
+
+export interface OffSiteItem {
+  network: string;
+  bankName: string;
+  name: string;
+  category: string;
+}
+
+function nameTokens(item: OffSiteItem): Set<string> {
+  const bankWords = new Set([...tokens(item.bankName), ...tokens(item.bankName.replace(/bank/gi, " "))]);
+  return new Set([...tokens(item.name)].filter((w) => !bankWords.has(w) && w !== "osobiste" && w !== "firmowe"));
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (!a.size && !b.size) return 1;
+  const shared = [...a].filter((w) => b.has(w)).length;
+  return shared / (a.size + b.size - shared);
+}
+
+/**
+ * Groups campaigns without a promotion on the site so that one account is one
+ * row: the other network's campaign for the same bank and kind of account,
+ * when each network has only one such account or the names match closely,
+ * and same-named duplicates within a network. First-appearance order is kept.
+ */
+export function groupOffSiteItems<T extends OffSiteItem>(items: T[]): T[][] {
+  const parent = items.map((_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i]!)));
+  const union = (a: number, b: number) => {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent[Math.max(ra, rb)] = Math.min(ra, rb);
+  };
+  const bucket = (t: T) => `${normalizeBank(t.bankName)}|${accountTypeFromCategory(t.category)}`;
+  const toks = items.map(nameTokens);
+  const key = (i: number) => [...toks[i]!].sort().join(" ");
+  // Distinct account names per network within a bank + account kind.
+  const distinct = (b: string, network: string) => new Set(items.map((x, i) => (bucket(x) === b && x.network === network ? key(i) : null)).filter((k) => k !== null)).size;
+  // Cross-network candidates, best match first, each campaign paired once.
+  const candidates: { i: number; j: number; score: number }[] = [];
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length; j++) {
+      const a = items[i]!;
+      const b = items[j]!;
+      if (bucket(a) !== bucket(b)) continue;
+      const sim = jaccard(toks[i]!, toks[j]!);
+      if (a.network === b.network) {
+        if (sim === 1) union(i, j);
+        continue;
+      }
+      const onlyOne = distinct(bucket(a), a.network) === 1 && distinct(bucket(b), b.network) === 1;
+      if (onlyOne || sim >= 0.5) candidates.push({ i, j, score: onlyOne ? 2 : sim });
+    }
+  }
+  const paired = new Set<number>();
+  for (const { i, j } of candidates.sort((x, y) => y.score - x.score)) {
+    if (paired.has(i) || paired.has(j)) continue;
+    union(i, j);
+    paired.add(i);
+    paired.add(j);
+  }
+  const out = new Map<number, T[]>();
+  items.forEach((t, i) => out.set(find(i), [...(out.get(find(i)) ?? []), t]));
+  return [...out.values()];
+}
