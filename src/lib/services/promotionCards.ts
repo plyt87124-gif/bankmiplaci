@@ -3,7 +3,7 @@ import type { AccountType, Difficulty, Prisma } from "@prisma/client";
 import { hasFeeCaveat } from "@/lib/feeModel";
 import { sortRecommended } from "@/lib/recommended";
 import { signupCutoff } from "@/lib/promotionAvailability";
-import { applyViewerExclusions } from "@/lib/services/viewerFilter";
+import { applyViewerExclusions, viewerIsAdmin } from "@/lib/services/viewerFilter";
 import { activeWhere, buildActiveWhere, sortToOrderBy, type PromotionFilters } from "@/lib/services/promotions";
 
 /**
@@ -23,6 +23,8 @@ import { activeWhere, buildActiveWhere, sortToOrderBy, type PromotionFilters } f
  */
 export interface PromotionCardData {
   slug: string;
+  /** Only ever true for a signed-in admin's lists (Promotion.adminOnly). */
+  adminOnly?: boolean;
   name: string;
   summary: string | null;
   maxBonusCents: number;
@@ -72,6 +74,7 @@ export type PromotionCardJson = Omit<PromotionCardData, "endDate" | "lastVerifie
  */
 export const PROMOTION_CARD_SELECT = {
   slug: true,
+  adminOnly: true,
   name: true,
   summary: true,
   maxBonusCents: true,
@@ -101,6 +104,7 @@ export type CardRow = Prisma.PromotionGetPayload<{ select: typeof PROMOTION_CARD
 function toCard(row: CardRow): PromotionCardData {
   return {
     slug: row.slug,
+    adminOnly: row.adminOnly,
     name: row.name,
     summary: row.summary,
     maxBonusCents: row.maxBonusCents,
@@ -156,7 +160,7 @@ export function finalizeCards(rows: CardRow[], sort?: PromotionFilters["sort"]):
 export async function listPromotionCards(filters: PromotionFilters = {}): Promise<PromotionCardData[]> {
   // Ended offers have no "Polecane" order: the most recently closed come first.
   const rows = await db.promotion.findMany({
-    where: buildActiveWhere(filters),
+    where: buildActiveWhere({ ...filters, includeAdminOnly: filters.includeAdminOnly ?? (await viewerIsAdmin()) }),
     select: PROMOTION_CARD_SELECT,
     orderBy: filters.ended ? [{ endDate: "desc" }, { rating: "desc" }] : sortToOrderBy(filters.sort)
   });
@@ -176,7 +180,7 @@ export async function getEndingSoon(days: number, now: Date = new Date()): Promi
   const from = signupCutoff(now);
   const until = new Date(from.getTime() + Math.max(0, Math.floor(days)) * 24 * 60 * 60 * 1000);
   const rows = await db.promotion.findMany({
-    where: { ...activeWhere(), endDate: { gte: from, lte: until } },
+    where: { ...activeWhere({ includeAdminOnly: await viewerIsAdmin() }), endDate: { gte: from, lte: until } },
     select: PROMOTION_CARD_SELECT,
     orderBy: [{ endDate: "asc" }, { rating: "desc" }]
   });

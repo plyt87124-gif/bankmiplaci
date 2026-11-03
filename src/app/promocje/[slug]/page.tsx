@@ -79,7 +79,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const promotion = await getOffer(slug);
   // A draft is invisible to everyone but a signed-in admin: do not leak its name into <title>.
-  if (!promotion || (promotion.status === "DRAFT" && !(await isAdminViewer()))) {
+  if (!promotion || ((promotion.status === "DRAFT" || promotion.adminOnly) && !(await isAdminViewer()))) {
     return { title: "Promocja nie znaleziona", robots: { index: false, follow: true } };
   }
 
@@ -108,7 +108,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Indexing and sign-up availability are separate decisions (src/lib/promotionAvailability.ts):
     // the same robotsForStatus() decides what sitemap.xml lists - an offer ended
     // up to 90 days ago stays indexed (with the "ended" banner), older ones are noindex.
-    robots: robotsForStatus(promotion.status, promotion.endDate, now)
+    robots: promotion.adminOnly ? { index: false, follow: false } : robotsForStatus(promotion.status, promotion.endDate, now)
   });
 }
 
@@ -117,7 +117,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
   const [promotion, currentUser] = await Promise.all([getOffer(slug), getViewer()]);
 
   if (!promotion) notFound();
-  if (promotion.status === "DRAFT" && !(await isAdminViewer())) notFound();
+  if ((promotion.status === "DRAFT" || promotion.adminOnly) && !(await isAdminViewer())) notFound();
 
   const now = new Date();
   const { bank } = promotion;

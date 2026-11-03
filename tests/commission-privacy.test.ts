@@ -22,6 +22,7 @@ const SECRET = 987_654_321; // easy to grep for in serialized output
 function row(slug: string, rating: number, commission: number | null, over: Partial<CardRow> = {}): CardRow {
   return {
     slug,
+    adminOnly: false,
     name: `Promocja ${slug}`,
     summary: "Opis",
     maxBonusCents: 50_000,
@@ -88,6 +89,7 @@ test("a card has exactly the documented public fields", () => {
   const [card] = finalizeCards([row("a", 9.3, SECRET)], "top-rated");
   assert.deepEqual(Object.keys(card!).sort(), [
     "accountType",
+    "adminOnly",
     "bank",
     "conditions",
     "difficulty",

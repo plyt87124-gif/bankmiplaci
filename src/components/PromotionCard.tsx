@@ -52,6 +52,8 @@ export interface PromotionCardData {
   bank: { name: string; slug?: string; logoUrl?: string | null };
   /** Admin preview of an unpublished offer shows a "Roboczy" badge. */
   status?: "DRAFT" | "ACTIVE" | "EXPIRED" | "ARCHIVED";
+  /** Listed only for a signed-in admin (Promotion.adminOnly): shows a "Tylko admin" badge. */
+  adminOnly?: boolean;
 }
 
 export interface PromotionCardProps {
@@ -139,6 +141,7 @@ export function PromotionCard({
         </span>
         <div className="flex flex-wrap items-center gap-1.5">
           {draft ? <Badge variant="info">Roboczy</Badge> : null}
+          {promotion.adminOnly ? <Badge variant="info">Tylko admin</Badge> : null}
           <span data-vt="type" className="inline-flex">
             <Badge variant="neutral">{ACCOUNT_TYPE_LABEL[promotion.accountType]}</Badge>
           </span>
