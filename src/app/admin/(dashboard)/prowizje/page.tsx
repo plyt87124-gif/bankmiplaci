@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { getSwitchAccounts } from "@/lib/adminAccounts";
 import { computeEligibility, isCurrentClient } from "@/lib/services/eligibility";
+import { deadlineForGroup, groupIndexFromOrder, periodRuleOf } from "@/lib/checklistSchedule";
 import {
   chooseAffiliateLink,
   contestBonusCents,
@@ -17,10 +18,12 @@ import {
 } from "@/lib/affiliateNetworks";
 import {
   accountTypeFromCategory,
+  commissionDeadline,
   commissionEligibility,
   describeNewClientRule,
   parseNewClientRule,
   suggestPromotions,
+  type CommissionDeadline,
   type MatchPromotion,
   type OwnerHistory
 } from "@/lib/affiliateRules";
@@ -44,8 +47,9 @@ function describeTiers(tiers: ContestTier[]): string {
 
 const SORTS = {
   razem: "prowizja + premia + konkurs",
-  prowizja: "prowizja",
+  prowizja: "prowizja (z konkursem)",
   premia: "premia banku",
+  termin: "najkrótszy termin prowizji",
   mozliwosc: "mogę wziąć udział",
   bank: "bank A-Z"
 } as const;
@@ -65,12 +69,14 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
   const sort: SortKey = (sp.sort && sp.sort in SORTS ? sp.sort : "razem") as SortKey;
   const only = sp.tylko === "prowizja" || sp.tylko === "premia" || sp.tylko === "oba" ? sp.tylko : "";
   const onlyContest = sp.konkurs === "1";
+  const where = sp.gdzie === "strona" || sp.gdzie === "poza" ? sp.gdzie : "";
 
   const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const ownEmail = getSwitchAccounts().find((a) => a.key === "own")?.email;
   const since30 = new Date(now.getTime() - 30 * 86_400_000);
 
-  const [offers, contests, applications, stageCounts, changes, clicks, owner, promotions, catalog] = await Promise.all([
+  const [offers, contests, applications, stageCounts, changes, clicks, owner, promotions, catalog, rewardSteps] = await Promise.all([
     db.affiliateOffer.findMany({
       orderBy: [{ bankName: "asc" }, { name: "asc" }],
       include: {
@@ -109,7 +115,11 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
       where: { status: { in: ["ACTIVE", "DRAFT"] } },
       select: { id: true, name: true, status: true, accountType: true, maxBonusCents: true, bankId: true, endDate: true, cooldownMonths: true, cooldownCutoffDate: true, bank: { select: { name: true } } }
     }),
-    db.ebrokerCampaign.findMany({ where: { watched: true, ignored: false, missingSince: null }, orderBy: [{ institution: "asc" }, { name: "asc" }] })
+    db.ebrokerCampaign.findMany({ where: { watched: true, ignored: false, missingSince: null }, orderBy: [{ institution: "asc" }, { name: "asc" }] }),
+    db.checklistStep.findMany({
+      where: { rewardCents: { not: null }, promotion: { status: { in: ["ACTIVE", "DRAFT"] } } },
+      select: { promotionId: true, order: true, periodStartMonths: true, periodMonths: true }
+    })
   ]);
 
   type Offer = (typeof offers)[number];
@@ -176,54 +186,6 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
     return { own: { tone: r.status === "yes" ? "ok" : r.status === "no" ? "no" : "unknown", text: r.text }, rule };
   }
 
-  // ---- rows: promotions with their campaigns ----
-  const rows = [...groups.values()].map(({ promotion: p, offers: g }) => {
-    const choice = chooseAffiliateLink(p, g, now);
-    const live = g.find((o) => o.network === p.affiliateNetwork && !o.missingSince) ?? g.find((o) => !o.missingSince) ?? g[0];
-    const rate = (o: Offer | undefined) => (o ? (o.cpsCents ?? o.cpaCents ?? 0) : 0);
-    const best = Math.max(0, ...g.filter((o) => !o.missingSince).map(rate));
-    const liveRate = live ? rate(live) : best;
-    const liveContests = live ? contestsByOffer(live.network, live.externalId) : [];
-    const contestPerClient = Math.round(liveContests.reduce((s, c) => s + contestBonusCents(parseTiers(c.tiers), 10), 0) / 10);
-    const commission = commissionOwn(live, p.bankId, p.accountType);
-    const premium = premiumOwn(p);
-    return {
-      p,
-      g,
-      choice,
-      live,
-      liveRate,
-      contestPerClient,
-      hasContest: g.some((o) => contestsByOffer(o.network, o.externalId).length > 0),
-      total: liveRate + p.maxBonusCents + contestPerClient,
-      commission,
-      premium,
-      catalogOnly: (catalogByPromo.get(p.id) ?? []).filter((c) => !panelIds.has(c.oid))
-    };
-  });
-
-  const rank = (t: Tone) => (t === "ok" ? 0 : t === "unknown" ? 1 : 2);
-  const shown = rows
-    .filter((r) => (only === "prowizja" ? r.commission.own.tone === "ok" : only === "premia" ? r.premium.tone === "ok" : only === "oba" ? r.commission.own.tone === "ok" && r.premium.tone === "ok" : true))
-    .filter((r) => (onlyContest ? r.hasContest : true))
-    .sort((a, b) => {
-      if (sort === "bank") return a.p.bank.name.localeCompare(b.p.bank.name, "pl") || a.p.name.localeCompare(b.p.name, "pl");
-      if (sort === "prowizja") return b.liveRate - a.liveRate;
-      if (sort === "premia") return b.p.maxBonusCents - a.p.maxBonusCents;
-      if (sort === "mozliwosc") return rank(a.commission.own.tone) - rank(b.commission.own.tone) || b.total - a.total;
-      return b.total - a.total;
-    });
-
-  const href = (patch: Record<string, string | null>) => {
-    const q = new URLSearchParams();
-    const cur: Record<string, string | undefined> = { sort: sp.sort, tylko: sp.tylko, konkurs: sp.konkurs };
-    for (const [k, v] of Object.entries({ ...cur, ...patch })) if (v) q.set(k, v);
-    const s = q.toString();
-    return s ? `/admin/prowizje?${s}` : "/admin/prowizje";
-  };
-
-  const clickCount = (n: Network | null) => clicks.find((c) => c.affiliateNetwork === n)?._count ?? 0;
-
   // ---- campaigns without a promotion: panel offers + catalog-only eBroker campaigns ----
   type Unmatched = {
     key: string;
@@ -275,6 +237,174 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
     a.key !== b.key &&
     suggestPromotions({ bankName: a.bankName, name: a.name, category: a.category }, [{ id: "x", name: "", bankName: b.bankName, accountType: accountTypeFromCategory(b.category), status: "ACTIVE", maxBonusCents: 0 }]).length > 0;
 
+  function LinkSuggestions({ u }: { u: Unmatched }) {
+    const matches = suggestPromotions({ bankName: u.bankName, name: u.name, category: u.category }, matchPromos);
+    const others = unmatched.filter((x) => x.network !== u.network && sameKind(u, x));
+    return (
+      <details className="mt-1 text-xs">
+        <summary className="cursor-pointer text-ink-500">
+          porównaj i powiąż z promocją{matches[0]?.amountMismatch ? " ⚠ inna kwota" : ""}
+        </summary>
+        <div className="mt-1 space-y-1">
+          {others.map((x) => (
+            <p key={x.key}>
+              <span className="text-ink-500">{NETWORK_LABEL[x.network]}:</span> {x.name} {x.cps != null && `CPS ${zl(x.cps)} `}
+              {x.cpa != null && `CPA ${zl(x.cpa)}`}
+            </p>
+          ))}
+          {matches.length === 0 && <p className="text-ink-500">Brak promocji na stronie dla tego banku i rodzaju konta.</p>}
+          {matches.slice(0, 3).map((m) => (
+            <form key={m.promotion.id} action={linkCampaignToPromotion.bind(null, u.kind, u.id, m.promotion.id)} className="flex flex-wrap items-center gap-2">
+              <span>
+                {m.promotion.name} (do {zl(m.promotion.maxBonusCents)}, {m.promotion.status})
+                {m.amountMismatch && <span className="ml-1 text-coral-600">⚠ inna kwota w nazwie kampanii</span>}
+              </span>
+              <button className="rounded border border-ink-100 px-2 py-0.5 hover:bg-ink-100">Powiąż</button>
+            </form>
+          ))}
+          {u.detailUrl && (
+            <a href={u.detailUrl} target="_blank" rel="noreferrer" className="text-ink-500 underline">
+              panel
+            </a>
+          )}
+        </div>
+      </details>
+    );
+  }
+
+  // ---- the bank's premium deadlines: the reward groups of the ściąga, for an account opened today ----
+  const rewardGroups = new Map<string, Map<number, typeof rewardSteps>>();
+  for (const s of rewardSteps) {
+    const byGroup = rewardGroups.get(s.promotionId) ?? new Map<number, typeof rewardSteps>();
+    const g = groupIndexFromOrder(s.order);
+    byGroup.set(g, [...(byGroup.get(g) ?? []), s]);
+    rewardGroups.set(s.promotionId, byGroup);
+  }
+  const dayBefore = (d: Date) => new Date(d.getTime() - 86_400_000);
+  function premiumDeadlines(promotionId: string): { first: Date; last: Date; parts: number } | null {
+    const byGroup = rewardGroups.get(promotionId);
+    if (!byGroup?.size) return null;
+    const groups = [...byGroup.keys()].sort((a, b) => a - b);
+    const end = (g: number) => dayBefore(deadlineForGroup(today, g, periodRuleOf(byGroup.get(g)!)));
+    return { first: end(groups[0]!), last: end(groups[groups.length - 1]!), parts: groups.length };
+  }
+
+  // ---- one row per account: promotions on the site and campaigns that have none ----
+  type Row = {
+    key: string;
+    onSite: boolean;
+    bankName: string;
+    title: string;
+    category: string;
+    p: Promo | null;
+    offers: Offer[];
+    /** The campaign the commission answers are about: the live link, else the best-paying one. */
+    lead: Offer | undefined;
+    catalogOnly: (typeof catalog)[number][];
+    choice: ReturnType<typeof chooseAffiliateLink> | null;
+    bestRate: number;
+    contestPerClient: number;
+    hasContest: boolean;
+    total: number;
+    commission: { own: Own; rule: ReturnType<typeof parseNewClientRule> };
+    commissionBy: CommissionDeadline | null;
+    premium: Own | null;
+    premiumBy: ReturnType<typeof premiumDeadlines>;
+    unmatched?: Unmatched;
+  };
+  const rate = (o: Offer | undefined) => (o ? (o.cpsCents ?? 0) + (o.cpaCents ?? 0) : 0);
+  const contestPer = (o: Offer | undefined) =>
+    o ? Math.round(contestsByOffer(o.network, o.externalId).reduce((s, c) => s + contestBonusCents(parseTiers(c.tiers), 10), 0) / 10) : 0;
+
+  const siteRows: Row[] = [...groups.values()].map(({ promotion: p, offers: g }) => {
+    const current = g.filter((o) => !o.missingSince);
+    const best = [...current].sort((a, b) => rate(b) - rate(a))[0];
+    const lead = current.find((o) => o.network === p.affiliateNetwork) ?? best ?? g[0];
+    const commission = commissionOwn(lead, p.bankId, p.accountType);
+    const contestPerClient = contestPer(lead);
+    return {
+      key: p.id,
+      onSite: true,
+      bankName: p.bank.name,
+      title: p.name,
+      category: p.accountType === "BUSINESS" ? "konto firmowe" : "konto osobiste",
+      p,
+      offers: g,
+      lead,
+      catalogOnly: (catalogByPromo.get(p.id) ?? []).filter((c) => !panelIds.has(c.oid)),
+      choice: chooseAffiliateLink(p, g, now),
+      bestRate: rate(best),
+      contestPerClient,
+      hasContest: g.some((o) => contestsByOffer(o.network, o.externalId).length > 0),
+      total: rate(lead) + p.maxBonusCents + contestPerClient,
+      commission,
+      commissionBy: commissionDeadline(lead?.conditions, today),
+      premium: premiumOwn(p),
+      premiumBy: premiumDeadlines(p.id)
+    };
+  });
+
+  const offSiteRows: Row[] = unmatched.map((u) => {
+    const matches = suggestPromotions({ bankName: u.bankName, name: u.name, category: u.category }, matchPromos);
+    const top = matches[0] ? promoById.get(matches[0].promotion.id) : undefined;
+    const commission = commissionOwn(u.offer, top?.bankId ?? null, accountTypeFromCategory(u.category) === "BUSINESS" ? "BUSINESS" : top?.accountType ?? "PERSONAL");
+    const contestPerClient = u.offer ? contestPer(u.offer) : 0;
+    const r = (u.cps ?? 0) + (u.cpa ?? 0);
+    return {
+      key: u.key,
+      onSite: false,
+      bankName: u.bankName,
+      title: u.name,
+      category: u.category,
+      p: null,
+      offers: u.offer ? [u.offer] : [],
+      lead: u.offer,
+      catalogOnly: [],
+      choice: null,
+      bestRate: r,
+      contestPerClient,
+      hasContest: contestPerClient > 0 || (u.kind === "catalog" && contestsByOffer("EBROKER", u.id).length > 0),
+      total: r + contestPerClient,
+      commission,
+      commissionBy: commissionDeadline(u.conditions, today),
+      premium: null,
+      premiumBy: null,
+      unmatched: u
+    };
+  });
+
+  const rank = (t: Tone | undefined) => (t === "ok" ? 0 : t === "unknown" || !t ? 1 : 2);
+  const shown = [...siteRows, ...offSiteRows]
+    .filter((r) => (where === "strona" ? r.onSite : where === "poza" ? !r.onSite : true))
+    .filter((r) =>
+      only === "prowizja"
+        ? r.commission.own.tone === "ok"
+        : only === "premia"
+          ? r.premium?.tone === "ok"
+          : only === "oba"
+            ? r.commission.own.tone === "ok" && r.premium?.tone === "ok"
+            : true
+    )
+    .filter((r) => (onlyContest ? r.hasContest : true))
+    .sort((a, b) => {
+      if (sort === "bank") return a.bankName.localeCompare(b.bankName, "pl") || a.title.localeCompare(b.title, "pl");
+      if (sort === "prowizja") return b.bestRate + b.contestPerClient - (a.bestRate + a.contestPerClient) || b.total - a.total;
+      if (sort === "premia") return (b.p?.maxBonusCents ?? -1) - (a.p?.maxBonusCents ?? -1) || b.bestRate - a.bestRate;
+      if (sort === "mozliwosc") return rank(a.commission.own.tone) - rank(b.commission.own.tone) || b.total - a.total;
+      if (sort === "termin") return (a.commissionBy?.date.getTime() ?? Infinity) - (b.commissionBy?.date.getTime() ?? Infinity) || b.total - a.total;
+      return b.total - a.total;
+    });
+
+  const href = (patch: Record<string, string | null>) => {
+    const q = new URLSearchParams();
+    const cur: Record<string, string | undefined> = { sort: sp.sort, tylko: sp.tylko, konkurs: sp.konkurs, gdzie: sp.gdzie };
+    for (const [k, v] of Object.entries({ ...cur, ...patch })) if (v) q.set(k, v);
+    const s = q.toString();
+    return s ? `/admin/prowizje?${s}` : "/admin/prowizje";
+  };
+  const chip = (active: boolean) => `rounded border px-2 py-1 ${active ? "border-ink-solid bg-ink-solid text-white" : "border-ink-100 hover:bg-ink-100"}`;
+
+  const clickCount = (n: Network | null) => clicks.find((c) => c.affiliateNetwork === n)?._count ?? 0;
 
   return (
     <div className="space-y-10">
@@ -283,9 +413,9 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
         <div>
           <h1 className="text-2xl font-semibold">Prowizje brokerów</h1>
           <p className="mt-1 max-w-3xl text-sm text-ink-500">
-            Stawki eBroker i Comperia dla promocji na stronie, konkursy płatne dodatkowo, czyj link jest teraz pod „Przejdź do promocji” i
-            dwie osobne odpowiedzi, czy możesz wziąć udział: <strong>prowizja brokera</strong> (okno „nowego klienta” z panelu, np. 2 lata bez konta) i{" "}
-            <strong>premia banku</strong> (karencja z regulaminu promocji). Te daty bywają różne. Dane codziennie odczytuje agent z paneli.
+            Wszystkie konta z obu sieci, te z promocją na stronie i te bez niej. Każde konto ma dwie osobne części, bo to dwa różne pieniądze:{" "}
+            <strong>prowizja</strong> (płaci broker, ma własny termin i własne okno „nowego klienta”) i <strong>premia</strong> (płaci bank, ma termin i
+            karencję z regulaminu promocji). Terminy są policzone dla konta otwartego dziś, {formatDate(today)}. Dane codziennie odczytuje agent z paneli.
           </p>
         </div>
       </div>
@@ -307,158 +437,245 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold">Promocje na stronie</h2>
+        <h2 className="text-lg font-semibold">
+          Konta i stawki ({siteRows.length} na stronie, {offSiteRows.length} bez promocji na stronie)
+        </h2>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <span className="text-ink-500">Sortuj:</span>
           {(Object.keys(SORTS) as SortKey[]).map((k) => (
-            <Link key={k} href={href({ sort: k })} className={`rounded border px-2 py-1 ${sort === k ? "border-ink-900 bg-ink-900 text-white" : "border-ink-100 hover:bg-ink-100"}`}>
+            <Link key={k} href={href({ sort: k })} className={chip(sort === k)}>
               {SORTS[k]}
             </Link>
           ))}
-          <span className="ml-3 text-ink-500">Pokaż tylko, gdzie mogę:</span>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-ink-500">Konta:</span>
+          {[
+            ["", "wszystkie"],
+            ["strona", "z promocją na stronie"],
+            ["poza", "bez promocji (sama prowizja)"]
+          ].map(([k, label]) => (
+            <Link key={k} href={href({ gdzie: k || null })} className={chip(where === k)}>
+              {label}
+            </Link>
+          ))}
+          <span className="ml-3 text-ink-500">Tylko, gdzie mogę:</span>
           {[
             ["", "wszystko"],
             ["prowizja", "wziąć prowizję"],
             ["premia", "wziąć premię"],
             ["oba", "prowizję i premię"]
           ].map(([k, label]) => (
-            <Link key={k} href={href({ tylko: k || null })} className={`rounded border px-2 py-1 ${only === k ? "border-ink-900 bg-ink-900 text-white" : "border-ink-100 hover:bg-ink-100"}`}>
+            <Link key={k} href={href({ tylko: k || null })} className={chip(only === k)}>
               {label}
             </Link>
           ))}
-          <Link href={href({ konkurs: onlyContest ? null : "1" })} className={`rounded border px-2 py-1 ${onlyContest ? "border-ink-900 bg-ink-900 text-white" : "border-ink-100 hover:bg-ink-100"}`}>
+          <Link href={href({ konkurs: onlyContest ? null : "1" })} className={chip(onlyContest)}>
             tylko z konkursem
           </Link>
         </div>
         <p className="mt-2 text-xs text-ink-500">
-          „Razem” = stawka brokera z linku teraz + maksymalna premia banku + konkurs w przeliczeniu na jednego klienta (średnio przy 10 kontach). Premia banku i
-          prowizja to dwa różne pieniądze: prowizję płaci broker, premię bank.
+          „Razem” = prowizja z linku, który jest teraz na stronie + premia banku + konkurs na jednego klienta (średnio przy 10 kontach). Sortowanie po prowizji bierze
+          lepszą stawkę z obu sieci razem z konkursem. „Do kiedy” to ostatni dzień na spełnienie warunków, gdy wniosek i umowa są dziś.
         </p>
         <div className="mt-3 overflow-x-auto rounded-xl2 border border-ink-100">
-          <table className="w-full min-w-[1250px] text-sm">
+          <table className="w-full min-w-[1400px] text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-100/40 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
-                <th className="p-3">Promocja</th>
-                {NETWORKS.map((n) => (
-                  <th key={n} className="p-3">
-                    {NETWORK_LABEL[n]}
-                  </th>
-                ))}
-                <th className="p-3">Razem</th>
-                <th className="p-3">Link teraz</th>
-                <th className="p-3">Czy Ty możesz</th>
+                <th className="p-3" rowSpan={2}>
+                  Konto
+                </th>
+                <th className="border-l border-ink-100 p-3 text-center" colSpan={3}>
+                  Prowizja brokera
+                </th>
+                <th className="border-l border-ink-100 p-3 text-center" colSpan={3}>
+                  Premia banku
+                </th>
+                <th className="border-l border-ink-100 p-3" rowSpan={2}>
+                  Razem
+                </th>
+                <th className="p-3" rowSpan={2}>
+                  Link teraz
+                </th>
+              </tr>
+              <tr className="border-b border-ink-100 bg-ink-100/40 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
+                <th className="border-l border-ink-100 p-3">Stawki</th>
+                <th className="p-3">Do kiedy</th>
+                <th className="p-3">Karencja</th>
+                <th className="border-l border-ink-100 p-3">Kwota</th>
+                <th className="p-3">Do kiedy</th>
+                <th className="p-3">Karencja</th>
               </tr>
             </thead>
             <tbody>
-              {shown.map(({ p, g, choice, total, liveRate, contestPerClient, commission, premium, catalogOnly }) => (
-                <tr key={p.id} className="border-b border-ink-100 align-top last:border-0">
-                  <td className="p-3">
-                    <Link href={`/admin/promocje/${p.id}`} className="font-medium text-ink-900 hover:underline">
-                      {p.bank.name}: {p.name}
-                    </Link>
+              {shown.map((r) => (
+                <tr key={r.key} className={`border-b border-ink-100 align-top last:border-0 ${r.onSite ? "" : "bg-ink-100/20"}`}>
+                  <td className="max-w-[260px] p-3">
+                    {r.p ? (
+                      <Link href={`/admin/promocje/${r.p.id}`} className="font-medium text-ink-900 hover:underline">
+                        {r.bankName}: {r.title}
+                      </Link>
+                    ) : (
+                      <p className="font-medium text-ink-900">
+                        {r.bankName}: {r.title}
+                      </p>
+                    )}
                     <p className="text-xs text-ink-500">
-                      {p.status} · premia banku do {zl(p.maxBonusCents)} · do {formatDate(p.endDate)}
+                      {r.category}
+                      {r.p ? ` · ${r.p.status}` : ""}
+                      {!r.onSite && r.unmatched && ` · tylko ${NETWORK_LABEL[r.unmatched.network]}, brak promocji na stronie`}
                     </p>
+                    {r.unmatched && <LinkSuggestions u={r.unmatched} />}
                   </td>
-                  {NETWORKS.map((n) => {
-                    const o = g.find((x) => x.network === n && !x.missingSince);
-                    if (!o) {
-                      const cat = n === "EBROKER" ? catalogOnly : [];
-                      return (
-                        <td key={n} className="max-w-[300px] p-3 text-xs text-ink-500">
-                          {cat.length ? (
-                            <>
-                              <p className="font-medium text-ink-900">tylko link z katalogu</p>
-                              <p>{cat.map((c) => c.name).join("; ")}: stawki w panelu nie odczytano</p>
-                            </>
-                          ) : (
-                            <span className="text-ink-300">brak</span>
-                          )}
-                        </td>
-                      );
-                    }
-                    const rule = parseNewClientRule(`${o.conditions ?? ""} ${o.notes ?? ""}`);
-                    const oc = contestsByOffer(o.network, o.externalId);
-                    return (
-                      <td key={n} className="max-w-[320px] p-3">
-                        <p className="font-medium text-ink-900">
-                          {o.cpsCents != null && `CPS ${zl(o.cpsCents)}`} {o.cpaCents != null && `CPA ${zl(o.cpaCents)}`}
-                        </p>
-                        {oc.map((c) => (
-                          <p key={c.id} className="mt-0.5 flex items-start gap-1 text-xs text-gold-600">
-                            <Trophy className="mt-0.5 h-3 w-3 shrink-0" />
-                            <span>
-                              konkurs: {describeTiers(parseTiers(c.tiers))}
-                              {c.endDate ? `, do ${formatDate(c.endDate)}` : ", okres nie podany"}
-                            </span>
+
+                  <td className="max-w-[260px] border-l border-ink-100 p-3">
+                    {NETWORKS.map((n) => {
+                      const o = r.offers.find((x) => x.network === n && !x.missingSince);
+                      if (!o) {
+                        if (n === "EBROKER" && r.catalogOnly.length)
+                          return (
+                            <p key={n} className="text-xs text-ink-500">
+                              {NETWORK_LABEL[n]}: tylko link z katalogu, stawki nie odczytano
+                            </p>
+                          );
+                        if (!r.onSite && r.unmatched && r.unmatched.network === n && r.unmatched.kind === "catalog")
+                          return (
+                            <p key={n} className="text-xs text-ink-500">
+                              {NETWORK_LABEL[n]}: stawka z panelu nieodczytana
+                            </p>
+                          );
+                        return r.onSite ? (
+                          <p key={n} className="text-xs text-ink-300">
+                            {NETWORK_LABEL[n]}: brak
                           </p>
-                        ))}
-                        <p className="mt-0.5 text-xs text-ink-500">
-                          {o.newClientOnly ? "tylko nowy klient: " : ""}
-                          {describeNewClientRule(rule)}
-                        </p>
-                        {o.conditions && (
-                          <details className="mt-1 text-xs text-ink-500">
-                            <summary className="cursor-pointer">kiedy należy się prowizja</summary>
-                            <p className="mt-1 whitespace-pre-line">{o.conditions}</p>
-                            {o.notes && <p className="mt-1 whitespace-pre-line">{o.notes}</p>}
-                          </details>
-                        )}
-                        {o.ownApplicationsAllowed === false && <p className="text-xs text-coral-600">zakaz wniosków własnych</p>}
-                        <p className="text-xs text-ink-300">widziane {formatDate(o.lastSeenAt)}</p>
-                      </td>
-                    );
-                  })}
-                  <td className="p-3">
-                    <p className="font-semibold text-ink-900">{zl(total)}</p>
-                    <p className="text-xs text-ink-500">
-                      {zl(liveRate)} + {zl(p.maxBonusCents)}
-                      {contestPerClient ? ` + ${zl(contestPerClient)}` : ""}
-                    </p>
-                  </td>
-                  <td className="p-3">
-                    <p className="font-medium text-ink-900">
-                      {p.affiliateNetwork ? NETWORK_LABEL[p.affiliateNetwork as Network] : "?"}
-                      {p.affiliateNetworkPinned && <span className="ml-1 text-xs text-gold-600">(przypięty)</span>}
-                    </p>
-                    <p className="text-xs text-ink-500">
-                      {choice.kind === "switch" ? `jutro przełączy na ${NETWORK_LABEL[choice.to.network]}` : choice.kind === "decide" ? `❓ ${choice.reason}` : choice.reason}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {NETWORKS.filter((n) => g.some((x) => x.network === n && x.trackingUrl && !x.missingSince) || (n === "EBROKER" && catalogOnly.length > 0)).map((n) => (
-                        <form key={n} action={pinAffiliateNetwork.bind(null, p.id, n)}>
-                          <button className="flex items-center gap-1 rounded border border-ink-100 px-2 py-0.5 text-xs hover:bg-ink-100">
-                            <Pin className="h-3 w-3" /> {NETWORK_LABEL[n]}
-                          </button>
-                        </form>
-                      ))}
-                      {p.affiliateNetworkPinned && (
-                        <form action={pinAffiliateNetwork.bind(null, p.id, null)}>
-                          <button className="flex items-center gap-1 rounded border border-ink-100 px-2 py-0.5 text-xs hover:bg-ink-100">
-                            <PinOff className="h-3 w-3" /> odepnij
-                          </button>
-                        </form>
-                      )}
-                    </div>
+                        ) : null;
+                      }
+                      const isBest = rate(o) === r.bestRate && r.offers.length > 1;
+                      return (
+                        <div key={n} className="mb-1">
+                          <p className={isBest ? "font-semibold text-ink-900" : "text-ink-700"}>
+                            {NETWORK_LABEL[n]}: {o.cpsCents != null && `CPS ${zl(o.cpsCents)}`} {o.cpaCents != null && `CPA ${zl(o.cpaCents)}`}
+                          </p>
+                          {contestsByOffer(o.network, o.externalId).map((c) => (
+                            <p key={c.id} className="flex items-start gap-1 text-xs text-gold-600">
+                              <Trophy className="mt-0.5 h-3 w-3 shrink-0" />
+                              <span>
+                                {describeTiers(parseTiers(c.tiers))}
+                                {c.endDate ? `, do ${formatDate(c.endDate)}` : ""}
+                              </span>
+                            </p>
+                          ))}
+                        </div>
+                      );
+                    })}
+                    {r.lead?.conditions && (
+                      <details className="mt-1 text-xs text-ink-500">
+                        <summary className="cursor-pointer">kiedy należy się prowizja ({NETWORK_LABEL[r.lead.network as Network]})</summary>
+                        <p className="mt-1 whitespace-pre-line">{r.lead.conditions}</p>
+                        {r.lead.notes && <p className="mt-1 whitespace-pre-line text-ink-300">{r.lead.notes}</p>}
+                      </details>
+                    )}
+                    {r.lead?.ownApplicationsAllowed === false && <p className="text-xs text-coral-600">zakaz wniosków własnych</p>}
                   </td>
                   <td className="p-3 text-xs">
-                    <p className={TONE[commission.own.tone]}>
-                      <strong>Prowizja brokera:</strong> {commission.own.text}
-                      <span className="block text-ink-300">okno: {describeNewClientRule(commission.rule)}</span>
+                    {r.commissionBy ? (
+                      <>
+                        <p className="text-sm font-semibold text-ink-900">{formatDate(r.commissionBy.date)}</p>
+                        <p className="text-ink-500">{r.commissionBy.basis}</p>
+                      </>
+                    ) : r.lead ? (
+                      <p className="text-ink-500">bez terminu: za samo otwarcie / umowę</p>
+                    ) : (
+                      <p className="text-ink-300">—</p>
+                    )}
+                  </td>
+                  <td className="p-3 text-xs">
+                    <p className={TONE[r.commission.own.tone]}>{r.commission.own.text}</p>
+                    <p className="mt-0.5 text-ink-500">{describeNewClientRule(r.commission.rule)}</p>
+                  </td>
+
+                  <td className="border-l border-ink-100 p-3">
+                    {r.p ? (
+                      <>
+                        <p className="font-semibold text-ink-900">{zl(r.p.maxBonusCents)}</p>
+                        <p className="text-xs text-ink-500">konto otwórz do {formatDate(r.p.endDate)}</p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-ink-500">brak premii na stronie</p>
+                    )}
+                  </td>
+                  <td className="p-3 text-xs">
+                    {r.premiumBy ? (
+                      <>
+                        <p className="text-sm font-semibold text-ink-900">{formatDate(r.premiumBy.last)}</p>
+                        <p className="text-ink-500">
+                          {r.premiumBy.parts > 1 ? `${r.premiumBy.parts} części premii, pierwsza do ${formatDate(r.premiumBy.first)}` : "jedna nagroda"}
+                        </p>
+                      </>
+                    ) : r.p ? (
+                      <p className="text-ink-500">brak ściągi z terminami</p>
+                    ) : (
+                      <p className="text-ink-300">—</p>
+                    )}
+                  </td>
+                  <td className="p-3 text-xs">
+                    {r.p && r.premium ? (
+                      <>
+                        <p className={TONE[r.premium.tone]}>{r.premium.text}</p>
+                        <p className="mt-0.5 text-ink-500">
+                          {r.p.cooldownMonths != null ? `${r.p.cooldownMonths} mies. od zamknięcia konta` : r.p.cooldownCutoffDate ? "" : "regulamin nie podaje karencji"}
+                          {r.p.cooldownCutoffDate ? `brak konta od ${formatDate(r.p.cooldownCutoffDate)}` : ""}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-ink-300">—</p>
+                    )}
+                  </td>
+
+                  <td className="border-l border-ink-100 p-3">
+                    <p className="font-semibold text-ink-900">{zl(r.total)}</p>
+                    <p className="text-xs text-ink-500">
+                      {zl(r.total - (r.p?.maxBonusCents ?? 0) - r.contestPerClient)}
+                      {r.p ? ` + ${zl(r.p.maxBonusCents)}` : ""}
+                      {r.contestPerClient ? ` + ${zl(r.contestPerClient)}` : ""}
                     </p>
-                    <p className={`mt-2 ${TONE[premium.tone]}`}>
-                      <strong>Premia banku:</strong> {premium.text}
-                      <span className="block text-ink-300">
-                        okno promocji: {p.cooldownMonths != null ? `${p.cooldownMonths} mies. od zamknięcia konta` : "brak"}
-                        {p.cooldownCutoffDate ? `, zamknięte przed ${formatDate(p.cooldownCutoffDate)}` : ""}
-                      </span>
-                    </p>
+                  </td>
+                  <td className="p-3">
+                    {r.p && r.choice ? (
+                      <>
+                        <p className="font-medium text-ink-900">
+                          {r.p.affiliateNetwork ? NETWORK_LABEL[r.p.affiliateNetwork as Network] : "?"}
+                          {r.p.affiliateNetworkPinned && <span className="ml-1 text-xs text-gold-600">(przypięty)</span>}
+                        </p>
+                        <p className="text-xs text-ink-500">
+                          {r.choice.kind === "switch" ? `jutro przełączy na ${NETWORK_LABEL[r.choice.to.network]}` : r.choice.kind === "decide" ? `❓ ${r.choice.reason}` : r.choice.reason}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {NETWORKS.filter((n) => r.offers.some((x) => x.network === n && x.trackingUrl && !x.missingSince) || (n === "EBROKER" && r.catalogOnly.length > 0)).map((n) => (
+                            <form key={n} action={pinAffiliateNetwork.bind(null, r.p!.id, n)}>
+                              <button className="flex items-center gap-1 rounded border border-ink-100 px-2 py-0.5 text-xs hover:bg-ink-100">
+                                <Pin className="h-3 w-3" /> {NETWORK_LABEL[n]}
+                              </button>
+                            </form>
+                          ))}
+                          {r.p.affiliateNetworkPinned && (
+                            <form action={pinAffiliateNetwork.bind(null, r.p.id, null)}>
+                              <button className="flex items-center gap-1 rounded border border-ink-100 px-2 py-0.5 text-xs hover:bg-ink-100">
+                                <PinOff className="h-3 w-3" /> odepnij
+                              </button>
+                            </form>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-xs text-ink-300">—</p>
+                    )}
                   </td>
                 </tr>
               ))}
               {shown.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-6 text-center text-ink-500">
+                  <td colSpan={9} className="p-6 text-center text-ink-500">
                     Brak pozycji dla tych filtrów.
                   </td>
                 </tr>
@@ -467,89 +684,6 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
           </table>
         </div>
       </section>
-
-      {unmatched.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold">Kampanie bez promocji na stronie ({unmatched.length})</h2>
-          <p className="mt-1 max-w-3xl text-sm text-ink-500">
-            Kliknij wiersz, żeby zobaczyć stawki obu brokerów, warunki i datę kwalifikacji. Podpowiedź dopasowania szuka tego samego banku i rodzaju konta
-            niezależnie od kwoty w nazwie; różnica kwot jest zaznaczona (np. 5000 w kampanii, 6000 w promocji).
-          </p>
-          <div className="mt-3 space-y-2">
-            {unmatched.map((u) => {
-              const matches = suggestPromotions({ bankName: u.bankName, name: u.name, category: u.category }, matchPromos);
-              const top = matches[0];
-              const topFull = top ? promoById.get(top.promotion.id) : undefined;
-              const rule = parseNewClientRule(`${u.conditions ?? ""} ${u.notes ?? ""}`);
-              const comm = commissionOwn(u.offer, topFull?.bankId ?? null, accountTypeFromCategory(u.category) === "BUSINESS" ? "BUSINESS" : topFull?.accountType ?? "PERSONAL");
-              const others = unmatched.filter((x) => x.network !== u.network && sameKind(u, x));
-              const uc = u.offer ? contestsByOffer(u.network, u.offer.externalId) : u.kind === "catalog" ? contestsByOffer("EBROKER", u.id) : [];
-              return (
-                <details key={u.key} className="rounded-xl2 border border-ink-100 px-4 py-3 text-sm">
-                  <summary className="cursor-pointer">
-                    <span className="text-ink-500">{NETWORK_LABEL[u.network]}:</span> <strong>{u.bankName}</strong>: {u.name}{" "}
-                    <span className="text-ink-500">
-                      ({u.category}) {u.cps != null && `CPS ${zl(u.cps)} `}
-                      {u.cpa != null && `CPA ${zl(u.cpa)}`}
-                      {u.cps == null && u.cpa == null && "stawka z panelu nieodczytana"}
-                    </span>
-                    {top?.amountMismatch && <span className="ml-2 text-xs text-coral-600">⚠ kwota {zl(top.amountMismatch.campaignCents)} vs {zl(top.amountMismatch.promotionCents)} w promocji</span>}
-                    {uc.length > 0 && <Trophy className="ml-2 inline h-3.5 w-3.5 text-gold-600" />}
-                  </summary>
-                  <div className="mt-3 grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Kwalifikacja</p>
-                      <p>
-                        Prowizja brokera: <span className={TONE[comm.own.tone]}>{comm.own.text}</span>
-                      </p>
-                      <p className="text-xs text-ink-500">okno nowego klienta: {describeNewClientRule(rule)}</p>
-                      {topFull && (
-                        <p className={`text-xs ${TONE[premiumOwn(topFull).tone]}`}>Premia banku (promocja „{topFull.name}”): {premiumOwn(topFull).text}</p>
-                      )}
-                      {uc.map((c) => (
-                        <p key={c.id} className="text-xs text-gold-600">
-                          konkurs: {describeTiers(parseTiers(c.tiers))}
-                          {c.endDate ? `, do ${formatDate(c.endDate)}` : ", okres nie podany"}
-                        </p>
-                      ))}
-                      {u.conditions && <p className="whitespace-pre-line text-xs text-ink-500">{u.conditions}</p>}
-                      {u.notes && <p className="whitespace-pre-line text-xs text-ink-300">{u.notes}</p>}
-                      {u.detailUrl && (
-                        <a href={u.detailUrl} target="_blank" rel="noreferrer" className="text-xs text-ink-500 underline">
-                          panel
-                        </a>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Porównanie z drugim brokerem i promocją</p>
-                      {others.length === 0 && <p className="text-xs text-ink-500">Drugi broker nie ma w odczycie podobnej kampanii (ten sam bank i rodzaj konta).</p>}
-                      {others.map((x) => (
-                        <p key={x.key} className="text-xs">
-                          <span className="text-ink-500">{NETWORK_LABEL[x.network]}:</span> {x.name} {x.cps != null && `CPS ${zl(x.cps)} `}
-                          {x.cpa != null && `CPA ${zl(x.cpa)}`}
-                          {u.cps != null && x.cps != null && <span className="ml-1 text-ink-500">(różnica {zl(x.cps - u.cps)})</span>}
-                          {((u.cps != null && x.cps == null) || (u.cpa != null && x.cpa == null)) && <span className="ml-1 text-coral-600">inne rozliczenie (CPS vs CPA)</span>}
-                        </p>
-                      ))}
-                      {matches.length === 0 && <p className="text-xs text-ink-500">Brak promocji na stronie dla tego banku i rodzaju konta.</p>}
-                      {matches.slice(0, 3).map((m) => (
-                        <form key={m.promotion.id} action={linkCampaignToPromotion.bind(null, u.kind, u.id, m.promotion.id)} className="flex flex-wrap items-center gap-2 text-xs">
-                          <span>
-                            {m.promotion.name} (premia do {zl(m.promotion.maxBonusCents)}, {m.promotion.status})
-                            {m.amountMismatch && <span className="ml-1 text-coral-600">⚠ inna kwota w nazwie kampanii</span>}
-                          </span>
-                          <button className="rounded border border-ink-100 px-2 py-0.5 hover:bg-ink-100">Powiąż</button>
-                        </form>
-                      ))}
-                    </div>
-                  </div>
-                </details>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
       <section>
         <h2 className="flex items-center gap-2 text-lg font-semibold">
           <Trophy className="h-5 w-5 text-gold-600" /> Konkursy i bonusy

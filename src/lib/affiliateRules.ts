@@ -159,6 +159,58 @@ export function commissionEligibility(
 }
 
 // ---------------------------------------------------------------------
+// When the commission must be earned
+// ---------------------------------------------------------------------
+
+export interface CommissionDeadline {
+  /** Last day to meet the broker's conditions when the application and agreement happen on `openedAt`. */
+  date: Date;
+  /** The panel's wording the date comes from, e.g. "3 płatności w 30 dni od umowy". */
+  basis: string;
+}
+
+const addDaysUtc = (d: Date, n: number) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + n));
+/** Last day of the calendar month `n` months after `d` (n = 0: the same month). */
+const endOfMonthUtc = (d: Date, n: number) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n + 1, 0));
+const NUM_WORD: Record<string, number> = { jednego: 1, miesiąca: 1, dwóch: 2, dwoch: 2, trzech: 3 };
+
+/**
+ * The commission deadline the panel's text implies for an account applied for
+ * and opened on `openedAt` (the latest of all the deadlines it states):
+ *   "w ciągu 30 dni od podpisania umowy"                    -> +30 days
+ *   "w terminie 30 dni od daty wypełnienia wniosku"         -> +30 days
+ *   "w ciągu miesiąca od daty otwarcia"                     -> +1 month
+ *   "do końca pierwszego pełnego miesiąca kalendarzowego"   -> end of next month
+ *   "w miesiącu następującym po otwarciu"                   -> end of next month
+ *   "w jednym z dwóch pierwszych miesięcy po otwarciu"      -> end of the 2nd month
+ *   "musi pozostać otwarte przez min. 60 dni"               -> +60 days
+ * null when the text names no deadline (commission for the agreement alone).
+ */
+export function commissionDeadline(text: string | null | undefined, openedAt: Date): CommissionDeadline | null {
+  if (!text) return null;
+  const t = text.replace(/\s+/g, " ");
+  const found: CommissionDeadline[] = [];
+  const quote = (m: RegExpMatchArray) => m[0].trim().replace(/^(w|do)\s/i, (s) => s.toLowerCase());
+
+  for (const m of t.matchAll(/(?:w ciągu|w terminie|przez min\.?|przez minimum|przez co najmniej)\s+(?:pierwszych\s+)?(\d{1,3})\s+dni/gi)) {
+    found.push({ date: addDaysUtc(openedAt, Number(m[1])), basis: quote(m) });
+  }
+  for (const m of t.matchAll(/w ciągu (jednego|dwóch|dwoch|trzech)?\s*(?:miesiąca|miesięcy) od/gi)) {
+    const n = m[1] ? NUM_WORD[m[1].toLowerCase()] ?? 1 : 1;
+    const d = new Date(openedAt);
+    d.setUTCMonth(d.getUTCMonth() + n);
+    found.push({ date: d, basis: quote(m).replace(/ od$/, "") });
+  }
+  for (const m of t.matchAll(/do końca pierwszego pełnego miesiąca kalendarzowego/gi)) found.push({ date: endOfMonthUtc(openedAt, 1), basis: quote(m) });
+  for (const m of t.matchAll(/w miesiącu następującym po (?:otwarciu|miesiącu otwarcia)/gi)) found.push({ date: endOfMonthUtc(openedAt, 1), basis: quote(m) });
+  for (const m of t.matchAll(/w jednym z (dwóch|trzech) pierwszych miesięcy po otwarciu/gi)) {
+    found.push({ date: endOfMonthUtc(openedAt, m[1]!.toLowerCase() === "trzech" ? 3 : 2), basis: quote(m) });
+  }
+  if (!found.length) return null;
+  return found.sort((a, b) => b.date.getTime() - a.date.getTime())[0]!;
+}
+
+// ---------------------------------------------------------------------
 // Matching a campaign to a promotion on the site
 // ---------------------------------------------------------------------
 
