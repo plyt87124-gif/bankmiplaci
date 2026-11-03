@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   bonusFromName,
+  commissionDeadline,
   commissionEligibility,
   describeNewClientRule,
   normalizeBank,
@@ -88,4 +89,23 @@ test("nazwy banków z paneli sprowadzają się do jednego", () => {
   assert.equal(normalizeBank("PEKAO S.A"), normalizeBank("Bank Pekao"));
   assert.equal(normalizeBank("Bank Credit Agricole"), normalizeBank("Credit Agricole"));
   assert.equal(bonusFromName("Konto Biznes z Żubrem - zyskaj do 5000 zł"), 500000);
+});
+
+test("termin prowizji: najpóźniejszy z terminów w warunkach, liczony od dnia otwarcia", () => {
+  const open = d("2026-11-03");
+  const alior = commissionDeadline(
+    "w ciągu 30 dni od wysłania Wniosku podpisze umowę i w ciągu 30 dni od podpisania umowy wykona min. trzy płatności kartą. Nowy klient: w ciągu ostatnich dwóch lat.",
+    open
+  );
+  assert.equal(alior?.date.toISOString().slice(0, 10), "2026-12-03");
+  assert.equal(commissionDeadline("transakcje na 200 zł najpóźniej do końca pierwszego pełnego miesiąca kalendarzowego po otwarciu rachunku", open)?.date.toISOString().slice(0, 10), "2026-12-31");
+  assert.equal(commissionDeadline("co najmniej jedna transakcja w miesiącu otwarcia rachunku lub w jednym z dwóch pierwszych miesięcy po otwarciu rachunku", open)?.date.toISOString().slice(0, 10), "2027-01-31");
+  assert.equal(commissionDeadline("6 transakcji w ciągu 60 dni od momentu otwarcia konta. Konto musi pozostać otwarte przez min. 60 dni.", open)?.date.toISOString().slice(0, 10), "2027-01-02");
+  assert.equal(commissionDeadline("jednej transakcji kartą lub BLIKiem w ciągu miesiąca od daty otwarcia konta", open)?.date.toISOString().slice(0, 10), "2026-12-03");
+});
+
+test("termin prowizji: okno nowego klienta to nie termin, a sama umowa nie ma terminu", () => {
+  const open = d("2026-11-03");
+  assert.equal(commissionDeadline("nie posiadał konta BNP Paribas w ciągu 12 poprzedzających miesięcy", open), null);
+  assert.equal(commissionDeadline("Wynagrodzenie przyznane będzie za sprzedaż konta, czyli podpisanie umowy przez klienta.", open), null);
 });

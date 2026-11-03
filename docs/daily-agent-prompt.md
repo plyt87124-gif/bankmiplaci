@@ -60,6 +60,8 @@ Uruchom `npx.cmd vercel env pull <katalog tymczasowy>\.env.prod --environment=pr
 - Wartości nigdy nie wypisujesz.
 - DATABASE_URL ustawiasz tylko w procesie. Host musi zaczynać się od ep-spring-rice-b2ou0ds9.
 - Na końcu usuwasz plik.
+- ADMIN_EMAIL bywa niedostępny z Vercel (wartość „sensitive”). Wtedy bierzesz SUPPORT_EMAIL albo ADMIN_EMAIL z pliku .env w repo.
+- Skrypty uruchamiasz z kodu zgodnego z origin/main (`git fetch`, potem osobny worktree albo gałąź od origin/main), nie z gałęzi, na której akurat stoi główny folder.
 
 ### B. Sygnały promocji
 Małym skryptem tsx tylko do odczytu odczytaj z produkcji:
@@ -132,6 +134,18 @@ Używasz wbudowanej przeglądarki (narzędzia mcp__Claude_Browser__*; preview_st
   1. `npx.cmd tsx scripts/affiliate-sync.ts sync <plik>` (dry-run), potem to samo z `--apply`. Robisz to dla każdej sieci, którą udało się odczytać.
   2. `npx.cmd tsx scripts/affiliate-sync.ts links` (dry-run), potem `links --apply`. Ten krok przełącza link na sieć, która płaci więcej za nowego klienta: porównuje tylko CPS z CPS albo CPA z CPA, pomija promocje przypięte w /admin/prowizje, a sytuacje niejasne zapisuje jako ❓.
   3. `npx.cmd tsx scripts/affiliate-sync.ts report --since <czas poprzedniego uruchomienia, domyślnie 24 h>`. Wynik wklejasz do maila.
+
+**Wskazówki z pierwszego pełnego odczytu (3.11.2026):**
+- eBroker, lista kampanii bez klikania: w karcie panelu `fetch` POST na `/wyszukiwarka-produktow/szukaj` z FormData formularza `product-search`, w którym `target_product[]` = `4_2` (konta osobiste) i `4_13` (konta firmowe), plus `page` = 1, 2, … i nagłówek `X-Requested-With: XMLHttpRequest`. Każda kampania to `section.product` (id w klasie `row_<id>_…`, nazwa `.target-name`, stawka i model w `.product-elem.lead` i `.settlement`, warunki w `.details`). Około 42 kampanii na 5–6 stronach.
+- eBroker, konkursy: zasady (np. „za każde 3 sprzedaże 150 zł”, ranking miejsc) są tylko na grafice `https://img.ebroker.pl/konkursy/<id>/mobile_img.jpg`. Pobierz ją do katalogu tymczasowego i obejrzyj. Listę kampanii konkursu dają napisy „Identyfikator targetu: N” na stronie konkursu. Ranking miejsc to tiers = [] z opisem.
+- Comperia: lista `/tabela-prowizji.html?produkt%5B%5D=ko` (osobiste), `kosz` (oszczędnościowe), `kdfb` (firmowe); szczegóły `kampania.html?oferta=N&produkt=<to samo>` (bez `produkt` strona przekierowuje na listę). Można je czytać `fetch` z karty panelu. Akcje promocyjne dla wydawców („240 zł za każde 2 konta (1–30.11)”) są w opisie kampanii, a także w aktualnościach na stronie startowej panelu.
+- Po zalogowaniu Comperia otwiera osobne okno, które blokuje przeglądarkę. Nie możesz go zamknąć: wpisz to w ⚠ PROBLEMY i poproś właściciela o zamknięcie okna.
+
+### F2. Kampanie z premią i wygasłe promocje (po synchronizacji)
+1. **Premia, a promocji nie ma na stronie.** Dla każdej kampanii z obu sieci bez promotionSlug sprawdź u banku, czy jest do niej promocja z premią dla klienta. Jeśli tak, a strona jej nie ma: dodaj ją jak w kroku C, z opisem, warunkami, opłatami i ściągą z regulaminu banku. Dotyczy to także kampanii, które są tylko w Comperii. Wtedy w kandydacie nie ma ebrokerOid, a affiliateUrl = trackingUrl oferty Comperii. Promocję zapisujesz ACTIVE, gdy spełnia zasadę 3, potem w snapshocie ustawiasz jej promotionSlug i ponownie uruchamiasz sync oraz links.
+2. **Konto bez premii, ale z prowizją.** Promocji nie dodajesz. Kampania zostaje w /admin/prowizje jako konto bez promocji na stronie (wystarczy sync). W raporcie jedna linia z bankiem i stawką.
+3. **Wygasłe promocje.** Promocje EXPIRED z ostatnich 60 dni sprawdzasz w obu panelach i na stronie banku. Ta sama edycja z nowym terminem: extend-promotion (krok D). Nowa edycja: nowa promocja (krok C). Kampania brokera wciąż istnieje, ale bank nie ma promocji: nic nie dodajesz, piszesz w raporcie.
+4. **Dopasowanie kampanii do promocji.** Jeśli kwota w nazwie kampanii lub w opisie u brokera różni się od kwoty promocji na stronie (np. 2400 zł zamiast 3000 zł), nie łącz automatycznie. Daj ❓ do decyzji, a link przypnij do sieci, w której zgodność jest pewna.
 
 ### G. Oceny
 Przeliczają je skrypty. Dodatkowo możesz wywołać POST https://bankmiplaci.pl/api/cron/recompute-ratings z nagłówkiem Bearer CRON_SECRET.
