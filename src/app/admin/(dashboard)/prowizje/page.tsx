@@ -47,7 +47,13 @@ type Own = { tone: Tone; text: string; from?: Date };
 function describeTiers(tiers: ContestTier[], title?: string): string {
   if (!tiers.length) return title ?? "zasady do sprawdzenia w panelu";
   return tiers
-    .map((t) => (t.everyN ? (t.everyN === 1 ? `${zl(t.bonusCents)} za każde konto` : `${zl(t.bonusCents)} za każde ${t.everyN} konta`) : `${zl(t.bonusCents)} po ${t.atLeast} kontach`))
+    .map((t) =>
+      t.everyN
+        ? t.everyN === 1
+          ? `${zl(t.bonusCents)} za każde konto`
+          : `${zl(t.bonusCents)} za każde ${t.everyN} ${t.everyN < 5 ? "konta" : "kont"}`
+        : `${zl(t.bonusCents)} po ${t.atLeast} kontach`
+    )
     .join(", ");
 }
 
@@ -137,6 +143,7 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
   // Network panels name banks their own way; the owner's history is keyed by our bank.
   const bankIdByKey = new Map(banks.flatMap((b) => [[normalizeBank(b.name), b.id] as const, [normalizeBank(b.slug), b.id] as const]));
   const bankIdOf = (name: string) => bankIdByKey.get(normalizeBank(name)) ?? null;
+  const bankNameByKey = new Map(banks.flatMap((b) => [[normalizeBank(b.name), b.name] as const, [normalizeBank(b.slug), b.name] as const]));
   const logoByKey = new Map(banks.flatMap((b) => (b.logoUrl ? [[normalizeBank(b.name), b.logoUrl] as const, [normalizeBank(b.slug), b.logoUrl] as const] : [])));
 
   type Offer = (typeof offers)[number];
@@ -487,7 +494,7 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
     const g = contestGroupMap.get(key) ?? {
       key,
       bankKey,
-      bankName: first.promotion?.bank.name ?? first.bankName,
+      bankName: first.promotion?.bank.name ?? bankNameByKey.get(bankKey) ?? first.bankName,
       kind: KIND[type as keyof typeof KIND] ?? first.category,
       own: commissionOwn(first, first.promotion?.bankId ?? bankIdOf(first.bankName), type).own,
       items: []
