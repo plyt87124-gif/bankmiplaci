@@ -119,6 +119,8 @@ Używasz wbudowanej przeglądarki (narzędzia mcp__Claude_Browser__*; preview_st
 - conditions i notes przepisane dosłownie z panelu;
 - `complete.<sekcja>` = true tylko wtedy, gdy sekcję odczytałeś w całości.
 
+Lokaty i konta oszczędnościowe pomijasz (właściciel 3.11.2026: w /admin/prowizje tylko konta osobiste i firmowe). Kampanie typu „5% na lokatach” też.
+
 **eBrokerPartner** (https://ebrokerpartner.pl):
 - `/wyszukiwarka-produktow`, kategorie: konto osobiste, konto firmowe, konto oszczędnościowe. Przy każdej kampanii odczytujesz:
   - nazwę, instytucję, STAWKĘ i MODEL (CPS do cpsCents, CPA do cpaCents);
