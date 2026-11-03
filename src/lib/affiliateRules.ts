@@ -134,8 +134,10 @@ export function commissionEligibility(
   now: Date = new Date()
 ): CommissionEligibility {
   if (ownApplicationsAllowed === false) return { status: "no", text: "broker zakazuje wniosków własnych" };
-  if (!rule) return { status: "unknown", text: "panel nie podaje okna nowego klienta" };
+  // An account you still have rules you out under any new-client window, even one the panel does not state.
   if (history?.currentClient) return { status: "no", text: "jesteś obecnie klientem banku" };
+  if (history?.wasClientUntil && dayKey(history.wasClientUntil) > dayKey(now)) return { status: "no", text: `konto jeszcze otwarte do ${fmt(history.wasClientUntil)}` };
+  if (!rule) return { status: "unknown", text: "panel nie podaje okna nowego klienta" };
   const never = !history || !history.hasRow || (!history.wasClientFrom && !history.wasClientUntil);
 
   if (rule.kind === "never") {

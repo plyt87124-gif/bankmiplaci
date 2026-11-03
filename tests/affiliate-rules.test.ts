@@ -160,3 +160,12 @@ test("to samo konto z dwóch sieci to jeden wiersz", () => {
     ]
   ]);
 });
+
+test("prowizja: obecny klient albo konto jeszcze otwarte to nie, także gdy panel nie podaje okna", () => {
+  const now = d("2026-11-03");
+  assert.equal(commissionEligibility(null, { hasRow: true, wasClientFrom: d("2026-10-19"), currentClient: true }, null, now).status, "no");
+  const open = commissionEligibility(null, { hasRow: true, wasClientUntil: d("2026-11-11"), currentClient: false }, null, now);
+  assert.equal(open.status, "no");
+  assert.equal(open.text, "konto jeszcze otwarte do 11.11.2026");
+  assert.equal(commissionEligibility(null, { hasRow: true, wasClientUntil: d("2024-11-11"), currentClient: false }, null, now).status, "unknown");
+});
