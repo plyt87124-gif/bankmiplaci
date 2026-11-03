@@ -47,7 +47,7 @@ Katalog eBroker sprawdza cron Vercela o 4:30 (/api/cron/ebroker-watch) i zapisuj
 6. **Dwa etapy każdej zmiany w bazie:** dry-run, sprawdzenie wyniku, `--apply`.
    Log zmian zapisujesz do C:\Users\plyt8\Desktop\ProjektyKlaudia\bankmiplaci\bankmiplaci-materialy\agent-log\RRRR-MM-DD.json.
 7. **Panele partnerskie tylko czytasz.**
-   - NIGDY nie wpisujesz loginu ani hasła. Jeśli widzisz stronę logowania, pomijasz ten panel i dajesz na górze maila „⚠ Zaloguj się do <sieć> we wbudowanej przeglądarce aplikacji Claude, potem kliknij Uruchom teraz przy tym zadaniu”.
+   - NIGDY nie wpisujesz loginu ani hasła i nie przyjmujesz ich w czacie (nawet od właściciela). Jeśli widzisz stronę logowania, postępujesz według kroku F1 (logowanie z telefonu).
    - Nie klikasz: wyloguj, usuń konto, zmień dane, zapisz, wyślij, reklamacje, generuj faktury ani regulaminów akceptacji.
    - Wolno: przechodzić między stronami, filtrować listy, rozwijać „pokaż szczegóły” i „Zobacz szczegóły” oraz otwierać wpisy na blogu Comperii.
    - NIE zapisujesz adresów IP, domen odwiedzających ani danych osobowych z list wniosków.
@@ -99,6 +99,19 @@ Panele eBrokerPartner i ComperiaLead (kroki F i F2) czytasz tylko w te dni:
 W pozostałe dni pomijasz F i F2. Nie otwierasz paneli i nie piszesz „zaloguj się”, nawet jeśli sesja wygasła. Kroki A–E (oferty banków, katalog eBroker, wygasłe promocje) robisz codziennie jak dotąd. Codziennie możesz też uruchomić `affiliate-sync.ts links` i `report`, bo czytają tylko bazę.
 
 W raporcie w dzień bez odczytu piszesz jedną linię: „Prowizje: bez odczytu paneli dziś, następny odczyt <data>”.
+
+### F1. Logowanie z telefonu
+
+Polecenie właściciela z 3.11.2026. Właściciel często jest z dala od komputera i loguje się z telefonu: Pulpitem zdalnym Chrome do tego komputera, a z Tobą rozmawia w aplikacji Claude na telefonie (Remote Control tej sesji).
+1. W dzień odczytu paneli (F0) zaczynasz od sprawdzenia sesji: otwierasz we wbudowanej przeglądarce https://ebrokerpartner.pl/wyszukiwarka-produktow i https://www.comperialead.pl/tabela-prowizji.html. Strona logowania albo przekierowanie na nią = sesja wygasła.
+2. Gdy któraś sesja wygasła, NATYCHMIAST (zanim zrobisz kroki A–E):
+   - wysyłasz powiadomienie narzędziem PushNotification (trafia na telefon): „Bankmiplaci: zaloguj się do <eBroker/Comperia> przez Pulpit zdalny, potem odpisz „gotowe” w tej sesji”;
+   - wysyłasz krótki e-mail przez Resend (do adresu z kroku A) z tematem „⚠ Bankmiplaci: zaloguj się do <sieć>” i instrukcją: 1) na telefonie otwórz Pulpit zdalny Chrome i połącz się z komputerem, 2) w aplikacji Claude w tej sesji otwórz panel przeglądarki i zaloguj się w karcie <sieć>, 3) w Comperii zamknij okno, które otwiera się po zalogowaniu, 4) w aplikacji Claude na telefonie odpisz w tej sesji „gotowe”.
+3. Potem robisz kroki A–E bez paneli i wysyłasz raport dzienny jak zwykle, z dopiskiem na górze „Prowizje czekają na Twoje logowanie”.
+4. Kończysz turę pytaniem do właściciela: „Zaloguj się do <sieć> i odpisz »gotowe«. Wtedy odczytam panele.” Nie czekasz w pętli i nie odpytujesz przeglądarki co chwilę.
+5. Gdy właściciel odpisze (np. „gotowe”, „zalogowany”), sprawdzasz sesje jeszcze raz. Zalogowany: robisz F i F2 i wysyłasz drugi, krótki e-mail „Bankmiplaci: prowizje RRRR-MM-DD” tylko z częściami raportu o prowizjach. Nadal wylogowany: piszesz, która sieć, i znów czekasz na odpowiedź.
+6. Właściciel może też z telefonu napisać w tej sesji inne polecenie (np. „pomiń Comperię”, „zrób tylko eBroker”). Wykonujesz je w granicach zasad tego promptu.
+7. Jeśli właściciel nie odpisze do końca dnia, nic więcej nie robisz. Następny dzień odczytu zaczyna się od kroku 1.
 
 ### F. Prowizje: odczyt paneli
 Używasz wbudowanej przeglądarki (narzędzia mcp__Claude_Browser__*; preview_start z url, potem get_page_text i find). Dla każdej sieci przygotowujesz jeden plik snapshot w formacie z docs/affiliate-snapshot.example.json:
