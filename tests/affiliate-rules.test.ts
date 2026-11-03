@@ -6,6 +6,7 @@ import {
   commissionEligibility,
   describeNewClientRule,
   groupOffSiteItems,
+  isAccountCampaign,
   normalizeBank,
   parseNewClientRule,
   promoRestrictions,
@@ -159,4 +160,21 @@ test("to samo konto z dwóch sieci to jeden wiersz", () => {
       "COMPERIA:Pekao S.A. - Konto osobiste z bonusem"
     ]
   ]);
+});
+
+test("panel prowizji: tylko konta osobiste i firmowe, bez lokat i oszczędności", () => {
+  assert.equal(isAccountCampaign({ name: "VeloKonto Firma", category: "konto firmowe" }), true);
+  assert.equal(isAccountCampaign({ name: "Konto Przekorzystne - zyskaj do 300 zł", category: "konto osobiste" }), true);
+  assert.equal(isAccountCampaign({ name: "VeloKonto Gold - 5% na lokatach do 420 tys. zł", category: "konto osobiste" }), false);
+  assert.equal(isAccountCampaign({ name: "Santander Consumer Bank - Rachunek oszczędnościowy", category: "konto oszczędnościowe" }), false);
+  assert.equal(isAccountCampaign({ name: "eKonto standard - nawet 1010 zł oraz 5,3% w skali roku na oszczędnościach", category: "konto osobiste" }), true);
+});
+
+test("prowizja: obecny klient albo konto jeszcze otwarte to nie, także gdy panel nie podaje okna", () => {
+  const now = d("2026-11-03");
+  assert.equal(commissionEligibility(null, { hasRow: true, wasClientFrom: d("2026-10-19"), currentClient: true }, null, now).status, "no");
+  const open = commissionEligibility(null, { hasRow: true, wasClientUntil: d("2026-11-11"), currentClient: false }, null, now);
+  assert.equal(open.status, "no");
+  assert.equal(open.text, "konto jeszcze otwarte do 11.11.2026");
+  assert.equal(commissionEligibility(null, { hasRow: true, wasClientUntil: d("2024-11-11"), currentClient: false }, null, now).status, "unknown");
 });
