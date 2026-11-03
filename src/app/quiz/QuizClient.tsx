@@ -145,7 +145,7 @@ export function QuizClient({ offers }: { offers: QuizOffer[] }) {
                   value={option.id}
                   checked={checked}
                   onChange={() => setDraft((d) => ({ ...d, [question.id]: option.id }))}
-                  className="h-5 w-5 shrink-0"
+                  className="radio"
                 />
                 <span>{option.label}</span>
               </label>

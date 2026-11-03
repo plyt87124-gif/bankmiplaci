@@ -1,4 +1,4 @@
-import { ListChecks, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { PromotionCard } from "@/components/PromotionCard";
 import { ButtonLink } from "@/components/ui/Button";
 import { CountUp } from "@/components/motion/CountUp";
@@ -12,12 +12,12 @@ import type { HomeModel } from "./homeModel";
 
 /**
  * Hero (layout spec, HOME block 1): no illustration, no animation of its own.
- * The kicker, H1 and lead are plain server HTML (the LCP is text; nothing in
+ * The H1 and the buttons are plain server HTML (the LCP is text; nothing in
  * here is revealed on scroll). The only motion is the count-up of the offer
- * counter, an aggregate and therefore allowed. The status dot is static.
+ * counter, an aggregate and therefore allowed.
  *
- * `model` is null when the database could not be read: the kicker and the
- * counter then simply disappear, nothing is made up.
+ * `model` is null when the database could not be read: the verification line
+ * and the counter then simply disappear, nothing is made up.
  */
 export function HomeHero({
   model,
@@ -39,23 +39,8 @@ export function HomeHero({
     >
       <div className="container-page grid grid-cols-[minmax(0,1fr)] items-center gap-10 py-14 md:py-[88px] lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-12">
         <div className="min-w-0">
-          {verifiedText ? (
-            <p className="type-label flex items-center gap-2 text-ink-500">
-              <span
-                aria-hidden="true"
-                className="h-2 w-2 shrink-0 rounded-full bg-teal-600"
-              />
-              <span>
-                {LATEST_VERIFICATION_LABEL}:{" "}
-                <time dateTime={verifiedIso ?? undefined}>{verifiedText}</time>
-              </span>
-            </p>
-          ) : null}
-
-          <h1
-            id="home-title"
-            className={verifiedText ? "mt-4 max-w-3xl" : "max-w-3xl"}
-          >
+          {/* No kicker above the headline: the headline carries itself, the date of the newest check sits under the buttons. */}
+          <h1 id="home-title" className="type-display max-w-3xl">
             {HOME_H1}
           </h1>
 
@@ -79,7 +64,11 @@ export function HomeHero({
                 aria-hidden="true"
                 className="mt-px shrink-0 text-ink-500"
               />
-              <span>Przy każdej ofercie pokazujemy datę weryfikacji</span>
+              <span>
+                {LATEST_VERIFICATION_LABEL}:{" "}
+                <time dateTime={verifiedIso ?? undefined}>{verifiedText}</time>. Przy każdej ofercie pokazujemy datę
+                weryfikacji.
+              </span>
             </p>
           ) : null}
         </div>
@@ -88,12 +77,7 @@ export function HomeHero({
           <HeroSpotlight
             header={
               total > 0 ? (
-                <p className="flex items-center gap-2.5 text-ui text-ink-700">
-                  <ListChecks
-                    size={20}
-                    aria-hidden="true"
-                    className="shrink-0 text-ink-500"
-                  />
+                <p className="text-ui text-ink-700">
                   <span>
                     <CountUp
                       value={total}

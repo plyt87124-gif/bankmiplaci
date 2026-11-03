@@ -98,7 +98,8 @@
     /* LEGACY: visible slate plate (10:1 with white text) so admin buttons stay readable. */
     --color-ink-solid: 56 72 92;
 
-    --color-line: 40 54 72;
+    /* A step lighter than before (40 54 72): the hairlines are what separates a card from the band behind it. */
+    --color-line: 48 63 86;
     --color-line-strong: 105 122 142;
 
     --color-action: 120 178 255;
@@ -190,6 +191,19 @@
     outline-offset: 2px;
   }
 
+  /* Browser surfaces that ship with a default look: selection, caret, scrollbar. */
+  ::selection {
+    background-color: rgb(var(--color-action) / 0.32);
+    color: rgb(var(--color-ink-900));
+  }
+  input,
+  textarea {
+    caret-color: rgb(var(--color-action));
+  }
+  html {
+    scrollbar-color: rgb(var(--color-line-strong) / 0.7) transparent;
+  }
+
   /* Native <dialog> (AuthModal, mobile filter sheet): follow the tokens, dim the page without blur. */
   dialog {
     @apply bg-surface text-ink-900;
@@ -251,9 +265,15 @@
   .type-article {
     @apply font-body text-article lg:text-article-lg;
   }
-  /* Small uppercase caption such as "PREMIA DO", "TERMIN". */
+  /* Small caption above a value ("Premia do", "Termin"). Sentence case on purpose: tracked capitals above every
+     number are the look of a template, and Polish reads better in lower case. */
   .type-label {
-    @apply font-brand text-label uppercase;
+    @apply font-body text-caption font-medium;
+  }
+  /* Home hero headline: bigger than an h1 of an inner page, tighter. */
+  .type-display {
+    @apply font-display text-display md:text-display-lg;
+    text-wrap: balance;
   }
 
   /* Body links in running text: underlined, offset 3 px, action colour. */
@@ -317,6 +337,14 @@
   }
   .dark .checkbox:checked {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2305122c' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12.5 4 4 8-9'/%3E%3C/svg%3E");
+  }
+  /* Styled native radio (quiz answers): 20 px ring, the dot is the action colour. Same 3:1 ring as the checkbox. */
+  .radio {
+    @apply inline-block h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-line-strong bg-surface align-middle transition-colors duration-150 ease-out;
+  }
+  .radio:checked {
+    @apply border-action;
+    background-image: radial-gradient(circle at center, rgb(var(--color-action)) 0 42%, transparent 46%);
   }
   .checkbox:disabled {
     @apply cursor-not-allowed border-line bg-ink-100;

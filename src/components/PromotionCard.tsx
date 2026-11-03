@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CardBlockedMark } from "@/components/BlockedOffers";
 import { CardLink } from "@/components/CardLink";
-import { Check, ChevronRight, XCircle } from "lucide-react";
+import { Briefcase, Check, ChevronRight, User, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { BankLogo } from "@/components/ui/BankLogo";
 import { EffortMeter } from "@/components/ui/EffortMeter";
@@ -113,6 +113,7 @@ export function PromotionCard({
   const prioritizeLogo = priority ?? (index != null && index < PRIORITY_CARD_COUNT);
   const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
   const bankSaysItself = nameMentionsBank(promotion.name, bank.name);
+  const TypeIcon = promotion.accountType === "BUSINESS" ? Briefcase : User;
 
   return (
     <article
@@ -137,10 +138,12 @@ export function PromotionCard({
         <span data-vt="logo" className="inline-flex">
           <BankLogo name={bank.name} logoUrl={bank.logoUrl} size="sm" grayscale={ended} priority={prioritizeLogo} />
         </span>
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
           {draft ? <Badge variant="info">Roboczy</Badge> : null}
-          <span data-vt="type" className="inline-flex">
-            <Badge variant="neutral">{ACCOUNT_TYPE_LABEL[promotion.accountType]}</Badge>
+          {/* Plain text with an icon, not a chip: the kind of account is a fact, not a status. */}
+          <span data-vt="type" className="inline-flex items-center gap-1.5 text-caption font-medium text-ink-500">
+            <TypeIcon size={14} aria-hidden="true" className="shrink-0" />
+            {ACCOUNT_TYPE_LABEL[promotion.accountType]}
           </span>
         </div>
       </div>
@@ -167,7 +170,8 @@ export function PromotionCard({
         </CardLink>
       </Heading>
 
-      <div data-vt="amount" className="mt-3 min-h-[3.5rem]">
+      {/* The torn-off edge of a voucher: the title above, the value below it. */}
+      <div data-vt="amount" className="mt-4 min-h-[4.5rem] border-t border-dashed border-line-strong/40 pt-4">
         {hasBonus ? (
           <>
             <p className="type-label text-ink-500">Premia do</p>
@@ -207,11 +211,12 @@ export function PromotionCard({
           {fee.note ? <span className="whitespace-nowrap text-ink-700"> ({fee.note})</span> : null}
         </p>
       )}
-      {/* Deadline and verification sit together, apart from the coloured difficulty + fee pair, right above the divider. */}
-      <div className="mt-5 flex flex-wrap items-center gap-2">
-        {ended ? null : <DeadlineBadge endDate={promotion.endDate} now={now} />}
-        <span data-vt="verified" className="inline-flex">
-          <VerifiedLine lastVerifiedAt={promotion.lastVerifiedAt} now={now} badge />
+      {/* Deadline and verification sit together, apart from the coloured difficulty + fee pair, right above the divider.
+          Two quiet lines with an icon each (no chips): only a near deadline gets a colour. */}
+      <div className="mt-4 flex flex-col gap-1.5">
+        {ended ? null : <DeadlineBadge endDate={promotion.endDate} now={now} plain />}
+        <span data-vt="verified" className="block">
+          <VerifiedLine lastVerifiedAt={promotion.lastVerifiedAt} now={now} className="text-ink-700" />
         </span>
       </div>
 

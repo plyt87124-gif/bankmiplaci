@@ -28,10 +28,11 @@ import { Button } from "@/components/ui/Button";
 type BannerState = "eligible" | "waiting" | "not-eligible" | "logged-out";
 
 const STATE_STYLE: Record<BannerState, { bar: string; icon: LucideIcon; iconClass: string }> = {
-  eligible: { bar: "border-l-success", icon: CheckCircle2, iconClass: "text-success" },
-  waiting: { bar: "border-l-gold-500", icon: Clock, iconClass: "text-gold-600" },
-  "not-eligible": { bar: "border-l-coral-600", icon: XCircle, iconClass: "text-coral-600" },
-  "logged-out": { bar: "border-l-info", icon: LogIn, iconClass: "text-info" }
+  // The state is carried by the icon and the words; the whole hairline is tinted (a thick coloured side bar is a template tell).
+  eligible: { bar: "border-success/45", icon: CheckCircle2, iconClass: "text-success" },
+  waiting: { bar: "border-gold-500/55", icon: Clock, iconClass: "text-gold-600" },
+  "not-eligible": { bar: "border-coral-600/50", icon: XCircle, iconClass: "text-coral-600" },
+  "logged-out": { bar: "border-info/45", icon: LogIn, iconClass: "text-info" }
 };
 
 export function EligibilityBanner({
@@ -132,7 +133,7 @@ function Shell({
   return (
     <div
       data-eligibility={state}
-      className={cn("mt-4 rounded-card border border-l-[3px] border-line bg-sunken p-4 sm:p-5", bar, className)}
+      className={cn("mt-4 rounded-card border border-line bg-sunken p-4 sm:p-5", bar, className)}
     >
       <div className="flex items-start gap-3">
         <Icon size={24} aria-hidden="true" className={cn("mt-0.5 shrink-0", iconClass)} />

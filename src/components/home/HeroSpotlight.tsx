@@ -146,7 +146,7 @@ export function HeroSpotlight({ header, slides, labels }: { header: ReactNode; s
         role="group"
         aria-roledescription="karuzela"
         aria-label="Najbardziej polecane promocje"
-        className="relative rounded-card shadow-[0_18px_50px_-18px_rgb(var(--color-action)/0.45)] ring-1 ring-action/30 max-sm:rounded-none max-sm:shadow-none max-sm:ring-0"
+        className="relative rounded-card shadow-[0_24px_48px_-28px_rgb(0_0_0/0.6)] ring-1 ring-line-strong/40 max-sm:rounded-none max-sm:shadow-none max-sm:ring-0"
       >
         <div
           ref={trackRef}

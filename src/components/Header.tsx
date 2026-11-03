@@ -111,8 +111,9 @@ export function Header() {
                   Moje konto
                 </ButtonLink>
               ) : (
-                <Button variant="ghost" onClick={login}>
-                  <User size={20} aria-hidden="true" />
+                // A real button, not bare text: the account entry is the one thing in the header that is an action.
+                <Button variant="secondary" size="sm" onClick={login}>
+                  <User size={18} aria-hidden="true" />
                   Zaloguj się
                 </Button>
               )}

@@ -37,7 +37,8 @@ test("waiting: karencja trwa - „Karencja do {data}”, ikona zegara, kolor tyl
   assert.match(out, /data-eligibility="waiting"/);
   assert.match(text(out), /Karencja do 01\.02\.2027/);
   assert.match(out, /lucide-clock/);
-  assert.match(out, /border-l-gold-500/);
+  assert.match(out, /border-gold-500\/55/);
+  assert.doesNotMatch(out, /border-l-/, "no thick coloured side bar: the whole hairline is tinted");
 });
 
 test("not-eligible: data graniczna - „Prawdopodobnie nie kwalifikujesz się: …”, ikona X", () => {
