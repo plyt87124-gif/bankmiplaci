@@ -1,0 +1,185 @@
+{
+  "_comment": "Erste Bank Polska — „Odkryj Konto Erste Platinum z nagrodą do 1500 zł” (przystąpienie 1.09–30.11.2026, trwa do 31.12.2027). Źródło: regulamin PDF + strona oferty. Kampania eBroker 13860. Opłata za konto 45 zł bez zwolnienia (zwolnienie: wpływ min. 10 000 zł w miesiącu lub średnie saldo aktywów min. 150 000 zł w poprzednim miesiącu) — ze strony oferty. Promocja wymaga założenia konta online/w aplikacji (nie w placówce, nie po zalogowaniu). Nie łączy się z „do 600 zł z kontem” (to inna promocja Erste).",
+  "bankSlug": "erste",
+  "ebrokerOid": "13860",
+  "promotion": {
+    "slug": "erste-konto-platinum-do-1500-zl",
+    "name": "Konto Erste Platinum: do 1500 zł za aktywność",
+    "accountType": "PERSONAL",
+    "maxBonusCents": 150000,
+    "difficulty": "HARD",
+    "rating": 7.0,
+    "status": "DRAFT",
+    "startDate": "2026-09-01",
+    "endDate": "2026-11-30",
+    "affiliateLinkEnabled": true,
+    "sourceUrl": "https://www.erste.pl/_fileserver/item/1528779",
+    "additionalSourceUrls": [
+      "https://www.erste.pl/ws-konto-erste-platinum/"
+    ],
+    "lastVerifiedAt": "2026-10-24",
+    "eligibleFor": "Pełnoletnie osoby fizyczne z polskim obywatelstwem, mieszkające w Polsce, z ważnym dowodem osobistym i pełną zdolnością do czynności prawnych, które od 1.01.2024 nie miały i nie mają w Erste Bank Polska (wcześniej Santander Bank Polska) żadnego konta w złotych (osobistego ani wspólnego). Konto otwierane online lub w aplikacji przed zalogowaniem.",
+    "notEligibleFor": "Osoby, które od 1.01.2024 miały konto w złotych w Erste/Santander. Konto otwarte po zalogowaniu do aplikacji lub bankowości, w placówce (także przez QR) albo u doradcy mobilnego. Brak łączenia z promocją „do 600 zł z kontem”, „Polecam mój bank – edycja 14” (kod polecenia) i innymi wymienionymi w regulaminie.",
+    "cooldownMonths": null,
+    "cooldownCutoffDate": "2024-01-01",
+    "summary": "Do 1500 zł: 3 × 200 zł za miesiące z wpływem 10 000 zł i aktywnością oraz 900 zł nagrody lojalnościowej za 9 z 12 miesięcy aktywności.",
+    "conditions": [
+      {
+        "title": "Otwórz Konto Erste Platinum z kartą i Erste online na stronie lub w aplikacji",
+        "description": "Od 1.09 do 30.11.2026. Wniosek i umowa na erste.pl albo w aplikacji Erste przez opcję „Załóż konto” (przed zalogowaniem). Wymagane zgody marketingowe, EKK, telefon i e-mail oraz akceptacja regulaminu.",
+        "type": "account_opening",
+        "order": 0
+      },
+      {
+        "title": "Co miesiąc przez 3 kolejne miesiące: wpływ min. 10 000 zł",
+        "description": "Łączny wpływ min. 10 000 zł na konto otwarte w promocji w miesiącu. Nie liczą się wpłaty w wpłatomatach ani przelewy z innego Twojego rachunku w Erste.",
+        "type": "inflow",
+        "order": 1
+      },
+      {
+        "title": "10 płatności kartą lub BLIKIEM w miesiącu",
+        "description": "Płatności kartą debetową lub BLIKIEM w dowolnej kombinacji; nie liczą się wypłaty z bankomatów, wpłaty do wpłatomatów ani przelewy na telefon BLIK.",
+        "type": "card_payments",
+        "order": 2
+      },
+      {
+        "title": "Przelew online i logowanie do aplikacji Erste",
+        "description": "Co miesiąc min. 1 przelew online z konta (nie między własnymi kontami w banku) i min. 1 logowanie do aplikacji Erste. Za każdy spełniony miesiąc (z trzech po miesiącu wniosku) 200 zł; miesiące są niezależne.",
+        "type": "other",
+        "order": 3
+      },
+      {
+        "title": "Nagroda lojalnościowa 900 zł: 9 z 12 miesięcy aktywności",
+        "description": "W 9 dowolnych z 12 miesięcy po miesiącu wniosku: spełnione warunki przystąpienia oraz wpływ min. 10 000 zł albo średnie saldo aktywów w banku min. 150 000 zł. Wypłata do końca miesiąca następującego po 9. spełnionym miesiącu.",
+        "type": "other",
+        "order": 4
+      },
+      {
+        "title": "Terminy wypłat i utrzymanie konta",
+        "description": "Nagrody 200 zł: np. wniosek w październiku – wypłaty do 31.12.2026, 31.01.2027 i 28.02.2027; wniosek we wrześniu – do 30.11, 31.12.2026 i 31.01.2027; wniosek w listopadzie – do 31.01, 28.02 i 31.03.2027. Konto, karta i Erste online muszą być aktywne w dniu wypłaty, zgody utrzymane, bez zmiany typu konta. Nagrody są zwolnione z podatku.",
+        "type": "deadline",
+        "order": 5
+      }
+    ],
+    "bonusParts": [
+      {
+        "label": "Nagrody miesięczne — 3 × 200 zł (wpływ 10 000 zł, 10 płatności, przelew, logowanie)",
+        "amountCents": 60000,
+        "order": 0
+      },
+      {
+        "label": "Nagroda lojalnościowa — 900 zł (9 z 12 miesięcy: wpływ 10 000 zł lub średnie aktywa 150 000 zł)",
+        "amountCents": 90000,
+        "order": 1
+      }
+    ],
+    "fees": {
+      "accountFeeCents": 4500,
+      "accountFeeWaiverCondition": "wpływ min. 10 000 zł w miesiącu lub średnie saldo aktywów min. 150 000 zł (sprawdzane w poprzednim miesiącu)",
+      "cardFeeCents": 0,
+      "otherFee": "Według strony oferty: 0 zł za przelewy natychmiastowe online, kartę Visa Platinum, wypłaty z bankomatów w Polsce i za granicą, przewalutowanie kartą oraz płatności i wypłaty BLIK.",
+      "sourceUrl": "https://www.erste.pl/ws-konto-erste-platinum/"
+    }
+  },
+  "checklistSteps": [
+    {
+      "order": 0,
+      "monthLabel": "Otwarcie konta",
+      "title": "Złóż wniosek i zawrzyj umowę o Konto Erste Platinum z kartą Visa Platinum i usługami Erste online na erste.pl lub w aplikacji Erste (opcja „Załóż konto” przed zalogowaniem), od 1.09 do 30.11.2026"
+    },
+    {
+      "order": 1,
+      "monthLabel": "Otwarcie konta",
+      "title": "We wniosku zaznacz zgody marketingowe i EKK, podaj aktywny numer telefonu i e-mail oraz zaakceptuj regulamin promocji"
+    },
+    {
+      "order": 10,
+      "monthLabel": "Miesiąc 1",
+      "title": "Zapewnij łącznie min. 10 000 zł wpływu na konto (bez wpłat w wpłatomacie i przelewów z Twoich innych rachunków w Erste)"
+    },
+    {
+      "order": 11,
+      "monthLabel": "Miesiąc 1",
+      "title": "Zapłać kartą lub BLIKIEM 10 razy (bez wypłat z bankomatów i przelewów na telefon BLIK)"
+    },
+    {
+      "order": 12,
+      "monthLabel": "Miesiąc 1",
+      "title": "Zrób min. 1 przelew online ze swojego konta (nie między własnymi kontami w banku)"
+    },
+    {
+      "order": 13,
+      "monthLabel": "Miesiąc 1",
+      "title": "Zaloguj się co najmniej raz do aplikacji Erste"
+    },
+    {
+      "order": 14,
+      "monthLabel": "Miesiąc 1",
+      "title": "Odbierz nagrodę: 200 zł",
+      "rewardCents": 20000
+    },
+    {
+      "order": 20,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zapewnij łącznie min. 10 000 zł wpływu na konto (bez wpłat w wpłatomacie i przelewów z Twoich innych rachunków w Erste)"
+    },
+    {
+      "order": 21,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zapłać kartą lub BLIKIEM 10 razy (bez wypłat z bankomatów i przelewów na telefon BLIK)"
+    },
+    {
+      "order": 22,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zrób min. 1 przelew online ze swojego konta (nie między własnymi kontami w banku)"
+    },
+    {
+      "order": 23,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zaloguj się co najmniej raz do aplikacji Erste"
+    },
+    {
+      "order": 24,
+      "monthLabel": "Miesiąc 2",
+      "title": "Odbierz nagrodę: 200 zł",
+      "rewardCents": 20000
+    },
+    {
+      "order": 30,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zapewnij łącznie min. 10 000 zł wpływu na konto (bez wpłat w wpłatomacie i przelewów z Twoich innych rachunków w Erste)"
+    },
+    {
+      "order": 31,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zapłać kartą lub BLIKIEM 10 razy (bez wypłat z bankomatów i przelewów na telefon BLIK)"
+    },
+    {
+      "order": 32,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zrób min. 1 przelew online ze swojego konta (nie między własnymi kontami w banku)"
+    },
+    {
+      "order": 33,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zaloguj się co najmniej raz do aplikacji Erste"
+    },
+    {
+      "order": 34,
+      "monthLabel": "Miesiąc 3",
+      "title": "Odbierz nagrodę: 200 zł",
+      "rewardCents": 20000
+    },
+    {
+      "order": 120,
+      "monthLabel": "Miesiąc 12",
+      "title": "W 9 dowolnych z 12 miesięcy po miesiącu wniosku: wpływ min. 10 000 zł albo średnie saldo aktywów min. 150 000 zł plus warunki aktywności z miesięcy 1–3"
+    },
+    {
+      "order": 121,
+      "monthLabel": "Miesiąc 12",
+      "title": "Odbierz nagrodę lojalnościową: 900 zł (do końca miesiąca po 9. spełnionym miesiącu)",
+      "rewardCents": 90000
+    }
+  ]
+}
