@@ -75,6 +75,11 @@ export async function revertAffiliateLinkSwitch(changeId: string) {
  * (panel offer or catalog campaign). From the next daily sync the campaign
  * takes part in the best-link choice and its rate shows next to the promotion.
  */
+/** Links every campaign of one account row (the same account in both networks) at once. */
+export async function linkCampaignsToPromotion(items: { kind: "offer" | "catalog"; id: string }[], promotionId: string) {
+  for (const it of items) await linkCampaignToPromotion(it.kind, it.id, promotionId);
+}
+
 export async function linkCampaignToPromotion(kind: "offer" | "catalog", id: string, promotionId: string) {
   const session = await requireAdmin();
   await db.promotion.findUniqueOrThrow({ where: { id: promotionId }, select: { id: true } });

@@ -89,6 +89,17 @@ Małym skryptem tsx tylko do odczytu odczytaj z produkcji:
 ### E. Zmiana albo zniknięcie kampanii w katalogu
 Sprawdzasz u banku, nic nie zmieniasz i dajesz rekomendację w raporcie.
 
+### F0. Kiedy czytasz panele prowizji (polecenie właściciela z 3.11.2026)
+
+Panele eBrokerPartner i ComperiaLead (kroki F i F2) czytasz tylko w te dni:
+- 1. dzień miesiąca,
+- 3. dzień miesiąca,
+- każdy poniedziałek.
+
+W pozostałe dni pomijasz F i F2. Nie otwierasz paneli i nie piszesz „zaloguj się”, nawet jeśli sesja wygasła. Kroki A–E (oferty banków, katalog eBroker, wygasłe promocje) robisz codziennie jak dotąd. Codziennie możesz też uruchomić `affiliate-sync.ts links` i `report`, bo czytają tylko bazę.
+
+W raporcie w dzień bez odczytu piszesz jedną linię: „Prowizje: bez odczytu paneli dziś, następny odczyt <data>”.
+
 ### F. Prowizje: odczyt paneli
 Używasz wbudowanej przeglądarki (narzędzia mcp__Claude_Browser__*; preview_start z url, potem get_page_text i find). Dla każdej sieci przygotowujesz jeden plik snapshot w formacie z docs/affiliate-snapshot.example.json:
 - kwoty w groszach, daty RRRR-MM-DD;
@@ -105,7 +116,7 @@ Używasz wbudowanej przeglądarki (narzędzia mcp__Claude_Browser__*; preview_st
 - `/konkursy`: każdy konkurs otwierasz („pokaż szczegóły”). Odczytujesz tytuł, okres, zasady premii zapisane jako tiers (everyN = premia za każde N kont, atLeast = jednorazowo po N) oraz listę kampanii (do offerExternalIds). Zasad, których nie da się jednoznacznie przeliczyć, nie zgadujesz: tiers = [] i opis w description.
 - `/statystyki`: bieżący i poprzedni miesiąc, wszystkie statusy, 200 wyników na stronę. Dla każdego wniosku: ID wniosku, data, instytucja, produkt, model, status (KLIK, Wysłane, Zaakceptowane, Odrzucone), kwota, jeśli jest podana.
 - `/rozliczenia/raporty`: wypłaty, czyli paidAt wniosków, jeśli raport je podaje.
-- Regulamin `/regulamin`: raz w tygodniu (w poniedziałek) sprawdź zapisy o wnioskach własnych partnera.
+- Regulamin `/regulamin`: 1. dnia miesiąca (patrz „Zakazy w promowaniu”).
 
 **ComperiaLead** (https://www.comperialead.pl):
 - `/tabela-prowizji.html`, filtry: Konto osobiste, Konto oszczędnościowe, Produkty dla firm (tylko konta firmowe). Każdą kampanię otwierasz (`kampania.html?oferta=N`, externalId = N) i odczytujesz:
@@ -116,7 +127,18 @@ Używasz wbudowanej przeglądarki (narzędzia mcp__Claude_Browser__*; preview_st
   - link partnerski, jeśli jest widoczny w sekcji „Link” bez zapisywania czegokolwiek; w przeciwnym razie null i informacja w raporcie.
 - Konkursy: wpisy „Dołącz do wybranej kampanii i zgarnij dodatkowe bonusy” w panelu i `/aktualnosci.html`, czyli posty na blog.comperialead.pl. Konkurs zapisujesz tylko z okresem i progami z treści.
 - `/wnioski.html` (wszystkie wnioski) oraz `/Wynagrodzenia.html`: status, kwota, data rozliczenia i data wypłaty.
-- `/regulamin`: zapisy o wnioskach własnych, sprawdzane raz w tygodniu.
+- `/regulamin`: 1. dnia miesiąca (patrz „Zakazy w promowaniu”).
+
+**Zakazy w promowaniu (polecenie właściciela z 3.11.2026, potrzebne do TikToków i reklam):**
+- Przy każdej kampanii przepisz do notes dosłownie każde zdanie o tym, czego nie wolno przy promowaniu:
+  - SEM i reklamy w wyszukiwarkach, licytowanie nazwy banku (brand bidding);
+  - własne grafiki lub kreacje z marką banku;
+  - mailing, SMS, skracacze linków, blogi, social media, wideo;
+  - wnioski w imieniu klienta, wnioski własne partnera.
+- Szukaj ich w „Uwagach”, w opisie, w warunkach i w regulaminie kampanii, a w eBroker także w zakładce OPIS.
+- Strona /admin/prowizje i komenda `npx.cmd tsx scripts/affiliate-sync.ts zasady [bank]` wyliczają z tego listę zakazów.
+- Nowy albo zmieniony zakaz wpisujesz do raportu (część 5).
+- Regulaminy całych sieci (/regulamin w eBroker i Comperii) czytasz 1. dnia miesiąca. Zasady ogólne są w NETWORK_RULES w src/lib/affiliateRules.ts (stan z 4.11.2026). Jeśli regulamin zmienił zapisy o wnioskach własnych, materiałach poza własną stroną lub social mediach, dajesz ❓ z cytatem.
 
 **Pola dla każdej kampanii:**
 - promotionSlug: tylko wtedy, gdy na pewno chodzi o tę samą promocję na stronie (ten sam bank, typ konta i ta sama edycja promocji; sprawdź w bazie produkcyjnej). W przeciwnym razie null.
@@ -169,7 +191,7 @@ Kolejność części:
    - kampanie kont bez promocji na stronie.
 3. ZROBIONE: dodane promocje (slug, kwota, daty, ACTIVE albo DRAFT, źródła), przedłużenia, zmiany linków (z kwotami i informacją, jak cofnąć: /admin/prowizje, przycisk „cofnij”), commit.
 4. WNIOSKI I PROWIZJE: nowe wnioski, zmiany statusu i wpływy z raportu prowizji.
-5. STAWKI, KONKURSY, TYLKO U JEDNEGO BROKERA, ZAKAZ WNIOSKÓW WŁASNYCH: z raportu prowizji.
+5. STAWKI, KONKURSY, TYLKO U JEDNEGO BROKERA, ZAKAZY W PROMOWANIU I WNIOSKÓW WŁASNYCH: z raportu prowizji i z odczytu (tylko w dni odczytu paneli).
 6. BEZ ZMIAN: jedna linia na obszar, np. „katalog eBroker: bez nowych kampanii; stawki Comperia: bez zmian”.
 
 W razie wątpliwości wybierasz bezpieczniejszą opcję (DRAFT zamiast ACTIVE, brak zmiany zamiast zmiany) i opisujesz to w raporcie.
