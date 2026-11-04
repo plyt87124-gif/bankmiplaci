@@ -41,6 +41,7 @@ export function PromotionForm({
     defaultValues: {
       status: "DRAFT",
       affiliateLinkEnabled: true,
+      adminOnly: false,
       accountType: "PERSONAL",
       difficulty: "EASY",
       conditions: [],
@@ -204,6 +205,17 @@ export function PromotionForm({
             <span className="block text-xs text-ink-500">
               Odznacz, jeśli oferta w banku trwa, ale kampania afiliacyjna nie jest potwierdzona: strona pokaże ofertę
               bez przycisku „Przejdź do promocji”, a /out/… nie przekieruje do partnera.
+            </span>
+          </span>
+        </label>
+        <label className="flex items-start gap-2 text-sm text-ink-700">
+          <input type="checkbox" {...register("adminOnly")} className="mt-1" />
+          <span>
+            Tylko dla admina
+            <span className="block text-xs text-ink-500">
+              Oferta działa normalnie (ściąga, link, prowizje), ale widzi ją tylko zalogowany admin, także po przełączeniu na konto
+              testowe albo „Moje konto”. Dla odwiedzających, wyszukiwarek i mapy strony jej nie ma. Dla kampanii, które zakazują
+              promowania na stronach o promocjach bankowych.
             </span>
           </span>
         </label>

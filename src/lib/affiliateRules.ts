@@ -134,8 +134,10 @@ export function commissionEligibility(
   now: Date = new Date()
 ): CommissionEligibility {
   if (ownApplicationsAllowed === false) return { status: "no", text: "broker zakazuje wniosków własnych" };
-  if (!rule) return { status: "unknown", text: "panel nie podaje okna nowego klienta" };
+  // An account you still have rules you out under any new-client window, even one the panel does not state.
   if (history?.currentClient) return { status: "no", text: "jesteś obecnie klientem banku" };
+  if (history?.wasClientUntil && dayKey(history.wasClientUntil) > dayKey(now)) return { status: "no", text: `konto jeszcze otwarte do ${fmt(history.wasClientUntil)}` };
+  if (!rule) return { status: "unknown", text: "panel nie podaje okna nowego klienta" };
   const never = !history || !history.hasRow || (!history.wasClientFrom && !history.wasClientUntil);
 
   if (rule.kind === "never") {
@@ -295,6 +297,17 @@ export function suggestPromotions(
     out.push({ promotion: p, score, amountMismatch: mismatch ? { campaignCents: campaignBonus!, promotionCents: p.maxBonusCents } : undefined });
   }
   return out.sort((a, b) => b.score - a.score);
+}
+
+/**
+ * Only personal and business current accounts belong in the commissions panel:
+ * savings accounts and campaigns sold on deposit rates ("5% na lokatach") are
+ * left out (owner's decision, 3.11.2026).
+ */
+export function isAccountCampaign(item: { name: string; category: string }): boolean {
+  if (accountTypeFromCategory(item.category) === "SAVINGS") return false;
+  // "na oszczędnościach" stays: mBank sells bonus accounts that way (eKonto, mKonto Intensive).
+  return !/lokat/i.test(item.name);
 }
 
 // ---- promoting a campaign: what the network and the bank forbid ----

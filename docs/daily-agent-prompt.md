@@ -119,6 +119,10 @@ Używasz wbudowanej przeglądarki (narzędzia mcp__Claude_Browser__*; preview_st
 - conditions i notes przepisane dosłownie z panelu;
 - `complete.<sekcja>` = true tylko wtedy, gdy sekcję odczytałeś w całości.
 
+Lokaty i konta oszczędnościowe pomijasz (właściciel 3.11.2026: w /admin/prowizje tylko konta osobiste i firmowe). Kampanie typu „5% na lokatach” też.
+
+Kampania zakazuje promowania na blogach lub stronach o promocjach bankowych (np. Credit Agricole Konto Biznes 12831): promocję zapisujesz ze statusem ACTIVE i z adminOnly = true (widzi ją tylko zalogowany admin, nie odwiedzający). Pola adminOnly nigdy nie zmieniasz na false sam; piszesz to w raporcie.
+
 **eBrokerPartner** (https://ebrokerpartner.pl):
 - `/wyszukiwarka-produktow`, kategorie: konto osobiste, konto firmowe, konto oszczędnościowe. Przy każdej kampanii odczytujesz:
   - nazwę, instytucję, STAWKĘ i MODEL (CPS do cpsCents, CPA do cpaCents);

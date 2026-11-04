@@ -52,6 +52,8 @@ export interface PromotionCardData {
   bank: { name: string; slug?: string; logoUrl?: string | null };
   /** Admin preview of an unpublished offer shows a "Roboczy" badge. */
   status?: "DRAFT" | "ACTIVE" | "EXPIRED" | "ARCHIVED";
+  /** Listed only for a signed-in admin (Promotion.adminOnly): shows a "Tylko admin" badge. */
+  adminOnly?: boolean;
 }
 
 export interface PromotionCardProps {
@@ -140,6 +142,7 @@ export function PromotionCard({
         </span>
         <div className="flex flex-wrap items-center gap-2">
           {draft ? <Badge variant="info">Roboczy</Badge> : null}
+          {promotion.adminOnly ? <Badge variant="info">Tylko admin</Badge> : null}
           {/* Plain text with an icon, not a chip: the kind of account is a fact, not a status. */}
           <span data-vt="type" className="inline-flex items-center gap-1.5 text-caption font-medium text-ink-500">
             <TypeIcon size={14} aria-hidden="true" className="shrink-0" />

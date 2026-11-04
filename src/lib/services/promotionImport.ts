@@ -95,6 +95,8 @@ export interface ImportPromotion {
   affiliateUrl: string;
   /** Omit to leave an existing promotion's flag untouched (new ones default to true). */
   affiliateLinkEnabled?: boolean;
+  /** Visible only to a signed-in admin (campaign forbids bank-promotion sites). Omit = unchanged / false. */
+  adminOnly?: boolean;
   sourceUrl?: string | null;
   lastVerifiedAt: string;
   eligibleFor?: string | null;
@@ -210,6 +212,7 @@ function baseDataFor(p: ImportPromotion, bankId: string): Prisma.PromotionUnchec
     endDate: new Date(p.endDate),
     affiliateUrl: p.affiliateUrl,
     affiliateLinkEnabled: p.affiliateLinkEnabled ?? undefined,
+    adminOnly: p.adminOnly ?? undefined,
     sourceUrl: p.sourceUrl ?? undefined,
     lastVerifiedAt: new Date(p.lastVerifiedAt),
     eligibleFor: p.eligibleFor ?? undefined,

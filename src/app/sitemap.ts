@@ -33,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [promotions, articles, banks] = await Promise.all([
     db.promotion.findMany({
       // Coarse DB filter (cheap, indexed); the exact decision is made in code.
-      where: { status: { in: OFFER_STATUSES }, endDate: { gte: expiredIndexWindowStart(now) } },
+      where: { status: { in: OFFER_STATUSES }, adminOnly: false, endDate: { gte: expiredIndexWindowStart(now) } },
       select: {
         slug: true,
         status: true,
@@ -57,7 +57,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 async function loadBanks(): Promise<SitemapBankRow[]> {
   if (!DYNAMIC_ROUTE_FLAGS.bankPages) return [];
   const rows = await db.bank.findMany({
-    where: { promotions: { some: { status: { in: OFFER_STATUSES } } } },
+    where: { promotions: { some: { status: { in: OFFER_STATUSES }, adminOnly: false } } },
     select: {
       slug: true,
       promotions: {
