@@ -286,6 +286,15 @@
   .select {
     @apply h-12 w-full rounded-field border border-line-strong bg-surface px-3.5 text-ui text-ink-900 outline-none transition-colors duration-150 ease-out;
   }
+  /* Recessed field: a faint inset shadow under the top edge (offset + blur, no halo) so a field reads as
+     "type here" and not as one more outlined box. Declared BEFORE the :focus rule, which replaces it with the ring. */
+  .input,
+  .select {
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.1);
+  }
+  .dark :is(.input, .select) {
+    box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.45);
+  }
   .input::placeholder {
     @apply text-ink-500;
   }

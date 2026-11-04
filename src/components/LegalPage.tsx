@@ -7,8 +7,9 @@ export type LegalSection = { id: string; label: string };
 /**
  * Wspólny układ stron prawnych (regulamin, polityka prywatności, cookies).
  *
- * - kolumna czytania 44 rem, tekst 16/27, linki podkreślone (offset 3 px),
- * - spis treści: od lg lepki z boku, poniżej lg zwijany blok nad treścią,
+ * - kolumna czytania 44 rem, tekst 16/27, linki w treści podkreślone (offset 3 px),
+ * - spis treści: od lg lepki z boku (podkreślenie dopiero po najechaniu, jak w TextPage),
+ *   poniżej lg zwijany blok nad treścią,
  * - kotwice: każdy nagłówek z `id` ma scroll-margin (zob. także globals.css),
  * - okruszki (Start / tytuł) + BreadcrumbList JSON-LD z tych samych pozycji;
  *   ścieżka strony pochodzi z jawnego `path`, nie jest zgadywana z tytułu,
@@ -23,8 +24,9 @@ const bodyStyles = [
   "text-base leading-[1.6875rem] text-ink-700",
   // Akapit z datą obowiązywania / ostatniej aktualizacji (<p data-legal-date>) - wyciszony.
   "[&>p[data-legal-date]]:text-sm [&>p[data-legal-date]]:text-ink-500",
-  "[&_h2]:mt-10 [&_h2]:scroll-mt-20 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:leading-snug [&_h2]:text-ink-900",
-  "[&_h3]:mt-6 [&_h3]:scroll-mt-20 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-ink-900",
+  // Nagłówki numerowanych paragrafów: o stopień większe od treści (24 px przy 16 px), z większym odstępem nad niż pod.
+  "[&_h2]:mt-12 [&_h2]:scroll-mt-20 [&_h2]:font-display [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:leading-tight [&_h2]:text-ink-900",
+  "[&_h3]:mt-7 [&_h3]:scroll-mt-20 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:leading-snug [&_h3]:text-ink-900",
   "[&_p]:mt-3",
   "[&_strong]:font-semibold [&_strong]:text-ink-900",
   "[&_ul]:mt-3 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-6 [&_ul]:marker:text-ink-400",
@@ -44,7 +46,7 @@ function TocList({ sections }: { sections: LegalSection[] }) {
         <li key={s.id}>
           <a
             href={`#${s.id}`}
-            className="block rounded-md px-2 py-1.5 text-ink-700 underline decoration-1 underline-offset-[3px] hover:text-action"
+            className="block rounded-md px-2 py-1.5 text-ink-700 underline-offset-[3px] hover:text-action hover:underline"
           >
             {s.label}
           </a>

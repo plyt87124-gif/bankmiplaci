@@ -16,7 +16,7 @@ export function Label({
 }: { required?: boolean; srOnly?: boolean } & ComponentProps<"label">) {
   return (
     <label
-      className={cn(srOnly ? "sr-only" : "mb-1.5 block text-small font-semibold text-ink-900", className)}
+      className={cn(srOnly ? "sr-only" : "mb-1.5 block text-small font-medium text-ink-900", className)}
       {...props}
     >
       {children}

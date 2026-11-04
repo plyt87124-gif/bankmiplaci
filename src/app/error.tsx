@@ -16,7 +16,6 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 
   return (
     <StatusPage
-      code="Błąd"
       title="Coś poszło nie tak"
       description="Nie udało się wyświetlić tej strony. Spróbuj ponownie. Jeśli błąd wraca, przejdź do listy promocji albo wyszukaj bank lub ofertę."
       detail={error.digest ? `Kod błędu: ${error.digest}` : undefined}

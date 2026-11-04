@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { JsonLd } from "@/components/JsonLd";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { ButtonLink } from "@/components/ui/Button";
 import { ArticleCard } from "@/components/blog/ArticleCard";
 import { BlogEmpty } from "@/components/blog/BlogEmpty";
 import { CategoryNav } from "@/components/blog/CategoryNav";
@@ -59,9 +61,10 @@ export default async function BlogPage(props: PageProps) {
               title="Nie ma jeszcze żadnych artykułów"
               description="Przygotowujemy pierwsze poradniki. Na razie sprawdź aktualne promocje."
             >
-              <Link href="/promocje" className="link-inline inline-flex min-h-11 items-center font-semibold">
+              <ButtonLink href="/promocje" variant="secondary">
                 Zobacz promocje
-              </Link>
+                <ArrowRight size={18} aria-hidden="true" className="shrink-0" />
+              </ButtonLink>
             </BlogEmpty>
           </div>
         ) : (

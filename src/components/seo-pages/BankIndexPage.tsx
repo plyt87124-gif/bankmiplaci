@@ -50,14 +50,15 @@ export function BankIndexPage({ banks }: { banks: readonly BankIndexRow[] }) {
               <li key={bank.slug} className="flex min-w-0">
                 <Link
                   href={`/banki/${bank.slug}`}
-                  className="group flex w-full min-w-0 flex-col items-start gap-3 rounded-card border border-line bg-surface p-4 transition-colors duration-150 ease-out hover:border-line-strong hover:bg-sunken/40 sm:flex-row sm:items-center sm:gap-4"
+                  className="group flex w-full min-w-0 items-center gap-4 rounded-card border border-line bg-surface p-4 shadow-sm transition-colors duration-150 ease-out hover:border-line-strong hover:bg-sunken/40"
                 >
                   {/* The name is real text next to the logo, so the image is hidden from assistive technology.
-                      On a phone the logo sits above the name: a long name keeps the whole tile width. */}
+                      Logo and name stay in one row on a phone too: eleven tiles of one row each are a short list,
+                      eleven tiles with the logo above the name were a very long one. */}
                   <span aria-hidden="true">
                     <BankLogo name={bank.name} logoUrl={bank.logoUrl} size="sm" />
                   </span>
-                  <span className="flex w-full min-w-0 flex-1 items-center gap-3">
+                  <span className="flex min-w-0 flex-1 items-center gap-3">
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold text-ink-900 [overflow-wrap:anywhere]">{bank.name}</span>
                       <span className="num block text-small text-ink-700">{activeCountText(bank.activeCount)}</span>

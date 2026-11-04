@@ -327,7 +327,7 @@ export function Filters({ banks, resultCount, shownCount, segmentCounts, disclos
             tabIndex={-1}
             className="mt-4 rounded-sm text-small text-ink-700"
           >
-            <span className="num font-semibold text-ink-900">{describeResultCount(resultCount, shownCount)}</span>
+            <span className="num font-medium text-ink-900">{describeResultCount(resultCount, shownCount)}</span>
           </p>
         ) : null}
 

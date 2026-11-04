@@ -165,7 +165,9 @@ test("editorial render: every answer is in the HTML (native <details>), the firs
     assert.ok(text(out).includes(item.question), item.question);
     assert.ok(text(out).includes(item.answer.slice(0, 60)), item.question);
   }
-  assert.match(out, /container-reading/);
+  // The 44 rem reading column, aligned to the left edge of the page (not centred): design round 3.
+  assert.match(out, /max-w-\[44rem\]/);
+  assert.doesNotMatch(out, /container-reading/);
   assert.match(out, /type-article/);
 });
 
