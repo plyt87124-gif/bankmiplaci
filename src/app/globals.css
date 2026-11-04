@@ -222,6 +222,52 @@
     @apply mx-auto w-full max-w-[44rem];
   }
 
+  /* /konto: the page background changes hue a little with the part of the page on screen (AccountAmbient.tsx).
+     AccountAmbient puts `data-konto-tone` on <body>; the tone rules below only set two variables there, and
+     `--konto-bg` mixes the paper colour with one accent at a few per cent (a change of hue, not of mood). The tint
+     colours are tokens, so the same few per cent are a cool lift in the dark theme and a soft wash in the light one.
+     Two things read `--konto-bg`: the fixed layer `.konto-ambient` behind the page (html has no background of its
+     own, so z-index -1 still sits above the canvas) and the sticky header (rule at the end of this file), so the
+     header does not stay a flat band of the plain colour on top of a tinted page. */
+  body[data-konto-tone] {
+    --ambient-tint: transparent;
+    --ambient-amount: 0%;
+    --konto-bg: color-mix(in srgb, rgb(var(--color-paper)), var(--ambient-tint) var(--ambient-amount));
+  }
+  body[data-konto-tone="sciaga-0"] {
+    --ambient-tint: rgb(var(--color-teal-500));
+    --ambient-amount: 5%;
+  }
+  body[data-konto-tone="sciaga-1"] {
+    --ambient-tint: rgb(var(--color-success));
+    --ambient-amount: 5%;
+  }
+  body[data-konto-tone="sciaga-2"] {
+    --ambient-tint: rgb(var(--color-gold-500));
+    --ambient-amount: 6%;
+  }
+  body[data-konto-tone="ustawienia"] {
+    --ambient-tint: rgb(var(--color-info));
+    --ambient-amount: 5%;
+  }
+  body[data-konto-tone="historia"] {
+    --ambient-tint: rgb(var(--color-coral-600));
+    --ambient-amount: 3%;
+  }
+  .konto-ambient {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: var(--konto-bg, transparent);
+    transition: background-color 1100ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .konto-ambient {
+      transition: none;
+    }
+  }
+
   /* Surfaces that stay WHITE in the dark theme too (bank-logo tile): inside
      them the ink/line tokens keep their LIGHT-theme values, so the monogram
      and ring look the same in both themes. */
@@ -360,5 +406,19 @@
   }
   .checkbox:checked:disabled {
     @apply border-ink-300 bg-ink-300;
+  }
+}
+
+/* /konto: the sticky header follows the page tint (see `--konto-bg` above). Unlayered on purpose: the header's own
+   `bg-paper/95` is a utility, and utilities beat anything inside @layer components whatever the specificity. */
+body[data-konto-tone] > header {
+  background-color: color-mix(in srgb, var(--konto-bg) 95%, transparent);
+  transition:
+    border-color 200ms ease-out,
+    background-color 1100ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-konto-tone] > header {
+    transition: border-color 200ms ease-out;
   }
 }
