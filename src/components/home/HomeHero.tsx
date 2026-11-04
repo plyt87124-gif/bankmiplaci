@@ -1,4 +1,4 @@
-import { ShieldCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { PromotionCard } from "@/components/PromotionCard";
 import { ButtonLink } from "@/components/ui/Button";
 import { CountUp } from "@/components/motion/CountUp";
@@ -51,8 +51,9 @@ export function HomeHero({
               <ButtonLink href="/promocje" size="lg">
                 Zobacz promocje
               </ButtonLink>
-              <ButtonLink href="/jak-to-dziala" variant="ghost" size="lg">
+              <ButtonLink href="/jak-to-dziala" variant="ghost" size="lg" className="pl-4">
                 Jak to działa
+                <ArrowRight size={18} aria-hidden="true" className="shrink-0 transition-transform duration-base ease-out group-hover/cta:translate-x-1" />
               </ButtonLink>
             </div>
           </div>

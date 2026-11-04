@@ -30,6 +30,10 @@ export function HomeEndingSoon({
 }) {
   const cards = model?.endingSoon ?? [];
   if (cards.length === 0) return null;
+  const hasAllLink = isLive(ENDING_SOON_PATH);
+  // Two cards leave the third column of the grid empty: the link to the full list takes that place (and ends the
+  // swipeable row on a phone). With one or three cards it stays a text link under the list, as before.
+  const linkAsTile = hasAllLink && cards.length === 2;
 
   return (
     <section aria-labelledby="konczace-title" className="border-t border-line">
@@ -46,9 +50,26 @@ export function HomeEndingSoon({
               <PromotionCard promotion={card} priority={false} now={now} className="w-full" />
             </li>
           ))}
+          {linkAsTile ? (
+            <li className="flex min-w-0">
+              <Link
+                href={ENDING_SOON_PATH}
+                className="group flex min-h-[8rem] w-full flex-col items-start justify-between gap-6 rounded-card border border-dashed border-line-strong/50 p-5 font-brand text-h3 text-ink-900 transition-colors duration-150 ease-out hover:border-action hover:bg-sunken/50"
+              >
+                Wszystkie kończące się promocje
+                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-line-strong/60 text-action transition-colors duration-150 ease-out group-hover:border-action group-hover:bg-action group-hover:text-on-action">
+                  <ArrowRight
+                    size={20}
+                    aria-hidden="true"
+                    className="transition-transform duration-base ease-out group-hover:translate-x-0.5"
+                  />
+                </span>
+              </Link>
+            </li>
+          ) : null}
         </CardRail>
 
-        {isLive(ENDING_SOON_PATH) ? (
+        {hasAllLink && !linkAsTile ? (
           <p className="mt-8">
             <Link href={ENDING_SOON_PATH} className="link-inline inline-flex min-h-11 items-center gap-1.5 font-semibold">
               Wszystkie kończące się promocje

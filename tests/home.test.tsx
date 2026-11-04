@@ -144,7 +144,8 @@ test("hero: kicker with the newest verification date, lead, segment control, but
   assert.match(hero, /aria-checked="true"[^>]*>Konta osobiste</);
 
   assert.match(hero, /<a [^>]*href="\/promocje"[^>]*>\s*Zobacz promocje\s*<\/a>/, "the hero button is the clean /promocje (canonical), whatever the segment");
-  assert.match(hero, /<a [^>]*href="\/jak-to-dziala"[^>]*>Jak to działa<\/a>/);
+  // the arrow icon after the label is decoration (aria-hidden), the link text stays "Jak to działa"
+  assert.match(hero, /<a [^>]*href="\/jak-to-dziala"[^>]*>Jak to działa<svg[^>]*aria-hidden="true"[^>]*>.*?<\/svg><\/a>/);
 
   assert.match(text(hero), /6 aktualnych promocji/, "the counter: the end value is in the server HTML (CountUp)");
   assert.match(text(hero), /Przy każdej ofercie pokazujemy datę weryfikacji/, "a true statement (VerifiedLine on every card), not a second copy of the date");
