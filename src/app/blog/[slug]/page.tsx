@@ -8,9 +8,11 @@ import { TrustNote } from "@/components/trust/TrustNote";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ArticleBody, siteHost } from "@/components/blog/ArticleBody";
 import { ArticleCard } from "@/components/blog/ArticleCard";
+import { EndedOfferNotice, endedLinkedOffer } from "@/components/blog/EndedOfferNotice";
 import { categoryHref, categoryInfo } from "@/components/blog/categories";
 import { ARTICLE_PAGE_IDS } from "@/components/blog/headingIds";
 import { containsPartnerLinks } from "@/components/blog/links";
+import { articleByline } from "@/lib/editorial";
 import { formatDatePL } from "@/lib/format";
 import { articleLd, breadcrumbLd, buildMetadata, collapseWhitespace, truncateAtWord, DESCRIPTION_MAX } from "@/lib/seo";
 import { getPublishedArticle, getRelatedArticles, getRelatedPromotionCard } from "../data";
@@ -46,7 +48,11 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
   });
   // buildMetadata already made this an og:type=article object (published/modified times);
   // add article:author. Next's OpenGraph type is a union that TypeScript cannot narrow here.
-  metadata.openGraph = { ...metadata.openGraph, type: "article", authors: [article.author.name] } as Metadata["openGraph"];
+  metadata.openGraph = {
+    ...metadata.openGraph,
+    type: "article",
+    authors: [articleByline(article.author.name).name]
+  } as Metadata["openGraph"];
   return metadata;
 }
 
@@ -65,6 +71,10 @@ export default async function ArticlePage(props: PageProps) {
   const hasPartnerLinks = containsPartnerLinks(article.body, siteHost());
   const published = article.publishedAt;
   const modified = article.contentUpdatedAt;
+  // A generic admin account is shown (and described to search engines) as the editorial team.
+  const byline = articleByline(article.author.name);
+  // The guide's offer may have ended since the text was written: say so above the text.
+  const endedOffer = endedLinkedOffer(promotion);
 
   return (
     <div className="container-page py-8 sm:py-12">
@@ -75,7 +85,8 @@ export default async function ArticlePage(props: PageProps) {
           description: article.excerpt,
           publishedAt: published,
           modifiedAt: modified,
-          authorName: article.author.name,
+          authorName: byline.name,
+          authorType: byline.kind === "organization" ? "Organization" : "Person",
           authorUrl: AUTHOR_URL
         })}
       />
@@ -107,10 +118,20 @@ export default async function ArticlePage(props: PageProps) {
             </p>
             <h1 className="type-h1 mt-2 text-ink-900 [overflow-wrap:anywhere]">{article.title}</h1>
             {article.excerpt ? <p className="type-lead mt-4 text-ink-700">{article.excerpt}</p> : null}
-            {/* Real byline from the actual authoring AdminUser and the database dates -
-                never a name, credential or review date that isn't backed by a field. */}
+            {/* Byline from the authoring AdminUser (a generic account reads as the editorial team,
+                src/lib/editorial.ts) and the database dates - never a name, credential or review
+                date that isn't backed by a field. */}
             <p className="mt-5 flex flex-wrap gap-x-2 gap-y-1 text-small text-ink-500">
-              <span>Autor: {article.author.name}</span>
+              <span>
+                Autor:{" "}
+                {byline.kind === "organization" ? (
+                  <Link href={AUTHOR_URL} className="link-inline">
+                    {byline.name}
+                  </Link>
+                ) : (
+                  byline.name
+                )}
+              </span>
               <span aria-hidden="true">·</span>
               {published ? (
                 <span>
@@ -129,6 +150,8 @@ export default async function ArticlePage(props: PageProps) {
               ) : null}
             </p>
           </header>
+
+          {endedOffer ? <EndedOfferNotice offer={endedOffer} className="mt-6" /> : null}
 
           {/* One note above the text, not one per link. */}
           {hasPartnerLinks ? <AffiliateDisclosure variant="compact" className="mt-4" /> : null}
