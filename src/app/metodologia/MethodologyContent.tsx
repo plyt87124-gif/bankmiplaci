@@ -5,7 +5,6 @@ import { AGING_MAX_DAYS, FRESH_MAX_DAYS, STALE_SUFFIX } from "@/lib/freshness";
 import { Callout, TextPage, type TocEntry } from "../jak-to-dziala/TextPage";
 import type { MethodologyData } from "./loadMethodologyData";
 import {
-  BUSINESS_PARTNER_FACTOR,
   COMPONENT_KEYS,
   COOLDOWN_ZERO_AT_MONTHS,
   DIFFICULTY_SCORE,
@@ -37,7 +36,7 @@ const COMPONENT_ROWS: Record<ComponentKey, { name: string; how: string }> = {
   },
   partner: {
     name: "Wynagrodzenie partnerskie serwisu",
-    how: `Ile serwis może zarobić na jednym kliencie, który otworzy konto przez nasz link: prowizja sieci partnerskiej razem z konkursami. Im więcej, tym wyższy wynik (skala logarytmiczna). Prowizja za konto firmowe liczy się za połowę (× ${num1.format(BUSINESS_PARTNER_FACTOR)}), bo prowizje od kont firmowych są z reguły wyższe. Kwot nie podajemy. Gdy nie znamy prowizji, składnik dostaje wartość neutralną (${num1.format(NEUTRAL_SCORE)}).`
+    how: "Ile serwis może zarobić na jednym kliencie, który otworzy konto przez nasz link."
   },
   effort: {
     name: "Trudność zdobycia",

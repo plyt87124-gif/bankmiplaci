@@ -201,7 +201,8 @@ test("/metodologia: all seven components are listed, from the biggest influence 
 
 test("/metodologia: the page names the partner remuneration as a component and does not claim the rating is free of it", async () => {
   const body = text((await renderAll())["/metodologia"]!);
-  assert.match(body, /Wynagrodzenie partnerskie serwisu\. Ile serwis może zarobić na jednym kliencie/);
+  assert.match(body, /Wynagrodzenie partnerskie serwisu\. Ile serwis może zarobić na jednym kliencie, który otworzy konto przez nasz link\./);
+  assert.doesNotMatch(body, /sieci partnerskiej razem z konkursami|Kwot nie podajemy|prowizje od kont firmowych/, "the owner asked for the one-sentence item");
   assert.ok(!/nie uwzględnia(my)? (w ocenie )?prowizji|nie jest składnikiem oceny|ocena[^.]*bez prowizji/i.test(body), "no statement that the rating ignores the commission");
   assert.ok(!/Opłat za konto i kartę – pokazujemy je przy ofercie osobno/.test(body), "fees ARE a component now");
 });
