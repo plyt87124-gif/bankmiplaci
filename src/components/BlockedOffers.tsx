@@ -71,20 +71,26 @@ function detail(mark: ClientMark): string {
   return "Postęp w „Moje konto”";
 }
 
-/** Blocked (client, karencja) is red, "you already have it" is blue; the text on each is the matching `on-*` colour. */
+/**
+ * Blocked (client, karencja) is red, "you already have it" is blue. A muted tint with a thin border of the same
+ * hue, text in that hue. The tint is a `before:` layer over a solid `bg-paper` base: a tint on its own is
+ * see-through, and the offer card underneath would show through the message.
+ */
 const TONE: Record<ClientMark["reason"], string> = {
-  client: "bg-coral-600 text-on-coral",
-  karencja: "bg-coral-600 text-on-coral",
-  joined: "bg-action text-on-action"
+  client: "border-coral-600/50 text-coral-600 before:bg-coral-600/[0.16]",
+  karencja: "border-coral-600/50 text-coral-600 before:bg-coral-600/[0.16]",
+  joined: "border-action/45 text-action before:bg-action/[0.14]"
 };
 
-/** The coloured message itself: bold icon on top, title and detail centred under it. */
+/** The tinted message itself: bold icon on top, title and detail centred under it. */
 export function BlockedMarkBox({ mark }: { mark: ClientMark }) {
   const { icon: Icon, title } = COPY[mark.reason];
   return (
-    <div className={`flex max-w-[85%] flex-col items-center gap-2 rounded-field px-5 py-3.5 text-center shadow-lg ${TONE[mark.reason]}`}>
-      <Icon size={28} strokeWidth={2.75} aria-hidden="true" className="shrink-0" />
-      <p className="text-small leading-snug">
+    <div
+      className={`relative flex max-w-[85%] flex-col items-center gap-2 overflow-hidden rounded-field border bg-paper px-5 py-3.5 text-center before:absolute before:inset-0 before:content-[''] ${TONE[mark.reason]}`}
+    >
+      <Icon size={28} strokeWidth={2.75} aria-hidden="true" className="relative shrink-0" />
+      <p className="relative text-small leading-snug">
         <span className="block font-bold">{title}</span>
         <span className="block font-medium">{detail(mark)}</span>
       </p>

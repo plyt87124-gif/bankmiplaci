@@ -70,9 +70,10 @@ test("CTA link: href, rel and target in the server-rendered HTML", () => {
   assert.equal(attr(out, "rel"), "sponsored nofollow noopener noreferrer");
   assert.equal(attr(out, "target"), "_blank");
   assert.ok(text(out).startsWith("Przejdź do promocji"));
-  // Rendered as the design system's cta button: accent fill, trailing arrow icon.
-  assert.match(out, /bg-action/);
-  assert.match(out, /text-on-action/);
+  // Rendered as the design system's cta button: tonal accent (tint + border + text), trailing arrow icon.
+  assert.match(out, /bg-action\/\[0\.16\]/);
+  assert.match(out, /border-action\/45/);
+  assert.match(out, /text-action/);
   assert.match(out, /lucide-arrow-right/);
   assert.match(out, /min-h-14/);
 });

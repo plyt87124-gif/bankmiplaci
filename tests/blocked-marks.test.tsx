@@ -11,15 +11,16 @@ import { BlockedMarkBox, type ClientMark } from "../src/components/BlockedOffers
 const render = (mark: ClientMark) => renderToStaticMarkup(h(BlockedMarkBox, { mark }));
 const text = (markup: string) => markup.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
-test("klient banku i karencja: czerwone tło z tekstem on-coral, joined: niebieskie tło z tekstem on-action", () => {
+test("klient banku i karencja: przygaszony czerwony z ramką, joined: przygaszony niebieski z ramką, oba na pełnym tle", () => {
   for (const mark of [{ slug: "a", reason: "client" }, { slug: "a", reason: "karencja", until: null }] as const) {
     const html = render(mark);
-    assert.match(html, /bg-coral-600 text-on-coral/);
-    assert.doesNotMatch(html, /bg-action|ring-1/);
+    assert.match(html, /border-coral-600\/50 text-coral-600 before:bg-coral-600\/\[0\.16\]/);
+    assert.match(html, /bg-paper/, "pełna podstawa, żeby kafelek pod spodem nie przebijał");
+    assert.doesNotMatch(html, /bg-action|text-on-coral/);
   }
   const joined = render({ slug: "a", reason: "joined" });
-  assert.match(joined, /bg-action text-on-action/);
-  assert.doesNotMatch(joined, /bg-coral-600/);
+  assert.match(joined, /border-action\/45 text-action before:bg-action\/\[0\.14\]/);
+  assert.doesNotMatch(joined, /coral-600/);
 });
 
 test("tekst jest wyśrodkowany, ikona gruba i nad tekstem", () => {

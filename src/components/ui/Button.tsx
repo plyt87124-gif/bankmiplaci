@@ -5,10 +5,10 @@ import { cn } from "@/lib/cn";
 
 /**
  * The ONE button implementation (spec section 5). Variants:
- *  - primary    bg-action / text-on-action
+ *  - primary    tonal: action tint + action border + action text (flat, no shadow)
  *  - cta        primary + ArrowRight. ONLY for links that leave for a bank
  *               (/out/...), always followed by <AffiliateDisclosure variant="compact">
- *  - secondary  surface + line-strong border
+ *  - secondary  transparent + line-strong border
  *  - ghost      text button, hover fill
  *  - danger     coral-600 fill, text-on-coral
  * Sizes: sm (36 px, hit area padded to 44), md (44 px), lg (56 px) - min-heights.
@@ -22,14 +22,14 @@ const base =
   "[transition:background-color_150ms_var(--ease-out,ease),border-color_150ms_var(--ease-out,ease),transform_120ms_var(--ease-out,ease)] " +
   "active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
-// The action fill is the only button with weight: a 1 px light edge on top and a tight shadow under it (offset + blur,
-// not a halo) make it read as a key you press, so the primary button is never mistaken for the outlined secondary one.
-const RAISED = "shadow-[inset_0_1px_0_rgb(255_255_255/0.3),0_1px_2px_rgb(0_0_0/0.25)] active:shadow-[inset_0_1px_2px_rgb(0_0_0/0.25)]";
+// Tonal, flat: the action colour as a muted tint with a thin border of the same hue and text in that hue; no highlight,
+// no shadow. The secondary button is transparent with a neutral border, so the two still differ by colour.
+const TONAL = "border-action/45 bg-action/[0.16] text-action hover:bg-action/[0.24] active:bg-action/[0.3]";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: `bg-action text-on-action hover:bg-action-hover ${RAISED}`,
-  cta: `bg-action text-on-action hover:bg-action-hover ${RAISED}`,
-  secondary: "border-line-strong bg-surface text-ink-900 hover:bg-sunken",
+  primary: TONAL,
+  cta: TONAL,
+  secondary: "border-line-strong bg-transparent text-ink-700 hover:bg-ink-100 hover:text-ink-900",
   ghost: "bg-transparent text-ink-700 hover:bg-ink-100",
   danger: "bg-coral-600 text-on-coral hover:bg-coral-600/90"
 };
