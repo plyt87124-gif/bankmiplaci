@@ -19,7 +19,7 @@ import { HOME_FAQ_IDS, HOME_H1, HOME_HUBS, HOME_TRUST_COLUMNS, homeFaqItems, liv
 import { buildHomeModel, type HomeModel } from "../src/components/home/homeModel";
 import { PromotionCard } from "../src/components/PromotionCard";
 import { FAQ_ITEMS } from "../src/app/faq/faqItems";
-import { RATING_COMMISSION_RULE, STRIP_RECOMMENDED, disclosureText } from "../src/lib/disclosureCopy";
+import { STRIP_RECOMMENDED, disclosureText } from "../src/lib/disclosureCopy";
 import { pluralizePl } from "../src/lib/format";
 import { QUIZ_QUESTION_COUNT, QUIZ_RESULT_COUNT } from "../src/lib/quiz";
 import { websiteId, organizationId } from "../src/lib/seo";

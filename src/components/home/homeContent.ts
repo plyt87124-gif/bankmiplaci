@@ -10,12 +10,12 @@
  */
 import { FAQ_ITEMS } from "@/app/faq/faqItems";
 import type { FaqAccordionItem } from "@/components/FaqAccordion";
-import { RATING_COMMISSION_RULE, STRIP_RECOMMENDED } from "@/lib/disclosureCopy";
+import { STRIP_RECOMMENDED } from "@/lib/disclosureCopy";
 import { isRouteLive } from "@/lib/seo/routes";
 
 export const HOME_H1 = "Promocje bankowe w jednym miejscu – ze ściągą krok po kroku";
 
-/** Where "Ocena serwisu bez prowizji" leads: the section that explains the rating on /jak-zarabiamy. */
+/** Where the rating link on the home page leads: the section that explains the rating on /jak-zarabiamy. */
 export const HOME_RATING_HREF = "/jak-zarabiamy#ocena";
 
 /** Where the "Ile wysiłku wymaga promocja?" block explains how the level is set. */

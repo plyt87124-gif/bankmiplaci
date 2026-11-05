@@ -6,7 +6,8 @@
  *  - No component, page, e-mail or test fixture writes this wording by hand:
  *    they import it from here, so the three claims below can never drift apart.
  *      1. "Polecane" ordering takes the partner remuneration into account.
- *      2. The site rating (ocena serwisu) is computed WITHOUT it.
+ *      2. The site rating (ocena serwisu) takes it into account too (a component of
+ *         the rating, see lib/ratingModel.ts), so does the "Najlepsza ocena" sort.
  *      3. Part of the links are affiliate links.
  *  - The wording needs a lawyer's review before production (UOKiK / unfair
  *    commercial practices, Omnibus - transparency of the main ranking
@@ -33,7 +34,7 @@ export const DISCLOSURE_LINKS = {
   howWeEarn: "/jak-zarabiamy",
   /** Section of that page which explains the "Polecane" ordering. */
   howWeEarnRecommended: "/jak-zarabiamy#polecane",
-  /** How the site rating is computed (commission is not a component). */
+  /** How the site rating is computed (its components and weights). */
   methodology: "/metodologia"
 } as const;
 
@@ -109,19 +110,19 @@ export const SORT_RECOMMENDED_LABEL = "Polecane";
 
 /**
  * Description shown under the sort control while "Polecane" is active. The
- * strip above the list already carries the full statement (what the order
- * depends on, that a lower-rated offer can rank higher, that the rating is
- * commission-free), so this line only adds what is new next to the control:
- * that remuneration acts in THIS sort order and in none of the others.
+ * strip above the list already carries the statement about the links, so this
+ * line only adds what is new next to the control: that remuneration acts in
+ * THIS sort order (and in "Najlepsza ocena", whose rating includes it), and in
+ * none of the sorts by bonus, difficulty or date.
  */
 export const TAG_RECOMMENDED_DESCRIPTION: DisclosureCopy = {
-  lead: "W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność. Pozostałe sortowania od niego nie zależą.",
+  lead: "W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność. Sortowania według premii, trudności i daty od niego nie zależą.",
   linkLabel: "Jak zarabiamy",
   href: DISCLOSURE_LINKS.howWeEarnRecommended
 };
 
 export const TAG_TOP_RATED: DisclosureCopy = {
-  lead: "Ocena serwisu nie uwzględnia prowizji.",
+  lead: "W tym sortowaniu wynagrodzenie partnerskie wpływa na kolejność, bo jest jednym ze składników oceny serwisu.",
   linkLabel: "Jak liczymy",
   href: DISCLOSURE_LINKS.methodology
 };
@@ -129,8 +130,8 @@ export const TAG_TOP_RATED: DisclosureCopy = {
 /**
  * Description of any other order (highest bonus, easiest, newest, ending
  * soon). True by construction: those orders are database orderings on bonus,
- * difficulty + rating, start date or end date (sortToOrderBy in
- * services/promotions.ts) and never read the commission.
+ * difficulty + bonus, start date or end date (sortToOrderBy in
+ * services/promotions.ts), none of which reads the rating or the commission.
  */
 export const TAG_OTHER: DisclosureCopy = {
   lead: "Ta kolejność nie zależy od wynagrodzenia partnerskiego.",
@@ -153,7 +154,7 @@ export const FOOTER: DisclosureCopy = {
   lead:
     "Bankmiplaci nie jest bankiem ani oficjalnym przedstawicielem banków. " +
     "Część linków to linki partnerskie – za otwarcie konta przez nasz link możemy otrzymać wynagrodzenie od banku lub sieci partnerskiej. " +
-    "Co do zasady nie zmienia to warunków oferty ani naszej oceny; jeśli promocja wymaga otwarcia konta przez link lub kod, sprawdź to w jej warunkach i w regulaminie banku. " +
+    "Co do zasady nie zmienia to warunków oferty; jeśli promocja wymaga otwarcia konta przez link lub kod, sprawdź to w jej warunkach i w regulaminie banku. " +
     "Nazwy i logotypy banków należą do ich właścicieli i służą wyłącznie identyfikacji oferty. " +
     "Nie porównujemy całego rynku. Nie jest to doradztwo finansowe.",
   linkLabel: "Jak zarabiamy",
@@ -179,9 +180,6 @@ export const COMMENTS_NOTE = "Opinie użytkowników – nie weryfikujemy ich. Ni
 
 /** Next to the rating, ALWAYS (not only when a rating reason exists). */
 export const RATING_NOTE = "Ocena serwisu, nie porada finansowa.";
-
-/** The principle behind the rating; also guarded by tests of the rating code. */
-export const RATING_COMMISSION_RULE = "Wysokość prowizji nie jest składnikiem oceny.";
 
 /** Shown when `requiresReferralLink` is true (never when it is null/false). */
 export const REQUIRES_REFERRAL_NOTICE = "Ta promocja wymaga otwarcia konta przez link lub kod";

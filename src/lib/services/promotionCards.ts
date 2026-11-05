@@ -3,6 +3,7 @@ import type { AccountType, Difficulty, Prisma } from "@prisma/client";
 import { hasFeeCaveat } from "@/lib/feeModel";
 import { sortRecommended } from "@/lib/recommended";
 import { signupCutoff } from "@/lib/promotionAvailability";
+import { loadEffectiveCommissions } from "@/lib/services/effectiveCommissions";
 import { applyViewerExclusions, viewerIsAdmin } from "@/lib/services/viewerFilter";
 import { activeWhere, buildActiveWhere, sortToOrderBy, type PromotionFilters } from "@/lib/services/promotions";
 
@@ -135,7 +136,12 @@ function toCard(row: CardRow): PromotionCardData {
  * field by field in `toCard`, so it cannot be carried along. Pure, so the
  * privacy and ordering invariants are unit-tested without a database.
  */
-export function finalizeCards(rows: CardRow[], sort?: PromotionFilters["sort"]): PromotionCardData[] {
+export function finalizeCards(
+  rows: CardRow[],
+  sort?: PromotionFilters["sort"],
+  /** Commission + contest per client by slug (loadEffectiveCommissions); the value stored on the promotion is the fallback. */
+  commissions?: ReadonlyMap<string, number>
+): PromotionCardData[] {
   const ordered =
     sort === "recommended" || sort === undefined
       ? sortRecommended(
@@ -144,12 +150,18 @@ export function finalizeCards(rows: CardRow[], sort?: PromotionFilters["sort"]):
             accountType: row.accountType as string,
             rating: Number(row.rating),
             maxBonusCents: row.maxBonusCents,
-            commissionCents: row.affiliateCommissionCents,
+            commissionCents: commissions?.get(row.slug) ?? row.affiliateCommissionCents,
             slug: row.slug
           }))
         ).map((x) => x.row)
       : rows;
   return ordered.map(toCard);
+}
+
+/** The commissions "Polecane" needs, read only when that order is used. */
+async function commissionsForOrder(rows: CardRow[], sort?: PromotionFilters["sort"]): Promise<ReadonlyMap<string, number> | undefined> {
+  if (!(sort === "recommended" || sort === undefined) || rows.length === 0) return undefined;
+  return (await loadEffectiveCommissions({ slugs: rows.map((r) => r.slug) })).bySlug;
 }
 
 /**
@@ -164,7 +176,8 @@ export async function listPromotionCards(filters: PromotionFilters = {}): Promis
     select: PROMOTION_CARD_SELECT,
     orderBy: filters.ended ? [{ endDate: "desc" }, { rating: "desc" }] : sortToOrderBy(filters.sort)
   });
-  return applyViewerExclusions(finalizeCards(rows, filters.ended ? "newest" : filters.sort));
+  const sort = filters.ended ? "newest" : filters.sort;
+  return applyViewerExclusions(finalizeCards(rows, sort, await commissionsForOrder(rows, sort)));
 }
 
 /** Active offers of one bank, in the default "Polecane" order. */

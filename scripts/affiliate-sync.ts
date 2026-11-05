@@ -16,6 +16,8 @@ import { readFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
 import { chooseLinks, syncSnapshot, type ChangeDraft } from "../src/lib/services/affiliateSync";
 import { buildAffiliateReport } from "../src/lib/services/affiliateReport";
+import { db as appDb } from "../src/lib/db";
+import { recomputeRatings } from "../src/lib/services/ratings";
 import { NETWORK_RULES, normalizeBank, promoRestrictions } from "../src/lib/affiliateRules";
 
 /** Promoting rules per campaign, straight from the panels' text in the DB, plus each network's general rules. */
@@ -44,6 +46,12 @@ async function printRules(db: PrismaClient, bank: string | undefined) {
   }
 }
 
+/** The commission and the contests we are paid are part of the site rating, so it follows every applied reading. */
+async function refreshRatings() {
+  const updated = await recomputeRatings();
+  console.log(`Ocena serwisu przeliczona po odczycie: zmieniono ${updated} ofert.`);
+}
+
 function print(changes: ChangeDraft[], apply: boolean) {
   for (const c of changes) console.log(`[${c.kind}] ${c.title}`);
   console.log(`${changes.length} zmian. ${apply ? "Zapisano." : "Dry-run, nic nie zapisano."}`);
@@ -59,8 +67,10 @@ async function main() {
       if (!file) throw new Error("Użycie: sync <snapshot.json> [--apply]");
       const raw = JSON.parse(readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
       print(await syncSnapshot(db, raw, { apply }), apply);
+      if (apply) await refreshRatings();
     } else if (command === "links") {
       print(await chooseLinks(db, { apply }), apply);
+      if (apply) await refreshRatings();
     } else if (command === "report") {
       const i = rest.indexOf("--since");
       const since = i >= 0 ? new Date(rest[i + 1] ?? "") : new Date(Date.now() - 24 * 3_600_000);
@@ -73,6 +83,7 @@ async function main() {
     }
   } finally {
     await db.$disconnect();
+    await appDb.$disconnect();
   }
 }
 

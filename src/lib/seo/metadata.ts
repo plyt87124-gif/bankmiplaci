@@ -760,7 +760,7 @@ export const STATIC_PAGE_META = {
     path: "/metodologia",
     title: "Jak liczymy ocenę serwisu",
     description:
-      "Z czego składa się ocena serwisu, skąd bierzemy dane, co znaczy „Zweryfikowano” i czego nie uwzględniamy w ocenie (np. prowizji)."
+      "Z czego składa się ocena serwisu i jakie mają wagi składniki, skąd bierzemy dane, co znaczy „Zweryfikowano” i czego nie uwzględniamy w ocenie."
   },
   oNas: {
     path: "/o-nas",

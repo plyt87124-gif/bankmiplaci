@@ -52,7 +52,7 @@ test("footer disclosure replaces the old 'not an official partner' claim", () =>
     text,
     "Bankmiplaci nie jest bankiem ani oficjalnym przedstawicielem banków. " +
       "Część linków to linki partnerskie – za otwarcie konta przez nasz link możemy otrzymać wynagrodzenie od banku lub sieci partnerskiej. " +
-      "Co do zasady nie zmienia to warunków oferty ani naszej oceny; jeśli promocja wymaga otwarcia konta przez link lub kod, sprawdź to w jej warunkach i w regulaminie banku. " +
+      "Co do zasady nie zmienia to warunków oferty; jeśli promocja wymaga otwarcia konta przez link lub kod, sprawdź to w jej warunkach i w regulaminie banku. " +
       "Nazwy i logotypy banków należą do ich właścicieli i służą wyłącznie identyfikacji oferty. " +
       "Nie porównujemy całego rynku. Nie jest to doradztwo finansowe. Jak zarabiamy"
   );

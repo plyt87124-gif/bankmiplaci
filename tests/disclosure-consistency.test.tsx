@@ -6,13 +6,13 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import HowWeEarnPage from "../src/app/jak-zarabiamy/page";
 import AboutPage from "../src/app/o-nas/page";
-import { RATING_FLOOR } from "../src/app/metodologia/ratingModel";
+import { RATING_FLOOR } from "../src/lib/ratingModel";
 import { STRIP_RECOMMENDED, TAG_RECOMMENDED_DESCRIPTION, disclosureText } from "../src/lib/disclosureCopy";
 import { LISTING_FAQ } from "../src/components/promocje/editorialContent";
 
 // The "Polecane" disclosure must say the same thing everywhere: the order depends
 // on the rating AND on partner remuneration, a lower-rated offer can rank higher,
-// and the rating itself is computed without remuneration. The earlier wording
+// and the rating itself includes it. The earlier wording
 // ("uwzględnia m.in. wynagrodzenie") understated the main parameter.
 
 (globalThis as { React?: typeof React }).React = React;
