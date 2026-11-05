@@ -123,7 +123,7 @@ Nie. Wymagany jest jednorazowy wpływ min. 1000 zł w danym miesiącu, z rachunk
 
 ### Czy premia z promocji jest opodatkowana?
 
-Regulamin banku wskazuje, że nagrody są zwolnione z podatku dochodowego (powołuje art. 21 ust. 1 pkt 68 ustawy o PIT). Zasady opodatkowania ustala jednak ustawa, nie bank, więc w swojej sytuacji sprawdź je na podatki.gov.pl. To informacja z regulaminu banku, a nie porada podatkowa.
+Regulamin banku wskazuje, że nagrody są zwolnione z podatku dochodowego (powołuje art. 21 ust. 1 pkt 68 ustawy o PIT). Zasady opodatkowania ustala jednak ustawa, nie bank, a zwolnienie ma własne warunki, więc w swojej sytuacji sprawdź je na podatki.gov.pl. To informacja z regulaminu banku, a nie porada podatkowa.
 
 ## Poprzednia edycja (zakończona)
 
