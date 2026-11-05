@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type FocusEvent } from "react";
-import { Menu, User, X } from "lucide-react";
+import { User } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { ChecklistBell } from "@/components/ChecklistAlerts";
 import { cn } from "@/lib/cn";
@@ -15,10 +15,29 @@ const DESKTOP_QUERY = "(min-width: 1024px)";
 export type MobileNavAccount = "user" | "guest" | "loading";
 
 /**
- * Hamburger + dropdown menu of the header, below the `lg` breakpoint.
+ * The glyph of the menu button: two bars of different length (not the stock
+ * three equal lines) that turn into a cross while the menu is open. Both bars
+ * sit on the same axis once open, so the cross stays centred. Moves with
+ * transform and width only; no transition under `prefers-reduced-motion`.
+ */
+function MenuGlyph({ open }: { open: boolean }) {
+  const bar =
+    "absolute right-0 block h-0.5 rounded-full bg-current transition-[transform,width] duration-200 ease-out motion-reduce:transition-none";
+  return (
+    <span aria-hidden="true" data-open={open} className="group relative block h-2.5 w-[18px] shrink-0">
+      <span className={cn(bar, "top-0 w-[18px] group-data-[open=true]:translate-y-1 group-data-[open=true]:rotate-45")} />
+      <span className={cn(bar, "bottom-0 w-[11px] group-data-[open=true]:w-[18px] group-data-[open=true]:-translate-y-1 group-data-[open=true]:-rotate-45")} />
+    </span>
+  );
+}
+
+/**
+ * Menu button + dropdown menu of the header, below the `lg` breakpoint.
  *
- *  - The button is 44 x 44, `aria-expanded` + `aria-controls`; its name stays
- *    "Menu" (the state is announced by aria-expanded, not by renaming it).
+ *  - The button is a 44 px high pill: the word "Menu" and a two-bar glyph that
+ *    becomes a cross when open (a bare icon reads like every template). It has
+ *    `aria-expanded` + `aria-controls`; its name stays "Menu" (the state is
+ *    announced by aria-expanded, not by renaming it).
  *  - Esc closes the menu and puts the focus back on the button; a click
  *    outside, tabbing out of it, following a link and widening the window to
  *    desktop size close it too.
@@ -122,19 +141,22 @@ export function MobileNav({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-field text-ink-700 transition-colors duration-150 ease-out hover:bg-ink-100"
+        className={cn(
+          "relative inline-flex h-11 shrink-0 select-none items-center gap-2.5 rounded-field border border-line-strong pl-3.5 pr-3 font-brand text-ui font-semibold text-ink-900 transition-[background-color,transform] duration-150 ease-out hover:bg-sunken active:scale-[0.98] motion-reduce:transition-none",
+          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+          open ? "bg-sunken" : "bg-surface"
+        )}
       >
-        <span className="relative inline-flex">
-          {open ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
-          {/* The account entry with the bell is inside the menu: a dot on the closed button says "look inside". */}
-          {!open && account === "user" && alerts.length > 0 ? (
-            <span
-              aria-hidden="true"
-              data-menu-alert="true"
-              className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-warn ring-2 ring-paper"
-            />
-          ) : null}
-        </span>
+        Menu
+        <MenuGlyph open={open} />
+        {/* The account entry with the bell is inside the menu: a dot on the closed button says "look inside". */}
+        {!open && account === "user" && alerts.length > 0 ? (
+          <span
+            aria-hidden="true"
+            data-menu-alert="true"
+            className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-warn ring-2 ring-paper"
+          />
+        ) : null}
       </button>
 
       {/* The same technique as `.collapse-rows` in motion.css, written with Tailwind utilities here. (The
