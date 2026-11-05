@@ -72,6 +72,33 @@ function detail(mark: ClientMark): string {
 }
 
 /**
+ * Blocked (client, karencja) is red, "you already have it" is blue. A muted tint with a thin border of the same
+ * hue, text in that hue. The tint is a `before:` layer over a solid `bg-paper` base: a tint on its own is
+ * see-through, and the offer card underneath would show through the message.
+ */
+const TONE: Record<ClientMark["reason"], string> = {
+  client: "border-coral-600/50 text-coral-600 before:bg-coral-600/[0.16]",
+  karencja: "border-coral-600/50 text-coral-600 before:bg-coral-600/[0.16]",
+  joined: "border-action/45 text-action before:bg-action/[0.14]"
+};
+
+/** The tinted message itself: bold icon on top, title and detail centred under it. */
+export function BlockedMarkBox({ mark }: { mark: ClientMark }) {
+  const { icon: Icon, title } = COPY[mark.reason];
+  return (
+    <div
+      className={`relative flex max-w-[85%] flex-col items-center gap-2 overflow-hidden rounded-field border bg-paper px-5 py-3.5 text-center before:absolute before:inset-0 before:content-[''] ${TONE[mark.reason]}`}
+    >
+      <Icon size={28} strokeWidth={2.75} aria-hidden="true" className="relative shrink-0" />
+      <p className="relative text-small leading-snug">
+        <span className="block font-bold">{title}</span>
+        <span className="block font-medium">{detail(mark)}</span>
+      </p>
+    </div>
+  );
+}
+
+/**
  * Rendered inside an offer card: when the visitor cannot join (client of the bank, karencja) or already has the
  * ściąga open, a frosted veil with a short message sits IN FRONT of the card (the card underneath is untouched).
  * The veil lets clicks through and fades away on hover so the card can be read. Renders nothing otherwise.
@@ -79,20 +106,12 @@ function detail(mark: ClientMark): string {
 export function CardBlockedMark({ slug }: { slug: string }) {
   const mark = useContext(MarksContext).get(slug);
   if (!mark) return null;
-  const { icon: Icon, title } = COPY[mark.reason];
-  const tone = mark.reason === "joined" ? "ring-action/40 text-action" : "ring-coral-600/45 text-coral-600";
   return (
     <div
       data-card-mark={mark.reason}
       className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center rounded-card bg-paper/70 p-3 transition-opacity duration-300 group-hover:opacity-0"
     >
-      <div className={`flex max-w-[85%] items-center gap-3 rounded-field bg-surface px-4 py-2.5 shadow-lg ring-1 ${tone}`}>
-        <Icon size={22} aria-hidden="true" className="shrink-0" />
-        <p className="text-small leading-snug">
-          <span className="block font-semibold text-ink-900">{title}</span>
-          <span className="block text-ink-700">{detail(mark)}</span>
-        </p>
-      </div>
+      <BlockedMarkBox mark={mark} />
     </div>
   );
 }

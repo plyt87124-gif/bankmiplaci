@@ -274,7 +274,10 @@ test("mobile menu: the hamburger controls a panel that is always in the DOM and 
   assert.ok(controls, "aria-controls");
   assert.match(html, /<button[^>]*aria-label="Menu"[^>]*aria-expanded="false"|<button[^>]*aria-expanded="false"[^>]*aria-label="Menu"/);
   assert.match(html, new RegExp(`id="${controls}"[^>]*inert|inert[^>]*id="${controls}"`));
-  assert.match(html, /h-11 w-11/, "44 x 44 button");
+  const button = html.slice(html.indexOf("<button"), html.indexOf("</button>"));
+  assert.match(button, /h-11/, "44 px high button");
+  assert.match(text(button), /^Menu$/, "the button says Menu in words");
+  assert.ok(!/lucide-menu/.test(html), "no stock three-line icon");
   assert.match(html, /<nav aria-label="Menu mobilne"/);
   for (const link of getMainNav()) assert.ok(html.includes(`href="${link.href}"`), link.href);
   assert.match(html, /aria-current="page"[^>]*href="\/quiz"|href="\/quiz"[^>]*aria-current="page"/);

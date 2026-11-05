@@ -9,6 +9,7 @@ import { AuthModalProvider } from "@/components/AuthModalProvider";
 import { BlockedOffersProvider } from "@/components/BlockedOffers";
 import { ChecklistAlertsProvider } from "@/components/ChecklistAlerts";
 import { CardTransitionBridge } from "@/components/CardTransitionBridge";
+import { ScrollDecor } from "@/components/ScrollDecor";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/components/ui/theme";
 import { siteName as resolveSiteName, siteUrl } from "@/lib/seo/siteUrl";
@@ -81,6 +82,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             "aktywny/a" dot on every page, not just promotion pages. */}
         <PageViewTracker />
         <CardTransitionBridge />
+        <ScrollDecor />
         <AuthModalProvider user={user ? { id: user.id, name: user.name } : null}>
           <BlockedOffersProvider>
             <ChecklistAlertsProvider>
