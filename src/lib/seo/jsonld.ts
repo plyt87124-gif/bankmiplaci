@@ -412,6 +412,11 @@ export interface ArticleLdInput {
   /** Article.contentUpdatedAt ONLY (never updatedAt, which changes on unrelated writes). */
   modifiedAt?: Date | string | null;
   authorName: string;
+  /**
+   * "Person" (default) for a named author, "Organization" for the editorial
+   * team (see src/lib/editorial.ts: a generic admin account is not a person).
+   */
+  authorType?: "Person" | "Organization";
   /** Author profile URL or path (e.g. the editorial page). Omit when there is none. */
   authorUrl?: string | null;
 }
@@ -434,7 +439,7 @@ export function articleLd(a: ArticleLdInput): JsonLdNode {
     url,
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     author: compact({
-      "@type": "Person",
+      "@type": a.authorType ?? "Person",
       name: collapseWhitespace(a.authorName),
       url: a.authorUrl ? absoluteUrl(a.authorUrl) : undefined
     }),

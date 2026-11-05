@@ -18,6 +18,7 @@
     "expire:promotions": "tsx scripts/expire-promotions.ts",
     "check:eligibility": "tsx scripts/check-eligibility.ts",
     "import:promotions": "tsx scripts/import-promotions.ts",
+    "import:articles": "tsx scripts/import-articles.ts",
     "recompute:ratings": "tsx scripts/recompute-ratings.ts",
     "checklist:reminders": "tsx scripts/checklist-deadline-reminders.ts",
     "audit:fees": "tsx scripts/audit-unverified-fees.ts",
