@@ -71,6 +71,27 @@ function detail(mark: ClientMark): string {
   return "Postęp w „Moje konto”";
 }
 
+/** Blocked (client, karencja) is red, "you already have it" is blue; the text on each is the matching `on-*` colour. */
+const TONE: Record<ClientMark["reason"], string> = {
+  client: "bg-coral-600 text-on-coral",
+  karencja: "bg-coral-600 text-on-coral",
+  joined: "bg-action text-on-action"
+};
+
+/** The coloured message itself: bold icon on top, title and detail centred under it. */
+export function BlockedMarkBox({ mark }: { mark: ClientMark }) {
+  const { icon: Icon, title } = COPY[mark.reason];
+  return (
+    <div className={`flex max-w-[85%] flex-col items-center gap-2 rounded-field px-5 py-3.5 text-center shadow-lg ${TONE[mark.reason]}`}>
+      <Icon size={28} strokeWidth={2.75} aria-hidden="true" className="shrink-0" />
+      <p className="text-small leading-snug">
+        <span className="block font-bold">{title}</span>
+        <span className="block font-medium">{detail(mark)}</span>
+      </p>
+    </div>
+  );
+}
+
 /**
  * Rendered inside an offer card: when the visitor cannot join (client of the bank, karencja) or already has the
  * ściąga open, a frosted veil with a short message sits IN FRONT of the card (the card underneath is untouched).
@@ -79,20 +100,12 @@ function detail(mark: ClientMark): string {
 export function CardBlockedMark({ slug }: { slug: string }) {
   const mark = useContext(MarksContext).get(slug);
   if (!mark) return null;
-  const { icon: Icon, title } = COPY[mark.reason];
-  const tone = mark.reason === "joined" ? "ring-action/40 text-action" : "ring-coral-600/45 text-coral-600";
   return (
     <div
       data-card-mark={mark.reason}
       className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center rounded-card bg-paper/70 p-3 transition-opacity duration-300 group-hover:opacity-0"
     >
-      <div className={`flex max-w-[85%] items-center gap-3 rounded-field bg-surface px-4 py-2.5 shadow-lg ring-1 ${tone}`}>
-        <Icon size={22} aria-hidden="true" className="shrink-0" />
-        <p className="text-small leading-snug">
-          <span className="block font-semibold text-ink-900">{title}</span>
-          <span className="block text-ink-700">{detail(mark)}</span>
-        </p>
-      </div>
+      <BlockedMarkBox mark={mark} />
     </div>
   );
 }
