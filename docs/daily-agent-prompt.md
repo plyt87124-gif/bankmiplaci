@@ -131,6 +131,8 @@ Kampania zakazuje promowania na blogach lub stronach o promocjach bankowych (np.
 
   trackingUrl zostaw pusty: skrypt weźmie link z katalogu.
 - `/konkursy`: każdy konkurs otwierasz („pokaż szczegóły”). Odczytujesz tytuł, okres, zasady premii zapisane jako tiers (everyN = premia za każde N kont, atLeast = jednorazowo po N) oraz listę kampanii (do offerExternalIds). Zasad, których nie da się jednoznacznie przeliczyć, nie zgadujesz: tiers = [] i opis w description.
+
+  **Konkurs „za każde jedno konto” (decyzja właściciela 4.11.2026):** gdy konkurs płaci dodatkową kwotę za KAŻDE pojedyncze konto (np. „+220 zł za każde otwarte konto”, bez progu liczby kont), zapisujesz go jako `tiers: [{ "everyN": 1, "bonusCents": <kwota w groszach> }]`, a w `offerExternalIds` podajesz kampanię, której dotyczy. To zwykła wyższa prowizja za klienta: wchodzi do kolumny „Razem” w /admin/prowizje (żółta część) oraz do oceny serwisu i „Polecane”. Konkurs za każde 2, 3 lub więcej kont zapisujesz jak dotąd (`everyN` = N), a progi jednorazowe jako `atLeast`. Każdy nowy lub zmieniony konkurs „za jedno konto” opisz osobno w raporcie e-mail (kampania, kwota, do kiedy).
 - `/statystyki`: bieżący i poprzedni miesiąc, wszystkie statusy, 200 wyników na stronę. Dla każdego wniosku: ID wniosku, data, instytucja, produkt, model, status (KLIK, Wysłane, Zaakceptowane, Odrzucone), kwota, jeśli jest podana.
 - `/rozliczenia/raporty`: wypłaty, czyli paidAt wniosków, jeśli raport je podaje.
 - Regulamin `/regulamin`: 1. dnia miesiąca (patrz „Zakazy w promowaniu”).

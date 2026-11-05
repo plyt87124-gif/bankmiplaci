@@ -4,14 +4,15 @@ import { EDITORIAL_SECTIONS, LISTING_FAQ } from "@/components/promocje/editorial
 
 /**
  * Editorial block under the list: four short sections ("Jak działa konto z
- * premią?" ...) and the FAQ, in the 44 rem reading column. Server component;
+ * premią?" ...) and the FAQ, in a 44 rem reading column aligned to the left
+ * edge of the page (like the heading above the list). Server component;
  * the FAQ is native <details>, so every answer is in the HTML (and in the
  * FAQPage JSON-LD the page emits from the same LISTING_FAQ array).
  * Body text is 17/28 (`type-article`), the first question starts open.
  */
 export function ListingEditorial() {
   return (
-    <div className="container-reading">
+    <div className="max-w-[44rem]">
       {EDITORIAL_SECTIONS.map((section, index) => (
         <div key={section.id} className={index === 0 ? undefined : "mt-10"}>
           <h2 id={section.id}>{section.heading}</h2>

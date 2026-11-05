@@ -135,7 +135,7 @@ export function BankPage({
           <p className="mt-2 max-w-prose text-ui text-ink-700">
             Termin zapisów na te promocje minął. Zostawiamy je jako informację o poprzednich ofertach banku.
           </p>
-          <ul role="list" className="mt-4 max-w-3xl border-t border-line">
+          <ul role="list" className="mt-4 max-w-[44rem] border-t border-line">
             {ended.shown.map((row) => {
               const href = endedOfferHref(row, now);
               const type = accountTypeLabel(row.accountType);
@@ -144,7 +144,10 @@ export function BankPage({
                 <li key={row.slug} className="border-b border-line py-2">
                   {/* Name on its own line (a long name wraps cleanly), the facts under it. */}
                   {href ? (
-                    <Link href={href} className="link-inline inline-block py-2 font-semibold [overflow-wrap:anywhere]">
+                    <Link
+                      href={href}
+                      className="link-inline inline-block py-2 font-semibold no-underline hover:underline [overflow-wrap:anywhere]"
+                    >
                       {row.name}
                     </Link>
                   ) : (

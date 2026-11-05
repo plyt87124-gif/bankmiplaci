@@ -46,7 +46,7 @@ function TocList({ toc }: { toc: readonly TocEntry[] }) {
         <li key={entry.id}>
           <a
             href={`#${entry.id}`}
-            className="block rounded-md px-2 py-1.5 text-ink-700 underline decoration-1 underline-offset-[3px] hover:text-action"
+            className="block rounded-md px-2 py-1.5 text-ink-700 transition-colors duration-150 ease-out hover:bg-sunken hover:text-ink-900 hover:underline hover:decoration-1 hover:underline-offset-[3px]"
           >
             {entry.label}
           </a>

@@ -15,10 +15,9 @@ import { FAQ_GROUPS, FAQ_ITEMS } from "../src/app/faq/faqItems";
 import { PUBLISHER, publisherAddress } from "../src/lib/publisher";
 import { buildContactEmailHtml, contactEmailSubject, escapeHtml } from "../src/app/kontakt/contactEmail";
 import { initialMessageFor } from "../src/app/kontakt/initialMessage";
-import { RATING_FLOOR, explainRating, type RatableOffer } from "../src/app/metodologia/ratingModel";
+import { COMPONENT_KEYS, RATING_CEILING, RATING_FLOOR, RATING_WEIGHTS } from "../src/lib/ratingModel";
 import type { MethodologyData } from "../src/app/metodologia/loadMethodologyData";
 import { COMMISSION_WEIGHT, recommendedScores, sortRecommended } from "../src/lib/recommended";
-import { RATING_COMMISSION_RULE } from "../src/lib/disclosureCopy";
 import { isRouteLive, liveRoutes } from "../src/lib/seo/routes";
 import { DESCRIPTION_MAX, STATIC_PAGE_META } from "../src/lib/seo";
 
@@ -34,27 +33,8 @@ const text = (markup: string) => decode(markup.replace(/<script[\s\S]*?<\/script
 
 // --- fixtures for the methodology page (no database) -------------------------
 
-function offer(id: string, extra: Partial<RatableOffer> = {}): RatableOffer {
-  return { id, accountType: "PERSONAL", maxBonusCents: 50000, difficulty: "EASY", cooldownMonths: null, durationMonths: 3, costCents: 600000, ...extra };
-}
-const FIXTURE_OFFERS: RatableOffer[] = [
-  offer("a", { maxBonusCents: 30000, difficulty: "EASY", durationMonths: 2, cooldownMonths: 12 }),
-  offer("b", { maxBonusCents: 90000, difficulty: "MEDIUM", durationMonths: 6, cooldownMonths: 24 }),
-  offer("c", { maxBonusCents: 150000, difficulty: "HARD", durationMonths: 12, cooldownMonths: 36 }),
-  offer("d", { maxBonusCents: 60000, difficulty: "VERY_EASY", durationMonths: 3, cooldownMonths: null })
-];
-const EXAMPLE = explainRating(FIXTURE_OFFERS[1]!, FIXTURE_OFFERS);
 const DATA: MethodologyData = {
-  example: {
-    slug: "bank-oferta-b",
-    name: "Oferta B",
-    bankName: "Bank Testowy",
-    accountType: "PERSONAL",
-    difficulty: "MEDIUM",
-    storedRating: EXAMPLE.rating,
-    breakdown: EXAMPLE
-  },
-  ratingStats: { count: 4, min: 8.4, max: 9.6 },
+  ratingStats: { count: 4, min: 8.7, max: 9.8 },
   latestVerifiedAt: new Date("2026-10-07T08:00:00Z")
 };
 
@@ -192,46 +172,61 @@ test("/faq: answers are informational (roughly 25-90 words) and unique", () => {
 // /metodologia, /o-nas, /jak-to-dziala
 // ---------------------------------------------------------------------------
 
-test("/metodologia: components and weights equal the ones in ratings.ts, commission is excluded", async () => {
+test("/metodologia: all seven components are listed, from the biggest influence to the smallest, without exact weights", async () => {
   const body = text((await renderAll())["/metodologia"]!);
-  for (const [label, weight] of [["Wysokość premii", "30%"], ["Wymagany obrót do premii", "25%"], ["Czas trwania", "20%"], ["Trudność zdobycia", "20%"], ["Karencja", "5%"]]) {
-    assert.ok(new RegExp(`${label}[^%]*${weight}`).test(body), `${label} ${weight}`);
-  }
+  const names = {
+    efficiency: "Premia w stosunku do własnego obrotu",
+    netPremium: "Wysokość premii",
+    partner: "Wynagrodzenie partnerskie serwisu",
+    effort: "Trudność zdobycia",
+    duration: "Czas trwania",
+    cooldown: "Karencja",
+    fees: "Opłaty za konto i kartę"
+  } as const;
+  assert.equal(COMPONENT_KEYS.length, Object.keys(names).length);
+  // the order on the page is the order of the model's weights, biggest first
+  const expected = [...COMPONENT_KEYS].sort((x, y) => RATING_WEIGHTS[y] - RATING_WEIGHTS[x]);
+  const positions = expected.map((key) => body.indexOf(`${names[key]}.`));
+  assert.ok(positions.every((i) => i >= 0), "every component is on the page");
+  assert.deepEqual([...positions].sort((x, y) => x - y), positions, "listed from the biggest influence");
+  assert.deepEqual(expected.slice(0, 3), ["efficiency", "netPremium", "partner"]);
+  assert.ok(body.includes("Ocena powstaje z siedmiu składników."));
+  assert.ok(body.includes("Dokładnych wag nie podajemy."));
+  assert.ok(!/razem 100%|Waga/.test(body), "no weights column, no percentages of the weights");
   assert.ok(body.includes("Ocena serwisu, nie porada finansowa."));
   assert.ok(body.includes("Najnowsza z tych dat wśród aktualnych ofert to 7 paź 2026"));
   assert.ok(body.includes("pokazujemy ją jako „Najnowsza weryfikacja oferty”"), "the same name as the footer, the hero and the lists");
-  assert.ok(body.includes("od 8,4 do 9,6"));
-  assert.ok(/6,5 \+ 3,5 × √/.test(body));
+  assert.ok(body.includes("od 8,7 do 9,8"));
 });
 
-test("/metodologia: natural wording, the scale starts where ratings.ts says, meta description promises nothing the page does not do", async () => {
+test("/metodologia: the page names the partner remuneration as a component and does not claim the rating is free of it", async () => {
+  const body = text((await renderAll())["/metodologia"]!);
+  assert.match(body, /Wynagrodzenie partnerskie serwisu\. Ile serwis może zarobić na jednym kliencie/);
+  assert.ok(!/nie uwzględnia(my)? (w ocenie )?prowizji|nie jest składnikiem oceny|ocena[^.]*bez prowizji/i.test(body), "no statement that the rating ignores the commission");
+  assert.ok(!/Opłat za konto i kartę – pokazujemy je przy ofercie osobno/.test(body), "fees ARE a component now");
+});
+
+test("/metodologia: natural wording, the scale is the one the model uses, meta description promises nothing the page does not do", async () => {
   const body = text((await renderAll())["/metodologia"]!);
   assert.ok(body.includes("Ocenę serwisu liczymy sami, według jawnych zasad opisanych niżej. Służy do porównania aktualnych promocji."));
   assert.ok(!body.includes("Oceną serwisu porównujemy"));
-  assert.ok(body.includes(`To liczba od ${new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1 }).format(RATING_FLOOR)} do 10 (np. 9,4/10)`));
+  const fmt = new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1 });
+  assert.ok(body.includes(`mieści się w przedziale od ${fmt.format(RATING_FLOOR)} do ${fmt.format(RATING_CEILING)}`));
   assert.ok(!body.includes("z przedziału do 10"));
-  const ratingsSource = readFileSync(join(ROOT, "src", "lib", "services", "ratings.ts"), "utf8");
-  assert.ok(ratingsSource.includes(`${RATING_FLOOR} + `), "RATING_FLOOR is the real lower bound of ratings.ts");
   const description = STATIC_PAGE_META.metodologia.description;
   assert.ok(description.length <= DESCRIPTION_MAX);
   assert.ok(!/jak często/.test(description), "the page deliberately gives no verification frequency");
-  assert.ok(description.includes("co znaczy „Zweryfikowano”") && description.includes("prowizji"));
+  assert.ok(description.includes("co znaczy „Zweryfikowano”") && description.includes("wagi"));
+  assert.ok(!description.includes("prowizji"), "the description does not claim the commission is left out");
 });
 
-test("/metodologia: the worked example shows its arithmetic and no commission line", async () => {
+test("/metodologia has no worked example any more (it would need the commission of one offer)", async () => {
   const page = (await renderAll())["/metodologia"]!;
-  assert.match(page, /<h2 id="przyklad"/);
-  const body = text(page);
-  assert.ok(body.includes("Bank Testowy – Oferta B"));
-  assert.ok(body.includes(`${new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(EXAMPLE.rating)}/10`));
-  assert.ok(!/prowizj[a-z]* [0-9]|wynagrodzenie partnerskie \(/i.test(body));
-  const sum = EXAMPLE.components.reduce((acc, c) => acc + c.contribution, 0);
-  assert.ok(Math.abs(sum - EXAMPLE.composite) < 1e-12);
+  assert.ok(!page.includes('id="przyklad"'));
 });
 
-test("/metodologia without live data still reads well (no example, no stats, no date)", () => {
-  const page = html(React.createElement(MethodologyContent, { data: { example: null, ratingStats: null, latestVerifiedAt: null } }));
-  assert.ok(!page.includes('id="przyklad"'));
+test("/metodologia without live data still reads well (no stats, no date)", () => {
+  const page = html(React.createElement(MethodologyContent, { data: { ratingStats: null, latestVerifiedAt: null } }));
   assert.ok(!/Najnowsza z tych dat/.test(text(page)));
   const ids = [...page.matchAll(/<h2 id="([^"]+)"/g)].map((m) => m[1]!);
   const hrefs = [...page.matchAll(/<nav aria-label="Spis treści"[^>]*>([\s\S]*?)<\/nav>/g)][0]![1]!.matchAll(/href="#([^"]+)"/g);
@@ -418,11 +413,15 @@ test("/faq: 'Czy muszę mieć konto', 'Jak działa ściąga' and 'Co znaczy Zwer
   }
 });
 
-test("/jak-zarabiamy is short: one statement that we may receive remuneration, no explanation of the order of offers", async () => {
+test("/jak-zarabiamy is short: the statement that we may receive remuneration, a pointer to the methodology, no explanation of the order of offers", async () => {
   const page = text((await renderAll())["/jak-zarabiamy"]!);
-  assert.match(page, /Możemy otrzymywać wynagrodzenie od banków lub sieci partnerskich za polecenie ich ofert\./);
+  assert.match(page, /Możemy otrzymywać wynagrodzenie, jeśli otworzysz konto przez naszą stronę\./);
   assert.match(page, /Korzystanie z Bankmiplaci jest bezpłatne dla użytkowników\./);
+  assert.doesNotMatch(page, /Czym jest afiliacja|eBrokerPartner|ComperiaLead/, "the owner asked to drop the affiliation section and the network names");
+  assert.match(page, /Z czego się składa i który składnik wpływa najmocniej, opisuje metodologia\./, "the components of the rating are explained on /metodologia, once");
+  assert.doesNotMatch(page, /piszemy „Link partnerski”/, "the on-page 'Link partnerski' notices are switched off, the page must not promise them");
+  assert.doesNotMatch(page, /nie uwzględnia prowizji|bez prowizji/i);
   assert.doesNotMatch(page, /kolejno|Polecane|współczynnik/i, "the owner asked not to explain the ordering here");
   const html = (await renderAll())["/jak-zarabiamy"]!;
-  for (const id of ["afiliacja", "ocena", "polecane", "czego-nie-robimy"]) assert.ok(html.includes(`id="${id}"`), id);
+  for (const id of ["ocena", "polecane", "czego-nie-robimy"]) assert.ok(html.includes(`id="${id}"`), id);
 });

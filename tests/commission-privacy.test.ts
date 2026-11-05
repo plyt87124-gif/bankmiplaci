@@ -9,8 +9,8 @@ import { stripPrivateFields } from "../src/lib/services/promotions";
 import { db } from "../src/lib/db";
 
 /**
- * Invariants of the partner commission (affiliateCommissionCents):
- *   1. it never influences the public "ocena serwisu";
+ * Invariants of the partner commission (affiliateCommissionCents and the campaigns behind it):
+ *   1. it is read only on the server (the rating service and the "Polecane" order), never on /metodologia;
  *   2. it never reaches a public function result, page prop or API response;
  *   3. offers without a commission still sort by rating.
  * No database is needed: the queries are covered through pure functions and a
@@ -42,10 +42,11 @@ function row(slug: string, rating: number, commission: number | null, over: Part
 
 // ---------------------------------------------------------------- invariant 1
 
-test("the rating algorithm does not read the partner commission", () => {
-  const src = readFileSync(join(__dirname, "..", "src", "lib", "services", "ratings.ts"), "utf8");
-  assert.doesNotMatch(src, /commission/i);
-  assert.doesNotMatch(src, /affiliate/i);
+test("the rating service reads the commission on the server; the methodology data loader never does", () => {
+  const read = (...parts: string[]) => readFileSync(join(__dirname, "..", "src", ...parts), "utf8");
+  assert.match(read("lib", "services", "ratings.ts"), /loadEffectiveCommissions/);
+  const loader = read("app", "metodologia", "loadMethodologyData.ts").replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.doesNotMatch(loader, /commission|affiliate/i);
 });
 
 test("ordering by commission never changes the rating values of the offers", () => {
@@ -168,6 +169,7 @@ test("only server-side data and admin code reference the commission field", () =
       "lib/services/promotionCards.ts",
       "lib/services/promotionWrite.ts",
       "lib/services/promotions.ts",
+      "lib/services/ratings.ts",
       "lib/validation/promotion.ts"
     ].map((p) => p.split("/").join(sep))
   );

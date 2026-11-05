@@ -5,6 +5,7 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { getSwitchAccounts } from "@/lib/adminAccounts";
 import { computeEligibility, isCurrentClient } from "@/lib/services/eligibility";
 import { deadlineForGroup, groupIndexFromOrder, periodRuleOf } from "@/lib/checklistSchedule";
+import { contestPerClientCents, offerRateCents } from "@/lib/effectiveCommission";
 import {
   chooseAffiliateLink,
   contestBonusCents,
@@ -353,9 +354,9 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
     twins?: Offer[];
     items?: Unmatched[];
   };
-  const rate = (o: Offer | undefined) => (o ? (o.cpsCents ?? 0) + (o.cpaCents ?? 0) : 0);
-  const contestPer = (o: Offer | undefined) =>
-    o ? Math.round(contestsByOffer(o.network, o.externalId).reduce((s, c) => s + contestBonusCents(parseTiers(c.tiers), 10), 0) / 10) : 0;
+  // The same definition the rating and "Polecane" use (src/lib/effectiveCommission.ts).
+  const rate = (o: Offer | undefined) => (o ? offerRateCents(o) : 0);
+  const contestPer = (o: Offer | undefined) => (o ? contestPerClientCents(contestsByOffer(o.network, o.externalId)) : 0);
   const withContest = (o: Offer) => rate(o) + contestPer(o);
   const restrictionsOf = (list: Offer[]) => {
     const seen = new Map<string, PromoRestriction>();
@@ -384,7 +385,7 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
       bestRate: best ? withContest(best) : 0,
       contestPerClient,
       hasContest: g.some((o) => contestsByOffer(o.network, o.externalId).length > 0),
-      total: rate(lead) + p.maxBonusCents,
+      total: rate(lead) + contestPerClient + p.maxBonusCents,
       commission: commissionOwn(lead, p.bankId, p.accountType),
       commissionBy: commissionDeadline(lead?.conditions, today),
       premium: premiumOwn(p),
@@ -415,7 +416,7 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
       bestRate: best,
       contestPerClient,
       hasContest: contestPerClient > 0 || items.some((x) => x.kind === "catalog" && contestsByOffer("EBROKER", x.id).length > 0),
-      total: lead ? rate(lead) : 0,
+      total: lead ? rate(lead) + contestPerClient : 0,
       commission: commissionOwn(lead, bankIdOf(u.bankName), accountTypeFromCategory(u.category)),
       commissionBy: commissionDeadline(lead?.conditions, today),
       premium: null,
@@ -594,7 +595,7 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
           Tylko konta osobiste i firmowe (bez lokat i kont oszczędnościowych). Banki są sekcjami ułożonymi według najlepszej kwoty w banku, a w banku najlepsze
           konto jest na górze. „Prowizja” to lepsza stawka z obu sieci razem z konkursem
           (średnio na klienta przy 10 kontach). „Razem” liczy link, który jest teraz na stronie. „Do kiedy” to ostatni dzień na
-          spełnienie warunków, gdy wniosek i umowa są dziś. Konta, w których nie weźmiesz ani prowizji, ani premii, są mocno przyszarzone; te bez samej prowizji lekko. Przełącznik je ukrywa. „Razem” = prowizja za jednego klienta + premia (bez konkursu).
+          spełnienie warunków, gdy wniosek i umowa są dziś. Konta, w których nie weźmiesz ani prowizji, ani premii, są mocno przyszarzone; te bez samej prowizji lekko. Przełącznik je ukrywa. „Razem” = prowizja za jednego klienta + konkurs na jednego klienta (na żółto) + premia.
         </p>
         <details className="mt-2 max-w-4xl text-xs text-ink-500">
           <summary className="cursor-pointer">Zasady sieci, które dotyczą każdej kampanii (wniosek na siebie, promowanie)</summary>
@@ -812,7 +813,15 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
                     <td className="border-l border-ink-100 p-3">
                       <p className="font-semibold text-ink-900">{zl(r.total)}</p>
                       <p className="text-xs text-ink-500">
-                        {zl(r.total - (r.p?.maxBonusCents ?? 0))}
+                        {zl(rate(r.lead))}
+                        {r.contestPerClient > 0 && (
+                          <>
+                            {" + "}
+                            <mark className="rounded bg-gold-100 px-1 text-gold-600" title="konkurs: średnio na klienta">
+                              {zl(r.contestPerClient)}
+                            </mark>
+                          </>
+                        )}
                         {r.p ? ` + ${zl(r.p.maxBonusCents)}` : ""}
                       </p>
                     </td>

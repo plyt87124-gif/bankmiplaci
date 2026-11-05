@@ -9,6 +9,7 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileNav, type MobileNavAccount } from "@/components/MobileNav";
 import { useAuthModal } from "@/components/AuthModalProvider";
+import { ChecklistBell, useChecklistAlerts } from "@/components/ChecklistAlerts";
 import { useSession } from "@/components/SessionProvider";
 import { cn } from "@/lib/cn";
 import { getMainNav, navAriaCurrent } from "@/lib/navigation";
@@ -30,12 +31,16 @@ import { getMainNav, navAriaCurrent } from "@/lib/navigation";
  *  - Links come from src/lib/navigation.ts: pages that are not live yet do not
  *    appear. There is deliberately no "Znajdz promocje" button: it duplicated
  *    "Promocje".
+ *  - When a ściąga deadline is near and its steps are not ticked, a bell sits
+ *    next to "Moje konto" (and on the mobile menu button): the list comes from
+ *    ChecklistAlertsProvider, so it follows the user across the whole site.
  *  - The lifetime earnings counter is not mounted here: its number only exists
  *    inside the checklist on /konto (EarningsProvider), where it stays.
  */
 export function Header() {
   const { user, status } = useSession();
   const { openAuth } = useAuthModal();
+  const { items: alerts } = useChecklistAlerts();
   const pathname = usePathname();
   const links = getMainNav();
 
@@ -109,17 +114,19 @@ export function Header() {
                 <ButtonLink href="/konto" variant="ghost">
                   <User size={20} aria-hidden="true" />
                   Moje konto
+                  <ChecklistBell items={alerts} />
                 </ButtonLink>
               ) : (
-                <Button variant="ghost" onClick={login}>
-                  <User size={20} aria-hidden="true" />
+                // A real button, not bare text: the account entry is the one thing in the header that is an action.
+                <Button variant="secondary" size="sm" onClick={login}>
+                  <User size={18} aria-hidden="true" />
                   Zaloguj się
                 </Button>
               )}
             </div>
 
             <ThemeToggle />
-            <MobileNav links={links} pathname={pathname} account={account} onLogin={login} />
+            <MobileNav links={links} pathname={pathname} account={account} onLogin={login} alerts={alerts} />
           </div>
         </div>
       </header>

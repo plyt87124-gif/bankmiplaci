@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState, type FocusEvent } from "react";
 import { Menu, User, X } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/Button";
+import { ChecklistBell } from "@/components/ChecklistAlerts";
 import { cn } from "@/lib/cn";
+import type { ChecklistAlertItem } from "@/lib/checklistDeadlines";
 import { navAriaCurrent, type NavLink } from "@/lib/navigation";
 
 /** Width from which the header shows the full navigation (Tailwind `lg`). */
@@ -34,12 +36,15 @@ export function MobileNav({
   links,
   pathname,
   account,
-  onLogin
+  onLogin,
+  alerts = []
 }: {
   links: readonly NavLink[];
   pathname: string | null;
   account: MobileNavAccount;
   onLogin: () => void;
+  /** Approaching ściąga deadlines (see ChecklistAlerts.tsx): a bell on "Moje konto" and a dot on the closed menu button. */
+  alerts?: readonly ChecklistAlertItem[];
 }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -119,7 +124,17 @@ export function MobileNav({
         onClick={() => setOpen((value) => !value)}
         className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-field text-ink-700 transition-colors duration-150 ease-out hover:bg-ink-100"
       >
-        {open ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
+        <span className="relative inline-flex">
+          {open ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
+          {/* The account entry with the bell is inside the menu: a dot on the closed button says "look inside". */}
+          {!open && account === "user" && alerts.length > 0 ? (
+            <span
+              aria-hidden="true"
+              data-menu-alert="true"
+              className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-warn ring-2 ring-paper"
+            />
+          ) : null}
+        </span>
       </button>
 
       {/* The same technique as `.collapse-rows` in motion.css, written with Tailwind utilities here. (The
@@ -156,6 +171,7 @@ export function MobileNav({
                     <ButtonLink href="/konto" variant="secondary" fullWidth onClick={close}>
                       <User size={20} aria-hidden="true" />
                       Moje konto
+                      <ChecklistBell items={alerts} />
                     </ButtonLink>
                   ) : (
                     <Button variant="secondary" fullWidth onClick={login}>

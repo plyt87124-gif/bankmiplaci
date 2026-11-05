@@ -22,9 +22,13 @@ const base =
   "[transition:background-color_150ms_var(--ease-out,ease),border-color_150ms_var(--ease-out,ease),transform_120ms_var(--ease-out,ease)] " +
   "active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
+// The action fill is the only button with weight: a 1 px light edge on top and a tight shadow under it (offset + blur,
+// not a halo) make it read as a key you press, so the primary button is never mistaken for the outlined secondary one.
+const RAISED = "shadow-[inset_0_1px_0_rgb(255_255_255/0.3),0_1px_2px_rgb(0_0_0/0.25)] active:shadow-[inset_0_1px_2px_rgb(0_0_0/0.25)]";
+
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-action text-on-action hover:bg-action-hover",
-  cta: "bg-action text-on-action hover:bg-action-hover",
+  primary: `bg-action text-on-action hover:bg-action-hover ${RAISED}`,
+  cta: `bg-action text-on-action hover:bg-action-hover ${RAISED}`,
   secondary: "border-line-strong bg-surface text-ink-900 hover:bg-sunken",
   ghost: "bg-transparent text-ink-700 hover:bg-ink-100",
   danger: "bg-coral-600 text-on-coral hover:bg-coral-600/90"
@@ -41,8 +45,8 @@ const sizes: Record<ButtonSize, string> = {
 };
 
 const disabledClasses =
-  "disabled:cursor-not-allowed disabled:border-line disabled:bg-ink-100 disabled:text-ink-500 disabled:active:scale-100 " +
-  "aria-disabled:cursor-not-allowed aria-disabled:border-line aria-disabled:bg-ink-100 aria-disabled:text-ink-500 aria-disabled:active:scale-100";
+  "disabled:cursor-not-allowed disabled:border-line disabled:bg-ink-100 disabled:text-ink-500 disabled:shadow-none disabled:active:scale-100 " +
+  "aria-disabled:cursor-not-allowed aria-disabled:border-line aria-disabled:bg-ink-100 aria-disabled:text-ink-500 aria-disabled:shadow-none aria-disabled:active:scale-100";
 
 interface ButtonOwnProps {
   variant?: ButtonVariant;
@@ -63,7 +67,7 @@ export function buttonClasses({
     base,
     variants[variant],
     sizes[size],
-    disabled ? "cursor-not-allowed border-line bg-ink-100 text-ink-500 hover:bg-ink-100 active:scale-100" : null,
+    disabled ? "cursor-not-allowed border-line bg-ink-100 text-ink-500 shadow-none hover:bg-ink-100 active:scale-100" : null,
     fullWidth ? "w-full" : null,
     className
   );
@@ -132,7 +136,7 @@ export function ButtonLink({
     base,
     variants[variant],
     sizes[size],
-    disabled ? "pointer-events-none cursor-not-allowed border-line bg-ink-100 text-ink-500" : null,
+    disabled ? "pointer-events-none cursor-not-allowed border-line bg-ink-100 text-ink-500 shadow-none" : null,
     fullWidth ? "w-full" : null,
     className
   );

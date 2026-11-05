@@ -38,11 +38,12 @@ function Missing() {
 }
 
 /** The value of a row: medium weight; the best one is bold and gets a check mark + a word for screen readers. */
-function Value({ best, children }: { best?: boolean; children: ReactNode }) {
+function Value({ best, large, children }: { best?: boolean; /** The headline row (premia): brand face, a size up. */ large?: boolean; children: ReactNode }) {
   return (
     <span
       className={cn(
         "num inline-flex flex-wrap items-baseline gap-x-1 text-ink-900",
+        large && "font-brand text-h4",
         best ? "font-bold" : "font-medium"
       )}
     >
@@ -210,7 +211,7 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
       cell: ({ card }, i) =>
         card.maxBonusCents > 0 ? (
           /* "do": it is the maximum, reached by meeting every condition (see the legend). */
-          <Value best={bestBonus[i]}>{`do ${formatPLN(card.maxBonusCents)}`}</Value>
+          <Value best={bestBonus[i]} large>{`do ${formatPLN(card.maxBonusCents)}`}</Value>
         ) : (
           <span className="text-ink-700">Bez premii gotówkowej</span>
         )

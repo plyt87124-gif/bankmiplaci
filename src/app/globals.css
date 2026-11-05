@@ -98,7 +98,8 @@
     /* LEGACY: visible slate plate (10:1 with white text) so admin buttons stay readable. */
     --color-ink-solid: 56 72 92;
 
-    --color-line: 40 54 72;
+    /* A step lighter than before (40 54 72): the hairlines are what separates a card from the band behind it. */
+    --color-line: 48 63 86;
     --color-line-strong: 105 122 142;
 
     --color-action: 120 178 255;
@@ -190,6 +191,19 @@
     outline-offset: 2px;
   }
 
+  /* Browser surfaces that ship with a default look: selection, caret, scrollbar. */
+  ::selection {
+    background-color: rgb(var(--color-action) / 0.32);
+    color: rgb(var(--color-ink-900));
+  }
+  input,
+  textarea {
+    caret-color: rgb(var(--color-action));
+  }
+  html {
+    scrollbar-color: rgb(var(--color-line-strong) / 0.7) transparent;
+  }
+
   /* Native <dialog> (AuthModal, mobile filter sheet): follow the tokens, dim the page without blur. */
   dialog {
     @apply bg-surface text-ink-900;
@@ -206,6 +220,52 @@
   /* Reading column (articles, legal and text pages): 44rem, about 68ch at 17 px. */
   .container-reading {
     @apply mx-auto w-full max-w-[44rem];
+  }
+
+  /* /konto: the page background changes hue a little with the part of the page on screen (AccountAmbient.tsx).
+     AccountAmbient puts `data-konto-tone` on <body>; the tone rules below only set two variables there, and
+     `--konto-bg` mixes the paper colour with one accent at a few per cent (a change of hue, not of mood). The tint
+     colours are tokens, so the same few per cent are a cool lift in the dark theme and a soft wash in the light one.
+     Two things read `--konto-bg`: the fixed layer `.konto-ambient` behind the page (html has no background of its
+     own, so z-index -1 still sits above the canvas) and the sticky header (rule at the end of this file), so the
+     header does not stay a flat band of the plain colour on top of a tinted page. */
+  body[data-konto-tone] {
+    --ambient-tint: transparent;
+    --ambient-amount: 0%;
+    --konto-bg: color-mix(in srgb, rgb(var(--color-paper)), var(--ambient-tint) var(--ambient-amount));
+  }
+  body[data-konto-tone="sciaga-0"] {
+    --ambient-tint: rgb(var(--color-teal-500));
+    --ambient-amount: 5%;
+  }
+  body[data-konto-tone="sciaga-1"] {
+    --ambient-tint: rgb(var(--color-success));
+    --ambient-amount: 5%;
+  }
+  body[data-konto-tone="sciaga-2"] {
+    --ambient-tint: rgb(var(--color-gold-500));
+    --ambient-amount: 6%;
+  }
+  body[data-konto-tone="ustawienia"] {
+    --ambient-tint: rgb(var(--color-info));
+    --ambient-amount: 5%;
+  }
+  body[data-konto-tone="historia"] {
+    --ambient-tint: rgb(var(--color-coral-600));
+    --ambient-amount: 3%;
+  }
+  .konto-ambient {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: var(--konto-bg, transparent);
+    transition: background-color 1100ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .konto-ambient {
+      transition: none;
+    }
   }
 
   /* Surfaces that stay WHITE in the dark theme too (bank-logo tile): inside
@@ -251,9 +311,15 @@
   .type-article {
     @apply font-body text-article lg:text-article-lg;
   }
-  /* Small uppercase caption such as "PREMIA DO", "TERMIN". */
+  /* Small caption above a value ("Premia do", "Termin"). Sentence case on purpose: tracked capitals above every
+     number are the look of a template, and Polish reads better in lower case. */
   .type-label {
-    @apply font-brand text-label uppercase;
+    @apply font-body text-caption font-medium;
+  }
+  /* Home hero headline: bigger than an h1 of an inner page, tighter. */
+  .type-display {
+    @apply font-display text-display md:text-display-lg;
+    text-wrap: balance;
   }
 
   /* Body links in running text: underlined, offset 3 px, action colour. */
@@ -265,6 +331,15 @@
   .input,
   .select {
     @apply h-12 w-full rounded-field border border-line-strong bg-surface px-3.5 text-ui text-ink-900 outline-none transition-colors duration-150 ease-out;
+  }
+  /* Recessed field: a faint inset shadow under the top edge (offset + blur, no halo) so a field reads as
+     "type here" and not as one more outlined box. Declared BEFORE the :focus rule, which replaces it with the ring. */
+  .input,
+  .select {
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.1);
+  }
+  .dark :is(.input, .select) {
+    box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.45);
   }
   .input::placeholder {
     @apply text-ink-500;
@@ -318,10 +393,32 @@
   .dark .checkbox:checked {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2305122c' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12.5 4 4 8-9'/%3E%3C/svg%3E");
   }
+  /* Styled native radio (quiz answers): 20 px ring, the dot is the action colour. Same 3:1 ring as the checkbox. */
+  .radio {
+    @apply inline-block h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-line-strong bg-surface align-middle transition-colors duration-150 ease-out;
+  }
+  .radio:checked {
+    @apply border-action;
+    background-image: radial-gradient(circle at center, rgb(var(--color-action)) 0 42%, transparent 46%);
+  }
   .checkbox:disabled {
     @apply cursor-not-allowed border-line bg-ink-100;
   }
   .checkbox:checked:disabled {
     @apply border-ink-300 bg-ink-300;
+  }
+}
+
+/* /konto: the sticky header follows the page tint (see `--konto-bg` above). Unlayered on purpose: the header's own
+   `bg-paper/95` is a utility, and utilities beat anything inside @layer components whatever the specificity. */
+body[data-konto-tone] > header {
+  background-color: color-mix(in srgb, var(--konto-bg) 95%, transparent);
+  transition:
+    border-color 200ms ease-out,
+    background-color 1100ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-konto-tone] > header {
+    transition: border-color 200ms ease-out;
   }
 }

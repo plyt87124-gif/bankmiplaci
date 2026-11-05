@@ -100,15 +100,19 @@ const config: Config = {
       fontSize: {
         stat: ["2.75rem", { lineHeight: "2.875rem", letterSpacing: "-0.02em", fontWeight: "600" }],
         "stat-lg": ["3.5rem", { lineHeight: "3.625rem", letterSpacing: "-0.02em", fontWeight: "600" }],
-        amount: ["2.25rem", { lineHeight: "2.5rem", fontWeight: "600" }],
+        amount: ["2.5rem", { lineHeight: "2.75rem", letterSpacing: "-0.01em", fontWeight: "600" }],
         h1: ["2rem", { lineHeight: "2.375rem", letterSpacing: "-0.015em", fontWeight: "600" }],
         "h1-lg": ["2.5rem", { lineHeight: "2.875rem", letterSpacing: "-0.015em", fontWeight: "600" }],
         h2: ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.01em", fontWeight: "600" }],
         "h2-lg": ["1.75rem", { lineHeight: "2.25rem", letterSpacing: "-0.01em", fontWeight: "600" }],
         h3: ["1.25rem", { lineHeight: "1.75rem", fontWeight: "600" }],
         h4: ["1.0625rem", { lineHeight: "1.625rem", fontWeight: "600" }],
-        lead: ["1.1875rem", { lineHeight: "1.875rem", fontWeight: "400" }],
-        "lead-lg": ["1.3125rem", { lineHeight: "2rem", fontWeight: "400" }],
+        // Display: the home hero only. Max 3.5 rem (56 px), tracking well above the -0.04em floor.
+        display: ["2.25rem", { lineHeight: "2.5rem", letterSpacing: "-0.025em", fontWeight: "600" }],
+        "display-lg": ["3.5rem", { lineHeight: "3.75rem", letterSpacing: "-0.03em", fontWeight: "600" }],
+        // The lead used to be 19 / 21 px: four lines of it outweighed the heading above it. 18 / 19 px keeps it a lead.
+        lead: ["1.125rem", { lineHeight: "1.75rem", fontWeight: "400" }],
+        "lead-lg": ["1.1875rem", { lineHeight: "1.875rem", fontWeight: "400" }],
         article: ["1.0625rem", { lineHeight: "1.75rem" }],
         "article-lg": ["1.125rem", { lineHeight: "1.875rem" }],
         ui: ["1rem", { lineHeight: "1.625rem" }],

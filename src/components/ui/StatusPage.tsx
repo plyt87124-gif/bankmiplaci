@@ -15,7 +15,7 @@ export function StatusPage({
   actions,
   children
 }: {
-  /** Short code shown above the title, e.g. "404". */
+  /** Short code shown in the quiet line under the description (never above the heading), e.g. "Błąd 404". */
   code?: string;
   title: string;
   description: ReactNode;
@@ -29,10 +29,15 @@ export function StatusPage({
   return (
     <div className="container-page py-12 md:py-20">
       <div className="container-reading">
-        {code ? <p className="type-label text-ink-500">{code}</p> : null}
-        <h1 className="type-h1 mt-2">{title}</h1>
+        <h1 className="type-h1">{title}</h1>
         <p className="type-lead mt-4 text-ink-700">{description}</p>
-        {detail ? <p className="mt-3 text-caption text-ink-500">{detail}</p> : null}
+        {code || detail ? (
+          <p className="num mt-3 text-caption text-ink-500">
+            {code}
+            {code && detail ? " · " : null}
+            {detail}
+          </p>
+        ) : null}
         {actions ? <div className="mt-8 flex flex-wrap gap-3">{actions}</div> : null}
         {children}
       </div>

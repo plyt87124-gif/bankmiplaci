@@ -7,6 +7,8 @@ import { LogoutButton } from "./LogoutButton";
 import { ACCOUNT_TYPE_LABEL, formatDatePL } from "@/lib/format";
 import { resolveFee } from "@/lib/feeModel";
 import { PromotionChecklist } from "@/components/PromotionChecklist";
+import { AccountAmbient } from "@/components/AccountAmbient";
+import { AMBIENT_HISTORY, AMBIENT_SETTINGS, AMBIENT_START } from "@/lib/accountAmbient";
 import { EarningsProvider } from "@/components/EarningsContext";
 import { EarningsCounter } from "@/components/EarningsCounter";
 import { earnedCentsFor } from "@/lib/checklistAvailability";
@@ -23,6 +25,8 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
   if (!user) redirect("/konto/logowanie?redirect=/konto");
 
   const isOnboarding = searchParams.onboarding === "1";
+  // One instant for the whole page: the ściąga's deadline notes then agree between the server and the browser.
+  const now = new Date();
 
   const [banks, history, trackingRows, completedTrackingRows, checkedProgress] = await Promise.all([
     db.bank.findMany({ orderBy: { name: "asc" } }),
@@ -73,8 +77,10 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
     // Wide container: the ściąga lays its months out in up to 3 columns. Text
     // blocks keep their own readable max width.
     <div className="container-page py-10 sm:py-14">
+      {/* The page background shifts hue a little with the part on screen (AccountAmbient). */}
+      <AccountAmbient />
       <EarningsProvider>
-        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+        <div data-ambient-tone={AMBIENT_START} className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           {/* Lifetime earnings badge sits next to the user's own info, not
               next to the logout button — the live number is computed
               inside PromotionChecklist and pushed up here via
@@ -94,10 +100,12 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
           initialChecked={initialChecked}
           completedEarnedCents={completedEarnedCents}
           emptyState={!isOnboarding}
+          userId={user.id}
+          now={now.toISOString()}
         />
       </EarningsProvider>
 
-      <section id="ustawienia" aria-labelledby="ustawienia-h" className="mt-12 max-w-3xl scroll-mt-20">
+      <section id="ustawienia" aria-labelledby="ustawienia-h" data-ambient-tone={AMBIENT_SETTINGS} className="mt-12 max-w-3xl scroll-mt-20">
         <h2 id="ustawienia-h">Ustawienia</h2>
         <form action={setOnlyEligible} className="mt-4 rounded-card border border-line bg-surface p-4 sm:p-5">
           <label htmlFor="only-eligible" className="flex min-h-11 cursor-pointer items-start gap-3 py-1">
@@ -114,7 +122,7 @@ export default async function AccountPage(props: { searchParams: Promise<{ onboa
         </form>
       </section>
 
-      <section aria-labelledby="historia-bankowa" className="mt-12 max-w-3xl">
+      <section aria-labelledby="historia-bankowa" data-ambient-tone={AMBIENT_HISTORY} className="mt-12 max-w-3xl">
         <h2 id="historia-bankowa">Twoja historia bankowa</h2>
         <p className="mt-2 max-w-2xl text-ui text-ink-700">
           Dla banków, w których byłeś/aś klientem, podaj typ konta i datę jego zamknięcia — pokażemy Ci wtedy,

@@ -44,7 +44,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
         id: "jak-liczycie-ocene",
         question: "Jak liczycie ocenę serwisu?",
         answer:
-          "To nasz wewnętrzny wskaźnik, np. 9,4/10. Zwykle liczymy go automatycznie z pięciu składników: wysokości premii, trudności zdobycia, czasu trwania, średniej premii na miesiąc i karencji, na tle innych aktualnych ofert tego samego typu konta (w wyjątkowych przypadkach ustawiamy go ręcznie – opisujemy to w metodologii). To nie jest porada finansowa ani niezależna ocena banku.",
+          "To nasz wewnętrzny wskaźnik, np. 9,4/10. Zwykle liczymy go automatycznie z siedmiu składników: premii w stosunku do własnego obrotu, wysokości premii, wynagrodzenia partnerskiego serwisu, trudności zdobycia, czasu trwania, karencji i opłat, na tle innych aktualnych ofert tego samego rodzaju konta (w wyjątkowych przypadkach ustawiamy go ręcznie – opisujemy to w metodologii). To nie jest porada finansowa ani niezależna ocena banku.",
         link: { href: "/metodologia", label: "Jak liczymy ocenę serwisu" }
       },
       {

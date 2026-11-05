@@ -4,6 +4,7 @@ import { Prisma, PromotionStatus, Difficulty } from "@prisma/client";
 import { recomputeRatings } from "./ratings";
 import { signupCutoff } from "@/lib/promotionAvailability";
 import { sortRecommended } from "@/lib/recommended";
+import { loadEffectiveCommissions } from "@/lib/services/effectiveCommissions";
 import { accountTypeWhere } from "@/lib/accountTypes";
 
 export type SortKey = "recommended" | "top-rated" | "highest-bonus" | "easiest" | "newest" | "ending-soon";
@@ -59,7 +60,8 @@ export function sortToOrderBy(sort?: SortKey): Prisma.PromotionOrderByWithRelati
     case "highest-bonus":
       return [{ maxBonusCents: "desc" }];
     case "easiest":
-      return [{ difficulty: "asc" }, { rating: "desc" }];
+      // The tie-break is the bonus, not the rating: the rating includes the partner remuneration, this order must not.
+      return [{ difficulty: "asc" }, { maxBonusCents: "desc" }];
     case "newest":
       return [{ startDate: "desc" }];
     case "ending-soon":
@@ -127,19 +129,21 @@ export async function listActivePromotions(filters: PromotionFilters = {}) {
 
   // "Polecane" (the default listing order) blends the rating with the partner
   // commission; the commission itself is removed from what callers receive.
-  const ordered =
-    filters.sort === "recommended" || filters.sort === undefined
-      ? sortRecommended(
-          rows.map((row) => ({
-            row,
-            accountType: row.accountType as string,
-            rating: Number(row.rating),
-            maxBonusCents: row.maxBonusCents,
-            commissionCents: row.affiliateCommissionCents,
-            slug: row.slug
-          }))
-        ).map((x) => x.row)
-      : rows;
+  const recommended = filters.sort === "recommended" || filters.sort === undefined;
+  const commissions = recommended && rows.length > 0 ? (await loadEffectiveCommissions({ slugs: rows.map((r) => r.slug) })).bySlug : null;
+  const ordered = recommended
+    ? sortRecommended(
+        rows.map((row) => ({
+          row,
+          accountType: row.accountType as string,
+          rating: Number(row.rating),
+          maxBonusCents: row.maxBonusCents,
+          // campaigns + contest per client; the value stored on the promotion is the fallback
+          commissionCents: commissions?.get(row.slug) ?? row.affiliateCommissionCents,
+          slug: row.slug
+        }))
+      ).map((x) => x.row)
+    : rows;
   return ordered.map(stripPrivateFields);
 }
 

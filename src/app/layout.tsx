@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { AdminSwitcher } from "@/components/AdminSwitcher";
 import { AuthModalProvider } from "@/components/AuthModalProvider";
 import { BlockedOffersProvider } from "@/components/BlockedOffers";
+import { ChecklistAlertsProvider } from "@/components/ChecklistAlerts";
 import { CardTransitionBridge } from "@/components/CardTransitionBridge";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/components/ui/theme";
@@ -82,11 +83,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <CardTransitionBridge />
         <AuthModalProvider user={user ? { id: user.id, name: user.name } : null}>
           <BlockedOffersProvider>
-            <Header />
-            <main id="tresc" tabIndex={-1} className="flex-1 focus:outline-none">
-              {children}
-            </main>
-            <Footer />
+            <ChecklistAlertsProvider>
+              <Header />
+              <main id="tresc" tabIndex={-1} className="flex-1 focus:outline-none">
+                {children}
+              </main>
+              <Footer />
+            </ChecklistAlertsProvider>
           </BlockedOffersProvider>
           {adminSession ? (
             <AdminSwitcher options={switchAccounts.map(({ key, label }) => ({ key, label }))} current={switchCurrent} />

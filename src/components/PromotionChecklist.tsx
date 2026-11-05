@@ -1,13 +1,23 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, ArrowRight, CheckCircle2, Gift, ListChecks, Lock } from "lucide-react";
+import { AlertCircle, ArrowRight, Bell, CheckCircle2, ChevronDown, Gift, ListChecks, Lock } from "lucide-react";
 import { formatPLN, formatDate, pluralizePl } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { isGroupUnlocked, monthGroupLabel, periodRuleOf, unlockDateForGroup, type PeriodRule } from "@/lib/checklistSchedule";
 import { resolveGroups, isRewardEarned, earnedCentsFor, type ResolvedGroup } from "@/lib/checklistAvailability";
+import {
+  alertItemsFor,
+  daysLeftText,
+  isUrgent,
+  lastDayText,
+  upcomingGroupDeadlines,
+  type GroupDeadline
+} from "@/lib/checklistDeadlines";
+import { ambientToneForCard } from "@/lib/accountAmbient";
+import { useChecklistAlerts } from "@/components/ChecklistAlerts";
 import { useEarningsContext } from "@/components/EarningsContext";
 import { BankLogo } from "@/components/ui/BankLogo";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -104,20 +114,106 @@ export function completeFailureMessage(res: { ok: boolean } | null, data: { erro
 /** Today's calendar date in Poland (YYYY-MM-DD), the clock the server validates dates against. */
 const warsawToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());
 
+/* ------------------------------------------------------------------ */
+/* Which ściągi are unfolded: remembered per signed-in user, per browser. */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A ściąga starts FOLDED; the ones the user unfolded are remembered in
+ * localStorage (the key carries the user id, so two people on one browser do not
+ * share it). Only the OPEN ids are stored: a folded one is the default. This
+ * keeps the cookie policy as it is (no new cookie, see /cookies) and needs no
+ * database column; the price is that the choice is per browser, not per account.
+ */
+export function sciagaOpenKey(userId: string | null | undefined): string {
+  return `bmp:sciaga-open:${userId ?? "anon"}`;
+}
+
+/** The stored value back to a set of ids; anything that is not a JSON array of strings is "nothing unfolded". */
+export function parseOpenIds(raw: string | null | undefined): Set<string> {
+  if (!raw) return new Set();
+  try {
+    const value: unknown = JSON.parse(raw);
+    return Array.isArray(value) ? new Set(value.filter((v): v is string => typeof v === "string")) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+/** What gets stored: the open ids that still belong to a tracked ściąga (finished ones drop out), sorted. */
+export function serializeOpenIds(open: ReadonlySet<string>, knownIds: readonly string[]): string {
+  const known = new Set(knownIds);
+  return JSON.stringify([...open].filter((id) => known.has(id)).sort());
+}
+
 export function PromotionChecklist({
   trackings,
   initialChecked,
   completedEarnedCents,
-  emptyState = true
+  emptyState = true,
+  userId,
+  now
 }: {
   trackings: Tracking[];
   initialChecked: string[];
   completedEarnedCents: number;
   /** Show the "no ściąga yet" panel (with a link to /promocje) when there is nothing to show. */
   emptyState?: boolean;
+  /** Keys the remembered "unfolded" state; the signed-in user's id. */
+  userId?: string;
+  /** The server's "now" (ISO): the same instant on the server and in the browser, so the deadline notes hydrate cleanly. Tests pass a fixed one. */
+  now?: string;
 }) {
   const router = useRouter();
   const [checked, setChecked] = useState<Set<string>>(() => new Set(initialChecked));
+  const nowDate = useMemo(() => (now ? new Date(now) : new Date()), [now]);
+
+  // Folded by default; the remembered choice is read after mount (the server cannot know it).
+  const storageKey = sciagaOpenKey(userId);
+  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
+  // Restoring the remembered state must not animate: ściągi the user left open snap open, then motion is switched on.
+  const [animate, setAnimate] = useState(false);
+  useEffect(() => {
+    let raw: string | null = null;
+    try {
+      raw = window.localStorage.getItem(storageKey);
+    } catch {
+      // Storage blocked (private mode, site data off): the ściągi just start folded each time.
+    }
+    setOpenIds(parseOpenIds(raw));
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => setAnimate(true));
+    });
+    // Another tab changed the choice: follow it.
+    function onStorage(event: StorageEvent) {
+      if (event.key === storageKey) setOpenIds(parseOpenIds(event.newValue));
+    }
+    window.addEventListener("storage", onStorage);
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [storageKey]);
+
+  function setOpen(trackingId: string, next: boolean) {
+    const updated = new Set(openIds);
+    if (next) updated.add(trackingId);
+    else updated.delete(trackingId);
+    setOpenIds(updated);
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        serializeOpenIds(
+          updated,
+          trackings.map((t) => t.id)
+        )
+      );
+    } catch {
+      // Not saved: it still works for this visit.
+    }
+  }
   const [doneIds, setDoneIds] = useState<Set<string>>(() => new Set());
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [closedAtDrafts, setClosedAtDrafts] = useState<Record<string, string>>({});
@@ -133,6 +229,32 @@ export function PromotionChecklist({
   const visible = trackings.filter((t) => !doneIds.has(t.id));
   const activeEarnedCents = trackings.reduce((sum, t) => sum + trackingEarnedCents(t, checked), 0);
   const totalEarnedCents = completedEarnedCents + activeEarnedCents;
+
+  // Approaching deadlines of the ściągi still shown (rule: lib/checklistDeadlines.ts). Computed from the LIVE ticks,
+  // so the bell on a card and the one in the header go out as soon as the last step of a month is ticked.
+  const deadlinesByTracking = useMemo(
+    () =>
+      new Map(
+        trackings
+          .filter((t) => !doneIds.has(t.id))
+          .map((t) => [t.id, upcomingGroupDeadlines(t.steps, t.accountOpenedAt, checked, nowDate)] as const)
+      ),
+    [trackings, doneIds, checked, nowDate]
+  );
+  const liveAlertItems = useMemo(
+    () =>
+      trackings
+        .filter((t) => !doneIds.has(t.id))
+        .flatMap((t) => alertItemsFor(t, checked, nowDate))
+        .sort((a, b) => a.daysLeft - b.daysLeft),
+    [trackings, doneIds, checked, nowDate]
+  );
+  // The header's bell follows these ticks while this page is open; leaving the page hands it back to the fetched list.
+  const { publishLive } = useChecklistAlerts();
+  useEffect(() => {
+    publishLive(liveAlertItems);
+  }, [liveAlertItems, publishLive]);
+  useEffect(() => () => publishLive(null), [publishLive]);
 
   // The badge itself now lives next to the "Moje konto" header (see
   // EarningsProvider in konto/page.tsx) — this is the only place that
@@ -234,7 +356,8 @@ export function PromotionChecklist({
       </h2>
       <p className="mt-2 max-w-2xl text-ui text-ink-700">
         Zaznaczaj kroki w miarę spełniania warunków promocji, którą aktywnie śledzisz. Zaznaczenie możesz w każdej
-        chwili cofnąć.
+        chwili cofnąć. Kliknij nagłówek ściągi, żeby ją rozwinąć albo zwinąć. Zapamiętamy w tej przeglądarce, które
+        zostawiłeś/aś otwarte.
       </p>
 
       {/* Always in the DOM so that a message appearing later is announced. */}
@@ -262,11 +385,16 @@ export function PromotionChecklist({
         </ButtonLink>
       )}
 
-      <div className="mt-6 space-y-6">
-        {visible.map((t) => (
+      <div className="mt-6 space-y-4">
+        {visible.map((t, index) => (
           <ChecklistCard
             key={t.id}
             tracking={t}
+            tone={ambientToneForCard(index)}
+            open={openIds.has(t.id)}
+            onOpenChange={(next) => setOpen(t.id, next)}
+            animate={animate}
+            deadlines={deadlinesByTracking.get(t.id) ?? []}
             checked={checked}
             failedStepId={failedStepId}
             onToggleStep={toggleStep}
@@ -287,6 +415,11 @@ export function PromotionChecklist({
 
 function ChecklistCard({
   tracking,
+  tone,
+  open,
+  onOpenChange,
+  animate,
+  deadlines,
   checked,
   failedStepId,
   onToggleStep,
@@ -300,6 +433,15 @@ function ChecklistCard({
   pending
 }: {
   tracking: Tracking;
+  /** Background tone of /konto while this card is on screen (see AccountAmbient). */
+  tone: string;
+  /** Unfolded? A ściąga starts folded; the user's choice is remembered by the parent. */
+  open: boolean;
+  onOpenChange: (next: boolean) => void;
+  /** False while the remembered state is being restored, so cards do not animate on load. */
+  animate: boolean;
+  /** Approaching deadlines of this ściąga, soonest first (empty = nothing to warn about). */
+  deadlines: readonly GroupDeadline[];
   checked: Set<string>;
   failedStepId: string | null;
   onToggleStep: (stepId: string, next: boolean) => void;
@@ -314,6 +456,8 @@ function ChecklistCard({
 }) {
   const baseId = useId();
   const titleId = `${baseId}-title`;
+  const summaryId = `${baseId}-summary`;
+  const panelId = `${baseId}-panel`;
   const progressLabelId = `${baseId}-progress`;
   const closedAtId = `${baseId}-closed-at`;
   const closedAtHintId = `${baseId}-closed-at-hint`;
@@ -347,27 +491,71 @@ function ChecklistCard({
   }, [confirming]);
 
   return (
-    <article aria-labelledby={titleId} className="rounded-card border border-line bg-surface p-5 sm:p-6">
-      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-        <div className="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
+    <article
+      aria-labelledby={titleId}
+      data-ambient-tone={tone}
+      data-open={open ? "true" : "false"}
+      className="rounded-card border border-line bg-surface"
+    >
+      {/* The whole header is the fold button: logo, name, what is earned so far, the bell when a deadline is near, the chevron.
+          It stays visible folded, so a folded ściąga still says how far along it is and whether something is due. */}
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        aria-labelledby={titleId}
+        aria-describedby={summaryId}
+        onClick={() => onOpenChange(!open)}
+        className={cn(
+          "flex w-full items-start gap-3 p-5 text-left transition-colors duration-150 ease-out hover:bg-sunken/50 sm:p-6",
+          "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring",
+          open ? "rounded-t-card" : "rounded-card"
+        )}
+      >
+        <span className="flex min-w-0 flex-1 flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
           <BankLogo name={tracking.bankName} logoUrl={tracking.bankLogoUrl} size="md" />
-          <div className="min-w-0">
-            <p id={titleId} className="text-h4 text-ink-900">
+          <span className="min-w-0">
+            <span id={titleId} className="block text-h4 text-ink-900">
               {tracking.bankName} — {tracking.promotionName}
-            </p>
-            <p className="mt-0.5 text-small text-ink-700">
+            </span>
+            <span id={summaryId} className="mt-0.5 block text-small text-ink-700">
               Zdobyte dotąd: <span className="num font-semibold text-ink-900">{formatPLN(earnedCents)}</span>
-            </p>
-          </div>
-        </div>
-        <Link
-          href={`/promocje/${tracking.promotionSlug}`}
-          className="link-inline inline-flex min-h-11 items-center gap-1 text-small font-medium"
-        >
-          Zobacz promocję
-          <ArrowRight size={16} aria-hidden="true" />
-        </Link>
-      </header>
+              {requiredSteps.length > 0 ? (
+                <>
+                  {" · "}
+                  <span className="num">{stepsOf(checkedActionCount, requiredSteps.length)}</span>
+                </>
+              ) : null}
+            </span>
+            {deadlines.length > 0 ? <DeadlineNote deadlines={deadlines} /> : null}
+            {!tracking.accountOpenedAt ? (
+              <span className="mt-2 block text-small font-medium text-ink-900">
+                Uzupełnij datę otwarcia konta: rozwiń ściągę.
+              </span>
+            ) : null}
+          </span>
+        </span>
+        <ChevronDown size={22} aria-hidden="true" className="acc-chevron mt-1 shrink-0 text-ink-500" />
+      </button>
+
+      {/* Folded ściągi stay in the DOM (grid rows 0fr -> 1fr, see .collapse-rows in motion.css) and are `inert`:
+          their checkboxes leave the tab order and the accessibility tree until the ściąga is unfolded. */}
+      <div
+        className="collapse-rows"
+        data-open={open ? "true" : "false"}
+        style={animate ? undefined : ({ "--collapse-dur": "0ms" } as CSSProperties)}
+      >
+        <div id={panelId} inert={!open}>
+          <div className="border-t border-line px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
+            <div className="flex justify-end">
+              <Link
+                href={`/promocje/${tracking.promotionSlug}`}
+                className="link-inline inline-flex min-h-11 items-center gap-1 text-small font-medium"
+              >
+                Zobacz promocję
+                <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
 
       {tracking.fees ? (
         <section aria-label="Darmowe konto i karta" className="mt-5 rounded-field border border-line bg-sunken p-4">
@@ -421,6 +609,7 @@ function ChecklistCard({
           const headingId = `${baseId}-m${g.groupIndex}`;
           const lockId = `${baseId}-m${g.groupIndex}-lock`;
           const failedHere = failedStepId !== null && g.visibleSteps.some((s) => s.id === failedStepId);
+          const groupDeadline = deadlines.find((d) => d.groupIndex === g.groupIndex);
           return (
             <div
               key={g.groupIndex}
@@ -454,6 +643,26 @@ function ChecklistCard({
                   </span>
                 </p>
               )}
+
+              {groupDeadline ? (
+                <p
+                  data-group-deadline={isUrgent(groupDeadline.daysLeft) ? "urgent" : "soon"}
+                  className={cn(
+                    "mt-1.5 flex items-start gap-1.5 text-small font-medium",
+                    isUrgent(groupDeadline.daysLeft) ? "text-coral-600" : "text-ink-900"
+                  )}
+                >
+                  <Bell
+                    size={16}
+                    aria-hidden="true"
+                    className={cn("mt-0.5 shrink-0", isUrgent(groupDeadline.daysLeft) ? "text-coral-600" : "text-warn")}
+                  />
+                  <span>
+                    {daysLeftText(groupDeadline.daysLeft)}
+                    {groupDeadline.daysLeft > 1 ? ` (do ${lastDayText(groupDeadline.lastDay)})` : ""}
+                  </span>
+                </p>
+              ) : null}
 
               {g.unlocked && g.bulkSteps.length > 0 && (
                 <Button
@@ -587,7 +796,39 @@ function ChecklistCard({
           </div>
         )}
       </div>
+          </div>
+        </div>
+      </div>
     </article>
+  );
+}
+
+/**
+ * The bell line of a folded or unfolded ściąga: what is due, until when, how many steps are left. A <span> (it lives
+ * inside the fold button). Soonest group first; the others are only counted. Gold, red from 2 days on.
+ */
+function DeadlineNote({ deadlines }: { deadlines: readonly GroupDeadline[] }) {
+  const first = deadlines[0]!;
+  const rest = deadlines.length - 1;
+  const urgent = isUrgent(first.daysLeft);
+  return (
+    <span
+      data-deadline-note={urgent ? "urgent" : "soon"}
+      className={cn(
+        "mt-2 flex items-start gap-2 rounded-field px-3 py-2 text-small text-ink-900",
+        urgent ? "bg-coral-100" : "bg-warn-100"
+      )}
+    >
+      <Bell size={18} aria-hidden="true" className={cn("mt-px shrink-0", urgent ? "text-coral-600" : "text-warn")} />
+      <span>
+        <span className="font-semibold">
+          {daysLeftText(first.daysLeft)}
+          {first.daysLeft > 1 ? ` (do ${lastDayText(first.lastDay)})` : ""}:
+        </span>{" "}
+        {first.label}. Do zaznaczenia: {first.openSteps} {pluralizePl(first.openSteps, "krok", "kroki", "kroków")}.
+        {rest > 0 ? ` Jeszcze ${rest} ${pluralizePl(rest, "termin", "terminy", "terminów")}.` : ""}
+      </span>
+    </span>
   );
 }
 

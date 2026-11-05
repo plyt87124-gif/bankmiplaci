@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { HOME_TRUST_COLUMNS } from "./homeContent";
 
 /**
@@ -18,11 +19,16 @@ export function HomeTrust() {
       >
         {HOME_TRUST_COLUMNS.map((column) => (
           <li key={column.id} className="py-6 md:px-6 md:first:pl-0 md:last:pr-0">
-            <h3>{column.title}</h3>
-            <p className="mt-2 text-article text-ink-700">{column.text}</p>
-            <p className="mt-3 text-small">
-              <Link href={column.link.href} className="link-inline inline-flex min-h-11 items-center font-medium">
+            <h3 className="font-brand text-h3">{column.title}</h3>
+            <p className="mt-2 max-w-[34rem] text-article text-ink-700">{column.text}</p>
+            <p className="mt-3 text-ui">
+              <Link href={column.link.href} className="link-inline group inline-flex min-h-11 items-center gap-1.5 font-semibold no-underline hover:underline">
                 {column.link.label}
+                <ArrowRight
+                  size={16}
+                  aria-hidden="true"
+                  className="transition-transform duration-base ease-out group-hover:translate-x-0.5"
+                />
               </Link>
             </p>
           </li>

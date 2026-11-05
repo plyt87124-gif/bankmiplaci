@@ -1,3 +1,4 @@
+import { Briefcase, User } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { BankLogo } from "@/components/ui/BankLogo";
 import { VerifiedLine } from "@/components/trust/VerifiedLine";
@@ -36,6 +37,7 @@ export function OfferHeader({
   now?: Date;
 }) {
   const lead = summary?.replace(/\s+/g, " ").trim() ?? "";
+  const TypeIcon = accountType === "BUSINESS" ? Briefcase : User;
 
   return (
     <header className="mt-5 md:mt-6">
@@ -50,20 +52,17 @@ export function OfferHeader({
         {name}
       </h1>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span style={{ viewTransitionName: "vt-type" }} className="inline-flex">
-          <Badge variant="neutral">{ACCOUNT_TYPE_LABEL[accountType]}</Badge>
+      {/* The same quiet facts as on the card (an icon and a line of text each), not two grey chips. */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+        <span
+          style={{ viewTransitionName: "vt-type" }}
+          className="inline-flex items-center gap-1.5 text-small font-medium text-ink-700"
+        >
+          <TypeIcon size={16} aria-hidden="true" className="shrink-0 text-ink-500" />
+          {ACCOUNT_TYPE_LABEL[accountType]}
         </span>
-        {/* The badge variant lays its text, date and suffix out as separate flex items, which breaks a long
-            "dane mogą być nieaktualne" line into three islands on a phone; the arbitrary variants below make
-            the badge's content flow as one inline run. */}
         <span style={{ viewTransitionName: "vt-verified" }} className="inline-flex max-w-full">
-          <VerifiedLine
-            lastVerifiedAt={lastVerifiedAt}
-            now={now}
-            badge
-            className="max-w-full [&>span]:inline-block [&>span>svg]:mr-1.5 [&>span>svg]:inline [&>span>svg]:align-text-bottom"
-          />
+          <VerifiedLine lastVerifiedAt={lastVerifiedAt} now={now} className="max-w-full text-ink-700" />
         </span>
         {ended ? <Badge variant="danger">Zakończona</Badge> : null}
         {draft ? <Badge variant="info">Roboczy</Badge> : null}

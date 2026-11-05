@@ -50,7 +50,7 @@ export function recommendedOrderFaq(): SeoFaqItem {
     question: "Czy kolejność ofert na tej stronie zależy od prowizji?",
     answer:
       `Tak. Ta lista jest ułożona w sortowaniu „Polecane”. ${stripCopy("recommended").lead} ` +
-      "Pozostałe sortowania na stronie wszystkich promocji, takie jak „Najlepsza ocena” czy „Najwyższa premia”, nie zależą od wynagrodzenia partnerskiego.",
+      "W sortowaniu „Najlepsza ocena” wynagrodzenie partnerskie też ma wpływ, bo jest częścią oceny serwisu. Sortowania według premii, trudności i daty na stronie wszystkich promocji od niego nie zależą.",
     link: { label: "Jak zarabiamy", href: DISCLOSURE_LINKS.howWeEarnRecommended }
   };
 }

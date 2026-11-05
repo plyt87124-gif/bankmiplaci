@@ -1,183 +1,103 @@
-import { Difficulty, PromotionStatus } from "@prisma/client";
+import { PromotionStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { signupCutoff } from "@/lib/promotionAvailability";
-import { estimateRequiredTurnoverCents } from "@/lib/requiredTurnover";
+import { buildRatingInput, type RatingSource } from "@/lib/ratingInputs";
+import { rateOffers, type RatingInput } from "@/lib/ratingModel";
+import { loadEffectiveCommissions } from "@/lib/services/effectiveCommissions";
 
 /**
- * Self-updating "ocena serwisu" algorithm.
+ * Self-updating "ocena serwisu".
  *
- * Scores every currently ACTIVE, not-yet-expired promotion relative to
- * offers of the SAME account type (personal and business offers are never
- * compared with each other) on five factors:
- *   1. maxBonusCents - how much (30%).
- *   2. required turnover relative to the bonus - the estimated money you
- *      have to move or spend (wpływy, płatności kartą; see
- *      requiredTurnover.ts) per 1 zł of bonus; less is better (25%). Unknown
- *      when the conditions name no threshold: neutral.
- *   3. duration - over how many months the bonus is spread, from the
- *      highest ChecklistStep month-group; fewer = better (20%).
- *   4. difficulty - assigned per promotion by weighing the required
- *      payments and thresholds (20%).
- *   5. cooldownMonths - shorter karencja = better (5%, low because most
- *      promotions don't have it recorded).
+ * The arithmetic lives in lib/ratingModel.ts (weights, curve, scales - the same
+ * constants /metodologia describes), the numbers it works on are built in
+ * lib/ratingInputs.ts. This file only reads the active offers, asks the model
+ * and stores what changed.
  *
- * With fewer than 3 offers of one account type there is no meaningful
- * spread, so the relative factors (1, 2, 3, 5) are neutral (0.5) rather than
- * borrowing offers of the other type.
+ * Every currently ACTIVE, not-yet-expired promotion is scored against offers of
+ * the same kind (personal-like or business, never across). A `ratingOverride`
+ * set by an administrator wins over the computed value.
  *
- * The composite (0..1) is mapped onto the public 0..10 scale with a
- * front-loaded curve so a merely-decent promotion already lands ~9,
- * while a weak one can fall into the 7s/8s.
- *
- * Runs after every write that can change the active set (see call sites
- * in admin actions, the import script, and expirePastPromotions) — never
- * on a timer, since nothing here depends on the passage of time beyond
- * status/endDate, which those call sites already own.
+ * Runs after every write that can change the active set (admin actions, the
+ * import script, expirePastPromotions) and after every affiliate sync, because
+ * the commission and the contests we are paid are part of the rating. Never on
+ * a timer: nothing else here depends on the passage of time except the
+ * karencja date, which moves slowly.
  */
-
-const DIFFICULTY_SCORE: Record<Difficulty, number> = {
-  VERY_EASY: 1.0,
-  EASY: 0.82,
-  MEDIUM: 0.55,
-  HARD: 0.3
-};
-
-const BONUS_WEIGHT = 0.3;
-const DIFFICULTY_WEIGHT = 0.2;
-const DURATION_WEIGHT = 0.2;
-const COST_WEIGHT = 0.25;
-const COOLDOWN_WEIGHT = 0.05;
-
-const NEUTRAL_SCORE = 0.5;
-
-function compositeToRating(composite: number): number {
-  const clamped = Math.min(1, Math.max(0, composite));
-  return 6.5 + 3.5 * Math.sqrt(clamped);
-}
-
-interface RatablePromotion {
-  id: string;
-  accountType: string;
-  maxBonusCents: number;
-  difficulty: Difficulty;
-  rating: unknown; // Prisma Decimal
-  ratingOverride: unknown; // Prisma Decimal | null
-  cooldownMonths: number | null;
-  /** Highest checklist month-group index, i.e. how many months the promotion's requirements span. Null when it has no checklist yet. */
-  durationMonths: number | null;
-  /** Estimated required turnover in grosze (see requiredTurnover.ts); null when unknown. */
-  costCents: number | null;
-}
-
-/** Percentile of `value` among peers (same accountType, or the whole active set if too few peers) — higher value = higher score unless `invert`. */
-function percentileScore(
-  value: number,
-  peers: RatablePromotion[],
-  pick: (p: RatablePromotion) => number,
-  invert = false
-): number {
-  const values = peers.map(pick);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  if (max === min) return 1;
-  const raw = (value - min) / (max - min);
-  return invert ? 1 - raw : raw;
-}
 
 /**
- * Recomputes `rating` for every currently-active promotion and persists
- * any changes. Returns how many rows were actually updated. Safe to call
- * as often as needed — a no-op when nothing in the active set changed.
+ * Computes the rating of every active promotion without writing anything.
+ * Used by recomputeRatings() and by the dry-run script (scripts/rating-dry-run.ts).
  */
-export async function recomputeRatings(): Promise<number> {
+export async function computeActiveRatings(now: Date = new Date()): Promise<
+  { id: string; slug: string; name: string; accountType: string; stored: number; computed: number; override: number | null; input: RatingInput }[]
+> {
   const rows = await db.promotion.findMany({
-    where: { status: PromotionStatus.ACTIVE, endDate: { gte: signupCutoff() } },
+    where: { status: PromotionStatus.ACTIVE, endDate: { gte: signupCutoff(now) } },
     select: {
       id: true,
+      slug: true,
+      name: true,
       accountType: true,
       maxBonusCents: true,
       difficulty: true,
       rating: true,
       ratingOverride: true,
       cooldownMonths: true,
-      checklistSteps: { select: { order: true } },
-      conditions: { select: { title: true, description: true } }
+      cooldownCutoffDate: true,
+      affiliateCommissionCents: true,
+      bonusParts: { select: { label: true, amountCents: true }, orderBy: { order: "asc" } },
+      checklistSteps: { select: { order: true, title: true, rewardCents: true } },
+      fees: {
+        select: { accountFeeCents: true, accountFeeWaiverCondition: true, cardFeeCents: true, cardFeeWaiverCondition: true }
+      }
     }
   });
+  if (rows.length === 0) return [];
 
-  if (rows.length === 0) return 0;
-
-  const active: RatablePromotion[] = rows.map((p) => {
-    const groupIndexes = p.checklistSteps.map((s) => Math.floor(s.order / 10));
-    const maxGroupIndex = groupIndexes.length > 0 ? Math.max(...groupIndexes) : null;
-    const durationMonths = maxGroupIndex !== null ? Math.max(1, maxGroupIndex) : null;
-    return {
+  const commissions = await loadEffectiveCommissions();
+  const inputs = rows.map((p) => {
+    const source: RatingSource = {
       id: p.id,
+      slug: p.slug,
       accountType: p.accountType,
       maxBonusCents: p.maxBonusCents,
       difficulty: p.difficulty,
-      rating: p.rating,
-      ratingOverride: p.ratingOverride,
       cooldownMonths: p.cooldownMonths,
-      durationMonths,
-      costCents: estimateRequiredTurnoverCents(p.conditions, durationMonths)
+      cooldownCutoffDate: p.cooldownCutoffDate,
+      bonusParts: p.bonusParts,
+      checklistSteps: p.checklistSteps,
+      fees: p.fees,
+      // The campaigns linked to the promotion; the value stored on the promotion is the fallback.
+      commissionCents: commissions.byId.get(p.id) ?? p.affiliateCommissionCents ?? null
     };
+    return buildRatingInput(source, now);
   });
+  const results = rateOffers(inputs);
 
-  const byType = new Map<string, RatablePromotion[]>();
-  for (const p of active) {
-    const list = byType.get(p.accountType) ?? [];
-    list.push(p);
-    byType.set(p.accountType, list);
-  }
-  const peersFor = (p: RatablePromotion) => byType.get(p.accountType) ?? [p];
+  return rows.map((p, i) => ({
+    id: p.id,
+    slug: p.slug,
+    name: p.name,
+    accountType: p.accountType,
+    stored: Number(p.rating),
+    computed: results.get(p.id)!.rating,
+    override: p.ratingOverride === null ? null : Number(p.ratingOverride),
+    input: inputs[i]!
+  }));
+}
 
+/**
+ * Recomputes `rating` for every currently-active promotion and persists
+ * any changes. Returns how many rows were actually updated. Safe to call
+ * as often as needed: a no-op when nothing in the active set changed.
+ */
+export async function recomputeRatings(): Promise<number> {
+  const rated = await computeActiveRatings();
   const updates: { id: string; rating: number }[] = [];
-  for (const p of active) {
-    const override = p.ratingOverride === null ? null : Number(p.ratingOverride);
-    let effective: number;
-    if (override !== null) {
-      effective = override;
-    } else {
-      const peers = peersFor(p);
-      const enoughPeers = peers.length >= 3;
-
-      const bonusScore = enoughPeers ? percentileScore(p.maxBonusCents, peers, (x) => x.maxBonusCents) : NEUTRAL_SCORE;
-
-      const durationPeers = peers.filter((x) => x.durationMonths !== null);
-      const durationScore =
-        enoughPeers && p.durationMonths !== null && durationPeers.length >= 2
-          ? percentileScore(p.durationMonths, durationPeers, (x) => x.durationMonths!, true)
-          : NEUTRAL_SCORE;
-
-      const costRatio = (x: RatablePromotion) => x.costCents! / Math.max(1, x.maxBonusCents);
-      const costPeers = peers.filter((x) => x.costCents !== null);
-      const costScore =
-        enoughPeers && p.costCents !== null && costPeers.length >= 2
-          ? percentileScore(costRatio(p), costPeers, costRatio, true)
-          : NEUTRAL_SCORE;
-
-      const cooldownPeers = peers.filter((x) => x.cooldownMonths !== null);
-      const cooldownScore =
-        enoughPeers && p.cooldownMonths !== null && cooldownPeers.length >= 2
-          ? percentileScore(p.cooldownMonths, cooldownPeers, (x) => x.cooldownMonths!, true)
-          : NEUTRAL_SCORE;
-
-      const composite =
-        BONUS_WEIGHT * bonusScore +
-        DIFFICULTY_WEIGHT * DIFFICULTY_SCORE[p.difficulty] +
-        DURATION_WEIGHT * durationScore +
-        COST_WEIGHT * costScore +
-        COOLDOWN_WEIGHT * cooldownScore;
-
-      effective = Math.round(compositeToRating(composite) * 10) / 10;
-    }
-
-    if (Number(p.rating) !== effective) {
-      updates.push({ id: p.id, rating: effective });
-    }
+  for (const r of rated) {
+    const effective = r.override ?? r.computed;
+    if (r.stored !== effective) updates.push({ id: r.id, rating: effective });
   }
-
   if (updates.length === 0) return 0;
 
   await db.$transaction(updates.map((u) => db.promotion.update({ where: { id: u.id }, data: { rating: u.rating } })));
