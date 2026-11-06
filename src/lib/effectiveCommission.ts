@@ -7,8 +7,12 @@
  *   commission  CPS + CPA of the campaign (the panel's own "stawka");
  *   contest     the contest bonus averaged per client at CONTEST_REFERENCE_CLIENTS
  *               clients. A contest that pays "za każde jedno konto"
- *               (tiers: [{ everyN: 1 }]) is simply a higher commission, a contest
- *               "za każde 3 konta" counts for a third of its bonus per client.
+ *               (tiers: [{ everyN: 1 }]) is simply a higher commission and counts in full.
+ *               Every other bonus (per N accounts, or one-off after N accounts) counts at
+ *               MULTI_ACCOUNT_CONTEST_WEIGHT of its per-client value (owner, 6.11.2026), on top of
+ *               being spread over the accounts it takes: "za każde 3 konta 150 zł" is 45 zł per
+ *               client at 10 clients, counted as 22,50 zł. A bonus that needs more than
+ *               CONTEST_REFERENCE_CLIENTS accounts adds nothing (for now), nor does a ranking.
  *
  * A contest counts only while it runs: from its first day to the end of its last day on
  * Poland's calendar (isContestRunning). So a contest "do końca listopada" stops counting on
@@ -16,11 +20,19 @@
  *
  * Pure (no database): the callers pass the rows they have read.
  */
-import { contestBonusCents, parseTiers } from "@/lib/affiliateNetworks";
+import { contestBonusCents, parseTiers, type ContestTier } from "@/lib/affiliateNetworks";
 import { isDeadlinePassed, signupCutoff } from "@/lib/promotionAvailability";
 
 /** The number of clients the per-client contest value is averaged over. */
 export const CONTEST_REFERENCE_CLIENTS = 10;
+
+/** How much of its per-client value a contest bonus that needs several accounts counts for (one account: 1). */
+export const MULTI_ACCOUNT_CONTEST_WEIGHT = 0.5;
+
+/** 1 for a bonus paid for every single account, MULTI_ACCOUNT_CONTEST_WEIGHT for every other kind. */
+export function contestTierWeight(tier: ContestTier): number {
+  return tier.everyN === 1 ? 1 : MULTI_ACCOUNT_CONTEST_WEIGHT;
+}
 
 export interface CommissionOffer {
   network: string;
@@ -45,9 +57,16 @@ export function offerRateCents(o: Pick<CommissionOffer, "cpsCents" | "cpaCents">
   return (o.cpsCents ?? 0) + (o.cpaCents ?? 0);
 }
 
-/** Contest bonus per client for the given contests (those that count the campaign), grosze. */
+/**
+ * Contest bonus per client for the given contests (those that count the campaign), grosze, weighted:
+ * a bonus for every single account in full, any other bonus at MULTI_ACCOUNT_CONTEST_WEIGHT. This is the value
+ * of the contest to us (rating, "Polecane", "Razem"); the real payouts shown elsewhere stay unweighted.
+ */
 export function contestPerClientCents(contests: readonly Pick<CommissionContest, "tiers">[]): number {
-  const total = contests.reduce((sum, c) => sum + contestBonusCents(parseTiers(c.tiers), CONTEST_REFERENCE_CLIENTS), 0);
+  let total = 0;
+  for (const c of contests) {
+    for (const tier of parseTiers(c.tiers)) total += contestBonusCents([tier], CONTEST_REFERENCE_CLIENTS) * contestTierWeight(tier);
+  }
   return Math.round(total / CONTEST_REFERENCE_CLIENTS);
 }
 
