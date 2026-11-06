@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { BankHubLink } from "../src/components/blog/BankHubLink";
 import { EndedOfferNotice, endedLinkedOffer } from "../src/components/blog/EndedOfferNotice";
 import { articleByline, editorialName } from "../src/lib/editorial";
 import { articleLd } from "../src/lib/seo/jsonld";
@@ -68,4 +69,13 @@ test("EndedOfferNotice says the offer ended, with the date, and links to the cur
   assert.match(out, /href="\/promocje"/);
   assert.match(out, /data-notice="oferta-zakonczona"/);
   assert.match(out, /role="note"/);
+});
+
+/* ---------------- bank hub link ---------------- */
+
+test("BankHubLink points to the bank's own page, named after the bank", () => {
+  const out = html(<BankHubLink bank={{ slug: "alior", name: "Alior Bank" }} className="mt-3" />);
+  assert.match(out, /href="\/banki\/alior"/);
+  assert.match(out, /Wszystkie promocje: Alior Bank/);
+  assert.match(out, /class="mt-3"/);
 });

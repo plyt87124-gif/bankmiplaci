@@ -8,6 +8,7 @@ import { TrustNote } from "@/components/trust/TrustNote";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ArticleBody, siteHost } from "@/components/blog/ArticleBody";
 import { ArticleCard } from "@/components/blog/ArticleCard";
+import { BankHubLink } from "@/components/blog/BankHubLink";
 import { EndedOfferNotice, endedLinkedOffer } from "@/components/blog/EndedOfferNotice";
 import { categoryHref, categoryInfo } from "@/components/blog/categories";
 import { ARTICLE_PAGE_IDS } from "@/components/blog/headingIds";
@@ -172,6 +173,7 @@ export default async function ArticlePage(props: PageProps) {
             <div className="mt-5 max-w-[26rem]">
               <PromotionCard promotion={promotion} headingLevel={3} />
             </div>
+            <BankHubLink bank={promotion.bank} className="mt-3" />
           </section>
         ) : null}
 
