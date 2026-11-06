@@ -54,7 +54,7 @@ export async function computeActiveRatings(now: Date = new Date()): Promise<
   });
   if (rows.length === 0) return [];
 
-  const commissions = await loadEffectiveCommissions();
+  const commissions = await loadEffectiveCommissions({}, now);
   const inputs = rows.map((p) => {
     const source: RatingSource = {
       id: p.id,
