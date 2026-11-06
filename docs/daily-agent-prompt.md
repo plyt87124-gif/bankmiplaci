@@ -189,7 +189,7 @@ Kampania zakazuje promowania na blogach lub stronach o promocjach bankowych (np.
 4. **Dopasowanie kampanii do promocji.** Jeśli kwota w nazwie kampanii lub w opisie u brokera różni się od kwoty promocji na stronie (np. 2400 zł zamiast 3000 zł), nie łącz automatycznie. Daj ❓ do decyzji, a link przypnij do sieci, w której zgodność jest pewna.
 
 ### G. Oceny
-Przeliczają je skrypty. Dodatkowo możesz wywołać POST https://bankmiplaci.pl/api/cron/recompute-ratings z nagłówkiem Bearer CRON_SECRET.
+Ocena serwisu przelicza się sama: po każdym `affiliate-sync.ts sync/links --apply`, po zmianach w panelu admina i **codziennie o ok. 3:10 (cron `/api/cron/recompute-ratings`)**. Konkurs liczy się do prowizji (a przez nią do oceny i „Polecane”) tylko od dnia startu do końca ostatniego dnia z jego pola okresu, więc wygasa sam. Dlatego przy konkursie zawsze wpisuj `startDate` i `endDate` z panelu; bez daty końca konkurs liczy się, dopóki jest w panelu. Nie musisz niczego przeliczać ręcznie. Jeśli bardzo zależy Ci na natychmiastowym efekcie, możesz wywołać POST https://bankmiplaci.pl/api/cron/recompute-ratings z nagłówkiem Bearer CRON_SECRET.
 
 ### H. Kopia plików kandydatów
 Tylko gdy dodałeś promocję.

@@ -8,6 +8,8 @@ import { effectiveCommissionCents } from "@/lib/effectiveCommission";
  * absent (unknown, not zero): callers fall back to the commission stored on the
  * promotion itself, else treat it as unknown.
  *
+ * Contests count only inside their period (isContestRunning), judged at `now`.
+ *
  * Read-only, two small queries. Used by the rating (services/ratings.ts) and by
  * the "Polecane" order, so both read the same number.
  */
@@ -16,7 +18,10 @@ export interface EffectiveCommissions {
   bySlug: Map<string, number>;
 }
 
-export async function loadEffectiveCommissions(filter: { slugs?: readonly string[] } = {}): Promise<EffectiveCommissions> {
+export async function loadEffectiveCommissions(
+  filter: { slugs?: readonly string[] } = {},
+  now: Date = new Date()
+): Promise<EffectiveCommissions> {
   const offers = await db.affiliateOffer.findMany({
     where: {
       missingSince: null,
@@ -37,7 +42,7 @@ export async function loadEffectiveCommissions(filter: { slugs?: readonly string
 
   const contests = await db.affiliateContest.findMany({
     where: { missingSince: null },
-    select: { network: true, offerExternalIds: true, tiers: true, missingSince: true }
+    select: { network: true, offerExternalIds: true, tiers: true, missingSince: true, startDate: true, endDate: true }
   });
 
   const byPromotion = new Map<string, { slug: string; offers: typeof offers }>();
@@ -48,7 +53,7 @@ export async function loadEffectiveCommissions(filter: { slugs?: readonly string
     byPromotion.set(o.promotion.id, entry);
   }
   for (const [id, entry] of byPromotion) {
-    const cents = effectiveCommissionCents(entry.offers, contests);
+    const cents = effectiveCommissionCents(entry.offers, contests, now);
     if (cents === null) continue;
     result.byId.set(id, cents);
     result.bySlug.set(entry.slug, cents);

@@ -5,7 +5,7 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { getSwitchAccounts } from "@/lib/adminAccounts";
 import { computeEligibility, isCurrentClient } from "@/lib/services/eligibility";
 import { deadlineForGroup, groupIndexFromOrder, periodRuleOf } from "@/lib/checklistSchedule";
-import { contestPerClientCents, offerRateCents } from "@/lib/effectiveCommission";
+import { contestPerClientCents, isContestRunning, offerRateCents } from "@/lib/effectiveCommission";
 import {
   chooseAffiliateLink,
   contestBonusCents,
@@ -191,9 +191,10 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
     unmatchedOffers.splice(unmatchedOffers.indexOf(o), 1);
   }
 
-  // Contests per (network, offer externalId).
+  // Contests per (network, offer externalId) that are running today; an ended contest is no longer part of the
+  // payout, the rating or "Polecane" (it stays in the contests table below, marked "zakończony").
   const contestsByOffer = (network: string, externalId: string) =>
-    contests.filter((c) => c.network === network && c.offerExternalIds.includes(externalId));
+    contests.filter((c) => c.network === network && c.offerExternalIds.includes(externalId) && isContestRunning(c));
 
   function history(bankId: string, accountType: string): OwnerHistory | null {
     if (!owner) return null;
@@ -908,6 +909,7 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
                         </td>
                         <td className="p-3 text-xs text-ink-500">
                           {c.startDate || c.endDate ? `${c.startDate ? formatDate(c.startDate) : "?"} – ${c.endDate ? formatDate(c.endDate) : "?"}` : "okres nie podany"}
+                          {!isContestRunning(c) && <span className="ml-1 rounded bg-coral-100 px-1 font-medium text-coral-600">{c.endDate && new Date(c.endDate) < new Date() ? "zakończony" : "jeszcze nie ruszył"}</span>}
                         </td>
                         <td className="p-3 text-xs">{rate ? zl(rate) : "—"}</td>
                         {PAYOUT_CLIENT_COUNTS.map((n) => (
