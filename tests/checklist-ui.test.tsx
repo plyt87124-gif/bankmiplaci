@@ -206,7 +206,8 @@ test("ściąga: bez daty otwarcia konta - etykieta pola daty, następne miesiąc
 
 test("ściąga: potwierdzenie zamknięcia konta to przycisk <Button>, bez ciemnej płyty z białym tekstem", () => {
   const out = checklist();
-  assert.match(out, /<button[^>]*bg-action\/\[0\.16\][^>]*text-action[^>]*>Spełniłem\/am warunki/);
+  // <Button> primary = the selected-Segment look: solid action fill with on-action text.
+  assert.match(out, /<button[^>]*bg-action[^>]*text-on-action[^>]*>Spełniłem\/am warunki/);
   assert.doesNotMatch(out, /bg-ink-solid|bg-teal-700|text-white/);
 });
 

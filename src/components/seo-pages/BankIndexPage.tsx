@@ -50,7 +50,7 @@ export function BankIndexPage({ banks }: { banks: readonly BankIndexRow[] }) {
               <li key={bank.slug} className="flex min-w-0">
                 <Link
                   href={`/banki/${bank.slug}`}
-                  className="group flex w-full min-w-0 items-center gap-4 rounded-card border border-line bg-surface p-4 shadow-sm transition-colors duration-150 ease-out hover:border-line-strong hover:bg-sunken/40"
+                  className="group flex w-full min-w-0 items-center gap-4 rounded-card border border-line bg-surface p-4 shadow-sm transition-colors duration-150 ease-out hover:border-line-strong hover:bg-[linear-gradient(rgb(var(--color-sunken)/0.4),rgb(var(--color-sunken)/0.4))]"
                 >
                   {/* The name is real text next to the logo, so the image is hidden from assistive technology.
                       Logo and name stay in one row on a phone too: eleven tiles of one row each are a short list,

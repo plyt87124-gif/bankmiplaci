@@ -254,7 +254,7 @@ function ResultCard({ match, rank }: { match: QuizMatch; rank: number }) {
   const href = `/promocje/${offer.slug}`;
 
   return (
-    <article className="rounded-card border border-line bg-surface p-5">
+    <article className="relative rounded-card border border-line bg-surface p-5">
       <div className="flex items-start justify-between gap-3">
         <span
           aria-hidden="true"

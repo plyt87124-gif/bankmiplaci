@@ -70,10 +70,13 @@ test("CTA link: href, rel and target in the server-rendered HTML", () => {
   assert.equal(attr(out, "rel"), "sponsored nofollow noopener noreferrer");
   assert.equal(attr(out, "target"), "_blank");
   assert.ok(text(out).startsWith("Przejdź do promocji"));
-  // Rendered as the design system's cta button: tonal accent (tint + border + text), trailing arrow icon.
-  assert.match(out, /bg-action\/\[0\.16\]/);
-  assert.match(out, /border-action\/45/);
-  assert.match(out, /text-action/);
+  // Rendered as the design system's cta button: SOLID (action fill, on-action text) like the selected Segment tab, plus
+  // a 4 px halo and a wide glow that plain primary buttons do not have, and the arrow icon.
+  // Owner (7.11.2026): it must not be overlooked, so it is the loudest button on the page.
+  assert.match(out, /(?<![\w/-])bg-action(?![\w/\[-])/);
+  assert.match(out, /text-on-action/);
+  assert.doesNotMatch(out, /bg-action\/\[0\.16\]/, "nie tonalny");
+  assert.match(out, /shadow-\[0_0_0_4px_rgb\(var\(--color-action\)\/0\.2\),0_12px_28px_-8px/);
   assert.match(out, /lucide-arrow-right/);
   assert.match(out, /min-h-14/);
 });

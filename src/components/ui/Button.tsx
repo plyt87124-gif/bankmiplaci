@@ -2,13 +2,15 @@ import Link from "next/link";
 import { ArrowRight, Loader2 } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { PILL_OFF, PILL_ON } from "@/components/ui/pillStyles";
 
 /**
- * The ONE button implementation (spec section 5). Variants:
- *  - primary    tonal: action tint + action border + action text (flat, no shadow)
- *  - cta        primary + ArrowRight. ONLY for links that leave for a bank
- *               (/out/...), always followed by <AffiliateDisclosure variant="compact">
- *  - secondary  transparent + line-strong border
+ * The ONE button implementation (spec section 5). All pills, in the look of the Segment the owner picked as the
+ * favourite (see pillStyles.ts). Variants:
+ *  - primary    ON: SOLID action fill, bold on-action label, soft drop shadow (= the selected Segment)
+ *  - cta        primary + a halo and a stronger glow + ArrowRight: the loudest button. ONLY for links that leave for a
+ *               bank (/out/...), always followed by <AffiliateDisclosure variant="compact">
+ *  - secondary  OFF: cream fill, line-strong border, ink text; hover washes in the action tint (= the other Segment tab)
  *  - ghost      text button, hover fill
  *  - danger     coral-600 fill, text-on-coral
  * Sizes: sm (36 px, hit area padded to 44), md (44 px), lg (56 px) - min-heights.
@@ -18,18 +20,23 @@ export type ButtonVariant = "primary" | "cta" | "secondary" | "ghost" | "danger"
 export type ButtonSize = "sm" | "md" | "lg";
 
 const base =
-  "group/cta relative inline-flex select-none items-center justify-center gap-2 rounded-field border border-transparent text-center font-brand font-semibold " +
+  "group/cta relative inline-flex select-none items-center justify-center gap-2 rounded-full border border-transparent text-center font-brand font-semibold " +
   "[transition:background-color_150ms_var(--ease-out,ease),border-color_150ms_var(--ease-out,ease),transform_120ms_var(--ease-out,ease)] " +
   "active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
-// Tonal, flat: the action colour as a muted tint with a thin border of the same hue and text in that hue; no highlight,
-// no shadow. The secondary button is transparent with a neutral border, so the two still differ by colour.
-const TONAL = "border-action/45 bg-action/[0.16] text-action hover:bg-action/[0.24] active:bg-action/[0.3]";
+// Primary = the selected Segment tab: solid action fill + soft drop shadow (PILL_ON), a darker fill on hover / press.
+const PRIMARY = `${PILL_ON} hover:border-action-hover hover:bg-action-hover active:bg-action-hover`;
+
+// The loudest button, only for the link that leaves for a bank ("Przejdź do promocji"). It is the primary look plus a
+// 4 px halo of the action hue and a wide glow underneath, so even next to other solid buttons it is the first thing the
+// eye lands on. Both live in ONE box-shadow, so `shadow-none` on a disabled button removes the halo with it.
+const CTA =
+  "border-action bg-action text-on-action shadow-[0_0_0_4px_rgb(var(--color-action)/0.2),0_12px_28px_-8px_rgb(var(--color-action)/0.75)] hover:border-action-hover hover:bg-action-hover active:bg-action-hover";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: TONAL,
-  cta: TONAL,
-  secondary: "border-line-strong bg-transparent text-ink-700 hover:bg-ink-100 hover:text-ink-900",
+  primary: PRIMARY,
+  cta: CTA,
+  secondary: PILL_OFF,
   ghost: "bg-transparent text-ink-700 hover:bg-ink-100",
   danger: "bg-coral-600 text-on-coral hover:bg-coral-600/90"
 };
@@ -45,8 +52,8 @@ const sizes: Record<ButtonSize, string> = {
 };
 
 const disabledClasses =
-  "disabled:cursor-not-allowed disabled:border-line disabled:bg-ink-100 disabled:text-ink-500 disabled:shadow-none disabled:active:scale-100 " +
-  "aria-disabled:cursor-not-allowed aria-disabled:border-line aria-disabled:bg-ink-100 aria-disabled:text-ink-500 aria-disabled:shadow-none aria-disabled:active:scale-100";
+  "disabled:cursor-not-allowed disabled:border-line disabled:bg-ink-100 disabled:bg-none disabled:text-ink-500 disabled:shadow-none disabled:active:scale-100 " +
+  "aria-disabled:cursor-not-allowed aria-disabled:border-line aria-disabled:bg-ink-100 aria-disabled:bg-none aria-disabled:text-ink-500 aria-disabled:shadow-none aria-disabled:active:scale-100";
 
 interface ButtonOwnProps {
   variant?: ButtonVariant;
@@ -67,7 +74,7 @@ export function buttonClasses({
     base,
     variants[variant],
     sizes[size],
-    disabled ? "cursor-not-allowed border-line bg-ink-100 text-ink-500 shadow-none hover:bg-ink-100 active:scale-100" : null,
+    disabled ? "cursor-not-allowed border-line bg-ink-100 text-ink-500 shadow-none hover:border-line hover:bg-ink-100 hover:bg-none active:scale-100" : null,
     fullWidth ? "w-full" : null,
     className
   );
@@ -136,7 +143,7 @@ export function ButtonLink({
     base,
     variants[variant],
     sizes[size],
-    disabled ? "pointer-events-none cursor-not-allowed border-line bg-ink-100 text-ink-500 shadow-none" : null,
+    disabled ? "pointer-events-none cursor-not-allowed border-line bg-ink-100 bg-none text-ink-500 shadow-none" : null,
     fullWidth ? "w-full" : null,
     className
   );

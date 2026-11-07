@@ -21,15 +21,16 @@ import { cn } from "@/lib/cn";
 export type BadgeVariant = "neutral" | "verified" | "success" | "warn" | "danger" | "info" | "reward" | "outline";
 type LegacyTone = "teal" | "gold" | "coral" | "neutral";
 
+// Same language as the buttons: a muted tint, a thin border of the same hue, text in that hue.
 const variants: Record<BadgeVariant, string> = {
-  neutral: "bg-ink-100 text-ink-700",
-  verified: "bg-teal-100 text-teal-700",
-  success: "bg-success-100 text-success",
-  warn: "bg-warn-100 text-warn",
-  danger: "bg-coral-100 text-coral-600",
-  info: "bg-info-100 text-info",
-  reward: "bg-gold-100 text-gold-600",
-  outline: "border border-line-strong bg-transparent text-ink-700"
+  neutral: "border-line bg-ink-100 text-ink-700",
+  verified: "border-teal-700/30 bg-teal-100 text-teal-700",
+  success: "border-success/30 bg-success-100 text-success",
+  warn: "border-warn/35 bg-warn-100 text-warn",
+  danger: "border-coral-600/35 bg-coral-100 text-coral-600",
+  info: "border-info/30 bg-info-100 text-info",
+  reward: "border-gold-600/35 bg-gold-100 text-gold-600",
+  outline: "border-line-strong bg-transparent text-ink-700"
 };
 
 const defaultIcons: Partial<Record<BadgeVariant, LucideIcon>> = {
@@ -71,7 +72,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 font-brand text-caption font-semibold",
+        "inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 font-brand text-caption font-semibold",
         variants[resolved],
         className
       )}

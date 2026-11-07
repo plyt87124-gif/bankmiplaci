@@ -124,7 +124,7 @@ export function PromotionCard({
       data-slug={promotion.slug}
       className={cn(
         "group relative flex h-full flex-col rounded-card border border-line bg-surface p-4 sm:p-5",
-        "transition-colors duration-150 ease-out hover:border-line-strong hover:bg-sunken/40",
+        "transition-colors duration-150 ease-out hover:border-line-strong hover:bg-[linear-gradient(rgb(var(--color-sunken)/0.4),rgb(var(--color-sunken)/0.4))]",
         className
       )}
     >

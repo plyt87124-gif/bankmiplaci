@@ -314,7 +314,11 @@ test("a whole database row can be passed (old callers do) and nothing private re
 test("no animation or lift on the card; hover is a border/tint change only", () => {
   const out = render(card());
   assert.match(out, /hover:border-line-strong/);
-  assert.match(out, /hover:bg-sunken\/40/);
+  // The tint is a gradient over the solid `bg-surface`, never a see-through colour: the drawings behind the page
+  // (ScrollDecor) must not shine through a hovered tile.
+  assert.match(out, /bg-surface/);
+  assert.match(out, /hover:bg-\[linear-gradient\(rgb\(var\(--color-sunken\)\/0\.4\)/);
+  assert.doesNotMatch(out, /hover:bg-sunken\/\d+/);
   assert.doesNotMatch(out, /shadow-|hover:-translate|hover:scale|animate-/);
 });
 
