@@ -19,6 +19,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { feeWaiverProblems } from "@/lib/feeValidation";
+import { offerCopyProblems } from "@/lib/offerCopyRules";
 import { overlayDefined, promotionContentChanged, type PromotionContentLike } from "@/lib/promotionContent";
 
 export interface ImportBank {
@@ -256,6 +257,8 @@ export async function importPromotions(
         problems.push(...resolved.problems);
         const resolvedFees = resolveImportFees(entry.promotion.slug, existing?.fees, entry.promotion.fees);
         problems.push(...resolvedFees.problems);
+        // Sentences the owner banned from offer pages must not reach the database (offerCopyRules.ts).
+        problems.push(...offerCopyProblems(entry.promotion.slug, entry.promotion));
         plans.push({ entry, existing, parts: resolved.parts, fees: resolvedFees.fees, feeUpdates: resolvedFees.updates });
       }
       if (problems.length > 0) throw new ImportAbortError(problems);

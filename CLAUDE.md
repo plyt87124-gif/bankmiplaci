@@ -24,6 +24,14 @@ Porównywarka promocji bankowych w Polsce: oferty ze ściągą krok po kroku, oc
 - Duże zmiany rób w osobnym worktree (`.claude/worktrees/...`), żeby nie ruszać głównego folderu, w którym mogą być prace z innych sesji.
 - Sekrety tylko w `.env*` (są w `.gitignore`), nigdy w commitach ani w odpowiedziach.
 
+## Treść ofert (zasady właściciela, 7.11.2026)
+
+Dotyczy każdej promocji, którą generujesz lub poprawiasz: plików `data/candidates/*.json`, generatorów `data/candidates/_src/gen_*.py`, importu, panelu admina.
+
+- **Każdą rzecz mów raz.** Karencja (data graniczna albo liczba miesięcy) siedzi tylko w polach `cooldownCutoffDate` / `cooldownMonths`. Strona sama składa z nich skrót w pasku faktów i jedno zdanie w „Dla kogo jest promocja?”. `eligibleFor` i `notEligibleFor` mówią KTO (forma prawna, wiek, rodzaj klienta), bez powtarzania dat i okresów karencji, i nie są swoim lustrem („kto nie może” nie przepisuje „kto może” od końca). Właściciel zauważył, że ta sama informacja stała na stronie w trzech miejscach.
+- **Zakazane zdania** (w żadnym polu, ani w szablonach strony): „Lista może zawierać także dodatkowe zasady i ograniczenia, a nie tylko czynności do wykonania.” oraz „Premia maksymalna nie jest gwarantowana – otrzymasz ją tylko po spełnieniu wszystkich warunków cząstkowych opisanych wyżej.” Pilnuje tego `src/lib/offerCopyRules.ts`: import przerywa się przed zapisem, formularz admina odmawia, `tests/offer-copy-rules.test.ts` skanuje `src/` i `data/`.
+- Generator, który pisze nowe pliki z promocjami, ma te zasady zachować od razu. Nie liczysz na to, że zablokuje je dopiero import.
+
 ## Podgląd w przeglądarce Claude
 
 `preview_start` czyta `.claude/launch.json` z głównego folderu. Żeby uruchomić podgląd z worktree, trzeba tymczasowo dodać wpis z `npm --prefix <worktree> run dev -- -p 3100` i po starcie przywrócić plik.

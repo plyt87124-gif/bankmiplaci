@@ -20,16 +20,8 @@ export function ConditionsSection({
 
       <div className="mt-5">
         {conditions.length > 0 ? (
-          <>
-            {/*
-              The conditions are numbered, but not every entry is an action: the data cannot tell a step from a
-              rule or a limit (PromotionCondition.type does not separate them), so the list says so.
-            */}
-            <p className="mb-5 text-small text-ink-500">
-              Lista może zawierać także dodatkowe zasady i ograniczenia, a nie tylko czynności do wykonania.
-            </p>
-            <ConditionsChecklist conditions={[...conditions]} />
-          </>
+          // No intro sentence about "steps and rules" (owner, 2026-11-07; see src/lib/offerCopyRules.ts).
+          <ConditionsChecklist conditions={[...conditions]} />
         ) : (
           <p className="text-article text-ink-700">
             Nie mamy jeszcze rozpisanych kroków tej promocji. Sprawdź warunki w regulaminie banku (link w sekcji

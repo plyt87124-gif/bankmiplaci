@@ -1,10 +1,6 @@
 import { CheckCircle2, XCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
-import {
-  cooldownSentences,
-  splitLines,
-  type CooldownRule
-} from "./offerModel";
+import { cooldownBrief, splitLines, type CooldownRule } from "./offerModel";
 
 function Panel({
   icon: Icon,
@@ -40,28 +36,32 @@ function Panel({
 
 /**
  * "Dla kogo jest promocja?": who can take part (`eligibleFor`) and who cannot
- * (`notEligibleFor`), then the cooldown rule in plain words. A free-text field
+ * (`notEligibleFor`), then the cooldown rule as ONE short line. A free-text field
  * written as separate lines becomes a list, a single paragraph stays one.
  * Empty fields are not shown; with nothing to say the whole section is absent
  * (and the summary bar then has no link to it).
+ *
+ * The summary bar's "Szczegóły karencji" link lands here (#dla-kogo), so the
+ * karencja line stays, but it is kept to a line or two: the section used to
+ * repeat the same rule in both cards and again in a boxed block with a
+ * heading of its own (owner, 2026-11-07). Write each fact once: the date or
+ * period lives in the cooldown fields, the cards say who, not when.
  */
 export function ForWhom({
   eligibleFor,
   notEligibleFor,
-  cooldown,
-  bankName
+  cooldown
 }: {
   eligibleFor: string | null;
   notEligibleFor: string | null;
   cooldown: CooldownRule | null;
-  bankName: string;
 }) {
   const can = splitLines(eligibleFor);
   const cannot = splitLines(notEligibleFor);
-  if (can.length === 0 && cannot.length === 0 && !cooldown) return null;
+  const note = cooldown ? cooldownBrief(cooldown) : null;
+  if (can.length === 0 && cannot.length === 0 && !note) return null;
 
   const panels = (can.length > 0 ? 1 : 0) + (cannot.length > 0 ? 1 : 0);
-  const sentences = cooldown ? cooldownSentences(cooldown, bankName) : [];
 
   return (
     <section id="dla-kogo" aria-labelledby="dla-kogo-h">
@@ -78,15 +78,10 @@ export function ForWhom({
         </div>
       ) : null}
 
-      {sentences.length > 0 ? (
-        <div className="mt-4 rounded-card border border-line bg-sunken p-4">
-          <h3 className="text-h4">Kiedy możesz otworzyć konto?</h3>
-          {sentences.map((sentence) => (
-            <p key={sentence} className="mt-1.5 text-ui text-ink-700">
-              {sentence}
-            </p>
-          ))}
-        </div>
+      {note ? (
+        <p className={cn("rounded-card border border-line bg-sunken px-4 py-3 text-small text-ink-700", panels > 0 ? "mt-3" : "mt-5")}>
+          {note}
+        </p>
       ) : null}
     </section>
   );

@@ -309,12 +309,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
 
           <BonusBreakdown openParts={openParts} closedParts={closedParts} maxBonusCents={promotion.maxBonusCents} />
 
-          <ForWhom
-            eligibleFor={promotion.eligibleFor}
-            notEligibleFor={promotion.notEligibleFor}
-            cooldown={cooldown}
-            bankName={bank.name}
-          />
+          <ForWhom eligibleFor={promotion.eligibleFor} notEligibleFor={promotion.notEligibleFor} cooldown={cooldown} />
 
           <FeesSection fees={promotion.fees} />
 
