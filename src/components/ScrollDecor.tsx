@@ -3,16 +3,18 @@
 import { useEffect, useRef, type ReactElement } from "react";
 
 /**
- * A few faint line drawings (coin, banknote, percent sign, card, stack of coins) behind the whole site. They drift
+ * Faint line drawings (coin, banknote, percent sign, card, stack of coins) behind the whole site. They drift
  * at different speeds while the page scrolls: slower than the text they look far away, a little faster than it
  * they look near, so the page gets some depth without any of it competing with the content.
  *
  *  - Meant to be almost invisible: the stroke is `stroke-ink-300` (the colour reserved for decoration), opacity 10 to 16 %,
- *    1.5 px lines, six drawings on a wide screen and four on a phone.
- *  - Two fixed layers. "back" (`-z-10`) sits behind the page: the opaque bands of the home page (hero, quiz) hide
- *    it, so those drawings slide under the bands. "front" (`z-30`, under the sticky header) holds the two near,
- *    faster drawings, drawn over the content at a lower opacity. That is where "something in front, something behind"
- *    comes from. Neither takes pointer events; both are hidden from assistive technology and print.
+ *    1.5 px lines, twelve drawings on a wide screen and eight on a phone.
+ *  - NEVER above a promotion tile. The tiles (PromotionCard, ArticleCard, ...) are positioned (`relative`, opaque
+ *    background) and come later in the DOM than this component, so they paint over every drawing. Two fixed layers:
+ *    "back" (`-z-10`) sits behind the page, the opaque bands of the home page (hero, quiz) hide it; "front" (`z-0`)
+ *    paints over plain page content and text but still UNDER every positioned tile and under the sticky header. Do not
+ *    give this layer a positive z-index: that is what once let a drawing cross a tile. Neither layer takes pointer
+ *    events; both are hidden from assistive technology and print.
  *  - The drawings are our own simple outlines, not reproductions of real banknotes or coins.
  *  - Each drawing's screen position is `start - speed * scroll`, wrapped around the viewport height with enough
  *    margin that the wrap-around happens off screen. Written straight to `transform` from one requestAnimationFrame
@@ -36,19 +38,27 @@ export interface DecorItem {
   rotate: number;
   /** 0..1, lower is further away. */
   opacity: number;
-  /** "back" sits behind the page (it slides under the coloured bands), "front" over the content. */
+  /** "back" sits behind the page (it slides under the coloured bands), "front" over plain content but under every tile. */
   layer: "back" | "front";
   /** Hidden below `md`. */
   desktopOnly?: boolean;
 }
 
 export const DECOR_ITEMS: readonly DecorItem[] = [
+  // Far: slower than the page, behind everything.
   { glyph: "coin", x: 6, y: 24, size: 64, speed: 0.18, rotate: -12, opacity: 0.16, layer: "back" },
   { glyph: "percent", x: 91, y: 42, size: 72, speed: 0.3, rotate: 8, opacity: 0.16, layer: "back" },
   { glyph: "stack", x: 93, y: 6, size: 58, speed: 0.22, rotate: 0, opacity: 0.14, layer: "back" },
+  { glyph: "percent", x: 12, y: 46, size: 48, speed: 0.12, rotate: -18, opacity: 0.14, layer: "back" },
+  { glyph: "coin", x: 84, y: 84, size: 52, speed: 0.36, rotate: 20, opacity: 0.16, layer: "back" },
   { glyph: "card", x: 4, y: 64, size: 96, speed: 0.5, rotate: 10, opacity: 0.16, layer: "back", desktopOnly: true },
+  { glyph: "banknote", x: 22, y: 8, size: 108, speed: 0.26, rotate: -6, opacity: 0.14, layer: "back", desktopOnly: true },
+  // Near: a little faster than the page, over plain content and text but still under every tile.
   { glyph: "coin", x: 9, y: 92, size: 112, speed: 1.18, rotate: 14, opacity: 0.12, layer: "front" },
-  { glyph: "banknote", x: 88, y: 70, size: 130, speed: 1.32, rotate: -8, opacity: 0.1, layer: "front", desktopOnly: true }
+  { glyph: "banknote", x: 88, y: 70, size: 130, speed: 1.32, rotate: -8, opacity: 0.1, layer: "front", desktopOnly: true },
+  { glyph: "stack", x: 94, y: 30, size: 70, speed: 1.1, rotate: 6, opacity: 0.1, layer: "front" },
+  { glyph: "card", x: 12, y: 52, size: 84, speed: 1.24, rotate: -10, opacity: 0.1, layer: "front", desktopOnly: true },
+  { glyph: "percent", x: 80, y: 96, size: 64, speed: 1.45, rotate: 12, opacity: 0.1, layer: "front" }
 ];
 
 const STROKE = { fill: "none", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round", vectorEffect: "non-scaling-stroke" } as const;
@@ -194,8 +204,9 @@ export function ScrollDecor() {
       <div aria-hidden="true" data-scroll-decor="back" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden print:hidden">
         {drawings("back")}
       </div>
-      {/* In front of the content (under the sticky header, z-40): only the near drawings, very faint. */}
-      <div aria-hidden="true" data-scroll-decor="front" className="pointer-events-none fixed inset-0 z-30 overflow-hidden print:hidden">
+      {/* Over plain content but UNDER the tiles: z-0 and earlier in the DOM than <main>, so every positioned tile (and the
+          sticky header, z-40) paints over it. Never raise this z-index. */}
+      <div aria-hidden="true" data-scroll-decor="front" className="pointer-events-none fixed inset-0 z-0 overflow-hidden print:hidden">
         {drawings("front")}
       </div>
     </>

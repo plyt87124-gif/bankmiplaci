@@ -70,10 +70,11 @@ test("CTA link: href, rel and target in the server-rendered HTML", () => {
   assert.equal(attr(out, "rel"), "sponsored nofollow noopener noreferrer");
   assert.equal(attr(out, "target"), "_blank");
   assert.ok(text(out).startsWith("Przejdź do promocji"));
-  // Rendered as the design system's cta button: tonal accent (tint + border + text), trailing arrow icon.
-  assert.match(out, /bg-action\/\[0\.16\]/);
-  assert.match(out, /border-action\/45/);
-  assert.match(out, /text-action/);
+  // Rendered as the design system's cta button: the one SOLID, loud button (action fill, on-action text), arrow icon.
+  // Owner (7.11.2026): the tonal look let visitors overlook it, so this is the only button that is not tonal.
+  assert.match(out, /(?<![\w/-])bg-action(?![\w/\[-])/);
+  assert.match(out, /text-on-action/);
+  assert.doesNotMatch(out, /bg-action\/\[0\.16\]/, "nie tonalny");
   assert.match(out, /lucide-arrow-right/);
   assert.match(out, /min-h-14/);
 });

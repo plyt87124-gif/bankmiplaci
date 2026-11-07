@@ -61,10 +61,10 @@ export function FilterFields({
                 aria-pressed={pressed}
                 onClick={() => toggleDifficulty(value)}
                 className={cn(
-                  "inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-3.5 text-small font-semibold",
+                  "inline-flex min-h-11 items-center gap-1.5 rounded-field border px-3.5 text-small font-semibold",
                   "[transition:background-color_150ms_var(--ease-out,ease),border-color_150ms_var(--ease-out,ease)]",
                   pressed
-                    ? "border-action bg-teal-100 text-teal-700"
+                    ? "border-action/45 bg-action/[0.16] text-action"
                     : "border-line-strong bg-surface text-ink-700 hover:bg-sunken"
                 )}
               >

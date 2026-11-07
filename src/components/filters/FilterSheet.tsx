@@ -80,10 +80,10 @@ export function FilterSheet({
       onMouseUp={(event) => {
         if (backdrop.current.up(pressedOnBackdrop(event))) onClose();
       }}
-      className="animate-dialog-in fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-none overflow-hidden rounded-b-none rounded-t-2xl border border-b-0 border-line bg-surface p-0 text-ink-900 shadow-modal sm:mx-auto sm:max-w-[32rem]"
+      className="animate-dialog-in fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-none overflow-hidden rounded-b-none rounded-t-2xl border border-b-0 border-action/40 bg-surface p-0 text-ink-900 shadow-modal sm:mx-auto sm:max-w-[32rem]"
     >
       <div className="flex max-h-[85dvh] flex-col">
-        <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-2 sm:px-6">
+        <div className="flex items-center justify-between gap-4 border-b border-action/25 bg-[linear-gradient(rgb(var(--color-action)/0.08),rgb(var(--color-action)/0.08))] px-5 py-2 sm:px-6">
           <h2 id={titleId} className="font-body text-h3">
             {title}
           </h2>

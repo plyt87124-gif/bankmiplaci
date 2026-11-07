@@ -25,9 +25,9 @@ export function CategoryNav({
 
   const chip = (active: boolean) =>
     cn(
-      "inline-flex min-h-11 items-center rounded-lg border px-4 text-small font-semibold transition-colors duration-150 ease-out",
+      "inline-flex min-h-11 items-center rounded-field border px-4 text-small font-semibold transition-colors duration-150 ease-out",
       active
-        ? "border-action bg-action text-on-action"
+        ? "border-action/45 bg-action/[0.16] text-action"
         : "border-line-strong bg-surface text-ink-900 hover:bg-sunken"
     );
 

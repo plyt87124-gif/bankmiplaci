@@ -61,7 +61,7 @@ export function AdminSwitcher({
   return (
     <div className="fixed bottom-4 left-4 z-50 text-ui">
       {open ? (
-        <div role="menu" className="mb-2 w-60 rounded-card border border-line bg-surface p-1.5 shadow-pop">
+        <div role="menu" className="mb-2 w-60 rounded-card border border-action/40 bg-surface p-1.5 shadow-pop">
           <p className="px-3 py-1.5 text-caption text-ink-500">Strona jako użytkownik</p>
           {options.map((option) => (
             <button
@@ -105,7 +105,7 @@ export function AdminSwitcher({
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex min-h-10 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 font-brand font-semibold text-ink-900 shadow-pop hover:bg-sunken"
+        className="inline-flex min-h-10 items-center gap-2 rounded-field border border-action/45 bg-surface bg-[linear-gradient(rgb(var(--color-action)/0.16),rgb(var(--color-action)/0.16))] px-4 font-brand font-semibold text-action shadow-pop hover:border-action"
       >
         <ShieldCheck size={16} aria-hidden="true" className="text-action" />
         Admin · {currentLabel}

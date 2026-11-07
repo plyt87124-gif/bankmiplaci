@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 /**
  * The ONE button implementation (spec section 5). Variants:
  *  - primary    tonal: action tint + action border + action text (flat, no shadow)
- *  - cta        primary + ArrowRight. ONLY for links that leave for a bank
+ *  - cta        SOLID action fill + ArrowRight: the only loud button. ONLY for links that leave for a bank
  *               (/out/...), always followed by <AffiliateDisclosure variant="compact">
  *  - secondary  transparent + line-strong border
  *  - ghost      text button, hover fill
@@ -26,9 +26,14 @@ const base =
 // no shadow. The secondary button is transparent with a neutral border, so the two still differ by colour.
 const TONAL = "border-action/45 bg-action/[0.16] text-action hover:bg-action/[0.24] active:bg-action/[0.3]";
 
+// The one loud button: solid action fill with on-action text (navy on light, pale blue on dark) and a soft glow of the
+// same hue. Only for the link that leaves for a bank ("Przejdź do promocji"): everything else on the page is tonal or
+// quieter, so this is the first thing the eye lands on and a visitor cannot skip past it.
+const SOLID = "border-action bg-action text-on-action shadow-[0_10px_24px_-10px_rgb(var(--color-action)/0.65)] hover:border-action-hover hover:bg-action-hover active:bg-action-hover";
+
 const variants: Record<ButtonVariant, string> = {
   primary: TONAL,
-  cta: TONAL,
+  cta: SOLID,
   secondary: "border-line-strong bg-transparent text-ink-700 hover:bg-ink-100 hover:text-ink-900",
   ghost: "bg-transparent text-ink-700 hover:bg-ink-100",
   danger: "bg-coral-600 text-on-coral hover:bg-coral-600/90"

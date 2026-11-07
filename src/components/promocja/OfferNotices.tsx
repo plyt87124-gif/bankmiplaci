@@ -8,10 +8,11 @@ type NoticeTone = "info" | "neutral" | "warn" | "danger";
 
 const TONE: Record<NoticeTone, { box: string; icon: string; title: string }> = {
   // The body text stays ink-700/900 in every tone; colour only carries the icon and the title.
-  info: { box: "border-line bg-sunken", icon: "text-info", title: "text-ink-900" },
+  // The border takes the hue of the tint (thin, like the tonal buttons); neutral stays a hairline.
+  info: { box: "border-info/35 bg-sunken", icon: "text-info", title: "text-ink-900" },
   neutral: { box: "border-line bg-sunken", icon: "text-ink-500", title: "text-ink-900" },
-  warn: { box: "border-line bg-warn-100", icon: "text-warn", title: "text-warn" },
-  danger: { box: "border-line bg-coral-100", icon: "text-coral-600", title: "text-coral-600" }
+  warn: { box: "border-warn/40 bg-warn-100", icon: "text-warn", title: "text-warn" },
+  danger: { box: "border-coral-600/40 bg-coral-100", icon: "text-coral-600", title: "text-coral-600" }
 };
 
 function Notice({

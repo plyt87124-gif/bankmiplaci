@@ -31,7 +31,7 @@ export function EndedOfferNotice({ offer, className }: { offer: LinkedOffer; cla
     <div
       data-notice="oferta-zakonczona"
       role="note"
-      className={`flex items-start gap-3 rounded-card border border-line bg-coral-100 p-4 sm:p-5 ${className ?? ""}`.trim()}
+      className={`flex items-start gap-3 rounded-card border border-coral-600/40 bg-coral-100 p-4 sm:p-5 ${className ?? ""}`.trim()}
     >
       <XCircle size={22} aria-hidden="true" className="mt-0.5 shrink-0 text-coral-600" />
       <div className="min-w-0 text-ui text-ink-700">

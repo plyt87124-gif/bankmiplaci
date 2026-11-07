@@ -57,7 +57,7 @@ export function HomeEndingSoon({
                 className="group flex min-h-[8rem] w-full flex-col items-start justify-between gap-6 rounded-card border border-dashed border-line-strong/50 p-5 font-brand text-h3 text-ink-900 transition-colors duration-150 ease-out hover:border-action hover:bg-sunken/50"
               >
                 Wszystkie kończące się promocje
-                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-line-strong/60 text-action transition-colors duration-150 ease-out group-hover:border-action group-hover:bg-action group-hover:text-on-action">
+                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-line-strong/60 text-action transition-colors duration-150 ease-out group-hover:border-action/60 group-hover:bg-action/[0.16]">
                   <ArrowRight
                     size={20}
                     aria-hidden="true"

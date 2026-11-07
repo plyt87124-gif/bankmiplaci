@@ -39,7 +39,7 @@ export function ArticleCard({
       data-card="article"
       className={cn(
         "relative rounded-card border border-line bg-surface p-5 transition-colors duration-150 ease-out",
-        "hover:border-line-strong hover:bg-sunken/40",
+        "hover:border-line-strong hover:bg-[linear-gradient(rgb(var(--color-sunken)/0.4),rgb(var(--color-sunken)/0.4))]",
         className
       )}
     >
