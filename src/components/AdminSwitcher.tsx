@@ -61,7 +61,7 @@ export function AdminSwitcher({
   return (
     <div className="fixed bottom-4 left-4 z-50 text-ui">
       {open ? (
-        <div role="menu" className="mb-2 w-60 rounded-card border border-action/40 bg-surface p-1.5 shadow-pop">
+        <div role="menu" className="mb-2 w-60 rounded-card border border-line-strong bg-surface p-1.5 shadow-pop">
           <p className="px-3 py-1.5 text-caption text-ink-500">Strona jako użytkownik</p>
           {options.map((option) => (
             <button
@@ -71,7 +71,7 @@ export function AdminSwitcher({
               aria-checked={current === option.key}
               disabled={busy}
               onClick={() => switchTo(option.key)}
-              className={cn(item, current === option.key && "font-semibold text-ink-900")}
+              className={cn(item, current === option.key && "bg-action font-semibold text-on-action hover:bg-action-hover")}
             >
               {option.label}
               {current === option.key ? <span aria-hidden="true">●</span> : null}
@@ -105,9 +105,9 @@ export function AdminSwitcher({
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex min-h-10 items-center gap-2 rounded-field border border-action/45 bg-surface bg-[linear-gradient(rgb(var(--color-action)/0.16),rgb(var(--color-action)/0.16))] px-4 font-brand font-semibold text-action shadow-pop hover:border-action"
+        className="inline-flex min-h-10 items-center gap-2 rounded-full border border-action bg-action px-4 font-brand font-semibold text-on-action shadow-pop hover:border-action-hover hover:bg-action-hover"
       >
-        <ShieldCheck size={16} aria-hidden="true" className="text-action" />
+        <ShieldCheck size={16} aria-hidden="true" />
         Admin · {currentLabel}
         <ChevronUp size={16} aria-hidden="true" className={cn("transition-transform", open ? "" : "rotate-180")} />
       </button>

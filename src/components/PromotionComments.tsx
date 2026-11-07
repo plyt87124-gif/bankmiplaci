@@ -280,7 +280,7 @@ export function PromotionComments({
                   className={cn(
                     "min-h-9 rounded-full px-4 text-small font-semibold transition-colors duration-150 ease-out",
                     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                    active ? "bg-action/[0.16] text-action ring-1 ring-inset ring-action/45" : "text-ink-700 hover:bg-ink-100"
+                    active ? "bg-action text-on-action shadow-[0_3px_4px_-1px_rgb(0_0_0/0.28)]" : "text-ink-700 hover:bg-ink-100"
                   )}
                 >
                   {option.label}

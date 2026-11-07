@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
+import { PILL_OFF, PILL_ON } from "@/components/ui/pillStyles";
 import { ARTICLE_CATEGORIES, CATEGORY_INFO, type ArticleCategoryKey } from "@/components/blog/categories";
 
 /**
  * Category links above a blog list: "Wszystkie" plus every category that has
  * at least one published article (an empty category is not advertised; its page
  * still exists, as noindex). The current page carries aria-current. Chips are
- * rectangular (8 px) and at least 44 px high.
+ * pills in the Segment look (selected = solid, others = cream) and at least
+ * 44 px high.
  */
 export function CategoryNav({
   counts,
@@ -25,10 +27,8 @@ export function CategoryNav({
 
   const chip = (active: boolean) =>
     cn(
-      "inline-flex min-h-11 items-center rounded-field border px-4 text-small font-semibold transition-colors duration-150 ease-out",
-      active
-        ? "border-action/45 bg-action/[0.16] text-action"
-        : "border-line-strong bg-surface text-ink-900 hover:bg-sunken"
+      "inline-flex min-h-11 items-center rounded-full border px-5 text-small font-semibold transition-colors duration-150 ease-out",
+      active ? PILL_ON : PILL_OFF
     );
 
   return (

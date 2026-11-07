@@ -133,12 +133,9 @@ export function Segment<T extends string>({
               "[transition:background-color_150ms_var(--ease-out,ease),border-color_150ms_var(--ease-out,ease),background-size_260ms_var(--ease-out,ease),transform_120ms_var(--ease-out,ease)]",
               joined && "motion-safe:active:scale-[0.97]",
               checked
-                ? // Tonal like the buttons: a tint with a thin border and text of the action hue, laid over a SOLID surface
-                  // (the selected tab overlaps its neighbours, so a see-through fill would show them).
-                  cn(
-                    "border-action/60 bg-surface bg-[linear-gradient(rgb(var(--color-action)/0.2),rgb(var(--color-action)/0.2))] text-action",
-                    joined && "z-10"
-                  )
+                ? // THE house style (owner's favourite): solid action fill, white bold label. Every selected / primary control on
+                  // the site copies this: Button primary, chips, tabs, dialog headers.
+                  cn("border-action bg-action text-on-action", joined && "z-10")
                 : cn(
                     "border-line-strong text-ink-700",
                     joined

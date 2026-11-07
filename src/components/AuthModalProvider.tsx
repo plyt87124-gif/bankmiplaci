@@ -224,19 +224,19 @@ function AuthDialog({
       onMouseUp={(e) => {
         if (backdrop.current.up(pressedOnBackdrop(e))) onClose();
       }}
-      className="animate-dialog-in m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[27.5rem] scroll-pt-20 overflow-y-auto overscroll-contain rounded-2xl border border-action/40 bg-surface p-0 text-ink-900 shadow-modal"
+      className="animate-dialog-in m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[27.5rem] scroll-pt-20 overflow-y-auto overscroll-contain rounded-2xl border border-action bg-surface p-0 text-ink-900 shadow-modal"
     >
       {/* The title row sticks to the top while a tall form scrolls (small phones), so the X is always reachable.
-          Tonal like the buttons: an action tint over a SOLID surface (the form scrolls underneath it). */}
-      <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-action/25 bg-surface bg-[linear-gradient(rgb(var(--color-action)/0.08),rgb(var(--color-action)/0.08))] px-6 pb-3 pt-6 sm:px-8 sm:pt-8">
-        <h2 id={titleId} className="font-display text-h2">
+          Solid action band with a white title, like the selected Segment tab (opaque: the form scrolls underneath it). */}
+      <div className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-action px-6 pb-4 pt-6 text-on-action sm:px-8 sm:pt-8">
+        <h2 id={titleId} className="font-display text-h2 text-on-action">
           {AUTH_TITLES[mode]}
         </h2>
         <Button
           variant="ghost"
           aria-label="Zamknij"
           onClick={() => onClose()}
-          className="-mr-3 -mt-2 h-11 w-11 shrink-0 px-0"
+          className="-mr-3 -mt-2 h-11 w-11 shrink-0 px-0 text-on-action hover:bg-on-action/15"
         >
           <X size={24} aria-hidden="true" />
         </Button>

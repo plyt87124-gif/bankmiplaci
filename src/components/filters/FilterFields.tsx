@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import { useOptionalSession } from "@/components/SessionProvider";
 import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
+import { PILL_OFF, PILL_ON } from "@/components/ui/pillStyles";
 import { cn } from "@/lib/cn";
 import { DIFFICULTY_LABEL, formatPLN } from "@/lib/format";
 import { DIFFICULTY_VALUES, MIN_BONUS_OPTIONS, type ListingState } from "@/components/filters/filterParams";
@@ -61,11 +62,9 @@ export function FilterFields({
                 aria-pressed={pressed}
                 onClick={() => toggleDifficulty(value)}
                 className={cn(
-                  "inline-flex min-h-11 items-center gap-1.5 rounded-field border px-3.5 text-small font-semibold",
+                  "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-small font-semibold",
                   "[transition:background-color_150ms_var(--ease-out,ease),border-color_150ms_var(--ease-out,ease)]",
-                  pressed
-                    ? "border-action/45 bg-action/[0.16] text-action"
-                    : "border-line-strong bg-surface text-ink-700 hover:bg-sunken"
+                  pressed ? PILL_ON : PILL_OFF
                 )}
               >
                 {pressed ? <Check size={16} aria-hidden="true" className="shrink-0" /> : null}
