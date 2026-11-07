@@ -9,6 +9,7 @@ import {
   bankOffersListHref,
   cooldownRule,
   COOLDOWN_SCOPE_NOTE,
+  cooldownBrief,
   cooldownSentences,
   cooldownShort,
   deriveOfferState,
@@ -197,6 +198,30 @@ test("cooldownShort and cooldownSentences use the stored values only", () => {
 
   const zero = cooldownSentences({ months: 0, cutoff: null }, "mBank");
   assert.deepEqual(zero, ["Według naszych danych po zamknięciu konta w tym banku nie obowiązuje dodatkowy okres karencji."]);
+});
+
+test("cooldownBrief: one short paragraph, the regulation clause inside the last sentence", () => {
+  assert.equal(
+    cooldownBrief({ months: null, cutoff: day("2025-09-01") }),
+    "Z promocji mogą skorzystać osoby, które od 01.09.2025 nie miały konta w tym banku (jakie produkty się liczą, określa regulamin)."
+  );
+  assert.equal(
+    cooldownBrief({ months: 36, cutoff: null }),
+    "Z promocji mogą skorzystać osoby, które w ciągu ostatnich 36 miesięcy (3 lat) przed złożeniem wniosku nie miały konta w tym banku (jakie produkty się liczą, określa regulamin)."
+  );
+  // both rules: two sentences, the clause only once, at the end
+  const both = cooldownBrief({ months: 24, cutoff: day("2024-12-31") }) ?? "";
+  assert.match(both, /od 31\.12\.2024 nie miały konta w tym banku\. Z promocji mogą skorzystać osoby, które w ciągu ostatnich 24 miesięcy/);
+  assert.equal((both.match(/jakie produkty się liczą/g) ?? []).length, 1);
+  // 0 months and no date: nothing to point at the regulation for
+  assert.equal(
+    cooldownBrief({ months: 0, cutoff: null }),
+    "Według naszych danych po zamknięciu konta w tym banku nie obowiązuje dodatkowy okres karencji."
+  );
+  // never the standalone sentence of the long form (it stays in the FAQ)
+  for (const rule of [{ months: 36, cutoff: null }, { months: null, cutoff: day("2025-09-01") }, { months: 12, cutoff: day("2025-09-01") }]) {
+    assert.doesNotMatch(cooldownBrief(rule) ?? "", /Szczegółowy zakres/);
+  }
 });
 
 test("cooldown wording never names the bank, never uses gendered slashes and never claims which products count", () => {
@@ -409,7 +434,8 @@ test("FAQ: the steps are our write-up of the terms, not a quotation of the regul
   assert.match(answer, /^Według naszego opisu promocji warunki są takie: Otwórz konto; Zaloguj się do aplikacji\./);
   // no numbering: the list holds rules and limits next to actions and the data cannot tell them apart (see offerFaq.ts)
   assert.doesNotMatch(answer, /\d\) /);
-  assert.match(answer, /Lista może zawierać także dodatkowe zasady i ograniczenia/);
+  // the "steps and rules" sentence was removed on the owner's order (2026-11-07)
+  assert.doesNotMatch(answer, /Lista może zawierać|dodatkowe zasady i ograniczenia/);
   assert.doesNotMatch(answer, /Według regulaminu/);
   assert.match(answer, /wiążące zasady w regulaminie banku/);
 });

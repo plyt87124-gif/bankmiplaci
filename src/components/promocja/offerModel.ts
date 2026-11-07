@@ -185,6 +185,28 @@ export function cooldownSentences(rule: CooldownRule, _bankName?: string): strin
   return out;
 }
 
+/** The short form of COOLDOWN_SCOPE_NOTE, as a clause inside the one-line karencja note. */
+export const COOLDOWN_SCOPE_HINT = "jakie produkty się liczą, określa regulamin";
+
+/**
+ * The karencja note of the "Dla kogo jest promocja?" section: ONE short paragraph (owner, 2026-11-07: the
+ * section said the same thing in the two cards and again in a boxed block with its own heading and a
+ * separate sentence for the regulation). It is cooldownSentences without the standalone scope sentence,
+ * which becomes a clause in brackets at the end of the last sentence. The long form stays in the FAQ.
+ * null when there is nothing to say.
+ */
+export function cooldownBrief(rule: CooldownRule): string | null {
+  const sentences = cooldownSentences(rule);
+  const hasScope = sentences[sentences.length - 1] === COOLDOWN_SCOPE_NOTE;
+  if (hasScope) sentences.pop();
+  if (sentences.length === 0) return null;
+  if (hasScope) {
+    const last = sentences.length - 1;
+    sentences[last] = (sentences[last] ?? "").replace(/\.$/, ` (${COOLDOWN_SCOPE_HINT}).`);
+  }
+  return sentences.join(" ");
+}
+
 /** The plain-language definition used wherever "karencja" first appears (same meaning as the FAQ). */
 export const COOLDOWN_EXPLAINER = KARENCJA_DEFINITION;
 

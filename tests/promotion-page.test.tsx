@@ -335,32 +335,34 @@ test("fees: confirmed 0 zł and a conditional rate are worded without a footnote
 });
 
 test("for whom: free text as paragraph or list, empty fields leave no section", () => {
-  const empty = html(h(ForWhom, { eligibleFor: null, notEligibleFor: "  ", cooldown: null, bankName: "B" }));
+  const empty = html(h(ForWhom, { eligibleFor: null, notEligibleFor: "  ", cooldown: null }));
   assert.equal(empty, "");
 
   const both = html(
     h(ForWhom, {
       eligibleFor: "Nowi klienci.",
       notEligibleFor: "- Pracownicy banku\n- Osoby z kontem w ostatnich 3 latach",
-      cooldown: { months: 36, cutoff: null },
-      bankName: "Alior Bank"
+      cooldown: { months: 36, cutoff: null }
     })
   );
   assert.match(both, /id="dla-kogo"/);
   assert.match(text(both), /Dla kogo jest promocja\? Kto może skorzystać Nowi klienci\./);
   assert.match(both, /<ul[^>]*><li[^>]*>Pracownicy banku<\/li><li[^>]*>Osoby z kontem w ostatnich 3 latach<\/li><\/ul>/);
-  assert.match(text(both), /Kiedy możesz otworzyć konto\?/);
-  assert.match(text(both), /nie miały konta w tym banku/);
+  // the karencja rule is ONE short paragraph, not a boxed block with a heading of its own (owner, 2026-11-07)
+  assert.doesNotMatch(text(both), /Kiedy możesz otworzyć konto\?/);
+  assert.equal((both.match(/<h3/g) ?? []).length, 2, "only the two card headings");
+  assert.equal((text(both).match(/nie miały konta w tym banku/g) ?? []).length, 1, "said once");
+  assert.match(text(both), /nie miały konta w tym banku \(jakie produkty się liczą, określa regulamin\)\./);
+  assert.doesNotMatch(text(both), /Szczegółowy zakres/);
   assert.match(both, /md:grid-cols-2/);
 });
 
 test("for whom: one list only, or only a cut-off date, still gives a section (without the karencja explainer)", () => {
-  const one = html(h(ForWhom, { eligibleFor: "Pełnoletni.", notEligibleFor: null, cooldown: null, bankName: "B" }));
+  const one = html(h(ForWhom, { eligibleFor: "Pełnoletni.", notEligibleFor: null, cooldown: null }));
   assert.doesNotMatch(one, /md:grid-cols-2/);
   assert.doesNotMatch(text(one), /Kto nie może/);
-  const cutoff = html(h(ForWhom, { eligibleFor: null, notEligibleFor: null, cooldown: { months: null, cutoff: day("2024-08-01") }, bankName: "Erste" }));
-  assert.match(text(cutoff), /od 01\.08\.2024 nie miały konta w tym banku\./);
-  assert.match(text(cutoff), /Szczegółowy zakres \(jakie produkty się liczą\) podaje regulamin promocji\./);
+  const cutoff = html(h(ForWhom, { eligibleFor: null, notEligibleFor: null, cooldown: { months: null, cutoff: day("2024-08-01") } }));
+  assert.match(text(cutoff), /od 01\.08\.2024 nie miały konta w tym banku \(jakie produkty się liczą, określa regulamin\)\./);
   assert.doesNotMatch(text(cutoff), /Erste|miałeś/);
   assert.doesNotMatch(text(cutoff), /Karencja to okres/);
 });
@@ -382,7 +384,8 @@ test("bonus breakdown: details only for more than one open part; closed parts ar
   assert.match(t, /Premia maksymalna 500 zł/);
   assert.match(t, /Zakończone dla nowych uczestników/);
   assert.match(t, /Kantor \(zapisy do 30\.09\.2026\) 100 zł/);
-  assert.match(t, /nie jest gwarantowana/);
+  // no footnote under the sum any more (owner, 2026-11-07)
+  assert.doesNotMatch(t, /nie jest gwarantowana|warunków cząstkowych|opisanych wyżej/);
 
   const single = html(h(BonusBreakdown, { openParts: open.slice(0, 1), closedParts: [], maxBonusCents: 20000 }));
   assert.equal(single, "");
@@ -421,10 +424,10 @@ test("conditions: numbered static list, no ściąga link or card (the ściąga l
   const none = html(h(ConditionsSection, { bankName: "B", conditions: [] }));
   assert.match(text(none), /Nie mamy jeszcze rozpisanych kroków tej promocji/);
   assert.doesNotMatch(none, /href="#sciaga"/);
-  // the numbered list is introduced as "steps plus rules": not every entry is an action
-  assert.match(text(withSheet), /Lista może zawierać także dodatkowe zasady i ograniczenia/);
-  assert.ok(withSheet.indexOf("Obok kroków") < withSheet.indexOf("<ol"));
-  assert.doesNotMatch(none, /Obok kroków/);
+  // no intro sentence about "steps and rules" any more (owner, 2026-11-07): the list starts right under the heading
+  assert.doesNotMatch(text(withSheet), /Lista może zawierać/);
+  assert.doesNotMatch(text(withSheet), /dodatkowe zasady i ograniczenia/);
+  assert.match(withSheet, /<\/h2><div class="mt-5"><ol/);
 });
 
 /* ------------------------------------------------------------------ */

@@ -69,10 +69,7 @@ export function BonusBreakdown({
                 <Money cents={sum || maxBonusCents} className="shrink-0 text-ui text-ink-900" />
               </li>
             </ul>
-            <p className="border-t border-line px-4 py-3 text-small text-ink-500 sm:px-5">
-              Premia maksymalna nie jest gwarantowana – otrzymasz ją tylko po spełnieniu wszystkich warunków
-              cząstkowych opisanych wyżej.
-            </p>
+            {/* No footnote under the sum (owner, 2026-11-07; see src/lib/offerCopyRules.ts). */}
           </details>
         </>
       ) : (

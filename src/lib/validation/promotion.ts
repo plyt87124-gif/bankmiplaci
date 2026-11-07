@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { feeWaiverProblems } from "@/lib/feeValidation";
+import { offerCopyIssues } from "@/lib/offerCopyRules";
 
 export const conditionSchema = z.object({
   title: z.string().min(3, "Podaj tytuł warunku"),
@@ -106,6 +107,18 @@ export const promotionFormSchema = z
   .refine((data) => data.endDate > data.startDate, {
     message: "Data zakończenia musi być późniejsza niż data rozpoczęcia",
     path: ["endDate"]
+  })
+  .superRefine((data, ctx) => {
+    // Sentences the owner banned from offer pages (offerCopyRules.ts). Only the fields the form shows an error
+    // for are checked here (an issue on a field without an error line would block the save silently); the bulk
+    // import checks every text.
+    for (const found of offerCopyIssues({
+      eligibleFor: data.eligibleFor,
+      notEligibleFor: data.notEligibleFor,
+      summary: data.summary
+    })) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: found.path, message: found.message });
+    }
   });
 
 export type PromotionFormValues = z.infer<typeof promotionFormSchema>;

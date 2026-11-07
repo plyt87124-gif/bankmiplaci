@@ -96,13 +96,13 @@ function questionSteps(input: OfferFaqInput): FaqAccordionItem {
   // "deadline" hold both steps ("Wpisz kod promocji", "Zaloguj się do aplikacji") and notes ("Kto może wziąć
   // udział", "Terminy wypłat", "Zależności i limity promocji"), and "card_payments"/"inflow" hold reward
   // tiers as well as actions. Filtering by type would drop real steps, so every condition is listed, WITHOUT
-  // numbering and with an intro that says some entries are rules, not actions.
+  // numbering. (No sentence about "steps and rules": removed on the owner's order, 2026-11-07, see
+  // src/lib/offerCopyRules.ts.)
   const list = titles.join("; ");
   return {
     question,
     answer:
       `Według naszego opisu promocji warunki są takie: ${list}. ` +
-      "Lista może zawierać także dodatkowe zasady i ograniczenia, a nie tylko czynności do wykonania. " +
       "Szczegóły znajdziesz w sekcji „Warunki promocji”, a wiążące zasady w regulaminie banku."
   };
 }
