@@ -14,7 +14,7 @@ import type { HomeModel } from "./homeModel";
 
 /**
  * The home page in the order of the layout spec (docs/redesign-v2/02-layout-spec.md):
- *   1 hero (+ segment, counter)   2 Polecane promocje   3 Kończą się wkrótce
+ *   1 hero (+ segment, counter)   2 Promocje z najwyższą oceną   3 Kończą się wkrótce
  *   4 Ile wysiłku wymaga promocja?   5 quiz band   6 Dlaczego możesz nam ufać
  *   7 FAQ shortcut + hubs
  * The hero and the featured list share the segment state (HomeSegmentProvider);

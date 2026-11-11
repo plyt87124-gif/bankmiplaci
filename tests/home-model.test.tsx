@@ -7,8 +7,10 @@ import {
   ENDING_SOON_COUNT,
   ENDING_SOON_DAYS,
   FEATURED_COUNT,
+  HOME_HIDDEN_SLUGS,
   buildHomeModel,
   hubSeeAllLabel,
+  isShownOnHome,
   latestVerification,
   pickEffortExamples,
   pickSpotlight,
@@ -42,6 +44,51 @@ function card(slug: string, overrides: Partial<PromotionCardData> = {}): Promoti
 }
 
 const slugs = (cards: readonly PromotionCardData[]) => cards.map((c) => c.slug);
+
+/* ------------------------------------------------------------------ */
+/* what the home page never shows as a card (owner, 2026-11-11)        */
+/* ------------------------------------------------------------------ */
+
+const MBANK_BUSINESS_START = "mbank-zaloz-firme-i-konto-z-platnosciami-500-zl";
+
+test("home never shows young accounts nor the mBank 'Załóż firmę i konto' offer as a card, in any block", () => {
+  assert.ok(HOME_HIDDEN_SLUGS.includes(MBANK_BUSINESS_START));
+  const pool = [
+    card("young-top", { accountType: "YOUNG", rating: 9.9, endDate: day(3), difficulty: "VERY_EASY" }), // best in every sense
+    card(MBANK_BUSINESS_START, { accountType: "BUSINESS", rating: 9.8, endDate: day(2) }),
+    card("alior-konto-18-25-mlodzi-zyskuja", { accountType: "PERSONAL", rating: 9.7, endDate: day(4) }),
+    card("p1", { rating: 9 }),
+    card("p2", { rating: 8.9 }),
+    card("b1", { accountType: "BUSINESS", rating: 8.8 }),
+    card("b2", { accountType: "BUSINESS", rating: 8.7 })
+  ];
+  const model = buildHomeModel(pool, NOW, () => false);
+  const hidden = ["young-top", MBANK_BUSINESS_START, "alior-konto-18-25-mlodzi-zyskuja"];
+  const everyShown = [
+    ...model.segments.flatMap((segment) => slugs(segment.featured)),
+    ...slugs(model.spotlight),
+    ...slugs(model.endingSoon),
+    ...slugs(model.effortExamples)
+  ];
+  for (const slug of hidden) assert.ok(!everyShown.includes(slug), `${slug} is not a card on the home page`);
+  assert.deepEqual(slugs(model.segments[0]!.featured), ["p1", "p2"]);
+  assert.deepEqual(slugs(model.segments[1]!.featured), ["b1", "b2"]);
+  assert.deepEqual(slugs(model.spotlight), ["p1", "p2", "b1", "b2"]);
+
+  // ... but they are still counted: the counter and the "Zobacz wszystkie" numbers lead to the full list
+  assert.equal(model.total, 7);
+  assert.equal(model.segments[0]!.count, 4, "personal: p1, p2, young-top and the Alior youth offer");
+  assert.equal(model.segments[1]!.count, 3, "business: b1, b2 and the mBank offer");
+  assert.equal(model.segments[0]!.seeAll.label, "Zobacz wszystkie (4)");
+});
+
+test("isShownOnHome: only the young accounts and the named offers are hidden", () => {
+  assert.equal(isShownOnHome({ slug: "x", accountType: "PERSONAL" }), true);
+  assert.equal(isShownOnHome({ slug: "x", accountType: "BUSINESS" }), true);
+  assert.equal(isShownOnHome({ slug: "x", accountType: "SAVINGS" }), true);
+  assert.equal(isShownOnHome({ slug: "x", accountType: "YOUNG" }), false);
+  assert.equal(isShownOnHome({ slug: MBANK_BUSINESS_START, accountType: "BUSINESS" }), false);
+});
 
 /* ------------------------------------------------------------------ */
 /* buildHomeModel                                                      */
@@ -108,10 +155,12 @@ test("model: one segment only = nothing to choose, the links lead to the whole l
   assert.equal(model.segments[0]!.count, 2);
   assert.deepEqual(model.segments[0]!.seeAll, { href: "/promocje", label: "Zobacz wszystkie (2)" });
 
-  // A youth account alone is a personal offer: the home page then has a Osobiste segment, not "a segment missing".
+  // A youth account alone has no card on the home page (owner, 2026-11-11): no Osobiste segment is made for it, but it
+  // is still one of the active offers the counter speaks about.
   const young = buildHomeModel([card("y1", { accountType: "YOUNG" })], NOW, () => false);
-  assert.deepEqual(young.segments.map((s) => s.value), ["PERSONAL"]);
-  assert.equal(young.defaultSegment, "PERSONAL");
+  assert.deepEqual(young.segments.map((s) => s.value), []);
+  assert.equal(young.defaultSegment, null);
+  assert.equal(young.total, 1);
 });
 
 test("model: 'Zobacz wszystkie' leads to the segment's hub while the hub is live, with the hub's own number", () => {

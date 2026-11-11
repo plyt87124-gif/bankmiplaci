@@ -1,5 +1,5 @@
 // The home page rendered on the server with fixtures: order of the blocks, the
-// disclosure strip right under the "Polecane promocje" heading, the blocks that
+// disclosure strip (off) right under the "Promocje z najwyższą oceną" heading, the blocks that
 // disappear when empty, the quiz band numbers, the trust claims, the FAQ shortcut
 // and its JSON-LD, the failure state, and the privacy of what reaches the HTML
 // and the client island. The page itself needs the database; the data rules are
@@ -104,7 +104,7 @@ test("home: one H1 with the planned wording, the blocks in the order of the layo
 
   const order = [
     'id="home-title"',
-    'id="polecane-title"',
+    'id="najwyzsza-ocena-title"',
     'id="konczace-title"',
     'id="wysilek-title"',
     'id="quiz-title"',
@@ -112,20 +112,20 @@ test("home: one H1 with the planned wording, the blocks in the order of the layo
     'id="faq-title"'
   ].map((marker) => FULL.indexOf(marker));
   for (const [i, position] of order.entries()) assert.ok(position >= 0, `block ${i} is rendered`);
-  assert.deepEqual([...order].sort((a, b) => a - b), order, "hero, Polecane, Kończą się, Ile wysiłku, quiz, zaufanie, FAQ");
+  assert.deepEqual([...order].sort((a, b) => a - b), order, "hero, najwyższa ocena, Kończą się, Ile wysiłku, quiz, zaufanie, FAQ");
 });
 
 test("home: the blocks have the planned headings and 'Najlepsze' is nowhere", () => {
   const headings = [...FULL.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => text(m[1]!));
   assert.deepEqual(headings, [
-    "Polecane promocje",
+    "Promocje z najwyższą oceną",
     "Kończą się wkrótce",
     "Ile wysiłku wymaga promocja?",
     "Nie wiesz, którą promocję wybrać?",
     "Dlaczego możesz nam ufać",
     "Najczęstsze pytania"
   ]);
-  assert.doesNotMatch(FULL, /Najlepsze/, "'Polecane', never a superlative (the sort option 'Najlepsza ocena' in a FAQ answer is a name)");
+  assert.doesNotMatch(FULL, /Najlepsze/, "no bare 'Najlepsze' (the sort option 'Najlepsza ocena' in a FAQ answer is a name; the section heading names the measure)");
 });
 
 /* ------------------------------------------------------------------ */
@@ -133,7 +133,7 @@ test("home: the blocks have the planned headings and 'Najlepsze' is nowhere", ()
 /* ------------------------------------------------------------------ */
 
 test("hero: kicker with the newest verification date, lead, segment control, buttons, three facts", () => {
-  const hero = FULL.slice(FULL.indexOf('aria-labelledby="home-title"'), FULL.indexOf('aria-labelledby="polecane-title"'));
+  const hero = FULL.slice(FULL.indexOf('aria-labelledby="home-title"'), FULL.indexOf('aria-labelledby="najwyzsza-ocena-title"'));
   assert.match(text(hero), /Najnowsza weryfikacja oferty: 7 paź 2026/, "the NEWEST lastVerifiedAt of the pool (p1), not today's date");
   assert.match(hero, /Najnowsza weryfikacja oferty: <time dateTime="2026-10-07">7 paź 2026<\/time>/);
   assert.doesNotMatch(text(hero), /Aktualizacja:|Ostatnia weryfikacja/, "one name for that date, said once");
@@ -171,20 +171,20 @@ test("hero: the counter uses the Polish plural form and the exact number", () =>
 test("hero: a static dot, no ping and no ornament; the LCP text is not revealed on scroll", () => {
   assert.doesNotMatch(FULL, /animate-ping|animate-pulse/);
   const firstReveal = FULL.indexOf("data-reveal");
-  assert.ok(firstReveal > FULL.indexOf('id="polecane-title"'), "hero and the offers of the first screen are not wrapped in Reveal");
-  assert.ok(firstReveal > FULL.indexOf("Zobacz wszystkie"), "Polecane (with its disclosure) is complete before the first Reveal");
+  assert.ok(firstReveal > FULL.indexOf('id="najwyzsza-ocena-title"'), "hero and the offers of the first screen are not wrapped in Reveal");
+  assert.ok(firstReveal > FULL.indexOf("Zobacz wszystkie"), "the rating-ordered offers (with their disclosure) are complete before the first Reveal");
 });
 
 /* ------------------------------------------------------------------ */
-/* Polecane promocje                                                   */
+/* Promocje z najwyższą oceną                                    */
 /* ------------------------------------------------------------------ */
 
-test("Polecane: no affiliate strip (removed by the owner) - the heading is followed by the segment label", () => {
+test("Najwyższa ocena: no affiliate strip (removed by the owner) - the heading is followed by the segment label", () => {
   assert.doesNotMatch(FULL, /data-disclosure/);
 });
 
-test("Polecane: three cards per segment in the pool's order, the other segment is hidden, 'Zobacz wszystkie (N)' follows the segment", () => {
-  const section = FULL.slice(FULL.indexOf('aria-labelledby="polecane-title"'), FULL.indexOf('id="konczace-title"'));
+test("Najwyższa ocena: three cards per segment in the pool's order, the other segment is hidden, 'Zobacz wszystkie (N)' follows the segment", () => {
+  const section = FULL.slice(FULL.indexOf('aria-labelledby="najwyzsza-ocena-title"'), FULL.indexOf('id="konczace-title"'));
   const personal = section.match(/<div data-segment="PERSONAL"( hidden="")?>([\s\S]*?)<\/div><div data-segment="BUSINESS"/);
   const business = section.match(/<div data-segment="BUSINESS"( hidden="")?>([\s\S]*?)<\/div><p role="status"/);
   assert.ok(personal && business, "both panels are in the HTML");
@@ -195,10 +195,10 @@ test("Polecane: three cards per segment in the pool's order, the other segment i
   assert.deepEqual(slugsIn(business![2]!), ["b1", "b2"]);
 
   assert.match(section, /<a [^>]*href="\/promocje\?accountType=PERSONAL"[^>]*><span>Zobacz wszystkie \(4\)<\/span><\/a>/);
-  assert.match(section, /<p role="status" class="sr-only">Polecane promocje: konta osobiste<\/p>/);
+  assert.match(section, /<p role="status" class="sr-only">Promocje z najwyższą oceną: konta osobiste<\/p>/);
 });
 
-test("Polecane: only the visible segment preloads its logos", () => {
+test("Najwyższa ocena: only the visible segment preloads its logos", () => {
   const withLogos = pool().map((c) => ({ ...c, bank: { ...c.bank, logoUrl: `https://img.example.pl/${c.slug}.png` } }));
   const html = render(buildHomeModel(withLogos, NOW));
   const personal = html.slice(html.indexOf('data-segment="PERSONAL"'), html.indexOf('data-segment="BUSINESS"'));
@@ -211,7 +211,7 @@ test("Polecane: only the visible segment preloads its logos", () => {
   assert.ok(imgs(below).every((img) => /loading="lazy"/.test(img)), "blocks below the fold: lazy");
 });
 
-test("Polecane: a single segment shows no control and no caption", () => {
+test("Najwyższa ocena: a single segment shows no control and no caption", () => {
   const html = render(buildHomeModel(pool().filter((c) => c.accountType === "BUSINESS"), NOW, () => false));
   assert.doesNotMatch(html, /role="radiogroup"/);
   assert.doesNotMatch(html, /Wybór zmienia listę/);
@@ -491,10 +491,25 @@ test("source guard: one place reads the site URL (the SEO library), nothing priv
   assert.doesNotMatch(page, /listPromotionCards|listActivePromotions|\bdb\b/, "the page reads through the cached loader only");
 });
 
+test("source guard: the home page is ordered by the site rating, never by the 'Polecane' (commission) order", () => {
+  // Owner, 2026-11-11: "Polecane" is only a sort option on the /promocje list. The home page shows the offers with
+  // the highest rating (scale 0-10), in the hero spotlight and in the featured lists alike (both read the one pool).
+  const data = fs.readFileSync(path.join(HOME_DIR, "homeData.ts"), "utf8");
+  assert.match(data, /listPromotionCards\(\{ sort: "top-rated" \}\)/);
+  assert.doesNotMatch(data.replace(/\/\*[\s\S]*?\*\//g, ""), /recommended/, "no recommended sort in the code of the home data");
+  for (const { file, source } of homeSources()) {
+    const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    assert.doesNotMatch(code, /sort="recommended"|sort: "recommended"|"recommended"/, `${file}: no recommended order`);
+    assert.doesNotMatch(code, /Najbardziej polecane|Polecane promocje/, `${file}: the old names are gone`);
+  }
+  assert.match(FULL, /aria-label="Promocje z najwyższą oceną"/, "the hero spotlight carries the same name");
+  assert.doesNotMatch(FULL, /Najbardziej polecane|Polecane promocje/);
+});
+
 test("source guard: Reveal only below the featured list, CountUp only for the counter", () => {
   const view = fs.readFileSync(path.join(HOME_DIR, "HomeView.tsx"), "utf8");
   const firstReveal = view.indexOf("<Reveal>");
-  assert.ok(firstReveal > view.indexOf("<HomeFeatured"), "no Reveal above or around the hero and Polecane");
+  assert.ok(firstReveal > view.indexOf("<HomeFeatured"), "no Reveal above or around the hero and the highest-rated offers");
   for (const block of ["HomeEndingSoon", "HomeEffort", "HomeFaq"]) {
     const before = view.slice(Math.max(0, view.indexOf("<" + block) - 40), view.indexOf("<" + block));
     assert.doesNotMatch(before, /<Reveal>\s*$/, block + " (result list / FAQ) is not wrapped in Reveal");
@@ -519,7 +534,7 @@ test("links with an anchor point at sections that exist (the pages of other pack
   }
 });
 
-test("the link under 'Polecane' shows the label and target the model gives it (the hub), and falls back to 'Zobacz wszystkie (N)'", () => {
+test("the link under the highest-rated list shows the label and target the model gives it (the hub), and falls back to 'Zobacz wszystkie (N)'", () => {
   const base = { value: "PERSONAL" as const, label: "Konta osobiste", href: "/promocje?typ=PERSONAL", count: 4 };
   const withSeeAll = renderToStaticMarkup(
     h(
@@ -540,7 +555,7 @@ test("the link under 'Polecane' shows the label and target the model gives it (t
   assert.match(fallback, /href="\/promocje\?typ=PERSONAL"[^>]*><span>Zobacz wszystkie \(4\)<\/span>/);
 });
 
-test("HomeView passes the model's seeAll to the island: with live hubs the link under 'Polecane' is the indexable hub", () => {
+test("HomeView passes the model's seeAll to the island: with live hubs the link under the highest-rated list is the indexable hub", () => {
   const html = renderToStaticMarkup(h(HomeView, { model: buildHomeModel(pool(), NOW, () => true), now: NOW }));
   assert.match(html, /<a [^>]*href="\/promocje\?accountType=PERSONAL"[^>]*><span>Wszystkie konta osobiste z premią \(\d+\)<\/span><\/a>/);
   const offline = renderToStaticMarkup(h(HomeView, { model: buildHomeModel(pool(), NOW, () => false), now: NOW }));

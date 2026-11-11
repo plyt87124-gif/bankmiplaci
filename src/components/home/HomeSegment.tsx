@@ -9,7 +9,7 @@ import type { HomeSeeAll, HomeSegment } from "./homeModel";
 /**
  * The client island of the home page: the "Konta osobiste | Konta firmowe"
  * control in the hero and everything that follows its state - the
- * "Zobacz promocje" button, the "Polecane promocje" list and its
+ * "Zobacz promocje" button, the "Promocje z najwyższą oceną" list and its
  * "Zobacz wszystkie (N)" link. The state is plain UI state (no URL change, no
  * storage): the first render is always the default segment, so the server HTML
  * and the first client render are identical.
@@ -31,7 +31,7 @@ export interface HomeSegmentOption {
   /** The number in "Zobacz wszystkie (N)". */
   count: number;
   /**
-   * Target and text of the link under the "Polecane" list (homeModel: the segment's hub while it is
+   * Target and text of the link under the "Promocje z najwyższą oceną" list (homeModel: the segment's hub while it is
    * live, otherwise the filtered list). Text and a path only. Without it the link falls back to
    * `href` and "Zobacz wszystkie (count)".
    */
@@ -88,7 +88,7 @@ export function HomeSegmentControl({ className }: { className?: string }) {
         value={current.value}
         onChange={setSegment}
       />
-      <p className="mt-2 text-small text-ink-500">Wybór zmienia listę „Polecane promocje” poniżej.</p>
+      <p className="mt-2 text-small text-ink-500">Wybór zmienia listę „Promocje z najwyższą oceną” poniżej.</p>
     </div>
   );
 }
@@ -115,7 +115,7 @@ export function HomeSegmentLink({
   );
 }
 
-/** The link under the "Polecane" list for the selected segment ("Wszystkie konta osobiste z premią (N)" or "Zobacz wszystkie (N)"). */
+/** The link under the "Promocje z najwyższą oceną" list for the selected segment ("Wszystkie konta osobiste z premią (N)" or "Zobacz wszystkie (N)"). */
 export function HomeSeeAllLink({ className }: { className?: string }) {
   const { current } = useHomeSegment();
   if (!current) return null;
@@ -154,7 +154,7 @@ export function HomeSegmentPanels({ panels, className }: { panels: readonly Home
       ))}
       {choosable && current ? (
         <p role="status" className="sr-only">
-          {`Polecane promocje: ${current.label.toLowerCase()}`}
+          {`Promocje z najwyższą oceną: ${current.label.toLowerCase()}`}
         </p>
       ) : null}
     </div>
