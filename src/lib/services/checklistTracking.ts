@@ -19,8 +19,14 @@
  *    shared eligibility rule (services/eligibility.ts) says "eligible".
  */
 import type { AccountType, PrismaClient } from "@prisma/client";
+import { clientKindTypes } from "@/lib/accountTypes";
 import { warsawTodayAsUtcMidnight } from "@/lib/promotionAvailability";
-import { computeEligibility, isChecklistRestartLocked, type EligibilityResult } from "@/lib/services/eligibility";
+import {
+  computeEligibility,
+  isChecklistRestartLocked,
+  mostRestrictiveHistory,
+  type EligibilityResult
+} from "@/lib/services/eligibility";
 
 /** Earliest account-opening date accepted; guards against typos like 0026-05-01. */
 export const OPENED_AT_EARLIEST = "2000-01-01";
@@ -186,11 +192,15 @@ export async function eligibilityForUser(
   promotion: PromotionRules,
   now: Date = new Date()
 ): Promise<EligibilityResult> {
-  const history = await client.userBankHistory.findUnique({
-    where: { userId_bankId_accountType: { userId, bankId: promotion.bankId, accountType: promotion.accountType } },
-    select: { wasClientUntil: true }
+  // A young account counts as a personal one for karencja (accountTypes.ts, clientKindOf): every row of the same
+  // kind at this bank is read, and the one that stands in the way decides.
+  const rows = await client.userBankHistory.findMany({
+    where: { userId, bankId: promotion.bankId, accountType: { in: clientKindTypes(promotion.accountType) } },
+    select: { wasClientFrom: true, wasClientUntil: true }
   });
-  return computeEligibility(promotion.cooldownMonths, promotion.cooldownCutoffDate, history?.wasClientUntil, now);
+  const worst = mostRestrictiveHistory(rows, promotion, now);
+  // Same inputs as before for a single row: no "current client" flag here (this lock only reads closure dates).
+  return computeEligibility(promotion.cooldownMonths, promotion.cooldownCutoffDate, worst?.row.wasClientUntil, now);
 }
 
 /**

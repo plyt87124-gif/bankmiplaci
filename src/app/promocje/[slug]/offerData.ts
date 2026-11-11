@@ -1,8 +1,10 @@
 import { cache } from "react";
 import { getServerSession } from "next-auth";
+import { clientKindTypes } from "@/lib/accountTypes";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { expiredIndexWindowStart } from "@/lib/promotionAvailability";
+import { mostRestrictiveHistory } from "@/lib/services/eligibility";
 import { getBankCards } from "@/lib/services/promotionCards";
 import { getPromotionBySlug } from "@/lib/services/promotions";
 import { getCurrentUser } from "@/lib/userSession";
@@ -28,11 +30,22 @@ export const isAdminViewer = cache(async (): Promise<boolean> => Boolean(await g
 
 export type OfferRow = NonNullable<Awaited<ReturnType<typeof getOffer>>>;
 
-/** The visitor's closure date for this bank and account type (eligibility banner), or null. */
-export function getBankHistory(userId: string, bankId: string, accountType: OfferRow["accountType"]) {
-  return db.userBankHistory.findUnique({
-    where: { userId_bankId_accountType: { userId, bankId, accountType } }
+/**
+ * The visitor's bank-history row that decides this offer's eligibility banner, or null. A young account counts as a
+ * personal one for karencja and "current client" (accountTypes.ts, clientKindOf), so every row of the same kind at
+ * this bank is read and the one that stands in the way wins (mostRestrictiveHistory).
+ */
+export async function getBankHistory(
+  userId: string,
+  bankId: string,
+  accountType: OfferRow["accountType"],
+  rules: { cooldownMonths: number | null; cooldownCutoffDate: Date | null },
+  now: Date = new Date()
+) {
+  const rows = await db.userBankHistory.findMany({
+    where: { userId, bankId, accountType: { in: clientKindTypes(accountType) } }
   });
+  return mostRestrictiveHistory(rows, rules, now)?.row ?? null;
 }
 
 /** The visitor's ściąga on this offer (joined / completed), or null. */

@@ -85,6 +85,40 @@ export function computeEligibility(
 }
 
 /**
+ * A user can hold several bank-history rows that count as the same account for one offer (a personal and a young
+ * account at the same bank: accountTypes.ts, clientKindOf). The offer is closed to them if ANY of those rows closes
+ * it, so the row that stands in the way decides.
+ *
+ *   rank 4  current client            rank 2  waiting for a karencja to pass
+ *   rank 3  a fixed cut-off failed    rank 1  eligible      rank 0  unknown (no data / no rule)
+ * Equal ranks: the one that frees the user LATER (a longer wait). Stable for equal rows.
+ */
+function restrictiveness(result: EligibilityResult): number {
+  if (result.status === "not-eligible") return result.currentClient ? 4 : result.cutoffFailed ? 3 : 2;
+  return result.status === "eligible" ? 1 : 0;
+}
+
+export function mostRestrictiveHistory<T extends { wasClientFrom?: Date | null; wasClientUntil?: Date | null }>(
+  rows: readonly T[],
+  rules: { cooldownMonths: number | null | undefined; cooldownCutoffDate: Date | null | undefined },
+  now: Date = new Date()
+): { row: T; result: EligibilityResult } | null {
+  let best: { row: T; result: EligibilityResult } | null = null;
+  for (const row of rows) {
+    const result = computeEligibility(rules.cooldownMonths, rules.cooldownCutoffDate, row.wasClientUntil, now, isCurrentClient(row));
+    if (!best) {
+      best = { row, result };
+      continue;
+    }
+    const a = restrictiveness(result);
+    const b = restrictiveness(best.result);
+    const later = (result.eligibleFromDate?.getTime() ?? 0) > (best.result.eligibleFromDate?.getTime() ?? 0);
+    if (a > b || (a === b && a === 2 && later)) best = { row, result };
+  }
+  return best;
+}
+
+/**
  * Whether the ściąga of an already COMPLETED promotion stays locked for this
  * participant: only a clear "eligible" (known closure date, rules satisfied)
  * lets them start a fresh round. Not completed -> not locked here.
