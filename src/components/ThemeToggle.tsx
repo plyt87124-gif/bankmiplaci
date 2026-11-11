@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Monitor, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { ThemeIcon } from "@/components/ui/ThemeIcon";
 import {
   THEME_LABEL,
   THEME_STORAGE_KEY,
@@ -12,8 +12,6 @@ import {
   saveThemePreference,
   type ThemePreference
 } from "@/components/ui/theme";
-
-const ICONS = { light: Sun, dark: Moon, system: Monitor } as const;
 
 // The header renders a toggle for desktop AND one for mobile. Every change is
 // broadcast so all instances (and other tabs, via `storage`) show the same state.
@@ -41,8 +39,8 @@ function useThemePreference(): ThemePreference | null {
 
 /**
  * Three-state theme switch: Jasny -> Ciemny -> Automatyczny -> Jasny.
- * One 44x44 button; the icon shows the CURRENT state, the accessible name says
- * what a click does. The saved preference is read after mount (the real
+ * One 44x44 button; the icon shows the CURRENT state (and, under `.motion-ok`, moves a little once every ten
+ * seconds, see ThemeIcon), the accessible name says what a click does. The saved preference is read after mount (the real
  * theme is already applied by the inline script in <head>, so there is no
  * flash) - until then the button renders empty, keeping server and client
  * markup identical.
@@ -80,7 +78,6 @@ export function ThemeToggle({ className }: { className?: string }) {
     setAnnouncement(`Motyw: ${THEME_LABEL[next]}`);
   }
 
-  const Icon = preference ? ICONS[preference] : null;
   const label = preference
     ? `Motyw: ${THEME_LABEL[preference]}. Kliknij, aby zmienić na: ${THEME_LABEL[nextThemePreference(preference)]}.`
     : "Zmień motyw";
@@ -97,7 +94,7 @@ export function ThemeToggle({ className }: { className?: string }) {
           className
         )}
       >
-        {Icon ? <Icon className="h-5 w-5" aria-hidden="true" /> : null}
+        {preference ? <ThemeIcon kind={preference} className="h-5 w-5" /> : null}
       </button>
       <span role="status" aria-live="polite" className="sr-only">
         {announcement}
