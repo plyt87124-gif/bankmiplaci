@@ -1,0 +1,281 @@
+{
+  "_comment": "mBank — eKonto do usług: łączy promocję „Cała naprzód – zyskuj z kontem w mBanku – edycja II” (do 1000 zł, przystąpienie 1.09–30.11.2026) i „Zgarnij bony do Biedronki z eKontem do usług – edycja I” (6 bonów po 50 zł, przystąpienie do 31.01.2027 lub do wyczerpania 12 000 rachunków). Strona oferty łączy obie (do 1000 zł + do 300 zł w bonach); wspólny termin przystąpienia = krótszy, 30.11.2026. Źródło: oba regulaminy PDF + strona oferty. Kampania eBroker 13870 (kampania 13676 to ten sam regulamin). Opłata za kartę po stawce bez zwolnienia nieustalona (NULL). Moje cele: 5,3% do 100 000 zł przez 180 dni (poza sumą premii).",
+  "bankSlug": "mbank",
+  "ebrokerOid": "13870",
+  "promotion": {
+    "slug": "mbank-ekonto-do-uslug-cala-naprzod-2-biedronka",
+    "name": "eKonto do usług: do 1000 zł i do 300 zł w bonach do Biedronki",
+    "accountType": "PERSONAL",
+    "maxBonusCents": 130000,
+    "difficulty": "HARD",
+    "rating": 7.0,
+    "status": "DRAFT",
+    "startDate": "2026-09-01",
+    "endDate": "2026-11-30",
+    "affiliateLinkEnabled": true,
+    "sourceUrl": "https://www.mbank.pl/pdf/promocje/konta/regulamin-promocji-cala-naprzod-zyskuj-z-kontem-w-mbanku-edycja-ii.pdf",
+    "additionalSourceUrls": [
+      "https://www.mbank.pl/pdf/promocje/konta/regulamin-promocji-zgarnij-bony-do-biedronki-z-ekontem-do-uslug-edycja-i.pdf",
+      "https://www.mbank.pl/portals/6.0/lp/eKonto/ebroker/biedronka/"
+    ],
+    "lastVerifiedAt": "2026-10-24",
+    "eligibleFor": "Pełnoletnie osoby z pełną zdolnością do czynności prawnych, które od 1.01.2023 nie były i nie są posiadaczem ani współposiadaczem rachunku oszczędnościowo-rozliczeniowego lub oszczędnościowego w mBanku. Do bonów do Biedronki dodatkowo: brak innych produktów mBanku w dniu przystąpienia do promocji, karta debetowa Mastercard i zgody na mOkazje. Konto indywidualne z kartą.",
+    "notEligibleFor": "Osoby, które od 1.01.2023 miały rachunek w mBanku. Konto wspólne. Z promocji można skorzystać tylko raz i tylko na pierwszym otwartym rachunku; zmiana rachunku na wspólny lub inny rodzaj kończy udział. Osoby z zastrzeżonym numerem PESEL.",
+    "cooldownMonths": null,
+    "cooldownCutoffDate": "2023-01-01",
+    "summary": "Do 1300 zł: premie 100 + 400 zł, bonusy 100 + 300 + 100 zł i 6 bonów po 50 zł do Biedronki; 5,3% na koncie Moje cele do 100 000 zł przez 180 dni.",
+    "conditions": [
+      {
+        "title": "Otwórz eKonto do usług z kartą Mastercard i rachunkiem Moje cele",
+        "description": "Wniosek składasz od 1.09 do 30.11.2026 (umowa najpóźniej do 7.12.2026). Rachunek jednoosobowy, z kartą, z zaznaczoną opcją otwarcia rachunku Moje cele. Najszybciej w aplikacji mobilnej mBanku.",
+        "type": "account_opening",
+        "order": 0
+      },
+      {
+        "title": "Zapisz się do promocji z bonami do Biedronki przed wnioskiem",
+        "description": "Wniosek zapisujący składasz na stronie promocji tego samego dnia przed otwarciem rachunku (dane muszą być identyczne), a we wniosku o konto wyrażasz zgody na mOkazje i spersonalizowane oferty. Do dnia wydania bonów musisz mieć te zgody.",
+        "type": "other",
+        "order": 1
+      },
+      {
+        "title": "Premia I (100 zł): wpływ min. 2000 zł w 7 dni, transakcje 350 zł, saldo Moje cele",
+        "description": "Jednorazowy wpływ min. 2000 zł w ciągu 7 dni od otwarcia (nie z innego Twojego rachunku w mBanku), transakcje kartą na min. 350 zł do końca pierwszego pełnego miesiąca (bez BLIK) oraz łączne saldo min. 100 zł na Moje cele w ostatnim dniu roboczym tego miesiąca.",
+        "type": "card_payments",
+        "order": 2
+      },
+      {
+        "title": "Premia II (400 zł): 5 miesięcy po 2000 zł wpływu, 350 zł transakcji i +100 zł na celach",
+        "description": "W każdym z miesięcy od drugiego do szóstego pełnego miesiąca po otwarciu: jednorazowy wpływ min. 2000 zł, transakcje kartą na min. 350 zł i wzrost łącznego salda Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca.",
+        "type": "inflow",
+        "order": 3
+      },
+      {
+        "title": "Bonus I (100 zł): konto otwarte przez selfie, e-dowód lub mObywatela",
+        "description": "Przysługuje po spełnieniu wszystkich warunków premii I i II.",
+        "type": "other",
+        "order": 4
+      },
+      {
+        "title": "Bonus II (300 zł): wynagrodzenie min. 2000 zł w co najmniej 4 z 6 miesięcy",
+        "description": "Wpływ z tytułu wynagrodzenia od pracodawcy, stypendium, renty, emerytury lub świadczenia ZUS/KRUS (także z własnej firmy w mBanku) z tytułem przelewu jednoznacznie wskazującym wynagrodzenie. Nie liczą się 800+, alimenty ani wpływy z rachunków osobistych.",
+        "type": "inflow",
+        "order": 5
+      },
+      {
+        "title": "Bonus III (100 zł): eKonto Junior lub możliwości dla dziecka",
+        "description": "Do końca pierwszego pełnego miesiąca po otwarciu Twojego rachunku otwierasz dla dziecka eKonto Junior albo eKonto możliwości (13–17 lat).",
+        "type": "other",
+        "order": 6
+      },
+      {
+        "title": "Bony do Biedronki (6 × 50 zł): wpływ 2000 zł i transakcje 350 zł co miesiąc",
+        "description": "Za każdy z 6 pełnych miesięcy po otwarciu, w którym spełnisz: jednorazowy wpływ min. 2000 zł i transakcje kartą na min. 350 zł, możesz dostać jeden bon 50 zł (pierwszy do końca 2. miesiąca, ostatni do końca 7.). Bony w aplikacji mBank w zakładce mOkazje, ważne 60 dni. Limit 12 000 rachunków w tej promocji.",
+        "type": "card_payments",
+        "order": 7
+      },
+      {
+        "title": "Promocyjne oprocentowanie na koncie Moje cele przez 180 dni",
+        "description": "5,3% w skali roku do 100 000 zł, naliczane w miesiącach, w których wpływy na cele przewyższają obciążenia o min. 100 zł. Powyżej limitu 0,1%. Po 180 dniach według tabeli stóp.",
+        "type": "other",
+        "order": 8
+      },
+      {
+        "title": "Terminy wypłat: premie do lutego–lipca 2027, bony do końca 7. miesiąca",
+        "description": "Premia I i bonus III: do 31.12.2026 dla rachunków otwartych w październiku, do 31.01.2027 dla listopada i do 28.02.2027 dla otwartych do 7.12.2026. Premia II oraz bonusy I i II: do 31.05.2027 / 30.06.2027 / 31.07.2027. Musisz być posiadaczem rachunku i karty do dnia wypłaty. Nagrody są zwolnione z podatku.",
+        "type": "deadline",
+        "order": 9
+      }
+    ],
+    "bonusParts": [
+      {
+        "label": "Premia I — 100 zł (wpływ w 7 dni, transakcje 350 zł, saldo Moje cele)",
+        "amountCents": 10000,
+        "order": 0
+      },
+      {
+        "label": "Premia II — 400 zł (warunki w 5 kolejnych miesiącach)",
+        "amountCents": 40000,
+        "order": 1
+      },
+      {
+        "label": "Bonus I — 100 zł (otwarcie przez selfie, e-dowód lub mObywatela)",
+        "amountCents": 10000,
+        "order": 2
+      },
+      {
+        "label": "Bonus II — 300 zł (wynagrodzenie w min. 4 z 6 miesięcy)",
+        "amountCents": 30000,
+        "order": 3
+      },
+      {
+        "label": "Bonus III — 100 zł (eKonto Junior lub możliwości dla dziecka)",
+        "amountCents": 10000,
+        "order": 4
+      },
+      {
+        "label": "Bony do Biedronki — 6 × 50 zł (wpływ 2000 zł i transakcje 350 zł co miesiąc)",
+        "amountCents": 30000,
+        "order": 5
+      }
+    ],
+    "fees": {
+      "accountFeeCents": 0,
+      "cardFeeCents": null,
+      "otherFee": "Według strony oferty: 0 zł za otwarcie i prowadzenie konta; karta 0 zł przy transakcjach kartą na łącznie 350 zł w miesiącu (stawka bez zwolnienia nieustalona); wypłaty z bankomatów w Polsce 0 zł od 300 zł; za granicą 0 zł; BLIK 0 zł.",
+      "sourceUrl": "https://www.mbank.pl/pomoc/oplaty/interaktywna/ind/"
+    }
+  },
+  "checklistSteps": [
+    {
+      "order": 0,
+      "monthLabel": "Otwarcie konta",
+      "title": "Zapisz się do promocji „Zgarnij bony do Biedronki” na stronie promocji (przed wnioskiem o konto)"
+    },
+    {
+      "order": 1,
+      "monthLabel": "Otwarcie konta",
+      "title": "Tego samego dnia otwórz eKonto do usług z kartą Mastercard w aplikacji mBank przez selfie, e-dowód lub mObywatela; zaznacz otwarcie rachunku Moje cele i zgody na mOkazje"
+    },
+    {
+      "order": 2,
+      "monthLabel": "Otwarcie konta",
+      "title": "Zaakceptuj regulaminy i oświadczenia; umowę zawrzyj najpóźniej do 7.12.2026"
+    },
+    {
+      "order": 3,
+      "monthLabel": "Otwarcie konta",
+      "title": "W ciągu 7 dni od otwarcia zrób jednorazowy wpływ min. 2000 zł (bez przelewu z innego Twojego rachunku w mBanku)"
+    },
+    {
+      "order": 10,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł do końca pierwszego pełnego miesiąca (bez BLIK)"
+    },
+    {
+      "order": 11,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Miej łączne saldo min. 100 zł na rachunku Moje cele w ostatnim dniu roboczym tego miesiąca"
+    },
+    {
+      "order": 12,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Wpływ wynagrodzenia min. 2000 zł z jednoznacznym tytułem (do bonusu II potrzebny w min. 4 z 6 miesięcy)"
+    },
+    {
+      "order": 13,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Do końca pierwszego pełnego miesiąca otwórz dla dziecka eKonto Junior lub eKonto możliwości (13–17 lat)"
+    },
+    {
+      "order": 16,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Odbierz nagrody: I: 100 zł (wypłata do końca 2. miesiąca po otwarciu) + III: 100 zł za konto dla dziecka + bon do Biedronki: 50 zł (w aplikacji mBank, zakładka mOkazje)",
+      "rewardCents": 25000
+    },
+    {
+      "order": 20,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zrób jednorazowy wpływ min. 2000 zł (najlepiej wynagrodzenie z jednoznacznym tytułem)"
+    },
+    {
+      "order": 21,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł (bez BLIK)"
+    },
+    {
+      "order": 22,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zwiększ łączne saldo na Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca"
+    },
+    {
+      "order": 23,
+      "monthLabel": "Miesiąc 2",
+      "title": "Odbierz bon do Biedronki: 50 zł (w aplikacji mBank, zakładka mOkazje)",
+      "rewardCents": 5000
+    },
+    {
+      "order": 30,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zrób jednorazowy wpływ min. 2000 zł (najlepiej wynagrodzenie z jednoznacznym tytułem)"
+    },
+    {
+      "order": 31,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł (bez BLIK)"
+    },
+    {
+      "order": 32,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zwiększ łączne saldo na Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca"
+    },
+    {
+      "order": 33,
+      "monthLabel": "Miesiąc 3",
+      "title": "Odbierz bon do Biedronki: 50 zł (w aplikacji mBank, zakładka mOkazje)",
+      "rewardCents": 5000
+    },
+    {
+      "order": 40,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zrób jednorazowy wpływ min. 2000 zł (najlepiej wynagrodzenie z jednoznacznym tytułem)"
+    },
+    {
+      "order": 41,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł (bez BLIK)"
+    },
+    {
+      "order": 42,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zwiększ łączne saldo na Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca"
+    },
+    {
+      "order": 43,
+      "monthLabel": "Miesiąc 4",
+      "title": "Odbierz bon do Biedronki: 50 zł (w aplikacji mBank, zakładka mOkazje)",
+      "rewardCents": 5000
+    },
+    {
+      "order": 50,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zrób jednorazowy wpływ min. 2000 zł (najlepiej wynagrodzenie z jednoznacznym tytułem)"
+    },
+    {
+      "order": 51,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł (bez BLIK)"
+    },
+    {
+      "order": 52,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zwiększ łączne saldo na Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca"
+    },
+    {
+      "order": 53,
+      "monthLabel": "Miesiąc 5",
+      "title": "Odbierz bon do Biedronki: 50 zł (w aplikacji mBank, zakładka mOkazje)",
+      "rewardCents": 5000
+    },
+    {
+      "order": 60,
+      "monthLabel": "Miesiąc 6",
+      "title": "Zrób jednorazowy wpływ min. 2000 zł (najlepiej wynagrodzenie z jednoznacznym tytułem)"
+    },
+    {
+      "order": 61,
+      "monthLabel": "Miesiąc 6",
+      "title": "Zrób transakcje kartą na łączną kwotę min. 350 zł (bez BLIK)"
+    },
+    {
+      "order": 62,
+      "monthLabel": "Miesiąc 6",
+      "title": "Zwiększ łączne saldo na Moje cele o min. 100 zł względem ostatniego dnia roboczego poprzedniego miesiąca"
+    },
+    {
+      "order": 66,
+      "monthLabel": "Miesiąc 6",
+      "title": "Odbierz nagrody: II: 400 zł (po 5 miesiącach spełnionych warunków) + I: 100 zł (za otwarcie przez selfie, e-dowód lub mObywatela) + II: 300 zł (wpływ wynagrodzenia w min. 4 z 6 miesięcy) + bon do Biedronki: 50 zł (ostatni, wystawiany do końca 7. miesiąca)",
+      "rewardCents": 85000
+    }
+  ]
+}

@@ -1,0 +1,229 @@
+{
+  "_comment": "Alior Bank — Sprzedaż premiowa „Alior Konto z premią II” (kod PREMIA800, 14.10.2026–11.01.2027). Nowa edycja po „Alior Konto z Premią” (13.07–13.10.2026); poprzednia promocja zostaje jako zakończona. Zmiana względem ed. I: nagroda I stopnia wymaga dodania karty do portfela cyfrowego i transakcji w 10 dni od zawarcia umów. Obrączka płatnicza (wartość 500 zł) to nagroda rzeczowa i NIE wchodzi do kwoty gotówkowej. Kampania eBroker 13536.",
+  "bankSlug": "alior",
+  "ebrokerOid": "13536",
+  "promotion": {
+    "slug": "alior-konto-z-premia-ii",
+    "name": "Alior Konto z premią II: do 800 zł + obrączka płatnicza",
+    "accountType": "PERSONAL",
+    "maxBonusCents": 80000,
+    "difficulty": "EASY",
+    "rating": 7.0,
+    "status": "DRAFT",
+    "startDate": "2026-10-14",
+    "endDate": "2027-01-11",
+    "affiliateLinkEnabled": true,
+    "sourceUrl": "https://www.aliorbank.pl/dam/jcr:c9730a76-1843-4c2d-82ad-e05c6c8f7c51/regulamin-sprzedazy-premiowej-alior-konto-z-premia-edycja-2.pdf",
+    "additionalSourceUrls": [
+      "https://konto-internetowe.aliorbank.pl/un/",
+      "https://www.aliorbank.pl/dam/jcr:2c557a27-9d52-4c66-8fb5-f2652658e43e/toip-konta-osobiste.pdf"
+    ],
+    "lastVerifiedAt": "2026-10-18",
+    "eligibleFor": "Pełnoletnie osoby (konsumenci), które w ciągu 3 lat przed złożeniem wniosku o konto i kartę nie miały w Alior Banku rachunku oszczędnościowo-rozliczeniowego (konta osobistego). Konto oszczędnościowe, firmowe, walutowe, oszczędnościowe walutowe lub karta kibica nie wykluczają z udziału.",
+    "notEligibleFor": "Osoby, które w ostatnich 3 latach miały w Alior Banku konto osobiste. Tylko Alior Konto w wariancie indywidualnym (jedyny posiadacz). Z promocji można skorzystać tylko raz. Nie łączy się z innymi promocjami i sprzedażami premiowymi do Alior Konta i Alior Konta Plus, chyba że ich regulaminy stanowią inaczej. Bank może zakończyć sprzedaż wcześniej, jeśli skończy się pula nagród (informacja 3 dni wcześniej).",
+    "cooldownMonths": 36,
+    "cooldownCutoffDate": null,
+    "summary": "Do 800 zł premii (200 zł na start, 200 zł za pierwszy miesiąc aktywności i 4 × 100 zł) oraz obrączka płatnicza o wartości 500 zł za Alior Konto z kodem PREMIA800. Oferta do 11.01.2027.",
+    "conditions": [
+      {
+        "title": "Złóż wniosek i zawrzyj umowę o Alior Konto z kartą w okresie 14.10.2026–11.01.2027",
+        "description": "Wniosek o umowę o konto wraz z umową o kartę debetową składasz na stronie banku, w Alior Online albo w Alior Mobile, a umowy musisz zawrzeć w tym samym okresie. Konto w wariancie indywidualnym (jeden posiadacz).",
+        "type": "account_opening",
+        "order": 0
+      },
+      {
+        "title": "Wpisz kod promocji PREMIA800 we wniosku",
+        "description": "Rejestracja do sprzedaży premiowej następuje przez wpisanie kodu we wniosku. Z promocji można skorzystać tylko raz.",
+        "type": "other",
+        "order": 1
+      },
+      {
+        "title": "Wyraź zgody marketingowe i nie wycofuj ich do wypłaty nagród",
+        "description": "Zgoda na przetwarzanie danych do marketingu bezpośredniego oraz na informacje marketingowe (e-mail, SMS/MMS, bankowość elektroniczna, serwisy internetowe i połączenia głosowe). Odwołanie zgód albo wypowiedzenie lub odstąpienie od umów przed wypłatą nagród oznacza ich utratę.",
+        "type": "other",
+        "order": 2
+      },
+      {
+        "title": "Nagroda na start I stopnia: 200 zł + obrączka płatnicza",
+        "description": "W ciągu 10 dni od zawarcia umów dodaj kartę do portfela cyfrowego (np. Google Pay, Apple Pay, Garmin Pay) i wykonaj nią co najmniej jedną transakcję. Bank przekaże 200 zł i SMS z kodem na bezpłatną obrączkę płatniczą (ważny 14 dni, odbiór na gotapster.com/alior) do końca miesiąca następującego po spełnieniu warunku. Obrączka jest nagrodą rzeczową o wartości 500 zł, bez wypłaty gotówką.",
+        "type": "card_payments",
+        "order": 3
+      },
+      {
+        "title": "Nagroda II stopnia: 200 zł za pierwszy miesiąc po otwarciu",
+        "description": "W miesiącu następującym po miesiącu zawarcia umów: 3 transakcje kartą lub BLIKIEM, jednorazowy wpływ min. 1000 zł z innego banku lub z konta biznesowego w Alior Banku (przelewy z Kantoru Walutowego Alior Banku się nie liczą) oraz co najmniej jedno logowanie do Alior Mobile. Wyłączone transakcje w punktach z kodami MCC 7995, 8999 (zagraniczne), 4111, 6012, 6211, 6051, 4829, 4900.",
+        "type": "card_payments",
+        "order": 4
+      },
+      {
+        "title": "Nagrody III stopnia: 4 × 100 zł za kolejne 4 miesiące",
+        "description": "W każdym z 4 kolejnych miesięcy (od drugiego miesiąca po miesiącu zawarcia umów) te same warunki: 3 transakcje, wpływ min. 1000 zł, logowanie do aplikacji. Nagroda za dany miesiąc do końca miesiąca następującego po nim.",
+        "type": "inflow",
+        "order": 5
+      }
+    ],
+    "bonusParts": [
+      {
+        "label": "Nagroda na start I stopnia — 200 zł (+ obrączka płatnicza, nagroda rzeczowa)",
+        "amountCents": 20000,
+        "order": 0
+      },
+      {
+        "label": "Nagroda II stopnia — 200 zł",
+        "amountCents": 20000,
+        "order": 1
+      },
+      {
+        "label": "Nagrody III stopnia — 4 × 100 zł",
+        "amountCents": 40000,
+        "order": 2
+      }
+    ],
+    "fees": {
+      "accountFeeCents": 0,
+      "accountFeeWaiverCondition": null,
+      "cardFeeCents": 700,
+      "cardFeeWaiverCondition": "brak opłaty w miesiącu wydania karty; potem min. 5 transakcji bezgotówkowych kartą lub BLIKIEM w miesiącu (przelewy na telefon BLIK się nie liczą)",
+      "otherFee": "Stawki dla Alior Konta otwieranego od 15.01.2026 z Taryfy Opłat i Prowizji obowiązującej od 1.06.2026.",
+      "sourceUrl": "https://www.aliorbank.pl/dam/jcr:2c557a27-9d52-4c66-8fb5-f2652658e43e/toip-konta-osobiste.pdf"
+    }
+  },
+  "checklistSteps": [
+    {
+      "order": 0,
+      "monthLabel": "Otwarcie konta",
+      "title": "Złóż wniosek o Alior Konto z kartą (strona banku, Alior Online lub Alior Mobile) — wariant indywidualny"
+    },
+    {
+      "order": 1,
+      "monthLabel": "Otwarcie konta",
+      "title": "Wpisz kod promocji PREMIA800 we wniosku"
+    },
+    {
+      "order": 2,
+      "monthLabel": "Otwarcie konta",
+      "title": "Wyraź zgody marketingowe (elektroniczne i telefoniczne) i nie wycofuj ich do wypłaty nagród"
+    },
+    {
+      "order": 3,
+      "monthLabel": "Otwarcie konta",
+      "title": "Zawrzyj umowę o konto i kartę do 11.01.2027"
+    },
+    {
+      "order": 4,
+      "monthLabel": "Otwarcie konta",
+      "title": "W ciągu 10 dni od zawarcia umów dodaj kartę do portfela cyfrowego (Google Pay, Apple Pay, Garmin Pay) i zapłać nią co najmniej raz"
+    },
+    {
+      "order": 5,
+      "monthLabel": "Otwarcie konta",
+      "title": "Odbierz nagrodę na start I stopnia: 200 zł + kod na obrączkę płatniczą (do końca następnego miesiąca)",
+      "rewardCents": 20000
+    },
+    {
+      "order": 10,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Wykonaj 3 transakcje kartą lub BLIKIEM (dowolna kwota)"
+    },
+    {
+      "order": 11,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zapewnij jednorazowy wpływ min. 1000 zł z innego banku lub z konta biznesowego w Alior Banku"
+    },
+    {
+      "order": 12,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Zaloguj się co najmniej raz do aplikacji Alior Mobile"
+    },
+    {
+      "order": 13,
+      "monthLabel": "Miesiąc 1 (po otwarciu konta)",
+      "title": "Odbierz nagrodę II stopnia: 200 zł (do końca następnego miesiąca)",
+      "rewardCents": 20000
+    },
+    {
+      "order": 20,
+      "monthLabel": "Miesiąc 2",
+      "title": "Wykonaj 3 transakcje kartą lub BLIKIEM (dowolna kwota)"
+    },
+    {
+      "order": 21,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zapewnij jednorazowy wpływ min. 1000 zł z innego banku lub z konta biznesowego w Alior Banku"
+    },
+    {
+      "order": 22,
+      "monthLabel": "Miesiąc 2",
+      "title": "Zaloguj się co najmniej raz do aplikacji Alior Mobile"
+    },
+    {
+      "order": 23,
+      "monthLabel": "Miesiąc 2",
+      "title": "Odbierz nagrodę III stopnia: 100 zł (do końca następnego miesiąca)",
+      "rewardCents": 10000
+    },
+    {
+      "order": 30,
+      "monthLabel": "Miesiąc 3",
+      "title": "Wykonaj 3 transakcje kartą lub BLIKIEM (dowolna kwota)"
+    },
+    {
+      "order": 31,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zapewnij jednorazowy wpływ min. 1000 zł z innego banku lub z konta biznesowego w Alior Banku"
+    },
+    {
+      "order": 32,
+      "monthLabel": "Miesiąc 3",
+      "title": "Zaloguj się co najmniej raz do aplikacji Alior Mobile"
+    },
+    {
+      "order": 33,
+      "monthLabel": "Miesiąc 3",
+      "title": "Odbierz nagrodę III stopnia: 100 zł (do końca następnego miesiąca)",
+      "rewardCents": 10000
+    },
+    {
+      "order": 40,
+      "monthLabel": "Miesiąc 4",
+      "title": "Wykonaj 3 transakcje kartą lub BLIKIEM (dowolna kwota)"
+    },
+    {
+      "order": 41,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zapewnij jednorazowy wpływ min. 1000 zł z innego banku lub z konta biznesowego w Alior Banku"
+    },
+    {
+      "order": 42,
+      "monthLabel": "Miesiąc 4",
+      "title": "Zaloguj się co najmniej raz do aplikacji Alior Mobile"
+    },
+    {
+      "order": 43,
+      "monthLabel": "Miesiąc 4",
+      "title": "Odbierz nagrodę III stopnia: 100 zł (do końca następnego miesiąca)",
+      "rewardCents": 10000
+    },
+    {
+      "order": 50,
+      "monthLabel": "Miesiąc 5",
+      "title": "Wykonaj 3 transakcje kartą lub BLIKIEM (dowolna kwota)"
+    },
+    {
+      "order": 51,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zapewnij jednorazowy wpływ min. 1000 zł z innego banku lub z konta biznesowego w Alior Banku"
+    },
+    {
+      "order": 52,
+      "monthLabel": "Miesiąc 5",
+      "title": "Zaloguj się co najmniej raz do aplikacji Alior Mobile"
+    },
+    {
+      "order": 53,
+      "monthLabel": "Miesiąc 5",
+      "title": "Odbierz nagrodę III stopnia: 100 zł (do końca następnego miesiąca)",
+      "rewardCents": 10000
+    }
+  ]
+}

@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "redesign-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/plyt8/Desktop/ProjektyKlaudia/bankmiplaci/bank-promo-comparator/.claude/worktrees/redesign-v3", "run", "dev", "--", "-p", "3100"],
+      "port": 3100
     }
   ]
 }
