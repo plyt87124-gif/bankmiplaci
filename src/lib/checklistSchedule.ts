@@ -102,7 +102,26 @@ export function periodRangeText(accountOpenedAt: Date, rule: PeriodRule): string
 
 const MONTH_FORMATTER = new Intl.DateTimeFormat("pl-PL", { month: "long", year: "numeric" });
 
-/** Human label for a month group — real calendar names once we know when the account opened. */
+/** A stored label of the plain "Miesiąc N" kind ("Miesiąc 3", "Miesiąc 1 (po otwarciu konta)"); an empty label counts too, there is nothing else to show. */
+export function isMonthLabel(label: string): boolean {
+  const trimmed = label.trim();
+  return trimmed === "" || /^Miesiąc\s+\d+/i.test(trimmed);
+}
+
+/**
+ * Whether a group is a calendar month ("ten miesiąc"). The opening group, groups
+ * counted from the agreement date and groups whose stored label says something
+ * else ("Nagrody zbiorcze (po 6 miesiącach)") are stages ("ten etap").
+ */
+export function isMonthGroup(groupIndex: number, storedLabel: string, rule?: PeriodRule | null): boolean {
+  return groupIndex > 0 && !rule && isMonthLabel(storedLabel);
+}
+
+/**
+ * Human label for a month group — real calendar names once we know when the account opened.
+ * A group whose stored label is not a plain "Miesiąc N" (an aggregate reward after 6 months, a
+ * loyalty reward for 9 of 12 months) keeps that label: it is not one calendar month.
+ */
 export function monthGroupLabel(
   accountOpenedAt: Date | null,
   groupIndex: number,
@@ -111,6 +130,7 @@ export function monthGroupLabel(
 ): string {
   if (groupIndex === 0) return fallbackLabel || "Otwarcie konta";
   if (rule) return accountOpenedAt ? `${fallbackLabel} (${periodRangeText(accountOpenedAt, rule)})` : fallbackLabel;
+  if (!isMonthLabel(fallbackLabel)) return fallbackLabel;
   if (groupIndex === 1) return "Pierwszy miesiąc po otwarciu konta";
   if (!accountOpenedAt) return fallbackLabel;
   const label = MONTH_FORMATTER.format(unlockDateForGroup(accountOpenedAt, groupIndex));

@@ -147,6 +147,31 @@ test("ściąga: okresy liczone od dnia umowy mają zakres dat z umowy, są otwar
   assert.match(out, /kroków tego etapu\./);
 });
 
+test("ściąga: grupy zbiorcze pokazują etykietę z bazy i „Nagroda za ten etap”, miesiące kalendarzowe zostają przy „miesiącu”", () => {
+  const aggSteps = [
+    { id: "o", monthLabel: "Otwarcie konta", title: "Otwórz konto", rewardCents: null, order: 0 },
+    { id: "or", monthLabel: "Otwarcie konta", title: "Odbierz: 100 zł", rewardCents: 10000, order: 1 },
+    { id: "m1", monthLabel: "Miesiąc 1 (po otwarciu konta)", title: "Zrób 7 płatności kartą", rewardCents: null, order: 10 },
+    { id: "m1r", monthLabel: "Miesiąc 1 (po otwarciu konta)", title: "Odbierz: 50 zł", rewardCents: 5000, order: 11 },
+    { id: "m2", monthLabel: "Miesiąc 2", title: "Zrób 7 płatności kartą", rewardCents: null, order: 20 },
+    { id: "m2r", monthLabel: "Miesiąc 2", title: "Odbierz: 50 zł", rewardCents: 5000, order: 21 },
+    { id: "a", monthLabel: "Nagrody zbiorcze (po 6 miesiącach)", title: "Utrzymaj konto aktywne", rewardCents: null, order: 70 },
+    { id: "ar", monthLabel: "Nagrody zbiorcze (po 6 miesiącach)", title: "Odbierz: 300 zł", rewardCents: 30000, order: 71 }
+  ];
+  const out = checklist({ trackings: [tracking({ steps: aggSteps })] });
+  const h3 = [...out.matchAll(/<h3[^>]*>([^<]+)<\/h3>/g)].map((m) => m[1]);
+  assert.equal(h3[0], "Otwarcie konta");
+  assert.equal(h3[1], "Pierwszy miesiąc po otwarciu konta");
+  assert.match(h3[2]!, /^[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+ \d{4}$/, "zwykły miesiąc dalej ma nazwę z kalendarza");
+  assert.equal(h3[3], "Nagrody zbiorcze (po 6 miesiącach)", "grupa zbiorcza nie dostaje nazwy miesiąca");
+  // otwarcie konta i grupa zbiorcza: „etap”; dwa zwykłe miesiące: „miesiąc”
+  assert.equal((out.match(/Nagroda za ten etap/g) ?? []).length, 2);
+  assert.equal((out.match(/Nagroda za ten miesiąc/g) ?? []).length, 2);
+  assert.equal((out.match(/kroków tego etapu\./g) ?? []).length, 2, "opis nagrody: otwarcie konta i grupa zbiorcza");
+  assert.equal((out.match(/kroków tego miesiąca\./g) ?? []).length, 2);
+  assert.doesNotMatch(out, FORBIDDEN);
+});
+
 test("ściąga: zablokowany miesiąc = aria-disabled + ikona Lock + tekst „Odblokuje się dd.mm.rrrr”", () => {
   const out = checklist();
   const group1 = out.split('data-unlocked="false"')[1];
