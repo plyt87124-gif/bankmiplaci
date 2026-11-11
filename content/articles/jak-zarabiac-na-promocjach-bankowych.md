@@ -70,7 +70,7 @@ Poniżej sześć ofert z różnych banków. Opisy pochodzą ze stron ofert w ser
 | [PKO, Konto za Zero (kod PROSTO)](/promocje/pko-konto-za-zero-prosty-zwrot-do-900-zl) | 900 zł | do 600 zł: 10% płatności kartą miesięcznie (do 100 zł) przez 5 miesięcy plus 100 zł, kod PROSTO; do 300 zł za konto dla dziecka | 31.12.2026 | łatwa |
 | [Alior, Konto z premią II](/promocje/alior-konto-z-premia-ii) | 800 zł | 3 płatności, wpływ 1000 zł i logowanie w kolejnych miesiącach, kod PREMIA800 | 11.01.2027 | łatwa |
 
-Pełny opis jednej z nich, krok po kroku, znajdziesz w poradniku [Alior Konto z premią II](/blog/alior-bank-jak-zdobyc-do-800-zl-premii). Oferty konkretnego banku zobaczysz na jego stronie, np. [Alior](/banki/alior), [mBank](/banki/mbank), [PKO](/banki/pko), [Pekao](/banki/pekao), [Credit Agricole](/banki/creditagricole), [BNP Paribas](/banki/bnp), [Erste](/banki/erste), [Millennium](/banki/millennium), [Nest Bank](/banki/nest), [Bank Pocztowy](/banki/bankpocztowy) i [Revolut](/banki/revolut). Dla firm i JDG jest osobna lista: [konta firmowe z premią](/konta-firmowe-z-premia).
+Pełny opis krok po kroku znajdziesz w poradnikach: [Alior Konto z premią II](/blog/alior-bank-jak-zdobyc-do-800-zl-premii) i [Millennium Konto 360°](/blog/promocja-millennium-konto-360-do-800-zl). Oferty konkretnego banku zobaczysz na jego stronie, np. [Alior](/banki/alior), [mBank](/banki/mbank), [PKO](/banki/pko), [Pekao](/banki/pekao), [Credit Agricole](/banki/creditagricole), [BNP Paribas](/banki/bnp), [Erste](/banki/erste), [Millennium](/banki/millennium), [Nest Bank](/banki/nest), [Bank Pocztowy](/banki/bankpocztowy) i [Revolut](/banki/revolut). Dla firm i JDG jest osobna lista: [konta firmowe z premią](/konta-firmowe-z-premia).
 
 ## Za co banki wypłacają premie?
 
@@ -153,4 +153,4 @@ Nie patrz tylko na kwotę. Porównaj trudność i liczbę warunków, czas potrze
 - [Jak liczymy ocenę serwisu](/metodologia) i [jak zarabiamy](/jak-zarabiamy)
 - [Portal podatkowy Ministerstwa Finansów](https://www.podatki.gov.pl)
 
-*Stan na 05.11.2026. Zaktualizowano: 05.11.2026.* Bankmiplaci nie jest bankiem ani doradcą. Warunki promocji ustala bank, wiążący jest regulamin. Możemy otrzymywać wynagrodzenie, jeśli otworzysz konto przez naszą stronę ([jak zarabiamy](/jak-zarabiamy), [jak liczymy ocenę](/metodologia)).
+*Stan liczb na 05.11.2026. Zaktualizowano: 10.11.2026.* Bankmiplaci nie jest bankiem ani doradcą. Warunki promocji ustala bank, wiążący jest regulamin. Możemy otrzymywać wynagrodzenie, jeśli otworzysz konto przez naszą stronę ([jak zarabiamy](/jak-zarabiamy), [jak liczymy ocenę](/metodologia)).
