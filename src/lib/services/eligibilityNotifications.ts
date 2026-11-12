@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { PromotionStatus, type PrismaClient } from "@prisma/client";
+import { clientKindOf } from "@/lib/accountTypes";
 import { sendEmail } from "@/lib/email";
 import { computeEligibility } from "@/lib/services/eligibility";
 import { signupCutoff } from "@/lib/promotionAvailability";
@@ -9,7 +10,8 @@ import { eligibilityReminderEmailHtml } from "@/lib/emailTemplates";
 /**
  * Finds every UserBankHistory row whose karencja (cooldown) has just
  * elapsed, and for each one:
- *   1. picks the best currently-ACTIVE promotion for that bank+accountType
+ *   1. picks the best currently-ACTIVE promotion for that bank+kind of account (a young account counts as a
+ *      personal one, accountTypes.ts clientKindOf)
  *      to point them at (highest rating),
  *   2. creates an in-app AdminNotification (powers the admin bell badge),
  *   3. stamps eligibilityNotifiedAt + a fresh eligibilityEmailToken,
@@ -74,7 +76,7 @@ export async function checkEligibilityAndNotify({ client = db, send = sendEmail,
 
   const promotionsByKey = new Map<string, typeof activePromotions>();
   for (const promo of activePromotions) {
-    const key = `${promo.bankId}:${promo.accountType}`;
+    const key = `${promo.bankId}:${clientKindOf(promo.accountType)}`;
     promotionsByKey.set(key, [...(promotionsByKey.get(key) ?? []), promo]);
   }
 
@@ -83,7 +85,7 @@ export async function checkEligibilityAndNotify({ client = db, send = sendEmail,
 
   for (const row of pending) {
     if (!row.wasClientUntil) continue;
-    const eligible = (promotionsByKey.get(`${row.bankId}:${row.accountType}`) ?? [])
+    const eligible = (promotionsByKey.get(`${row.bankId}:${clientKindOf(row.accountType)}`) ?? [])
       .map((promo) => ({
         promo,
         result: computeEligibility(promo.cooldownMonths, promo.cooldownCutoffDate, row.wasClientUntil, now)

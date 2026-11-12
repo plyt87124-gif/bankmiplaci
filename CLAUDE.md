@@ -32,6 +32,15 @@ Dotyczy każdej promocji, którą generujesz lub poprawiasz: plików `data/candi
 - **Zakazane zdania** (w żadnym polu, ani w szablonach strony): „Lista może zawierać także dodatkowe zasady i ograniczenia, a nie tylko czynności do wykonania.” oraz „Premia maksymalna nie jest gwarantowana – otrzymasz ją tylko po spełnieniu wszystkich warunków cząstkowych opisanych wyżej.” Pilnuje tego `src/lib/offerCopyRules.ts`: import przerywa się przed zapisem, formularz admina odmawia, `tests/offer-copy-rules.test.ts` skanuje `src/` i `data/`.
 - Generator, który pisze nowe pliki z promocjami, ma te zasady zachować od razu. Nie liczysz na to, że zablokuje je dopiero import.
 
+## Strona główna i konta dla młodych (zasady właściciela, 11.11.2026)
+
+- **Główna jest ułożona po ocenie, nie po „Polecane”.** Karty w karuzeli i w sekcji „Promocje z najwyższą oceną” (nazwa bez słowa „serwisu”) idą od najwyższej oceny (`sort: "top-rated"` w `homeData.ts`). Kolejność „Polecane” (zależna od prowizji) jest tylko opcją sortowania na liście `/promocje`. Pilnuje tego test w `tests/home.test.tsx`.
+- **Na głównej nie ma kart z kontami dla młodych ani z ofertą mBank „Załóż firmę i konto”.** Lista wyjątków to `HOME_HIDDEN_ACCOUNT_TYPES` i `HOME_HIDDEN_SLUGS` w `homeModel.ts` (typ `YOUNG`, mBank `mbank-zaloz-firme-i-konto-z-platnosciami-500-zl`, Alior „Młodzi zyskują” `alior-konto-18-25-mlodzi-zyskuja`). Zostają na `/promocje`, w hubach i w licznikach.
+- **Konto dla młodych liczy się jak osobiste do karencji i do „jestem już klientem”** (`clientKindOf` w `accountTypes.ts`, `mostRestrictiveHistory` w `eligibility.ts`). Oferta zachowuje swój typ, więc na kafelku nadal jest „Konto dla młodych”. Konto oszczędnościowe i wspólne NIE są wliczane.
+- **Licznik „N aktualnych promocji”** w hero liczy 1875 ms (2,5 × dawne 750 ms), zwalnia przy ostatnich liczbach, a na ostatniej urasta i „wybucha” (jedno puknięcie samej cyfry, BEZ koła, pierścienia ani promieni wokół liczby: właściciel tego nie chce); większa cyfra zostaje (`countUpController.ts`, `motion.css`). Ikona motywu rusza się raz na 10 s (`ThemeIcon.tsx`).
+
+- **Rysunki w tle (`ScrollDecor`) w ciemnym motywie są BIAŁE** (token `--color-decor`: szary 156 158 162 w jasnym, biały 255 255 255 w ciemnym; klasa `stroke-decor`). Wcześniej używały `ink-300`, który w ciemnym motywie jest ciemnym granatem i przy 10-16 % krycia znikał na tle (właściciel 12.11.2026). Nie wracaj do `stroke-ink-300`; test w `tests/scroll-decor.test.tsx` pilnuje obu wartości. Po zmianie `tailwind.config.ts` serwer deweloperski potrzebuje restartu, a przy zawieszonym starym CSS pomaga skasowanie `.next/cache`.
+
 ## Podgląd w przeglądarce Claude
 
 `preview_start` czyta `.claude/launch.json` z głównego folderu. Żeby uruchomić podgląd z worktree, trzeba tymczasowo dodać wpis z `npm --prefix <worktree> run dev -- -p 3100` i po starcie przywrócić plik.

@@ -3,25 +3,28 @@
  * the page shows out. No database, no React, no clock of its own (`now` is a
  * parameter), so every rule is covered by tests/home-model.test.tsx.
  *
- * The page reads the database ONCE (`listPromotionCards`, "Polecane" order) and
+ * The page reads the database ONCE (`listPromotionCards`, "top-rated" order: the highest site rating first) and
  * this module cuts the pool into the blocks of the layout spec
  * (docs/redesign-v2/02-layout-spec.md, HOME):
  *
- *   segments       "Polecane promocje": the first 3 offers of each segment
+ *   segments       "Promocje z najwyższą oceną": the first 3 offers of each segment
  *                  (Osobiste / Firmowe) in the pool's order. "Osobiste" is every
  *                  non-business account type, "Firmowe" is BUSINESS - the one
  *                  definition of src/lib/accountTypes.ts, so the number on the
  *                  home page is the number of the /promocje tab and of the hub.
- *                  The "Polecane" score of an offer only depends on offers of
- *                  its own REAL account type, so filtering the pool here gives
- *                  exactly what a database filter would (see applyAccountType in
- *                  components/promocje/listing.ts).
+ *                  The rating is a property of the offer itself, so filtering
+ *                  the pool here gives exactly what a database filter would
+ *                  (see applyAccountType in components/promocje/listing.ts).
  *   endingSoon     "Kończą się wkrótce": offers whose last sign-up day is
  *                  today .. 14 days away, soonest deadline first.
  *   effortExamples "Ile wysiłku wymaga promocja?": the easiest and the hardest
  *                  real offer of the pool; ONE card when the pool has a single
  *                  difficulty level; never an invented one.
  *   total          the counter "N aktualnych promocji" (every active offer).
+ *
+ * What the home page does NOT show as a card (owner, 2026-11-11): accounts for young people and the mBank
+ * "Załóż firmę i konto" offer (HOME_HIDDEN_*, isShownOnHome). They stay in every count (`total`, the numbers of
+ * "Zobacz wszystkie") because those lead to the full list, where they are all listed.
  *   latestVerifiedAt  newest `lastVerifiedAt` ("Aktualizacja: ...").
  *
  * What the pool contains is the public card (promotionCards.ts): no affiliate
@@ -50,10 +53,28 @@ export const HOME_SEGMENT_LABEL: Record<HomeSegment, string> = {
   BUSINESS: "Konta firmowe"
 };
 
-/** Cards in "Polecane promocje" (per segment). */
+/**
+ * Owner, 2026-11-11 ("zapamiętaj, żeby na głównej nie było kont dla młodych i tego konta mBanku za założenie
+ * firmy"): never a card on the home page. Hidden here, not in the data: all of them stay on /promocje, in the hubs,
+ * on the bank pages and in every count.
+ */
+export const HOME_HIDDEN_ACCOUNT_TYPES: readonly string[] = ["YOUNG"];
+export const HOME_HIDDEN_SLUGS: readonly string[] = [
+  // mBank: "Załóż firmę i konto w mBanku" (the account for starting a business)
+  "mbank-zaloz-firme-i-konto-z-platnosciami-500-zl",
+  // Alior "Młodzi zyskują" (18-25 years): an offer for young people that is stored as a personal account
+  "alior-konto-18-25-mlodzi-zyskuja"
+];
+
+/** May this offer be a card on the home page? */
+export function isShownOnHome(card: Pick<PromotionCardData, "slug" | "accountType">): boolean {
+  return !HOME_HIDDEN_ACCOUNT_TYPES.includes(card.accountType) && !HOME_HIDDEN_SLUGS.includes(card.slug);
+}
+
+/** Cards in "Promocje z najwyższą oceną" (per segment). */
 export const FEATURED_COUNT = 3;
 /**
- * Offers in the hero spotlight: 6 cards in "Polecane" order, usually 4 personal + 2 business, 3 + 3 when a third
+ * Offers in the hero spotlight: 6 cards in rating order (highest first), usually 4 personal + 2 business, 3 + 3 when a third
  * business offer outranks the fourth personal one. Never fewer than 2 business offers while the pool has them.
  */
 export const SPOTLIGHT_COUNT = 6;
@@ -97,7 +118,7 @@ export const ENDING_SOON_DAYS = 14;
 /** Cards in "Kończą się wkrótce". */
 export const ENDING_SOON_COUNT = 3;
 
-/** The "see everything" link under "Polecane promocje": where it leads and what it says. */
+/** The "see everything" link under "Promocje z najwyższą oceną": where it leads and what it says. */
 export interface HomeSeeAll {
   href: string;
   /** Visible text including the number, e.g. "Wszystkie konta osobiste z premią (16)". */
@@ -109,14 +130,14 @@ export interface HomeSegmentModel {
   label: string;
   /** Offers of this segment on the public list (Osobiste = every non-business type). */
   total: number;
-  /** The first FEATURED_COUNT in "Polecane" order. */
+  /** The first FEATURED_COUNT in rating order. */
   featured: PromotionCardData[];
   /** Where "Zobacz promocje" leads for this segment: the filtered /promocje list. */
   href: string;
   /** The number shown in "Zobacz wszystkie (N)" - what `href` lists. */
   count: number;
   /**
-   * The link under the "Polecane" list. It always leads to the /promocje list (filtered to the segment), the
+   * The link under the "Promocje z najwyższą oceną" list. It always leads to the /promocje list (filtered to the segment), the
    * owner's decision; while the segment's hub page is live the text is the hub's ("Wszystkie konta osobiste
    * z premią (N)"), otherwise `"Zobacz wszystkie (count)"`.
    */
@@ -201,7 +222,7 @@ export function pickEffortExamples(cards: readonly PromotionCardData[]): Promoti
 }
 
 /**
- * `pool` = every active offer in "Polecane" order (listPromotionCards({ sort: "recommended" })).
+ * `pool` = every active offer, highest rating first (listPromotionCards({ sort: "top-rated" })).
  * `isLive` decides whether a hub is linked instead of the filtered list
  * (injectable for tests; the page leaves it out).
  */
@@ -211,9 +232,15 @@ export function buildHomeModel(
   isLive: (path: string) => boolean = isRouteLive
 ): HomeModel {
   const total = pool.length;
-  const byType: Record<HomeSegment, PromotionCardData[]> = {
+  // Counts and links speak for the WHOLE list; the cards come from what the home page may show.
+  const shown = pool.filter(isShownOnHome);
+  const allByType: Record<HomeSegment, PromotionCardData[]> = {
     PERSONAL: applyAccountType(pool, "PERSONAL"),
     BUSINESS: applyAccountType(pool, "BUSINESS")
+  };
+  const byType: Record<HomeSegment, PromotionCardData[]> = {
+    PERSONAL: applyAccountType(shown, "PERSONAL"),
+    BUSINESS: applyAccountType(shown, "BUSINESS")
   };
   const available = HOME_SEGMENTS.filter((value) => byType[value].length > 0);
   // With one segment there is nothing to choose: the links lead to the whole list.
@@ -221,15 +248,15 @@ export function buildHomeModel(
 
   const segments: HomeSegmentModel[] = available.map((value) => {
     const href = choosable ? listingHref({ ...EMPTY_STATE, accountType: value }) : "/promocje";
-    const count = choosable ? byType[value].length : total;
+    const count = choosable ? allByType[value].length : total;
     const hub = HUBS[HUB_OF_SEGMENT[value]];
     const seeAll: HomeSeeAll = isLive(hub.path)
-      ? { href, label: hubSeeAllLabel(hub.kind, byType[value].length) }
+      ? { href, label: hubSeeAllLabel(hub.kind, allByType[value].length) }
       : { href, label: `Zobacz wszystkie (${count})` };
     return {
       value,
       label: HOME_SEGMENT_LABEL[value],
-      total: byType[value].length,
+      total: allByType[value].length,
       featured: byType[value].slice(0, FEATURED_COUNT),
       href,
       count,
@@ -241,10 +268,10 @@ export function buildHomeModel(
     total,
     latestVerifiedAt: latestVerification(pool),
     segments,
-    spotlight: pickSpotlight(pool),
+    spotlight: pickSpotlight(shown),
     defaultSegment: segments[0]?.value ?? null,
-    endingSoon: pickEndingSoon(pool, now),
-    effortExamples: pickEffortExamples(pool)
+    endingSoon: pickEndingSoon(shown, now),
+    effortExamples: pickEffortExamples(shown)
   };
 }
 

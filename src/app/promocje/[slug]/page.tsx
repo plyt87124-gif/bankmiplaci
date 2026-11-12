@@ -125,7 +125,7 @@ export default async function PromotionDetailPage({ params, searchParams }: Page
 
   // Everything below depends only on the offer and the visitor - one round of parallel reads.
   const [bankHistory, checklistStepCount, relatedArticle, tracking, bankCards] = await Promise.all([
-    currentUser ? getBankHistory(currentUser.id, promotion.bankId, promotion.accountType) : null,
+    currentUser ? getBankHistory(currentUser.id, promotion.bankId, promotion.accountType, promotion, now) : null,
     countChecklistSteps(promotion.id),
     getRelatedArticle(promotion.id),
     currentUser ? getTracking(currentUser.id, promotion.id) : null,

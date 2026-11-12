@@ -50,6 +50,8 @@ const config: Config = {
         "on-action": rgb("on-action"),
         "focus-ring": rgb("focus-ring"),
         "logo-tile": rgb("logo-tile"),
+        // Line colour of the background drawings (ScrollDecor): grey in the light theme, white in the dark one.
+        decor: rgb("decor"),
         "brand-soft": rgb("brand-soft"),
         teal: {
           700: rgb("teal-700"),

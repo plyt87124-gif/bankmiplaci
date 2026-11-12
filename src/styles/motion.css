@@ -4,7 +4,8 @@
  *
  * Rules this file follows:
  *  - Only transform and opacity animate (plus grid-template-rows for
- *    collapsing, and background/border colour transitions).
+ *    collapsing, background/border colour transitions, and the one-off growth
+ *    of the home counter's figure, see ".count-figure" below).
  *  - No entrance effect can hide content without JS: everything that starts
  *    from opacity:0 is scoped to `.motion-ok`, a class the <head> script in
  *    layout.tsx adds ONLY when prefers-reduced-motion is not "reduce".
@@ -151,6 +152,115 @@ dialog.animate-dialog-in::backdrop { animation: fade-in 160ms var(--ease-out) bo
   transition:
     opacity var(--dur-reveal) var(--ease-out) calc(var(--reveal-i, 0) * 40ms),
     transform var(--dur-reveal) var(--ease-out) calc(var(--reveal-i, 0) * 40ms);
+}
+
+/* ------------------------------------------------------------------ */
+/* Count-up figure (CountUp): unseen until the client takes over       */
+/* ------------------------------------------------------------------ */
+
+/* The server renders the TRUE number; without this rule it would show for the time between the first paint and
+   hydration, then restart from 0. The component removes the attribute when it starts (or settles). Scoped to
+   `.motion-ok`, so no JS and reduced motion never hide it; the same 2.5 s failsafe as [data-reveal] covers a
+   client that never arrives. */
+.motion-ok [data-count-pending] {
+  opacity: 0;
+  animation: reveal-failsafe 0s 2.5s forwards;
+}
+
+/* The landing of the home counter (owner, 2026-11-11): when the count reaches its last two numbers the figure GROWS,
+   on the last one it BURSTS (a single pop of the figure itself) and the larger figure STAYS.
+   NO ring, NO rays or any other shape around the number (owner, 2026-11-11: "jakieś koło z promieniami, tego nie chcę").
+   The controller sets data-count-phase = grow | burst | done (countUpController.ts); reduced motion never sets it.
+   The one place in this file where a layout property animates (font-size): a single 700 ms growth of a short
+   number inside a line that already has room for it (line-height 1 on the figure, so the line does not grow).
+   The burst itself is transform only. */
+.count-figure {
+  display: inline-block;
+  line-height: 1;
+}
+.motion-ok .count-figure[data-count-phase] {
+  transition: font-size 700ms var(--ease-out);
+}
+.motion-ok .count-figure[data-count-phase="grow"],
+.motion-ok .count-figure[data-count-phase="burst"],
+.motion-ok .count-figure[data-count-phase="done"] {
+  font-size: 1.4em;
+}
+.motion-ok .count-figure[data-count-phase="burst"] {
+  animation: count-pop 520ms var(--ease-out);
+}
+@keyframes count-pop {
+  0% { transform: scale(1); }
+  36% { transform: scale(1.32); }
+  100% { transform: scale(1); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Theme switch icon (ThemeIcon): one small movement every ten seconds */
+/* ------------------------------------------------------------------ */
+
+/* Owner, 2026-11-11: "ikonka lekko zanimowana, ale nie cały czas, tylko raz na dziesięć sekund jakiś ruch".
+   Every animation here is one 10 s cycle: still for the first 38 % (3.8 s), moving between 38 % and 56 %
+   (about 1.8 s), still again for the rest. Only transform and opacity. Reduced motion: no `.motion-ok`, a still icon. */
+.motion-ok .theme-icon .sun-ray {
+  transform-box: view-box;
+  transform-origin: 12px 4px; /* the inner end of the ray: it grows outwards */
+  animation: sun-ray 10s ease-in-out var(--d, 0ms) infinite;
+}
+.motion-ok .theme-icon .sun-halo {
+  opacity: 0;
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+  animation: sun-halo 10s ease-in-out infinite;
+}
+.motion-ok .theme-icon .moon-body {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+  animation: moon-rock 10s ease-in-out infinite;
+}
+.motion-ok .theme-icon .moon-star {
+  opacity: 0;
+  transform-box: view-box;
+}
+.motion-ok .theme-icon .moon-star-a {
+  transform-origin: 18px 6px;
+  animation: moon-twinkle 10s ease-in-out infinite;
+}
+.motion-ok .theme-icon .moon-star-b {
+  transform-origin: 21.4px 11px;
+  animation: moon-twinkle 10s ease-in-out 280ms infinite;
+}
+.motion-ok .theme-icon .screen-glow {
+  opacity: 0;
+  animation: screen-glow 10s ease-in-out infinite;
+}
+
+/* The eight rays stretch by different amounts (--k, then the smaller --j, per ray) and start a little apart (--d),
+   so the lengths look uneven, like light flickering. */
+@keyframes sun-ray {
+  0%, 38%, 56%, 100% { transform: scaleY(1); }
+  42% { transform: scaleY(var(--k, 1.6)); }
+  47% { transform: scaleY(var(--j, 1.2)); }
+  51% { transform: scaleY(calc(var(--k, 1.6) * 0.8)); }
+}
+@keyframes sun-halo {
+  0%, 38%, 58%, 100% { opacity: 0; transform: scale(0.85); }
+  47% { opacity: 0.5; transform: scale(1.14); }
+}
+@keyframes moon-rock {
+  0%, 38%, 56%, 100% { transform: rotate(0deg); }
+  43% { transform: rotate(-9deg); }
+  49% { transform: rotate(6deg); }
+  53% { transform: rotate(-2deg); }
+}
+@keyframes moon-twinkle {
+  0%, 39%, 54%, 100% { opacity: 0; transform: scale(0.2) rotate(0deg); }
+  44% { opacity: 1; transform: scale(1) rotate(10deg); }
+  49% { opacity: 0.3; transform: scale(0.65) rotate(22deg); }
+}
+@keyframes screen-glow {
+  0%, 40%, 56%, 100% { opacity: 0; }
+  47% { opacity: 0.22; }
 }
 
 /* ------------------------------------------------------------------ */

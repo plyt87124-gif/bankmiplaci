@@ -6,7 +6,15 @@ import React, { createElement, type ComponentProps, type FunctionComponent } fro
 import { renderToStaticMarkup } from "react-dom/server";
 import { Reveal } from "../src/components/motion/Reveal";
 import { CountUp } from "../src/components/motion/CountUp";
-import { COUNT_UP_MAX_MS, COUNT_UP_MIN_MS, clampCountUpDuration, easeOutCubic } from "../src/components/motion/easing";
+import {
+  COUNT_UP_HERO_MS,
+  COUNT_UP_MAX_MS,
+  COUNT_UP_MIN_MS,
+  clampCountUpDuration,
+  countAt,
+  easeOutCubic,
+  easeOutPower
+} from "../src/components/motion/easing";
 import { formatCountFrame, formatCountValue } from "../src/components/motion/format";
 import { prefersReducedMotion } from "../src/hooks/useReducedMotion";
 import { formatPLN } from "../src/lib/format";
@@ -71,9 +79,19 @@ test("CountUp: server HTML shows the FINAL value and labels it for assistive tec
   const final = formatCountValue(12500, "number");
   assert.equal(final, `12${String.fromCharCode(0xa0)}500`); // pl-PL groups with a non-breaking space
   assert.ok(html.includes(`<span class="sr-only">${final}</span>`), html);
-  assert.ok(html.includes(`<span aria-hidden="true">${final}</span>`), html);
+  // the animated text carries the TRUE number and is "pending" (unseen under .motion-ok) until the client takes over
+  assert.ok(html.includes(`<span class="count-figure" aria-hidden="true" data-count-pending="">${final}</span>`), html);
   assert.doesNotMatch(html, /role="img"/);
   assert.doesNotMatch(html, />0</);
+});
+
+test("CountUp: the pending figure is hidden only under .motion-ok and has the same 2.5 s failsafe as Reveal", () => {
+  const css = fs.readFileSync(path.join(SRC, "styles", "motion.css"), "utf8");
+  const rule = /\.motion-ok \[data-count-pending\]\s*\{([^}]*)\}/.exec(css);
+  assert.ok(rule, "rule exists and is scoped to .motion-ok (no JS or reduced motion never hides the number)");
+  assert.match(rule?.[1] ?? "", /opacity:\s*0/);
+  assert.match(rule?.[1] ?? "", /animation:\s*reveal-failsafe 0s 2\.5s forwards/);
+  assert.doesNotMatch(css.replace(/\.motion-ok \[data-count-pending\]/g, ""), /\[data-count-pending\]/, "no unscoped rule");
 });
 
 test("CountUp: pln format uses formatPLN of grosze, final text is exact", () => {
@@ -103,6 +121,73 @@ test("easeOutCubic: 0 -> 0, 1 -> 1, monotonic, clamped, front-loaded", () => {
     assert.ok(v >= prev);
     prev = v;
   }
+});
+
+test("easeOutPower: 0 -> 0, 1 -> 1, monotonic, clamped, harder than the cubic ease", () => {
+  assert.equal(easeOutPower(0), 0);
+  assert.equal(easeOutPower(1), 1);
+  assert.equal(easeOutPower(-2), 0);
+  assert.equal(easeOutPower(9), 1);
+  assert.ok(easeOutPower(0.3) > easeOutCubic(0.3), "power 4 is front-loaded more than the cubic");
+  let prev = -1;
+  for (let t = 0; t <= 1.0001; t += 0.05) {
+    const v = easeOutPower(t);
+    assert.ok(v >= prev);
+    prev = v;
+  }
+});
+
+test("countAt: starts at 0, lands on the exact value at the end, never overshoots, shows every whole number", () => {
+  assert.equal(countAt(0, 25), 0);
+  assert.equal(countAt(1, 25), 25);
+  assert.equal(countAt(1.5, 25), 25);
+  assert.equal(countAt(-1, 25), 0);
+  assert.equal(countAt(0.5, 0), 0, "nothing to count");
+  const shown = new Set<number>();
+  let prev = -1;
+  for (let i = 0; i <= 1000; i++) {
+    const v = countAt(i / 1000, 25);
+    assert.ok(v >= prev && v <= 25, `${prev} -> ${v}`);
+    prev = v;
+    shown.add(Math.round(v));
+  }
+  for (let n = 0; n <= 25; n++) assert.ok(shown.has(n), `${n} is shown on the way`);
+  // just before the end the figure shows the last-but-one or the last number, never an early final: it lands at the end
+  assert.ok(Math.round(countAt(0.97, 25)) >= 24);
+  assert.ok(countAt(0.5, 25) > 12.5, "front-loaded");
+});
+
+test("countAt: the pace falls the whole way - the closer to the end, the longer one number is held", () => {
+  const timeOf = (n: number) => {
+    for (let i = 0; i <= 100000; i++) if (Math.round(countAt(i / 100000, 25)) >= n) return i / 100000;
+    return 1;
+  };
+  const held = (n: number) => timeOf(n + 1) - timeOf(n);
+  assert.ok(held(24) > held(22) && held(22) > held(18) && held(18) > held(10) && held(10) > held(3));
+  assert.ok(held(24) > timeOf(10), "the last number is held longer than the first ten take together");
+  assert.ok(timeOf(10) < 0.25);
+});
+
+test("the home counter is 2.5 times slower than the other count-ups (EarningsCounter keeps 800 ms)", () => {
+  assert.equal(COUNT_UP_HERO_MS, 750 * 2.5);
+  assert.equal(clampCountUpDuration(COUNT_UP_HERO_MS), COUNT_UP_MAX_MS, "the shared clamp is unchanged (700-800)");
+});
+
+test("CountUp CSS: the landing (growth, burst, larger figure that stays) only exists under .motion-ok", () => {
+  const css = fs.readFileSync(path.join(SRC, "styles", "motion.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const phase of ["grow", "burst", "done"]) {
+    assert.match(css, new RegExp(String.raw`\.motion-ok \.count-figure\[data-count-phase="${phase}"\]`), phase);
+  }
+  const grown = /\.motion-ok \.count-figure\[data-count-phase="grow"\],\s*\.motion-ok \.count-figure\[data-count-phase="burst"\],\s*\.motion-ok \.count-figure\[data-count-phase="done"\]\s*\{([^}]*)\}/.exec(css);
+  assert.match(grown?.[1] ?? "", /font-size:\s*1\.4em/, "grow, burst and done all share the larger size, so it stays");
+  assert.match(css, /@keyframes count-pop/);
+  // owner, 2026-11-11: no circle with rays (or any other shape) around the figure during the burst
+  assert.doesNotMatch(css, /@keyframes count-rays|@keyframes count-ring/);
+  assert.doesNotMatch(css, /\.count-figure[^{]*::(before|after)/);
+  assert.doesNotMatch(css, /repeating-conic-gradient/);
+  // no selector for a phase outside .motion-ok (reduced motion never sees it)
+  const selectors = css.match(/[^{}]*\[data-count-phase[^{]*\{/g) ?? [];
+  for (const selector of selectors) assert.match(selector, /\.motion-ok/, selector.trim());
 });
 
 test("count-up duration is clamped to 700-800 ms", () => {

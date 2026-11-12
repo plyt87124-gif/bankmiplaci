@@ -38,7 +38,7 @@ function glowsFor(index: number): CSSProperties[] {
 export const SPOTLIGHT_INTERVAL_MS = 5000;
 
 /**
- * The hero's right-hand side: the most recommended offers as cards that take
+ * The hero's right-hand side: the highest-rated offers as cards that take
  * turns by themselves (every 5 s), with a light sweep over the card that has
  * just arrived. The cards are ready server-rendered nodes (the same
  * PromotionCard as in the lists); this island only decides which one is
@@ -145,7 +145,7 @@ export function HeroSpotlight({ header, slides, labels }: { header: ReactNode; s
       <div
         role="group"
         aria-roledescription="karuzela"
-        aria-label="Najbardziej polecane promocje"
+        aria-label="Promocje z najwyższą oceną"
         className="relative rounded-card shadow-[0_18px_50px_-18px_rgb(var(--color-action)/0.45)] ring-1 ring-action/30 max-sm:rounded-none max-sm:shadow-none max-sm:ring-0"
       >
         <div

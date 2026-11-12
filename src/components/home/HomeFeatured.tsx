@@ -9,12 +9,16 @@ import { HomeSeeAllLink, HomeSegmentPanels, type HomePanel } from "./HomeSegment
 import type { HomeModel } from "./homeModel";
 
 /**
- * "Polecane promocje" (layout spec, HOME block 2). The heading says "Polecane",
- * never a superlative; the disclosure strip sits DIRECTLY under it, with the
- * wording from lib/disclosureCopy.ts (the order takes the partner remuneration
- * into account, the rating does not). Below it, the first three offers of the
- * selected segment in "Polecane" order, then "Zobacz wszystkie (N)" and the
- * standing note about the scope of the comparison.
+ * "Promocje z najwyższą oceną" (layout spec, HOME block 2). Owner, 2026-11-11: the home page shows the
+ * offers with the highest site rating (scale 0-10, the "Ocena serwisu" on every card), not
+ * the "Polecane" order, which is only a sort option on the /promocje list. The heading
+ * ("Promocje z najwyższą oceną", owner's wording, without "serwisu") is a statement about a
+ * defined number: the "Ocena serwisu" printed on every card (explained at /metodologia), not
+ * a bare "best". The disclosure strip (switched off by the
+ * owner, SHOW_AFFILIATE_NOTICES) would sit DIRECTLY under it, with the wording for a
+ * non-"Polecane" order. Below it, the first three offers of the selected segment, highest
+ * rating first, then "Zobacz wszystkie (N)" and the standing note about the scope of the
+ * comparison.
  *
  * The cards of every segment are rendered here, on the server, and handed to
  * the client island as ready nodes; only the selected one is visible. On a
@@ -44,12 +48,12 @@ export function HomeFeatured({ model, now }: { model: HomeModel | null; now?: Da
   const hasOffers = panels.length > 0;
 
   return (
-    <section aria-labelledby="polecane-title" className="container-page py-12 md:py-24">
-      <h2 id="polecane-title">Polecane promocje</h2>
+    <section aria-labelledby="najwyzsza-ocena-title" className="container-page py-12 md:py-24">
+      <h2 id="najwyzsza-ocena-title">Promocje z najwyższą oceną</h2>
 
       {hasOffers ? (
         <>
-          <AffiliateDisclosure variant="strip" sort="recommended" className="mt-4 max-w-3xl" />
+          <AffiliateDisclosure variant="strip" sort="top-rated" className="mt-4 max-w-3xl" />
           <HomeSegmentPanels panels={panels} className="mt-6" />
           <ViewerFilterNote />
           <div className="mt-8">

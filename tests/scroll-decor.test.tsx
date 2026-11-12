@@ -56,8 +56,12 @@ test("znacznik: dwie warstwy, ukryte przed czytnikami, bez zdarzeń myszy, kolor
   assert.equal((html.match(/aria-hidden="true"/g) ?? []).length, 2);
   assert.match(html, /data-scroll-decor="back" class="pointer-events-none fixed inset-0 -z-10/);
   assert.match(html, /data-scroll-decor="front" class="pointer-events-none fixed inset-0 z-0 /, "nad zwykłą treścią, ale pod kafelkami");
-  assert.equal((html.match(/stroke-ink-300/g) ?? []).length, 12, "kontur w kolorze przeznaczonym na dekoracje (ink-300), nie na tekst");
-  assert.doesNotMatch(html, /text-ink-300/);
+  assert.equal((html.match(/stroke-decor/g) ?? []).length, 12, "kontur w kolorze przeznaczonym na te rysunki (decor), nie na tekst");
+  assert.doesNotMatch(html, /text-ink-300|stroke-ink-300/);
+  // Właściciel (12.11.2026): w ciemnym motywie rysunki są BIAŁE (ink-300 jest tam ciemnym granatem i przy 10-16 % znikał na tle).
+  const css = readFileSync(join(process.cwd(), "src", "app", "globals.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.match(/:root \{[^}]*?--color-decor:\s*156 158 162;/.exec(css)?.[0] ?? "", /--color-decor/, "jasny motyw: szary jak dotąd");
+  assert.match(/\.dark \{[^}]*?--color-decor:\s*255 255 255;/.exec(css)?.[0] ?? "", /--color-decor/, "ciemny motyw: biały");
   assert.equal((html.match(/print:hidden/g) ?? []).length, 2);
   assert.equal((html.match(/data-decor="/g) ?? []).length, 12);
   assert.equal((html.match(/hidden [^"]*md:block/g) ?? []).length, 4, "cztery tylko na szerokim ekranie");

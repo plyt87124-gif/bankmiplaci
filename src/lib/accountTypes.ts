@@ -105,3 +105,30 @@ export function accountTypeWhere(filter: string | null | undefined): Pick<Prisma
   if (filter === "PERSONAL") return { accountType: { in: [...PERSONAL_ACCOUNT_TYPES] } };
   return { accountType: filter as AccountType };
 }
+
+// ---------------------------------------------------------------------------
+// Karencja and "I am already a client": which stored accounts count as the same
+// ---------------------------------------------------------------------------
+
+/**
+ * For the karencja rule and for "I am a current client of this bank", a young account (YOUNG) counts as a
+ * personal account (PERSONAL) of the same bank, in both directions (owner, 2026-11-11: a user with an mBank
+ * personal account in karencja was still shown mBank's offers for young people). The OFFER keeps its real type,
+ * so the badge on its card still says "Konto dla młodych".
+ *
+ * Deliberately NOT folded in: SAVINGS and JOINT. Several banks say outright that a savings account does not
+ * exclude anyone from a personal-account offer, so those stay a kind of their own; BUSINESS is a world apart.
+ */
+export function clientKindOf(accountType: string | null | undefined): string {
+  return accountType === "YOUNG" ? "PERSONAL" : (accountType ?? "PERSONAL");
+}
+
+/** Do two stored account types count as the same account for karencja / current-client purposes? */
+export function sameClientKind(a: string | null | undefined, b: string | null | undefined): boolean {
+  return clientKindOf(a) === clientKindOf(b);
+}
+
+/** Every account type that counts as the same account as `accountType` (for `accountType: { in: [...] }`). */
+export function clientKindTypes(accountType: AccountType): AccountType[] {
+  return ALL_ACCOUNT_TYPES.filter((type) => sameClientKind(type, accountType));
+}

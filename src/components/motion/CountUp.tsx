@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { observeOnce } from "@/hooks/useInView";
-import { prefersReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/cn";
-import { clampCountUpDuration, COUNT_UP_DEFAULT_MS, easeOutCubic } from "./easing";
-import { formatCountFrame, formatCountValue, type CountFormat } from "./format";
+import { browserCountUpEnv, PENDING_ATTRIBUTE, startCountUp } from "./countUpController";
+import { COUNT_UP_HERO_MS } from "./easing";
+import { formatCountValue, type CountFormat } from "./format";
 
 /**
  * Count-up for AGGREGATES only (the "N aktualnych promocji" figure in the
@@ -16,9 +15,14 @@ import { formatCountFrame, formatCountValue, type CountFormat } from "./format";
  * - Assistive tech reads the FINAL value from a visually-hidden text; the
  *   animated text is `aria-hidden`, so intermediate numbers are never heard and
  *   the number stays plain text inside a sentence (no `role="img"`).
- * - Animates only when the element is OFF-screen at mount: it waits for it to
- *   scroll into view, then counts 0 -> value in 700-800 ms (easeOutCubic). An
- *   element already visible when the page hydrates is left alone (no flash).
+ * - It counts 0 -> value in 1875 ms (2.5 x the old 750 ms; owner, 2026-11-11), not
+ *   linearly: it slows down over the last numbers and lands exactly when the time is
+ *   up. On the last-but-one number the figure grows, on the last one it bursts
+ *   (one pop of the figure, no ring or rays) and the larger figure stays (motion.css). Straight away
+ *   when it is on screen at load, otherwise when it scrolls into view. Until the client
+ *   takes over the animated text is invisible (`data-count-pending`, motion.css),
+ *   so the true number never flashes and then restarts from 0. The rules are in
+ *   countUpController.ts.
  * - Frames are written straight to `textContent` through a ref: no React
  *   state, no re-render per frame. The last frame is the exact value.
  *
@@ -27,7 +31,7 @@ import { formatCountFrame, formatCountValue, type CountFormat } from "./format";
 export function CountUp({
   value,
   format = "number",
-  duration = COUNT_UP_DEFAULT_MS,
+  duration = COUNT_UP_HERO_MS,
   className
 }: {
   value: number;
@@ -41,55 +45,13 @@ export function CountUp({
   useEffect(() => {
     const el = textRef.current;
     if (!el) return;
-    if (el.textContent !== finalText) el.textContent = finalText;
-    if (prefersReducedMotion() || !Number.isFinite(value) || value <= 0) return;
-    const rect = el.getBoundingClientRect();
-    if (rect.bottom > 0 && rect.top < window.innerHeight) return; // already on screen: do not animate
-    // Far below the fold the observer may not fire for a long time (and crawlers/screenshots
-    // would see the starting "0"): animate only what is about to come into view.
-    if (rect.top > window.innerHeight * 1.5) return;
+    return startCountUp(el, { value, format, duration }, browserCountUpEnv());
+  }, [value, format, duration]);
 
-    const ms = clampCountUpDuration(duration);
-    let frame: number | undefined;
-    const showFinal = () => {
-      if (frame !== undefined) cancelAnimationFrame(frame);
-      frame = undefined;
-      if (el.textContent !== finalText) el.textContent = finalText;
-    };
-
-    // Off-screen, so nobody sees the swap to the starting value.
-    el.textContent = formatCountFrame(0, format);
-    const stopObserving = observeOnce(el, () => {
-      const start = performance.now();
-      let shown = "";
-      const tick = (now: number) => {
-        const progress = Math.min(1, (now - start) / ms);
-        if (progress >= 1) return showFinal();
-        const text = formatCountFrame(value * easeOutCubic(progress), format);
-        if (text !== shown) {
-          shown = text;
-          el.textContent = text;
-        }
-        frame = requestAnimationFrame(tick);
-      };
-      frame = requestAnimationFrame(tick);
-    });
-
-    // Printing / "save as PDF" must never capture a half-counted number.
-    window.addEventListener("beforeprint", showFinal);
-    // Failsafe: if the observer never fires, the true value must not stay hidden behind "0".
-    const failsafe = window.setTimeout(showFinal, 3000);
-    return () => {
-      window.clearTimeout(failsafe);
-      stopObserving();
-      window.removeEventListener("beforeprint", showFinal);
-      showFinal();
-    };
-  }, [value, format, duration, finalText]);
-
+  const pending = { [PENDING_ATTRIBUTE]: "" };
   return (
     <span className={cn("num", className)}>
-      <span ref={textRef} aria-hidden="true">
+      <span ref={textRef} className="count-figure" aria-hidden="true" {...pending}>
         {finalText}
       </span>
       <span className="sr-only">{finalText}</span>

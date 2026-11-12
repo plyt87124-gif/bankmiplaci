@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
-import { computeEligibility, isCurrentClient } from "@/lib/services/eligibility";
+import { sameClientKind } from "@/lib/accountTypes";
+import { mostRestrictiveHistory } from "@/lib/services/eligibility";
 import { activeWhere } from "@/lib/services/promotions";
 
 /** Why an offer card shows the "front layer" for this visitor. */
@@ -10,8 +11,10 @@ export type EligibilityMark =
 
 /**
  * What a signed-in visitor should be told on top of each open offer:
- *   client    the user said they are a CURRENT client of this bank (same account type): all of that bank's offers
- *             of that type are closed to them, with or without a karencja rule;
+ *   client    the user said they are a CURRENT client of this bank (same kind of account): all of that bank's offers
+ *             of that kind are closed to them, with or without a karencja rule. A young account counts as a
+ *             personal one here and in the karencja rule (accountTypes.ts, clientKindOf); the offer card keeps its
+ *             real "Konto dla młodych" badge;
  *   karencja  the closure date they gave fails the offer's karencja rule (`until` = the day they qualify, null for a
  *             fixed cut-off that never resolves);
  *   joined    they already have this offer's ściąga open (informational, not a block).
@@ -37,15 +40,11 @@ export async function listEligibilityMarks(userId: string, now: Date = new Date(
       select: { slug: true, bankId: true, accountType: true, cooldownMonths: true, cooldownCutoffDate: true }
     });
     for (const promotion of promotions) {
-      const row = history.find((h) => h.bankId === promotion.bankId && h.accountType === promotion.accountType);
-      if (!row) continue;
-      const result = computeEligibility(
-        promotion.cooldownMonths,
-        promotion.cooldownCutoffDate,
-        row.wasClientUntil,
-        now,
-        isCurrentClient(row)
-      );
+      // Every row that counts as the same account for this offer; the one that stands in the way decides.
+      const rows = history.filter((h) => h.bankId === promotion.bankId && sameClientKind(h.accountType, promotion.accountType));
+      const worst = mostRestrictiveHistory(rows, promotion, now);
+      if (!worst) continue;
+      const result = worst.result;
       if (result.status !== "not-eligible") continue;
       if (result.currentClient) marks.set(promotion.slug, { slug: promotion.slug, reason: "client" });
       else {
