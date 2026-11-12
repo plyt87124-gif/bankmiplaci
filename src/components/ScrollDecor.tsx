@@ -7,8 +7,11 @@ import { useEffect, useRef, type ReactElement } from "react";
  * at different speeds while the page scrolls: slower than the text they look far away, a little faster than it
  * they look near, so the page gets some depth without any of it competing with the content.
  *
- *  - Meant to be almost invisible: the stroke is `stroke-ink-300` (the colour reserved for decoration), opacity 10 to 16 %,
+ *  - Meant to be almost invisible: the stroke is `stroke-decor` (the colour reserved for these drawings), opacity 10 to 16 %,
  *    1.5 px lines, twelve drawings on a wide screen and eight on a phone.
+ *  - `--color-decor` is the grey of ink-300 in the light theme and WHITE in the dark theme (owner, 2026-11-12). ink-300 is
+ *    a dark slate in the dark theme (it is meant for icons on a surface) and at 10 to 16 % over the near-black page the
+ *    drawings were not visible at all. White at the same opacity is a faint, cool outline, as the grey is in the light one.
  *  - NEVER above a promotion tile. The tiles (PromotionCard, ArticleCard, ...) are positioned (`relative`, opaque
  *    background) and come later in the DOM than this component, so they paint over every drawing. Two fixed layers:
  *    "back" (`-z-10`) sits behind the page, the opaque bands of the home page (hero, quiz) hide it; "front" (`z-0`)
@@ -191,7 +194,7 @@ export function ScrollDecor() {
             transform: `translate3d(0, ${round1(decorY(item, 0, 800))}px, 0) rotate(${item.rotate}deg)`
           }}
         >
-          <svg viewBox={`0 0 ${w} ${h}`} width={item.size} height={(item.size * h) / w} focusable="false" className="stroke-ink-300 [&_*]:[vector-effect:non-scaling-stroke]">
+          <svg viewBox={`0 0 ${w} ${h}`} width={item.size} height={(item.size * h) / w} focusable="false" className="stroke-decor [&_*]:[vector-effect:non-scaling-stroke]">
             {shape}
           </svg>
         </div>

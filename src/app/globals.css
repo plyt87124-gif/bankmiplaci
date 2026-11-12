@@ -28,6 +28,9 @@
     --color-ink-400: 104 108 116;
     /* icons / decoration ONLY - never text */
     --color-ink-300: 156 158 162;
+    /* The line colour of the drawings drifting behind the page (ScrollDecor). Grey here, WHITE in the dark theme
+       (owner, 2026-11-12): ink-300 is a dark slate there and the drawings vanished on the near-black page. */
+    --color-decor: 156 158 162;
     /* fills (chips, skeleton, checkbox bg) - NOT borders */
     --color-ink-100: 238 234 226;
     /* LEGACY: fixed dark plate (paired with literal white text); does not flip. */
@@ -94,6 +97,7 @@
     --color-ink-500: 147 160 175;
     --color-ink-400: 132 146 162;
     --color-ink-300: 90 107 125;
+    --color-decor: 255 255 255;
     --color-ink-100: 38 50 68;
     /* LEGACY: visible slate plate (10:1 with white text) so admin buttons stay readable. */
     --color-ink-solid: 56 72 92;

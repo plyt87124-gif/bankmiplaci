@@ -107,6 +107,7 @@ const UI_PAIRS: Pair[] = [
 /** Tokens intentionally outside the thresholds. Not asserted; listed so the gap is visible and justified. */
 const DECORATIVE_ONLY: Record<string, string> = {
   "ink-300": "icons and decoration only (spec section 2; ui-tokens test bans it as text) - also the disabled+checked checkbox, which WCAG exempts",
+  decor: "line colour of the faint background drawings (ScrollDecor, 10-16 % opacity): grey in the light theme, white in the dark one; never text, no contrast requirement",
   line: "card borders and separators - decoration; the meaning is carried by text/headings and, for controls, by line-strong",
   "ink-100": "fill only (chips, skeleton, checkbox background) - no text-on-it pair other than those asserted above",
   "ink-solid": "LEGACY fill of the v1 admin panel, always paired with literal white text (asserted above)",

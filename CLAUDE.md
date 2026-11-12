@@ -39,6 +39,8 @@ Dotyczy każdej promocji, którą generujesz lub poprawiasz: plików `data/candi
 - **Konto dla młodych liczy się jak osobiste do karencji i do „jestem już klientem”** (`clientKindOf` w `accountTypes.ts`, `mostRestrictiveHistory` w `eligibility.ts`). Oferta zachowuje swój typ, więc na kafelku nadal jest „Konto dla młodych”. Konto oszczędnościowe i wspólne NIE są wliczane.
 - **Licznik „N aktualnych promocji”** w hero liczy 1875 ms (2,5 × dawne 750 ms), zwalnia przy ostatnich liczbach, a na ostatniej urasta i „wybucha” (jedno puknięcie samej cyfry, BEZ koła, pierścienia ani promieni wokół liczby: właściciel tego nie chce); większa cyfra zostaje (`countUpController.ts`, `motion.css`). Ikona motywu rusza się raz na 10 s (`ThemeIcon.tsx`).
 
+- **Rysunki w tle (`ScrollDecor`) w ciemnym motywie są BIAŁE** (token `--color-decor`: szary 156 158 162 w jasnym, biały 255 255 255 w ciemnym; klasa `stroke-decor`). Wcześniej używały `ink-300`, który w ciemnym motywie jest ciemnym granatem i przy 10-16 % krycia znikał na tle (właściciel 12.11.2026). Nie wracaj do `stroke-ink-300`; test w `tests/scroll-decor.test.tsx` pilnuje obu wartości. Po zmianie `tailwind.config.ts` serwer deweloperski potrzebuje restartu, a przy zawieszonym starym CSS pomaga skasowanie `.next/cache`.
+
 ## Podgląd w przeglądarce Claude
 
 `preview_start` czyta `.claude/launch.json` z głównego folderu. Żeby uruchomić podgląd z worktree, trzeba tymczasowo dodać wpis z `npm --prefix <worktree> run dev -- -p 3100` i po starcie przywrócić plik.
