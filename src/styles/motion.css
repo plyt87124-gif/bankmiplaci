@@ -168,14 +168,14 @@ dialog.animate-dialog-in::backdrop { animation: fade-in 160ms var(--ease-out) bo
 }
 
 /* The landing of the home counter (owner, 2026-11-11): when the count reaches its last two numbers the figure GROWS,
-   on the last one it BURSTS (a pop, a ring and rays that fly out and fade) and the larger figure STAYS.
+   on the last one it BURSTS (a single pop of the figure itself) and the larger figure STAYS.
+   NO ring, NO rays or any other shape around the number (owner, 2026-11-11: "jakieś koło z promieniami, tego nie chcę").
    The controller sets data-count-phase = grow | burst | done (countUpController.ts); reduced motion never sets it.
    The one place in this file where a layout property animates (font-size): a single 700 ms growth of a short
    number inside a line that already has room for it (line-height 1 on the figure, so the line does not grow).
-   The burst itself is transform + opacity only. */
+   The burst itself is transform only. */
 .count-figure {
   display: inline-block;
-  position: relative;
   line-height: 1;
 }
 .motion-ok .count-figure[data-count-phase] {
@@ -189,47 +189,10 @@ dialog.animate-dialog-in::backdrop { animation: fade-in 160ms var(--ease-out) bo
 .motion-ok .count-figure[data-count-phase="burst"] {
   animation: count-pop 520ms var(--ease-out);
 }
-.motion-ok .count-figure[data-count-phase]::before,
-.motion-ok .count-figure[data-count-phase]::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 52%;
-  width: 2.6em;
-  height: 2.6em;
-  margin: -1.3em 0 0 -1.3em;
-  border-radius: 50%;
-  opacity: 0;
-  pointer-events: none;
-}
-/* rays: a ring of short spokes */
-.motion-ok .count-figure[data-count-phase]::before {
-  background: repeating-conic-gradient(from 0deg, rgb(var(--color-action)) 0deg 4deg, transparent 4deg 30deg);
-  -webkit-mask: radial-gradient(circle, transparent 36%, #000 38%, #000 62%, transparent 64%);
-  mask: radial-gradient(circle, transparent 36%, #000 38%, #000 62%, transparent 64%);
-}
-/* shock ring */
-.motion-ok .count-figure[data-count-phase]::after {
-  border: 2px solid rgb(var(--color-action));
-}
-.motion-ok .count-figure[data-count-phase="burst"]::before {
-  animation: count-rays 700ms var(--ease-out) forwards;
-}
-.motion-ok .count-figure[data-count-phase="burst"]::after {
-  animation: count-ring 850ms var(--ease-out) 60ms forwards;
-}
 @keyframes count-pop {
   0% { transform: scale(1); }
   36% { transform: scale(1.32); }
   100% { transform: scale(1); }
-}
-@keyframes count-rays {
-  0% { opacity: 0.95; transform: scale(0.3) rotate(0deg); }
-  100% { opacity: 0; transform: scale(1.55) rotate(16deg); }
-}
-@keyframes count-ring {
-  0% { opacity: 0.85; transform: scale(0.35); }
-  100% { opacity: 0; transform: scale(1.75); }
 }
 
 /* ------------------------------------------------------------------ */

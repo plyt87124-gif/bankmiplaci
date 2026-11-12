@@ -18,7 +18,7 @@ import { formatCountValue, type CountFormat } from "./format";
  * - It counts 0 -> value in 1875 ms (2.5 x the old 750 ms; owner, 2026-11-11), not
  *   linearly: it slows down over the last numbers and lands exactly when the time is
  *   up. On the last-but-one number the figure grows, on the last one it bursts
- *   (rings, rays, a pop) and the larger figure stays (motion.css). Straight away
+ *   (one pop of the figure, no ring or rays) and the larger figure stays (motion.css). Straight away
  *   when it is on screen at load, otherwise when it scrolls into view. Until the client
  *   takes over the animated text is invisible (`data-count-pending`, motion.css),
  *   so the true number never flashes and then restarts from 0. The rules are in

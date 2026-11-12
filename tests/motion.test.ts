@@ -181,8 +181,10 @@ test("CountUp CSS: the landing (growth, burst, larger figure that stays) only ex
   const grown = /\.motion-ok \.count-figure\[data-count-phase="grow"\],\s*\.motion-ok \.count-figure\[data-count-phase="burst"\],\s*\.motion-ok \.count-figure\[data-count-phase="done"\]\s*\{([^}]*)\}/.exec(css);
   assert.match(grown?.[1] ?? "", /font-size:\s*1\.4em/, "grow, burst and done all share the larger size, so it stays");
   assert.match(css, /@keyframes count-pop/);
-  assert.match(css, /@keyframes count-rays/);
-  assert.match(css, /@keyframes count-ring/);
+  // owner, 2026-11-11: no circle with rays (or any other shape) around the figure during the burst
+  assert.doesNotMatch(css, /@keyframes count-rays|@keyframes count-ring/);
+  assert.doesNotMatch(css, /\.count-figure[^{]*::(before|after)/);
+  assert.doesNotMatch(css, /repeating-conic-gradient/);
   // no selector for a phase outside .motion-ok (reduced motion never sees it)
   const selectors = css.match(/[^{}]*\[data-count-phase[^{]*\{/g) ?? [];
   for (const selector of selectors) assert.match(selector, /\.motion-ok/, selector.trim());

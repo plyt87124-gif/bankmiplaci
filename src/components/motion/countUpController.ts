@@ -22,7 +22,7 @@ import { formatCountFrame, formatCountValue, type CountFormat } from "./format";
  *  - Printing shows the true value.
  *  - The count is not linear: it slows down towards the end and lands on the last number exactly when the time is
  *    up (countAt in easing.ts). When the shown number reaches the last-but-one the figure starts to GROW (phase
- *    "grow"); on the last number it bursts (phase "burst": rings, rays and a pop drawn by CSS) and the larger figure
+ *    "grow"); on the last number it bursts (phase "burst": one pop of the figure drawn by CSS, no ring or rays) and the larger figure
  *    STAYS (phase "done"). The phases are `data-count-phase` on the element, styled in motion.css under
  *    `.motion-ok`. Reduced motion and a value of 0 show the plain true value without them; settle() (print, a
  *    stalled frame loop, an armed figure that nobody scrolled to) shows the true value and the larger figure ("done").
@@ -52,7 +52,7 @@ export interface CountUpElement {
 export const PENDING_ATTRIBUTE = "data-count-pending";
 export const PHASE_ATTRIBUTE = "data-count-phase";
 export type CountPhase = "grow" | "burst" | "done";
-/** The burst (rings, rays, pop) lasts this long, then the phase becomes "done": the larger figure stays. */
+/** The burst (the pop of the figure) lasts this long, then the phase becomes "done": the larger figure stays. */
 export const BURST_MS = 900;
 /** The controller accepts durations in this range (the home counter uses COUNT_UP_HERO_MS). */
 export const MIN_DURATION_MS = 700;

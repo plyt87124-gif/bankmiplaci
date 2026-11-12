@@ -37,7 +37,7 @@ Dotyczy każdej promocji, którą generujesz lub poprawiasz: plików `data/candi
 - **Główna jest ułożona po ocenie, nie po „Polecane”.** Karty w karuzeli i w sekcji „Promocje z najwyższą oceną” (nazwa bez słowa „serwisu”) idą od najwyższej oceny (`sort: "top-rated"` w `homeData.ts`). Kolejność „Polecane” (zależna od prowizji) jest tylko opcją sortowania na liście `/promocje`. Pilnuje tego test w `tests/home.test.tsx`.
 - **Na głównej nie ma kart z kontami dla młodych ani z ofertą mBank „Załóż firmę i konto”.** Lista wyjątków to `HOME_HIDDEN_ACCOUNT_TYPES` i `HOME_HIDDEN_SLUGS` w `homeModel.ts` (typ `YOUNG`, mBank `mbank-zaloz-firme-i-konto-z-platnosciami-500-zl`, Alior „Młodzi zyskują” `alior-konto-18-25-mlodzi-zyskuja`). Zostają na `/promocje`, w hubach i w licznikach.
 - **Konto dla młodych liczy się jak osobiste do karencji i do „jestem już klientem”** (`clientKindOf` w `accountTypes.ts`, `mostRestrictiveHistory` w `eligibility.ts`). Oferta zachowuje swój typ, więc na kafelku nadal jest „Konto dla młodych”. Konto oszczędnościowe i wspólne NIE są wliczane.
-- **Licznik „N aktualnych promocji”** w hero liczy 1875 ms (2,5 × dawne 750 ms), zwalnia przy ostatnich liczbach, a na ostatniej urasta i „wybucha”; większa cyfra zostaje (`countUpController.ts`, `motion.css`). Ikona motywu rusza się raz na 10 s (`ThemeIcon.tsx`).
+- **Licznik „N aktualnych promocji”** w hero liczy 1875 ms (2,5 × dawne 750 ms), zwalnia przy ostatnich liczbach, a na ostatniej urasta i „wybucha” (jedno puknięcie samej cyfry, BEZ koła, pierścienia ani promieni wokół liczby: właściciel tego nie chce); większa cyfra zostaje (`countUpController.ts`, `motion.css`). Ikona motywu rusza się raz na 10 s (`ThemeIcon.tsx`).
 
 ## Podgląd w przeglądarce Claude
 
