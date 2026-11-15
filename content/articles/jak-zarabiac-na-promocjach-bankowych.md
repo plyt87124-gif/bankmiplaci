@@ -50,10 +50,9 @@ Kwota w nagłówku to maksimum. Najwyższe 2400 zł w ofercie Pekao to zwrot 20%
 
 ### Dlaczego najwyższa premia nie zawsze jest najlepsza?
 
-Bo część promocji to zwrot procentowy od Twoich wydatków. Dwa przykłady z opisów ofert w serwisie:
+Bo część promocji to zwrot procentowy od Twoich wydatków. Przykład z opisu oferty w serwisie:
 
 - Pekao zwraca 20% wydatków podróżnych (paliwo, bilety, wycieczki) przez 12 miesięcy, do 2400 zł. Żeby dostać całe 2400 zł, trzeba wydać 12 000 zł na takie cele.
-- Credit Agricole zwraca do 1000 zł za gastronomię: 10 zł za każde 50 zł, do 100 zł miesięcznie przez 10 miesięcy. Żeby dostać całe 1000 zł, trzeba wydać w gastronomii 5000 zł.
 
 Dla porównania Alior w trwającej promocji wymaga trzech płatności w miesiącu na dowolną kwotę, jednego wpływu min. 1000 zł i jednego logowania do aplikacji, a daje do 800 zł. Dlatego porównuj nagrodę z wysiłkiem, a nie tylko kwotę z reklamy.
 
@@ -65,12 +64,11 @@ Poniżej sześć ofert z różnych banków. Opisy pochodzą ze stron ofert w ser
 |---|---|---|---|---|
 | [Pekao, Konto Przekorzystne (Promocja Podróżna III)](/promocje/pekao-konto-przekorzystne-300-zl-i-promocja-podrozna-iii) | 2400 zł | zwrot 20% wydatków podróżnych (paliwo, bilety, wycieczki) przez 12 miesięcy; wymaga braku umów z Pekao od 1.10.2024 | 12.01.2027 | łatwa |
 | [Erste, Konto Platinum](/promocje/erste-platinum-1500-plus-300-zl) | 1500 zł | 3 × 200 zł w pierwszych trzech miesiącach i 900 zł nagrody lojalnościowej | 30.11.2026 | średnia |
-| [Credit Agricole, Konto dla Ciebie MAX](/promocje/creditagricole-konto-dla-ciebie-max-smaczne-zwroty-ii) | 1500 zł | zwroty za gastronomię i zakupy, min. 10 płatności miesięcznie przy zwrocie za zakupy | 31.12.2026 | łatwa |
 | [Nest Bank, Nest Konto](/promocje/nest-konto-zyskaj-do-1060-zl-za-wynagrodzenie) | 1060 zł | 200 zł za pierwsze wynagrodzenie, 10 × 50 zł premii miesięcznej, zwrot za zakupy | 31.03.2027 | średnia |
 | [PKO, Konto za Zero (kod PROSTO)](/promocje/pko-konto-za-zero-prosty-zwrot-do-900-zl) | 900 zł | do 600 zł: 10% płatności kartą miesięcznie (do 100 zł) przez 5 miesięcy plus 100 zł, kod PROSTO; do 300 zł za konto dla dziecka | 31.12.2026 | łatwa |
 | [Alior, Konto z premią II](/promocje/alior-konto-z-premia-ii) | 800 zł | 3 płatności, wpływ 1000 zł i logowanie w kolejnych miesiącach, kod PREMIA800 | 11.01.2027 | łatwa |
 
-Pełny opis krok po kroku znajdziesz w poradnikach: [Alior Konto z premią II](/blog/alior-bank-jak-zdobyc-do-800-zl-premii), [Millennium Konto 360°](/blog/promocja-millennium-konto-360-do-800-zl) i [Nest Konto](/blog/promocja-nest-bank-nest-konto-do-1060-zl). Oferty konkretnego banku zobaczysz na jego stronie, np. [Alior](/banki/alior), [mBank](/banki/mbank), [PKO](/banki/pko), [Pekao](/banki/pekao), [Credit Agricole](/banki/creditagricole), [BNP Paribas](/banki/bnp), [Erste](/banki/erste), [Millennium](/banki/millennium), [Nest Bank](/banki/nest), [Bank Pocztowy](/banki/bankpocztowy) i [Revolut](/banki/revolut). Dla firm i JDG jest osobna lista: [konta firmowe z premią](/konta-firmowe-z-premia).
+Pełny opis krok po kroku znajdziesz w poradnikach: [Alior Konto z premią II](/blog/alior-bank-jak-zdobyc-do-800-zl-premii), [Millennium Konto 360°](/blog/promocja-millennium-konto-360-do-800-zl) i [Nest Konto](/blog/promocja-nest-bank-nest-konto-do-1060-zl). Oferty konkretnego banku zobaczysz na jego stronie, np. [Alior](/banki/alior), [mBank](/banki/mbank), [PKO](/banki/pko), [Pekao](/banki/pekao), [BNP Paribas](/banki/bnp), [Erste](/banki/erste), [Millennium](/banki/millennium), [Nest Bank](/banki/nest), [Bank Pocztowy](/banki/bankpocztowy) i [Revolut](/banki/revolut). Dla firm i JDG jest osobna lista: [konta firmowe z premią](/konta-firmowe-z-premia).
 
 ## Za co banki wypłacają premie?
 
