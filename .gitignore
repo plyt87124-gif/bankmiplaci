@@ -16,3 +16,6 @@ revert-*.json
 
 # Pobrane regulaminy i teksty z nich (robocze, cudze dokumenty) — tylko skrypty .py zostają
 data/candidates/_src/*/
+
+# Surowe wizerunki NBP i inne pobrane materialy (cudze, nie do repozytorium)
+materialy/
