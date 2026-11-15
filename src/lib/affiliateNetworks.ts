@@ -157,24 +157,11 @@ export function isUsableOffer(o: OfferForChoice, now: Date): boolean {
   return true;
 }
 
-/** Best (highest) offer of one network, by the given commission model. */
-function bestOf(offers: OfferForChoice[], model: "CPS" | "CPA"): OfferForChoice | null {
-  const key = model === "CPS" ? "cpsCents" : "cpaCents";
-  let best: OfferForChoice | null = null;
-  for (const o of offers) {
-    const v = o[key];
-    if (v == null) continue;
-    if (!best || v > (best[key] ?? -1)) best = o;
-  }
-  return best;
-}
-
 /**
  * Decides whether a promotion's "Przejdź do promocji" link should move to the
- * other network. "Better" = a higher commission for one new client, compared
- * only like with like: CPS with CPS, else CPA with CPA. Anything the rule
- * cannot settle (different models, a network's campaign gone) is a
- * "decide" for the owner, never a guess.
+ * other network. "Better" = a higher commission for one new client; CPS and CPA are
+ * compared 1:1. Anything the rule cannot settle (a network's campaign gone)
+ * is a "decide" for the owner, never a guess.
  */
 export function chooseAffiliateLink(promotion: PromotionForChoice, offers: OfferForChoice[], now: Date = new Date()): LinkChoice {
   const current = promotion.affiliateNetwork ?? networkFromUrl(promotion.affiliateUrl);
@@ -197,27 +184,35 @@ export function chooseAffiliateLink(promotion: PromotionForChoice, offers: Offer
 
   const eb = byNetwork.get("EBROKER")!;
   const cp = byNetwork.get("COMPERIA")!;
-  for (const model of ["CPS", "CPA"] as const) {
-    const a = bestOf(eb, model);
-    const b = bestOf(cp, model);
-    if (!a || !b) continue;
-    const key = model === "CPS" ? "cpsCents" : "cpaCents";
-    const av = a[key]!;
-    const bv = b[key]!;
-    if (av === bv) return { kind: "keep", reason: `ta sama stawka ${model} u obu brokerów`, network: current };
-    const winner = av > bv ? a : b;
-    if (winner.network === current) return { kind: "keep", reason: `${NETWORK_LABEL[current]} płaci więcej (${model})`, network: current };
-    const loser = winner === a ? b : a;
-    return {
-      kind: "switch",
-      from: current,
-      to: winner,
-      model,
-      fromCents: current === loser.network ? loser[key] : null,
-      toCents: winner[key]!
-    };
-  }
-  return { kind: "decide", reason: "brokerzy płacą w różnych modelach (CPS u jednego, CPA u drugiego)" };
+  // Owner's rule (15.11.2026): CPS and CPA are compared 1:1 (an offer's value is its
+  // CPS, else its CPA), so the better-paying network wins whatever the model.
+  const value = (o: OfferForChoice) => o.cpsCents ?? o.cpaCents;
+  const bestValue = (list: OfferForChoice[]): OfferForChoice | null => {
+    let best: OfferForChoice | null = null;
+    for (const o of list) {
+      const v = value(o);
+      if (v == null) continue;
+      if (!best || v > value(best)!) best = o;
+    }
+    return best;
+  };
+  const a = bestValue(eb);
+  const b = bestValue(cp);
+  if (!a || !b) return { kind: "decide", reason: "u jednego z brokerów brak stawki" };
+  const av = value(a)!;
+  const bv = value(b)!;
+  if (av === bv) return { kind: "keep", reason: "ta sama stawka u obu brokerów", network: current };
+  const winner = av > bv ? a : b;
+  const loser = winner === a ? b : a;
+  if (winner.network === current) return { kind: "keep", reason: `${NETWORK_LABEL[current]} płaci więcej`, network: current };
+  return {
+    kind: "switch",
+    from: current,
+    to: winner,
+    model: winner.cpsCents != null ? "CPS" : "CPA",
+    fromCents: current === loser.network ? value(loser) : null,
+    toCents: value(winner)!
+  };
 }
 
 /** The commission a chosen offer pays, for promotion.affiliateCommissionCents. */
