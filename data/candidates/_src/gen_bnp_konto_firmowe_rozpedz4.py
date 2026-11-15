@@ -5,7 +5,8 @@ from lib import open_steps, write
 # Link partnerski Comperii (kampania 1166) podawany jako argument: nie trzymamy go w kodzie generatora.
 LINK = sys.argv[1] if len(sys.argv) > 1 else ""
 OUT = sys.argv[2] if len(sys.argv) > 2 else "data/candidates/bnp-konto-otwarte-na-biznes-rozpedz-swoj-biznes-4.json"
-REG = "https://lp.bnpparibas.pl/rozpedzswojbiznes2/regulamin.pdf"
+REG = "https://lp.bnpparibas.pl/rozpedzswojbiznes4/regulamin.pdf"
+TARYFA = "https://www.bnpparibas.pl/_fileserver/item/1549383"
 LP = "https://lp.bnpparibas.pl/rozpedzswojbiznes4"
 FUEL = "Zapłać kartą Mastercard Business wydaną jako pierwsza do rachunku w PLN na stacjach paliw lub ładowania (MCC 5172, 5541, 5542, 5552, 5983). Moneyback 10% od transakcji, maks. 200 zł w miesiącu"
 
@@ -33,7 +34,7 @@ d = {
         "accountType": "BUSINESS", "maxBonusCents": 500000, "difficulty": "HARD", "rating": 7.0, "status": "DRAFT",
         "startDate": "2026-07-01", "endDate": "2026-12-31", "affiliateLinkEnabled": True,
         "affiliateUrl": LINK,
-        "sourceUrl": REG, "additionalSourceUrls": [LP],
+        "sourceUrl": REG, "additionalSourceUrls": [LP, TARYFA],
         "lastVerifiedAt": "2026-11-15",
         "eligibleFor": "Przedsiębiorcy (JDG, spółka cywilna, jawna, z o.o., partnerska, komandytowa, prosta spółka akcyjna) z przychodem netto ze sprzedaży za ostatni rok obrotowy poniżej 8 mln zł, którzy w okresie 01.07.2025–30.06.2026 nie mieli w BNP Paribas żadnego rachunku bieżącego w PLN.",
         "notEligibleFor": "Klienci, którzy w okresie 01.07.2025–30.06.2026 mieli w banku otwarty (lub w okresie wypowiedzenia) rachunek bieżący w PLN w jakimkolwiek planie. Zmiana planu taryfowego z Konta Otwartego na Biznes oznacza utratę warunków promocji. Wnioski o kredyt złożone przez pośredników finansowych nie są objęte promocją.",
@@ -48,11 +49,11 @@ d = {
         ],
         "bonusParts": parts,
         "fees": {
-            "accountFeeCents": None, "cardFeeCents": None, "atmFeeCents": None,
-            "accountFeeWaiverCondition": "0 zł przez 3 lata od zawarcia umowy ramowej dla uczestników promocji (po tym czasie opłaty z Taryfy Prowizji i Opłat). Stawki z taryfy: do sprawdzenia.",
-            "cardFeeWaiverCondition": "0 zł przez 3 lata za pierwszą kartę wydaną do rachunku, bez warunków z taryfy. Stawka z taryfy: do sprawdzenia.",
-            "otherFee": "Opłaty i prowizje poza wskazanymi: wg Taryfy Prowizji i Opłat dla klientów biznesowych (do sprawdzenia). 0% prowizji za udzielenie kredytu lub opłaty manipulacyjnej przy leasingu w promocji.",
-            "sourceUrl": REG,
+            "accountFeeCents": 1500, "cardFeeCents": 900, "atmFeeCents": None,
+            "accountFeeWaiverCondition": "0 zł, gdy suma wpływów na rachunek wynosi co najmniej 20 tys. zł albo średniomiesięczne saldo co najmniej 3 tys. zł (15 zł tylko przy wpływach poniżej 20 tys. zł i saldzie poniżej 3 tys. zł); 0 zł przez 12 miesięcy dla firm działających do 6 miesięcy. W promocji BNP: 0 zł przez 3 lata od umowy ramowej.",
+            "cardFeeWaiverCondition": "0 zł, gdy w poprzednim miesiącu kalendarzowym transakcje bezgotówkowe tą kartą wyniosły co najmniej 700 zł (karta Mastercard Business PLN; wydanie karty 0 zł). W promocji BNP: 0 zł przez 3 lata za pierwszą kartę.",
+            "otherFee": "Wypłata PLN z bankomatów sieci Euronet i Planet Cash w kraju 10 zł, w bankomatach w oddziałach Banku 0 zł. Pozostałe opłaty wg Taryfy Prowizji i Opłat (pakiety depozytowe, od 01.12.2025).",
+            "sourceUrl": TARYFA,
         },
     },
     "checklistSteps": steps,

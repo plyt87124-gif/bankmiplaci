@@ -13,9 +13,10 @@
     "endDate": "2026-12-31",
     "affiliateLinkEnabled": true,
     "affiliateUrl": "https://www.comperialead.pl/a/pp.php?link=4ffc0693a10e037dc3e6a88b85df8562",
-    "sourceUrl": "https://lp.bnpparibas.pl/rozpedzswojbiznes2/regulamin.pdf",
+    "sourceUrl": "https://lp.bnpparibas.pl/rozpedzswojbiznes4/regulamin.pdf",
     "additionalSourceUrls": [
-      "https://lp.bnpparibas.pl/rozpedzswojbiznes4"
+      "https://lp.bnpparibas.pl/rozpedzswojbiznes4",
+      "https://www.bnpparibas.pl/_fileserver/item/1549383"
     ],
     "lastVerifiedAt": "2026-11-15",
     "eligibleFor": "Przedsiębiorcy (JDG, spółka cywilna, jawna, z o.o., partnerska, komandytowa, prosta spółka akcyjna) z przychodem netto ze sprzedaży za ostatni rok obrotowy poniżej 8 mln zł, którzy w okresie 01.07.2025–30.06.2026 nie mieli w BNP Paribas żadnego rachunku bieżącego w PLN.",
@@ -68,13 +69,13 @@
       }
     ],
     "fees": {
-      "accountFeeCents": null,
-      "cardFeeCents": null,
+      "accountFeeCents": 1500,
+      "cardFeeCents": 900,
       "atmFeeCents": null,
-      "accountFeeWaiverCondition": "0 zł przez 3 lata od zawarcia umowy ramowej dla uczestników promocji (po tym czasie opłaty z Taryfy Prowizji i Opłat). Stawki z taryfy: do sprawdzenia.",
-      "cardFeeWaiverCondition": "0 zł przez 3 lata za pierwszą kartę wydaną do rachunku, bez warunków z taryfy. Stawka z taryfy: do sprawdzenia.",
-      "otherFee": "Opłaty i prowizje poza wskazanymi: wg Taryfy Prowizji i Opłat dla klientów biznesowych (do sprawdzenia). 0% prowizji za udzielenie kredytu lub opłaty manipulacyjnej przy leasingu w promocji.",
-      "sourceUrl": "https://lp.bnpparibas.pl/rozpedzswojbiznes2/regulamin.pdf"
+      "accountFeeWaiverCondition": "0 zł, gdy suma wpływów na rachunek wynosi co najmniej 20 tys. zł albo średniomiesięczne saldo co najmniej 3 tys. zł (15 zł tylko przy wpływach poniżej 20 tys. zł i saldzie poniżej 3 tys. zł); 0 zł przez 12 miesięcy dla firm działających do 6 miesięcy. W promocji BNP: 0 zł przez 3 lata od umowy ramowej.",
+      "cardFeeWaiverCondition": "0 zł, gdy w poprzednim miesiącu kalendarzowym transakcje bezgotówkowe tą kartą wyniosły co najmniej 700 zł (karta Mastercard Business PLN; wydanie karty 0 zł). W promocji BNP: 0 zł przez 3 lata za pierwszą kartę.",
+      "otherFee": "Wypłata PLN z bankomatów sieci Euronet i Planet Cash w kraju 10 zł, w bankomatach w oddziałach Banku 0 zł. Pozostałe opłaty wg Taryfy Prowizji i Opłat (pakiety depozytowe, od 01.12.2025).",
+      "sourceUrl": "https://www.bnpparibas.pl/_fileserver/item/1549383"
     }
   },
   "checklistSteps": [
