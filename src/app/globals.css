@@ -411,6 +411,75 @@
   .checkbox:checked:disabled {
     @apply border-ink-300 bg-ink-300;
   }
+
+  /* Names of the affiliate networks in their own look (NetworkName.tsx; owner, 2026-11-15). Brand colours of the
+     two logos, so plain custom properties here, not design tokens: they are wordmarks, not text colours.
+     eBroker partner: navy + blue, a geometric sans. comperia Lead: grey heavy serif + thin sky-blue sans.
+     The navy would vanish on the dark page, so in the dark theme it turns light. Everything is in em. */
+  .net-name {
+    --net-ebroker-main: 0 24 56;
+    --net-ebroker-sub: 8 104 224;
+    --net-comperia-main: 126 126 126;
+    --net-comperia-sub: 66 192 240;
+    white-space: nowrap;
+  }
+  .dark .net-name {
+    --net-ebroker-main: 226 236 252;
+    --net-ebroker-sub: 96 160 245;
+    --net-comperia-main: 176 176 176;
+    --net-comperia-sub: 84 198 245;
+  }
+  .net-ebroker {
+    font-family: var(--font-body), system-ui, sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .net-ebroker .net-main {
+    color: rgb(var(--net-ebroker-main));
+  }
+  .net-ebroker .net-sub {
+    color: rgb(var(--net-ebroker-sub));
+  }
+  .net-comperia {
+    display: inline-block;
+    vertical-align: baseline;
+  }
+  .net-comperia .net-main {
+    font-family: Georgia, "Times New Roman", "Noto Serif", serif;
+    font-weight: 700;
+    font-size: 1.08em;
+    letter-spacing: -0.02em;
+    text-transform: lowercase;
+    color: rgb(var(--net-comperia-main));
+  }
+  .net-comperia .net-sub {
+    font-family: var(--font-body), system-ui, sans-serif;
+    font-weight: 300;
+    font-size: 1.05em;
+    margin-left: 0.04em;
+    color: rgb(var(--net-comperia-sub));
+  }
+  /* the logo variant: bigger, eBroker stacked on two lines, comperia Lead with its small line underneath */
+  .net-logo {
+    font-size: 1.35em;
+    line-height: 1.05;
+  }
+  .net-ebroker.net-logo {
+    display: inline-block;
+  }
+  .net-tag {
+    display: block;
+    margin-top: 0.15em;
+    font-family: var(--font-body), system-ui, sans-serif;
+    font-size: 0.34em;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgb(var(--net-comperia-main));
+  }
+  .net-tag strong {
+    font-weight: 700;
+  }
 }
 
 /* /konto: the sticky header follows the page tint (see `--konto-bg` above). Unlayered on purpose: the header's own

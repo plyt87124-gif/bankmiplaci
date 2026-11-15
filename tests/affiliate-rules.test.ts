@@ -4,10 +4,12 @@ import {
   bonusFromName,
   commissionDeadline,
   commissionEligibility,
+  currentClientText,
   describeNewClientRule,
   groupOffSiteItems,
   isAccountCampaign,
   normalizeBank,
+  ownerHistoryFor,
   parseNewClientRule,
   promoRestrictions,
   suggestPromotions
@@ -177,4 +179,65 @@ test("prowizja: obecny klient albo konto jeszcze otwarte to nie, także gdy pane
   assert.equal(open.status, "no");
   assert.equal(open.text, "konto jeszcze otwarte do 11.11.2026");
   assert.equal(commissionEligibility(null, { hasRow: true, wasClientUntil: d("2024-11-11"), currentClient: false }, null, now).status, "unknown");
+});
+
+// Właściciel (15.11.2026): ma Aliora firmowego w ściądze (konto otwarte), a panel prowizji pisał „brak historii w Moim koncie”,
+// jakby mógł wziąć udział. Otwarta ściąga to otwarte konto, czyli obecny klient banku.
+const ALIOR = "bank-alior";
+const tracking = { promotionId: "p-alior-biz", promotionName: "Szybki Bonus dla firm", bankId: ALIOR, accountType: "BUSINESS", since: d("2026-11-12") };
+
+test("ściąga w toku = obecny klient banku: prowizja „nie”, z nazwą ściągi i datą", () => {
+  const h = ownerHistoryFor([], [tracking], ALIOR, "BUSINESS");
+  assert.equal(h.currentClient, true);
+  assert.equal(h.hasRow, true);
+  assert.equal(h.wasClientFrom?.toISOString().slice(0, 10), "2026-11-12");
+  assert.equal(h.wasClientUntil, null);
+  assert.equal(h.viaChecklist?.promotionId, "p-alior-biz");
+  const rule = { kind: "since", date: d("2025-09-01") } as const;
+  const r = commissionEligibility(rule, h, null, d("2026-11-15"));
+  assert.equal(r.status, "no");
+  assert.equal(r.text, "jesteś klientem banku: ściąga „Szybki Bonus dla firm” w toku od 12.11.2026");
+  assert.equal(currentClientText(h), r.text);
+});
+
+test("bez historii i bez ściągi nadal „brak historii” (nie zgadujemy, że jesteś klientem)", () => {
+  const h = ownerHistoryFor([], [], ALIOR, "BUSINESS");
+  assert.deepEqual(h, { hasRow: false, currentClient: false });
+  const r = commissionEligibility({ kind: "months", months: 24 }, h, null, d("2026-11-15"));
+  assert.equal(r.status, "unknown");
+  assert.match(r.text, /brak historii w Moim koncie/);
+});
+
+test("ściąga innego banku albo innego rodzaju konta nie liczy się", () => {
+  assert.equal(ownerHistoryFor([], [tracking], "bank-pekao", "BUSINESS").currentClient, false);
+  assert.equal(ownerHistoryFor([], [tracking], ALIOR, "PERSONAL").currentClient, false, "ściąga konta firmowego nie blokuje osobistego");
+});
+
+test("ściąga konta dla młodych liczy się jak osobiste (jak w karencji na stronie)", () => {
+  const young = { ...tracking, promotionId: "p-young", accountType: "YOUNG" };
+  assert.equal(ownerHistoryFor([], [young], ALIOR, "PERSONAL").currentClient, true);
+  assert.equal(ownerHistoryFor([], [{ ...tracking, accountType: "PERSONAL" }], ALIOR, "YOUNG").currentClient, true);
+  assert.equal(ownerHistoryFor([], [young], ALIOR, "BUSINESS").currentClient, false);
+});
+
+test("wiersz „obecnie klientem” z Mojego konta ma pierwszeństwo przed ściągą i przed zamkniętym kontem", () => {
+  const rows = [
+    { bankId: ALIOR, accountType: "BUSINESS", wasClientFrom: d("2018-01-01"), wasClientUntil: d("2024-01-01") },
+    { bankId: ALIOR, accountType: "BUSINESS", wasClientFrom: d("2025-02-01"), wasClientUntil: null }
+  ];
+  const h = ownerHistoryFor(rows, [tracking], ALIOR, "BUSINESS");
+  assert.equal(h.currentClient, true);
+  assert.equal(h.viaChecklist, undefined, "powód to wiersz z Mojego konta, nie ściąga");
+  assert.equal(currentClientText(h), "jesteś obecnie klientem banku");
+});
+
+test("kilka zamkniętych kont tego samego rodzaju: liczy się to zamknięte najpóźniej", () => {
+  const rows = [
+    { bankId: ALIOR, accountType: "PERSONAL", wasClientFrom: d("2010-01-01"), wasClientUntil: d("2020-01-01") },
+    { bankId: ALIOR, accountType: "YOUNG", wasClientFrom: d("2021-01-01"), wasClientUntil: d("2025-06-01") },
+    { bankId: "bank-pekao", accountType: "PERSONAL", wasClientFrom: d("2022-01-01"), wasClientUntil: d("2026-10-01") }
+  ];
+  const h = ownerHistoryFor(rows, [], ALIOR, "PERSONAL");
+  assert.equal(h.currentClient, false);
+  assert.equal(h.wasClientUntil?.toISOString().slice(0, 10), "2025-06-01");
 });

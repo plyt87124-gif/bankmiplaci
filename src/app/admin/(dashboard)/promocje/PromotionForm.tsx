@@ -6,6 +6,7 @@ import { promotionFormSchema, type PromotionFormValues } from "@/lib/validation/
 import { useState } from "react";
 import { ratingReasonWarning, summaryLengthWarning } from "@/lib/promotionForm";
 import { Plus, Trash2 } from "lucide-react";
+import { NetworkName } from "@/components/ui/NetworkName";
 
 interface Bank {
   id: string;
@@ -151,7 +152,7 @@ export function PromotionForm({
           error={errors.affiliateCommissionCents?.message}
         >
           <p className="mb-2 text-sm text-ink-500">
-            Ile bank płaci nam za jedno spełnienie warunków w groszach (np. 12000 = 120 zł; z panelu eBrokerPartner).
+            Ile bank płaci nam za jedno spełnienie warunków w groszach (np. 12000 = 120 zł; z panelu <NetworkName network="EBROKER" />).
             Pole wewnętrzne: kwota nie jest nigdzie wyświetlana publicznie, ale sam fakt, że prowizja wpływa na
             kolejność „Polecane”, jest jawnie opisany na stronie /jak-zarabiamy. „Ocena serwisu” nigdy jej nie
             uwzględnia. Puste = nieznana (oferta bez prowizji jest ułożona według oceny).
