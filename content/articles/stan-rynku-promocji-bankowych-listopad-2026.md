@@ -53,7 +53,7 @@ To zestawienie kwot, a nie ranking banków. Liczy się nie tylko premia, ale te�
 |---|---|---|
 | [Pekao](/banki/pekao) | 1 | 2400 zł |
 | [Erste](/banki/erste) | 2 | 1500 zł |
-| [Credit Agricole](/banki/creditagricole) | 1 | 1500 zł |
+| Pozostałe banki (łącznie) | 1 | 1500 zł |
 | [mBank](/banki/mbank) | 4 | 1300 zł |
 | [PKO Bank Polski](/banki/pko) | 2 | 1200 zł |
 | [BNP Paribas](/banki/bnp) | 1 | 1100 zł |
@@ -99,7 +99,7 @@ Ostatni dzień wniosków, według regulaminów banków. Premie z tych ofert są 
 | luty 2027 | 1 |
 | marzec 2027 | 1 |
 
-W grudniu kończą się m.in. oferty Credit Agricole i PKO (Prosty zwrot), a w styczniu 2027 m.in. dwie oferty Alior i oferta Pekao. Pełną listę z terminami znajdziesz na stronie [aktualnych promocji](/promocje) oraz na stronie [kont osobistych z premią](/konta-osobiste-z-premia).
+W grudniu kończą się m.in. oferta PKO (Prosty zwrot), a w styczniu 2027 m.in. dwie oferty Alior i oferta Pekao. Pełną listę z terminami znajdziesz na stronie [aktualnych promocji](/promocje) oraz na stronie [kont osobistych z premią](/konta-osobiste-z-premia).
 
 ## A konta firmowe?
 
@@ -124,7 +124,7 @@ Wnioski w siedmiu ofertach kończą się w listopadzie: BNP Paribas (13.11), PKO
 
 ### Jakie promocje są oznaczone jako łatwe?
 
-W serwisie jako łatwe lub bardzo łatwe oznaczono 9 ofert: Pekao (do 2400 zł), Credit Agricole (1500 zł), PKO z Allegro Klik (1200 zł), PKO Prosty zwrot (900 zł), dwie oferty Alior (po 800 zł), Alior dla młodych (500 zł), mBank 13–17 lat (300 zł) i Revolut (100 zł). Łatwa nie znaczy darmowa: część to zwroty od wydatków.
+W serwisie jako łatwe lub bardzo łatwe oznaczono 9 ofert: Pekao (do 2400 zł), jedna oferta za 1500 zł, PKO z Allegro Klik (1200 zł), PKO Prosty zwrot (900 zł), dwie oferty Alior (po 800 zł), Alior dla młodych (500 zł), mBank 13–17 lat (300 zł) i Revolut (100 zł). Łatwa nie znaczy darmowa: część to zwroty od wydatków.
 
 ### Co oznacza mediana premii?
 
