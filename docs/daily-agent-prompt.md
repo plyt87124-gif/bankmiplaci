@@ -173,7 +173,7 @@ Kampania zakazuje promowania na blogach lub stronach o promocjach bankowych (np.
 - Snapshoty zapisujesz do bankmiplaci-materialy\agent-log\affiliate-<SIEC>-RRRR-MM-DD.json, bez IP i bez danych osobowych.
 - Potem, z produkcyjnym DATABASE_URL w procesie:
   1. `npx.cmd tsx scripts/affiliate-sync.ts sync <plik>` (dry-run), potem to samo z `--apply`. Robisz to dla każdej sieci, którą udało się odczytać.
-  2. `npx.cmd tsx scripts/affiliate-sync.ts links` (dry-run), potem `links --apply`. Ten krok przełącza link na sieć, która płaci więcej za nowego klienta: porównuje tylko CPS z CPS albo CPA z CPA, pomija promocje przypięte w /admin/prowizje, a sytuacje niejasne zapisuje jako ❓.
+  2. `npx.cmd tsx scripts/affiliate-sync.ts links` (dry-run), potem `links --apply`. Ten krok przełącza link na sieć, która płaci więcej za nowego klienta: CPS i CPA porównuje 1:1 (polecenie właściciela z 15.11.2026), pomija promocje przypięte w /admin/prowizje, a sytuacje niejasne zapisuje jako ❓.
   3. `npx.cmd tsx scripts/affiliate-sync.ts report --since <czas poprzedniego uruchomienia, domyślnie 24 h>`. Wynik wklejasz do maila.
 
 **Wskazówki z pierwszego pełnego odczytu (3.11.2026):**

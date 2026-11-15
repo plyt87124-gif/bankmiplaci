@@ -64,9 +64,16 @@ test("compares CPA with CPA when only CPA is paid by both", () => {
   if (c.kind === "switch") assert.equal(c.model, "CPA");
 });
 
-test("never compares CPS with CPA: asks the owner instead", () => {
-  const c = chooseAffiliateLink(promo("EBROKER"), [offer("EBROKER", 22000, null), offer("COMPERIA", null, 20000)], NOW);
-  assert.equal(c.kind, "decide");
+test("compares CPS with CPA 1:1 (owner's rule)", () => {
+  const c = chooseAffiliateLink(promo("EBROKER"), [offer("EBROKER", 22000, null), offer("COMPERIA", null, 25000)], NOW);
+  assert.equal(c.kind, "switch");
+  if (c.kind === "switch") {
+    assert.equal(c.to.network, "COMPERIA");
+    assert.equal(c.model, "CPA");
+    assert.equal(c.fromCents, 22000);
+    assert.equal(c.toCents, 25000);
+  }
+  assert.equal(chooseAffiliateLink(promo("EBROKER"), [offer("EBROKER", 22000, null), offer("COMPERIA", null, 20000)], NOW).kind, "keep");
 });
 
 test("a pinned promotion is never switched", () => {
