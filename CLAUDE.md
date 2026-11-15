@@ -26,6 +26,8 @@ Porównywarka promocji bankowych w Polsce: oferty ze ściągą krok po kroku, oc
 
 ## Treść ofert (zasady właściciela, 7.11.2026)
 
+**Wzorzec całej promocji (każda sekcja strony, opłaty za konto i kartę, ściąga, lista kontrolna): `docs/wzorzec-promocji.md`, skill `bankmiplaci-wzorzec-promocji`.** Czytaj go przy każdej nowej albo poprawianej promocji; dzienny agent ofert robi to samo. Poniżej zasady treści, które wzorzec rozwija.
+
 Dotyczy każdej promocji, którą generujesz lub poprawiasz: plików `data/candidates/*.json`, generatorów `data/candidates/_src/gen_*.py`, importu, panelu admina.
 
 - **Każdą rzecz mów raz.** Karencja (data graniczna albo liczba miesięcy) siedzi tylko w polach `cooldownCutoffDate` / `cooldownMonths`. Strona sama składa z nich skrót w pasku faktów i jedno zdanie w „Dla kogo jest promocja?”. `eligibleFor` i `notEligibleFor` mówią KTO (forma prawna, wiek, rodzaj klienta), bez powtarzania dat i okresów karencji, i nie są swoim lustrem („kto nie może” nie przepisuje „kto może” od końca). Właściciel zauważył, że ta sama informacja stała na stronie w trzech miejscach.

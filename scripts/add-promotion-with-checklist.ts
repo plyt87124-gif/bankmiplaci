@@ -27,6 +27,8 @@ import path from "path";
 import { recomputeRatings } from "../src/lib/services/ratings";
 import { sendEmail } from "../src/lib/email";
 import { watchDigestEmail } from "../src/lib/services/ebrokerWatch";
+import { feeWaiverProblems } from "../src/lib/feeValidation";
+import { offerCopyProblems } from "../src/lib/offerCopyRules";
 
 type Candidate = {
   bankSlug: string;
@@ -92,8 +94,11 @@ function validate(c: Candidate): string[] {
     if (!VALID_CONDITION_TYPES.has(cond.type)) errs.push(`warunek "${cond.title}": nieznany typ ${cond.type}`);
   }
   const f = p.fees;
-  if (f.accountFeeCents === 0 && f.accountFeeWaiverCondition) errs.push("opłata za konto 0 zł z warunkiem zwolnienia (zapisz stawkę BEZ zwolnienia)");
-  if (f.cardFeeCents === 0 && f.cardFeeWaiverCondition) errs.push("opłata za kartę 0 zł z warunkiem zwolnienia (zapisz stawkę BEZ zwolnienia)");
+  // Wzorzec promocji (docs/wzorzec-promocji.md): kwota to stawka BEZ zwolnienia, a warunek dopisuje się po „0 zł gdy …”.
+  for (const problem of feeWaiverProblems(f)) errs.push(`fees.${problem.field}: ${problem.message}`);
+  if (f.atmFeeCents != null) errs.push("fees.atmFeeCents ma zostać puste (właściciel nie pokazuje opłat za bankomaty)");
+  if (f.otherFee && /bankomat/i.test(f.otherFee)) errs.push("fees.otherFee nie wspomina o bankomatach (decyzja właściciela z 22.08.2026)");
+  errs.push(...offerCopyProblems(p.slug, p));
   const orders = c.checklistSteps.map((s) => s.order);
   if (new Set(orders).size !== orders.length) errs.push("powtórzone order w checklistSteps");
   return errs;
