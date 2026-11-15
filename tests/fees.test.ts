@@ -69,3 +69,30 @@ test("the old compact fee formatter is gone: the shared fee model (feeModel.ts) 
   assert.equal("formatFeeCompact" in format, false);
   assert.equal(typeof format.isConfirmedFreeAccount, "function");
 });
+
+// Właściciel (15.11.2026, BNP firmowe): strona pisze „0 zł gdy <warunek>”, więc warunek nie może zaczynać się od „0 zł”
+// (wychodziło „0 zł gdy 0 zł, gdy suma wpływów…”) i ma być krótki, bo FAQ i JSON-LD cytują najwyżej 200 znaków.
+import { feeWaiverProblems, FEE_WAIVER_CONDITION_MAX } from "../src/lib/feeValidation";
+
+test("warunek zwolnienia nie zaczyna się od „0 zł”: strona sama dopisuje „0 zł gdy”", () => {
+  for (const bad of ["0 zł, gdy wpływy min. 2000 zł", "0 zł gdy wpływy min. 2000 zł", " 0 zl, gdy wpływy", "0 PLN gdy wpływy", "0zł, gdy wpływy"]) {
+    const problems = feeWaiverProblems({ accountFeeCents: 1500, accountFeeWaiverCondition: bad });
+    assert.deepEqual(problems.map((p) => p.field), ["accountFeeWaiverCondition"], bad);
+    assert.match(problems[0]!.message, /0 zł gdy/);
+  }
+  for (const good of ["wpływy na rachunek min. 2000 zł w miesiącu", "jesteś uczestnikiem promocji (przez 3 lata), a potem wpływ min. 1000 zł", "10 transakcji kartą w miesiącu (0 zł tylko dla…)"]) {
+    assert.deepEqual(feeWaiverProblems({ cardFeeCents: 900, cardFeeWaiverCondition: good }), [], good);
+  }
+});
+
+test("warunek zwolnienia dłuższy niż 200 znaków jest odrzucany (karta i konto osobno)", () => {
+  const long = "wpływ ".repeat(40);
+  assert.ok(long.length > FEE_WAIVER_CONDITION_MAX);
+  assert.deepEqual(feeWaiverProblems({ cardFeeCents: 900, cardFeeWaiverCondition: long }).map((p) => p.field), ["cardFeeWaiverCondition"]);
+  assert.deepEqual(feeWaiverProblems({ accountFeeCents: 900, accountFeeWaiverCondition: "x".repeat(FEE_WAIVER_CONDITION_MAX) }), []);
+});
+
+test("formularz admina i import stosują ten sam zakaz (feesSchema)", () => {
+  assert.equal(feesSchema.safeParse({ accountFeeCents: 1500, accountFeeWaiverCondition: "0 zł, gdy wpływy min. 20 tys. zł" }).success, false);
+  assert.equal(feesSchema.safeParse({ accountFeeCents: 1500, accountFeeWaiverCondition: "wpływy min. 20 tys. zł" }).success, true);
+});

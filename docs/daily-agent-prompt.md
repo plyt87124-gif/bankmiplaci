@@ -72,6 +72,7 @@ Małym skryptem tsx tylko do odczytu odczytaj z produkcji:
 ### C. Nowe kampanie
 - Duplikaty kanałów i konta bez premii dopisujesz do data/ebroker-skip.json z powodem, potem uruchamiasz `npx.cmd tsx scripts/ebroker-watch.ts skip` na produkcji.
 - Dla pozostałych piszesz generator według data/candidates/_src (lib.py, gen_*.py). Wynik: data/candidates/<bank>-<oferta>.json.
+- PRZED napisaniem generatora i PRZED zapisem przeczytaj docs/wzorzec-promocji.md (skill `bankmiplaci-wzorzec-promocji`): co ma być w każdej sekcji strony, jak pisać opłaty za konto i kartę, „Dla kogo”, krótki opis i ściągę. Lista kontrolna jest w sekcji 5 wzorca.
 - Wymagania dla kandydata:
   - conditions z polem type;
   - bonusParts sumują się do maxBonusCents;
@@ -214,3 +215,9 @@ Kolejność części:
 6. BEZ ZMIAN: jedna linia na obszar, np. „katalog eBroker: bez nowych kampanii; stawki Comperia: bez zmian”.
 
 W razie wątpliwości wybierasz bezpieczniejszą opcję (DRAFT zamiast ACTIVE, brak zmiany zamiast zmiany) i opisujesz to w raporcie.
+
+DOPISANE 2026-11-15 NA POLECENIE WŁAŚCICIELA: WZORZEC PROMOCJI
+- Każda nowa promocja ma wyglądać według docs/wzorzec-promocji.md. Czytasz go przed każdą nową promocją.
+- Najczęstsze poprawki właściciela: warunek zwolnienia z opłaty nie zaczyna się od „0 zł” (strona sama pisze „0 zł gdy …”), jest krótki (do 200 znaków) i bez dopisków o innych taryfach; w otherFee nie ma bankomatów; daty i okresy karencji tylko w cooldownMonths / cooldownCutoffDate (nie w eligibleFor / notEligibleFor, które nie są swoim lustrem); summary do 160 znaków; opłaty uzupełnione z taryfy (fees.sourceUrl to taryfa, nigdy regulamin).
+- Dry-run `scripts/add-promotion-with-checklist.ts` sprawdza opłaty, zakazane zdania i bankomaty. Błąd walidacji poprawiasz w pliku i generatorze.
+- Istniejących promocji nie edytujesz; odstępstwa opisz w raporcie (część ❓).
