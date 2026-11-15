@@ -11,6 +11,8 @@
  * No database access here (tests/affiliate-rules.test.ts).
  */
 
+import { sameClientKind } from "@/lib/accountTypes";
+
 export type NewClientRule =
   | { kind: "months"; months: number }
   | { kind: "since"; date: Date }
@@ -110,6 +112,80 @@ export interface OwnerHistory {
   wasClientFrom?: Date | null;
   wasClientUntil?: Date | null;
   currentClient: boolean;
+  /**
+   * Set when the reason is not a "Moje konto" row but a ściąga the owner has OPEN: its account was opened
+   * on `since` and is not closed, so the owner is a current client of that bank.
+   */
+  viaChecklist?: { promotionId: string; promotionName: string; since: Date };
+}
+
+/** One bank-history row of the owner ("Moje konto"). */
+export interface OwnerHistoryRow {
+  bankId: string;
+  accountType: string;
+  wasClientFrom?: Date | null;
+  wasClientUntil?: Date | null;
+}
+
+/** A ściąga the owner has open (tracked, not completed): the account for that promotion was opened on `since`. */
+export interface OwnerChecklist {
+  promotionId: string;
+  promotionName: string;
+  bankId: string;
+  accountType: string;
+  since: Date;
+}
+
+/**
+ * What the owner's data says about one bank and kind of account, for the commission and premium answers.
+ *
+ * Two sources: the bank-history rows of "Moje konto" and the ściągi in progress. A ściąga that is open means
+ * the account was really opened (the join asks for the opening date) and is not closed yet, so it makes the owner a
+ * CURRENT client just as a "jestem obecnie klientem" row does; without this the page said "no history, so
+ * probably yes" for a bank where the owner is in the middle of a promotion (owner, 2026-11-15, Alior business).
+ * A young account counts as a personal one, as everywhere else (accountTypes.ts, sameClientKind).
+ * Several rows for the same kind: the one that stands in the way wins (a current client, then the latest closure).
+ */
+export function ownerHistoryFor(
+  rows: readonly OwnerHistoryRow[],
+  checklists: readonly OwnerChecklist[],
+  bankId: string,
+  accountType: string
+): OwnerHistory {
+  const mine = rows.filter((r) => r.bankId === bankId && sameClientKind(r.accountType, accountType));
+  const open = (r: OwnerHistoryRow) => Boolean(r.wasClientFrom) && !r.wasClientUntil;
+  const asHistory = (r: OwnerHistoryRow): OwnerHistory => ({
+    hasRow: true,
+    wasClientFrom: r.wasClientFrom,
+    wasClientUntil: r.wasClientUntil,
+    currentClient: open(r)
+  });
+
+  const realCurrent = mine.find(open);
+  if (realCurrent) return asHistory(realCurrent);
+
+  const tracked = checklists
+    .filter((c) => c.bankId === bankId && sameClientKind(c.accountType, accountType))
+    .sort((a, b) => a.since.getTime() - b.since.getTime())[0];
+  if (tracked) {
+    return {
+      hasRow: true,
+      wasClientFrom: tracked.since,
+      wasClientUntil: null,
+      currentClient: true,
+      viaChecklist: { promotionId: tracked.promotionId, promotionName: tracked.promotionName, since: tracked.since }
+    };
+  }
+
+  if (mine.length === 0) return { hasRow: false, currentClient: false };
+  const withClosure = mine.filter((r) => r.wasClientUntil).sort((a, b) => b.wasClientUntil!.getTime() - a.wasClientUntil!.getTime());
+  return asHistory(withClosure[0] ?? mine[0]!);
+}
+
+/** "jesteś obecnie klientem banku" with the ściąga that proves it, when that is the reason. */
+export function currentClientText(history: OwnerHistory | null | undefined): string {
+  const c = history?.viaChecklist;
+  return c ? `jesteś klientem banku: ściąga „${c.promotionName}” w toku od ${fmtDay(c.since)}` : "jesteś obecnie klientem banku";
 }
 
 export interface CommissionEligibility {
@@ -120,6 +196,7 @@ export interface CommissionEligibility {
 }
 
 const fmt = (d: Date) => d.toISOString().slice(0, 10).split("-").reverse().join(".");
+const fmtDay = fmt;
 const dayKey = (d: Date) => d.toISOString().slice(0, 10);
 
 /**
@@ -135,7 +212,7 @@ export function commissionEligibility(
 ): CommissionEligibility {
   if (ownApplicationsAllowed === false) return { status: "no", text: "broker zakazuje wniosków własnych" };
   // An account you still have rules you out under any new-client window, even one the panel does not state.
-  if (history?.currentClient) return { status: "no", text: "jesteś obecnie klientem banku" };
+  if (history?.currentClient) return { status: "no", text: currentClientText(history) };
   if (history?.wasClientUntil && dayKey(history.wasClientUntil) > dayKey(now)) return { status: "no", text: `konto jeszcze otwarte do ${fmt(history.wasClientUntil)}` };
   if (!rule) return { status: "unknown", text: "panel nie podaje okna nowego klienta" };
   const never = !history || !history.hasRow || (!history.wasClientFrom && !history.wasClientUntil);

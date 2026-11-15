@@ -3,13 +3,12 @@ import { BadgePercent, Pin, PinOff, Trophy, Undo2 } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { getSwitchAccounts } from "@/lib/adminAccounts";
-import { computeEligibility, isCurrentClient } from "@/lib/services/eligibility";
+import { computeEligibility } from "@/lib/services/eligibility";
 import { deadlineForGroup, groupIndexFromOrder, periodRuleOf } from "@/lib/checklistSchedule";
 import { contestPerClientCents, isContestRunning, offerRateCents } from "@/lib/effectiveCommission";
 import {
   chooseAffiliateLink,
   contestBonusCents,
-  NETWORK_LABEL,
   parseTiers,
   PAYOUT_CLIENT_COUNTS,
   STAGE_LABEL,
@@ -21,7 +20,9 @@ import {
   accountTypeFromCategory,
   commissionDeadline,
   commissionEligibility,
+  currentClientText,
   describeNewClientRule,
+  ownerHistoryFor,
   parseNewClientRule,
   groupOffSiteItems,
   isAccountCampaign,
@@ -32,8 +33,10 @@ import {
   type CommissionDeadline,
   type PromoRestriction,
   type MatchPromotion,
+  type OwnerChecklist,
   type OwnerHistory
 } from "@/lib/affiliateRules";
+import { NetworkName } from "@/components/ui/NetworkName";
 import { linkCampaignsToPromotion, pinAffiliateNetwork, revertAffiliateLinkSwitch } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -127,7 +130,14 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
     ownEmail
       ? db.user.findUnique({
           where: { email: ownEmail },
-          select: { bankHistory: { select: { bankId: true, accountType: true, wasClientFrom: true, wasClientUntil: true } } }
+          select: {
+            bankHistory: { select: { bankId: true, accountType: true, wasClientFrom: true, wasClientUntil: true } },
+            // A ściąga in progress = an account opened and not closed yet (see ownerHistoryFor).
+            promotionTracking: {
+              where: { completedAt: null },
+              select: { joinedAt: true, accountOpenedAt: true, promotion: { select: { id: true, name: true, bankId: true, accountType: true } } }
+            }
+          }
         })
       : null,
     db.promotion.findMany({
@@ -196,19 +206,34 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
   const contestsByOffer = (network: string, externalId: string) =>
     contests.filter((c) => c.network === network && c.offerExternalIds.includes(externalId) && isContestRunning(c));
 
+  // What "Moje konto" says plus the ściągi the owner has open: an open ściąga is an open account, i.e. a current client.
+  const ownerChecklists: OwnerChecklist[] = (owner?.promotionTracking ?? []).map((t) => ({
+    promotionId: t.promotion.id,
+    promotionName: t.promotion.name,
+    bankId: t.promotion.bankId,
+    accountType: t.promotion.accountType,
+    since: t.accountOpenedAt ?? t.joinedAt
+  }));
   function history(bankId: string, accountType: string): OwnerHistory | null {
     if (!owner) return null;
-    const row = owner.bankHistory.find((h) => h.bankId === bankId && h.accountType === accountType);
-    if (!row) return { hasRow: false, currentClient: false };
-    return { hasRow: true, wasClientFrom: row.wasClientFrom, wasClientUntil: row.wasClientUntil, currentClient: isCurrentClient(row) };
+    return ownerHistoryFor(owner.bankHistory, ownerChecklists, bankId, accountType);
   }
 
   /** The bank's own premium: the promotion's karencja, never the broker's window. */
-  function premiumOwn(p: { bankId: string; accountType: string; cooldownMonths: number | null; cooldownCutoffDate: Date | null }): Own {
+  function premiumOwn(p: { id: string; bankId: string; accountType: string; cooldownMonths: number | null; cooldownCutoffDate: Date | null }): Own {
     if (!owner) return { tone: "unknown", text: ownEmail ? "brak konta „Moje konto”" : "ustaw ADMIN_OWN_USER_EMAIL" };
-    const row = owner.bankHistory.find((h) => h.bankId === p.bankId && h.accountType === p.accountType);
-    if (!row || (!row.wasClientFrom && !row.wasClientUntil)) return { tone: "unknown", text: "brak historii w tym banku (jeśli nigdy nie byłeś klientem: raczej tak)" };
-    const r = computeEligibility(p.cooldownMonths, p.cooldownCutoffDate, row.wasClientUntil, now, isCurrentClient(row));
+    const row = ownerHistoryFor(owner.bankHistory, ownerChecklists, p.bankId, p.accountType);
+    if (row.viaChecklist) {
+      return {
+        tone: "no",
+        text:
+          row.viaChecklist.promotionId === p.id
+            ? `bierzesz już udział: ściąga w toku od ${formatDate(row.viaChecklist.since)}`
+            : `nie: ${currentClientText(row)}`
+      };
+    }
+    if (!row.hasRow || (!row.wasClientFrom && !row.wasClientUntil)) return { tone: "unknown", text: "brak historii w tym banku (jeśli nigdy nie byłeś klientem: raczej tak)" };
+    const r = computeEligibility(p.cooldownMonths, p.cooldownCutoffDate, row.wasClientUntil, now, row.currentClient);
     if (r.status === "eligible") return { tone: "ok", text: "tak, karencja promocji minęła" };
     if (r.currentClient) return { tone: "no", text: "nie: jesteś obecnie klientem" };
     if (r.status === "not-eligible")
@@ -302,7 +327,7 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
             .filter((x) => x.detailUrl)
             .map((x) => (
               <a key={x.key} href={x.detailUrl!} target="_blank" rel="noreferrer" className="mr-2 text-ink-500 underline">
-                panel {NETWORK_LABEL[x.network]}
+                panel <NetworkName network={x.network} />
               </a>
             ))}
         </div>
@@ -530,7 +555,9 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
           const pending = stageCounts.filter((s) => s.network === n && ["SENT", "PENDING", "ACCEPTED"].includes(s.stage));
           return (
             <div key={n} className="rounded-xl2 border border-ink-100 p-4 text-sm">
-              <p className="font-semibold text-ink-900">{NETWORK_LABEL[n]}</p>
+              <p className="font-semibold text-ink-900">
+                <NetworkName network={n} variant="logo" />
+              </p>
               <p className="mt-1 text-ink-500">Kliknięcia z naszej strony (30 dni): {clickCount(n)}</p>
               <p className="text-ink-500">W toku: {pending.reduce((s, x) => s + x._count, 0)} wn. ({zl(pending.reduce((s, x) => s + (x._sum.amountCents ?? 0), 0))})</p>
               <p className="text-ink-500">Wypłacono: {paid.reduce((s, x) => s + x._count, 0)} wn. ({zl(paid.reduce((s, x) => s + (x._sum.amountCents ?? 0), 0))})</p>
@@ -602,7 +629,9 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
           <summary className="cursor-pointer">Zasady sieci, które dotyczą każdej kampanii (wniosek na siebie, promowanie)</summary>
           {NETWORKS.map((n) => (
             <div key={n} className="mt-2">
-              <p className="font-medium text-ink-700">{NETWORK_LABEL[n]}</p>
+              <p className="font-medium text-ink-700">
+                <NetworkName network={n} />
+              </p>
               <p>Wniosek na siebie: {NETWORK_RULES[n].own}</p>
               <ul className="ml-4 list-disc">
                 {NETWORK_RULES[n].promo.map((x) => (
@@ -671,7 +700,13 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
                       {r.lead?.ownApplicationsAllowed === false && <p className="text-xs text-coral-600">zakaz wniosków własnych</p>}
                       {r.twins && r.twins.length > 0 && (
                         <p className="mt-1 text-xs text-ink-500">
-                          to samo konto także w kampaniach: {r.twins.map((o) => `${NETWORK_LABEL[o.network as Network]} ${o.externalId}`).join(", ")}
+                          to samo konto także w kampaniach:{" "}
+                          {r.twins.map((o, i) => (
+                            <span key={o.id}>
+                              {i > 0 && ", "}
+                              <NetworkName network={o.network as Network} /> {o.externalId}
+                            </span>
+                          ))}
                         </p>
                       )}
                       {r.items && <LinkSuggestions items={r.items} />}
@@ -684,12 +719,12 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
                           if (n === "EBROKER" && (r.catalogOnly.length || r.items?.some((x) => x.kind === "catalog")))
                             return (
                               <p key={n} className="text-xs text-ink-500">
-                                {NETWORK_LABEL[n]}: tylko link z katalogu, stawki nie odczytano
+                                <NetworkName network={n} />: tylko link z katalogu, stawki nie odczytano
                               </p>
                             );
                           return r.onSite ? (
                             <p key={n} className="text-xs text-ink-300">
-                              {NETWORK_LABEL[n]}: brak
+                              <NetworkName network={n} />: brak
                             </p>
                           ) : null;
                         }
@@ -700,7 +735,7 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
                         return (
                           <div key={n} className="mb-1">
                             <p className={isBest ? "font-semibold text-ink-900" : "text-ink-700"}>
-                              {NETWORK_LABEL[n]}: {o.cpsCents != null && `CPS ${zl(o.cpsCents)}`} {o.cpaCents != null && `CPA ${zl(o.cpaCents)}`}
+                              <NetworkName network={n} />: {o.cpsCents != null && `CPS ${zl(o.cpsCents)}`} {o.cpaCents != null && `CPA ${zl(o.cpaCents)}`}
                               {isBest && <span className="ml-1 text-xs font-normal text-teal-700">płaci więcej</span>}
                               {live && <span className="ml-1 rounded bg-teal-700/10 px-1 text-xs font-normal text-teal-700">● link na stronie</span>}
                             </p>
@@ -740,7 +775,9 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
                       </dl>
                       {r.lead?.conditions && (
                         <details className="mt-1 text-xs text-ink-500">
-                          <summary className="cursor-pointer">warunki prowizji ({NETWORK_LABEL[r.lead.network as Network]})</summary>
+                          <summary className="cursor-pointer">
+                            warunki prowizji (<NetworkName network={r.lead.network as Network} />)
+                          </summary>
                           <p className="mt-1 whitespace-pre-line">{r.lead.conditions}</p>
                           {r.lead.notes && <p className="mt-1 whitespace-pre-line text-ink-300">{r.lead.notes}</p>}
                         </details>
@@ -750,14 +787,22 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
                           {(r.p.affiliateNetworkPinned || r.choice.kind !== "keep") && (
                             <p className="text-ink-500">
                               {r.p.affiliateNetworkPinned && <span className="mr-1 text-gold-600">link przypięty</span>}
-                              {r.choice.kind === "switch" ? `jutro przełączy na ${NETWORK_LABEL[r.choice.to.network]}` : r.choice.kind === "decide" ? `❓ ${r.choice.reason}` : ""}
+                              {r.choice.kind === "switch" ? (
+                                <>
+                                  jutro przełączy na <NetworkName network={r.choice.to.network} />
+                                </>
+                              ) : r.choice.kind === "decide" ? (
+                                `❓ ${r.choice.reason}`
+                              ) : (
+                                ""
+                              )}
                             </p>
                           )}
                           <div className="mt-1 flex flex-wrap gap-1">
                             {NETWORKS.filter((n) => r.offers.some((x) => x.network === n && x.trackingUrl && !x.missingSince) || (n === "EBROKER" && r.catalogOnly.length > 0)).map((n) => (
                               <form key={n} action={pinAffiliateNetwork.bind(null, r.p!.id, n)}>
                                 <button className="flex items-center gap-1 rounded border border-ink-100 px-2 py-0.5 hover:bg-ink-100">
-                                  <Pin className="h-3 w-3" /> {NETWORK_LABEL[n]}
+                                  <Pin className="h-3 w-3" /> <NetworkName network={n} />
                                 </button>
                               </form>
                             ))}
@@ -889,7 +934,9 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
                       <tr key={c.id} className="border-b border-ink-100 align-top">
                         <td className="p-3">
                           <p className={winner ? "font-semibold text-ink-900" : "text-ink-700"}>
-                            <span className="text-ink-500">{NETWORK_LABEL[c.network as Network]}:</span>{" "}
+                            <span className="text-ink-500">
+                              <NetworkName network={c.network as Network} />:
+                            </span>{" "}
                             {c.sourceUrl ? (
                               <a href={c.sourceUrl} target="_blank" rel="noreferrer" className="hover:underline">
                                 {c.title}
@@ -955,7 +1002,9 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
               {applications.map((a) => (
                 <tr key={a.id} className="border-b border-ink-100 last:border-0">
                   <td className="p-3 text-ink-500">{formatDateTime(a.openedAt)}</td>
-                  <td className="p-3">{NETWORK_LABEL[a.network as Network]}</td>
+                  <td className="p-3">
+                    <NetworkName network={a.network as Network} />
+                  </td>
                   <td className="p-3">
                     {a.bankName}: {a.productName}
                   </td>
