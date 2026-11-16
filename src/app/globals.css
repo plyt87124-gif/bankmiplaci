@@ -414,7 +414,7 @@
 
   /* Names of the affiliate networks in their own look (NetworkName.tsx; owner, 2026-11-15). Brand colours of the
      two logos, so plain custom properties here, not design tokens: they are wordmarks, not text colours.
-     eBroker partner: navy + blue, a geometric sans. comperia Lead: grey heavy serif + thin sky-blue sans.
+     eBroker partner: the "e" and "partner" blue, "Broker" navy, a geometric sans. comperia Lead: grey heavy serif + thin sky-blue sans.
      The navy would vanish on the dark page, so in the dark theme it turns light. Everything is in em. */
   .net-name {
     --net-ebroker-main: 0 24 56;
@@ -437,7 +437,8 @@
   .net-ebroker .net-main {
     color: rgb(var(--net-ebroker-main));
   }
-  .net-ebroker .net-sub {
+  .net-ebroker .net-sub,
+  .net-ebroker .net-e {
     color: rgb(var(--net-ebroker-sub));
   }
   .net-comperia {
