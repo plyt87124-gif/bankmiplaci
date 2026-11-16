@@ -18,8 +18,14 @@ const text = (html: string) => html.replace(/<[^>]+>/g, "");
 test("eBroker: dwie części (nazwa i „partner”), czysty tekst do skopiowania", () => {
   const html = render("EBROKER");
   assert.match(html, /data-network="EBROKER"/);
-  assert.match(html, /<span class="net-main">eBroker<\/span> <span class="net-sub">partner<\/span>/);
+  // owner, 15.11.2026: in the logo the "e" is blue like "partner", only "Broker" is navy
+  assert.match(html, /<span class="net-main"><span class="net-e">e<\/span>Broker<\/span> <span class="net-sub">partner<\/span>/);
   assert.equal(text(html), "eBroker partner");
+});
+
+test("eBroker: „e” w kolorze „partner” (niebieskie), „Broker” granatowe", () => {
+  assert.match(CSS, /\.net-ebroker \.net-sub,\s*\.net-ebroker \.net-e \{\s*color: rgb\(var\(--net-ebroker-sub\)\)/);
+  assert.match(CSS, /\.net-ebroker \.net-main \{\s*color: rgb\(var\(--net-ebroker-main\)\)/);
 });
 
 test("Comperia: „Comperia” (na ekranie małymi literami, szeryfowo) i „Lead”", () => {

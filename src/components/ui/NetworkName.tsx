@@ -4,7 +4,8 @@ import type { Network } from "@/lib/affiliateNetworks";
  * The name of an affiliate network the way the network writes it (owner, 2026-11-15: "wszystkie nazwy sieci
  * afiliacyjnych niech nabiorą ich oryginalnego stylu", after two logo screenshots):
  *
- *   eBroker partner   "eBroker" in dark navy, "partner" in blue, a plain geometric sans (the site's body face);
+ *   eBroker partner   the "e" and "partner" in blue, "Broker" in dark navy (as in the logo), a plain geometric sans
+ *                     (the site's body face);
  *   comperia Lead     "comperia" in grey, heavy serif, all lowercase; "Lead" in light sky blue, thin sans; the logo
  *                     variant adds the small line "PROGRAM PARTNERSKI NR1" under it.
  *
@@ -25,7 +26,9 @@ export function NetworkName({ network, variant = "inline", className }: { networ
   if (network === "EBROKER") {
     return (
       <span className={classes} data-network="EBROKER">
-        <span className="net-main">eBroker</span>
+        <span className="net-main">
+          <span className="net-e">e</span>Broker
+        </span>
         {variant === "logo" ? <br /> : " "}
         <span className="net-sub">partner</span>
       </span>
