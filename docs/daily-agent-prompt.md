@@ -90,16 +90,9 @@ Małym skryptem tsx tylko do odczytu odczytaj z produkcji:
 ### E. Zmiana albo zniknięcie kampanii w katalogu
 Sprawdzasz u banku, nic nie zmieniasz i dajesz rekomendację w raporcie.
 
-### F0. Kiedy czytasz panele prowizji (polecenie właściciela z 3.11.2026)
+### F0. Kiedy czytasz panele prowizji (zmiana z 17.11.2026, polecenie właściciela)
 
-Panele eBrokerPartner i ComperiaLead (kroki F i F2) czytasz tylko w te dni:
-- 1. dzień miesiąca,
-- 3. dzień miesiąca,
-- każdy poniedziałek.
-
-W pozostałe dni pomijasz F i F2. Nie otwierasz paneli i nie piszesz „zaloguj się”, nawet jeśli sesja wygasła. Kroki A–E (oferty banków, katalog eBroker, wygasłe promocje) robisz codziennie jak dotąd. Codziennie możesz też uruchomić `affiliate-sync.ts links` i `report`, bo czytają tylko bazę.
-
-W raporcie w dzień bez odczytu piszesz jedną linię: „Prowizje: bez odczytu paneli dziś, następny odczyt <data>”.
+Panele eBrokerPartner i ComperiaLead (kroki F, F1 i F2) czytasz KAŻDEGO DNIA, w pełnym zakresie opisanym w F: kampanie, konkursy, wnioski, rozliczenia, zakazy w promowaniu. Regulaminy sieci (/regulamin) nadal 1. dnia miesiąca. Wygasła sesja = procedura F1 każdego dnia. Dawna zasada „tylko 1., 3. dzień i poniedziałki” jest uchylona.
 
 ### F1. Logowanie z telefonu
 
