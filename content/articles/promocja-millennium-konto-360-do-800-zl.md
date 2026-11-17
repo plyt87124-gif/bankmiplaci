@@ -11,7 +11,7 @@ stan_na: "2026-11-10"
 published: true
 ---
 
-Promocja „Do 800 zł z kontem Millennium 360°” to oferta Banku Millennium dla osób, które od 1 stycznia 2023 r. nie miały w nim konta osobistego. Bank płaci do **800 zł** w trzech premiach (200 + 300 + 300 zł) za wpływy na konto, płatności i aktywność przez około pół roku. Konto trzeba otworzyć od 28.10.2026 do **18.02.2027** albo do czasu, gdy bank otworzy 150 000 kont. Stan na 10 listopada 2026 r., według regulaminu obowiązującego od 28.10.2026.
+Promocja „Do 800 zł z kontem Millennium 360°” to oferta Banku Millennium dla osób, które od 1 stycznia 2023 r. nie miały w nim konta osobistego. Bank płaci do **800 zł** w trzech premiach (200 + 300 + 300 zł) za wpływy na konto, płatności i aktywność przez około pół roku. Konto trzeba otworzyć od 28.10.2026 do **18.02.2027** albo do czasu, gdy bank otworzy 150 000 kont. Stan na 10 listopada 2026 r., według regulaminu obowiązującego od 28.10.2026. (Nazwę banku często wpisuje się w wyszukiwarce jako „Milenium”; to ten sam bank, w tekście używamy oficjalnej pisowni Millennium.)
 
 **W skrócie**
 - **Premia:** do 800 zł, nie gwarantowane. Każda z trzech części ma osobne warunki.
