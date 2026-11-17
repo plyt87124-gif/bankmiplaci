@@ -180,7 +180,9 @@ export default async function AffiliateCommissionsPage({ searchParams }: { searc
   const groups = new Map<string, { promotion: Promo; offers: Offer[]; sameAccount: Offer[] }>();
   const unmatchedOffers: Offer[] = [];
   for (const o of offers) {
-    if (!o.promotion) {
+    // A campaign still linked to an expired/archived promotion is the same account as the
+    // network's other campaign for it; treat it as "no promotion on the site" so the two pair up.
+    if (!o.promotion || (o.promotion.status !== "ACTIVE" && o.promotion.status !== "DRAFT")) {
       if (!o.missingSince && isAccountCampaign(o)) unmatchedOffers.push(o);
       continue;
     }
